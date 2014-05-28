@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qml/main.qml</file>
+        <file>qml/LoginView.qml</file>
+        <file>qml/StyleButtonDefault.qml</file>
+        <file>qml/Loading.qml</file>
+        <file>qml/calaos.js</file>
+        <file>qml/RoomListView.qml</file>
+        <file>qml/ScrollBar.qml</file>
+    </qresource>
+</RCC>

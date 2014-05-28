@@ -1,0 +1,36 @@
+<RCC>
+    <qresource prefix="/">
+        <file>img/rooms/bathroom.png</file>
+        <file>img/rooms/bathroom@2x.png</file>
+        <file>img/rooms/bedroom.png</file>
+        <file>img/rooms/bedroom@2x.png</file>
+        <file>img/rooms/cellar.png</file>
+        <file>img/rooms/cellar@2x.png</file>
+        <file>img/rooms/corridor.png</file>
+        <file>img/rooms/corridor@2x.png</file>
+        <file>img/rooms/diningroom.png</file>
+        <file>img/rooms/diningroom@2x.png</file>
+        <file>img/rooms/garage.png</file>
+        <file>img/rooms/garage@2x.png</file>
+        <file>img/rooms/kitchen.png</file>
+        <file>img/rooms/kitchen@2x.png</file>
+        <file>img/rooms/lounge.png</file>
+        <file>img/rooms/lounge@2x.png</file>
+        <file>img/rooms/office.png</file>
+        <file>img/rooms/office@2x.png</file>
+        <file>img/rooms/outside.png</file>
+        <file>img/rooms/outside@2x.png</file>
+        <file>img/rooms/various.png</file>
+        <file>img/rooms/various@2x.png</file>
+        <file>img/background.png</file>
+        <file>img/background@2x.png</file>
+        <file>img/background_landscape.png</file>
+        <file>img/background_landscape@2x.png</file>
+        <file>img/back_items_home.png</file>
+        <file>img/back_items_home@2x.png</file>
+        <file>img/back_items_home_glow.png</file>
+        <file>img/back_items_home_glow@2x.png</file>
+        <file>img/logo_simple.png</file>
+        <file>img/logo_simple@2x.png</file>
+    </qresource>
+</RCC>

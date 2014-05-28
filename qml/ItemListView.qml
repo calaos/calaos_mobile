@@ -13,13 +13,10 @@ ListView {
 
         anchors.horizontalCenter: parent.horizontalCenter
         width: parent.width - 10
-        height: 100
-
-        property string roomIconType: roomType
-        onRoomIconTypeChanged: roomIcon.source = "qrc:/img/rooms/" + Calaos.getRoomTypeIcon(roomIconType)
+        height: 40
 
         Image {
-            id: roomIcon
+            id: itemIcon
             fillMode: Image.PreserveAspectFit
             anchors {
                 left: parent.left; leftMargin: 8
@@ -30,14 +27,14 @@ ListView {
 
         Text {
             color: "#3ab4d7"
-            font { bold: false; pointSize: 13 }
-            text: roomName
+            font { bold: false; pointSize: 12 }
+            text: name
             clip: true
             elide: Text.ElideRight
             anchors {
-                left: roomIcon.right; leftMargin: 8
+                left: itemIcon.right; leftMargin: 8
                 right: parent.right; rightMargin: 8
-                top: parent.top; topMargin: 18
+                verticalCenter: parent.verticalCenter
             }
         }
     }

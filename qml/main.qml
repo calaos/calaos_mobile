@@ -1,5 +1,7 @@
 import QtQuick 2.2
 import QtQuick.Window 2.1
+import QtQuick.Controls 1.2
+import Calaos 1.0
 import "calaos.js" as Calaos;
 
 Window {
@@ -13,40 +15,6 @@ Window {
     //height: 568
 
     property bool isLandscape: rootWindow.width > rootWindow.height
-    property bool isLoading: false
-    property bool isLoggedIn: false
-
-    property var calaosObj
-
-    //Global models
-    ListModel
-    {
-        id: modelHome;
-
-        function load(user, pass, host) {
-            Calaos.loadHome(user, pass, host,
-                            function(data) {
-                                calaosObj = data;
-                                isLoggedIn = true;
-                                isLoading = false;
-
-                                modelHome.clear()
-                                if (calaosObj.home === undefined) return;
-
-                                //sort rooms
-                                calaosObj.home.sort(function (rooma, roomb) { return roomb.hits - rooma.hits; });
-
-                                for (var it = 0; it < calaosObj.home.length; it++) {
-                                    modelHome.append(calaosObj.home[it])
-                                }
-                            },
-                            function() {
-                                isLoggedIn = false;
-                                isLoading = false;
-                            });
-            isLoading = true;
-        }
-    }
 
     Image {
         source: isLandscape?
@@ -55,10 +23,75 @@ Window {
         anchors.fill: parent
         fillMode: Image.PreserveAspectCrop
     }
+/*
+    StackView {
+        id: mainStack
+        anchors.fill: parent
+//        delegate: StackViewDelegate {
+//            function transitionFinished(properties)
+//            {
+//                properties.exitItem.opacity = 1
+//            }
+
+//            pushTransition: StackViewTransition {
+//                PropertyAnimation {
+//                    target: enterItem
+//                    property: "opacity"
+//                    from: 0
+//                    to: 1
+//                }
+//                PropertyAnimation {
+//                    target: exitItem
+//                    property: "opacity"
+//                    from: 1
+//                    to: 0
+//                }
+//            }
+//        }
+    }
+
+    Component {
+        id: homeView
+        Item {
+            RoomListView {
+                id: listViewRoom
+                model: modelHome
+            }
+            ScrollBar {
+                width: 10; height: listViewRoom.height
+                anchors.right: parent.right
+                opacity: 1
+                orientation: Qt.Vertical
+                wantBackground: false
+                position: listViewRoom.visibleArea.yPosition
+                pageSize: listViewRoom.visibleArea.heightRatio
+            }
+        }
+    }
+
+    Component {
+        id: roomDetailView
+        Item {
+            ItemListView {
+                id: listViewItems
+                model: modelRoom
+            }
+            ScrollBar {
+                width: 10; height: listViewRoom.height
+                anchors.right: parent.right
+                opacity: 1
+                orientation: Qt.Vertical
+                wantBackground: false
+                position: listViewRoom.visibleArea.yPosition
+                pageSize: listViewRoom.visibleArea.heightRatio
+            }
+        }
+    }
+*/
 
     RoomListView {
         id: listViewRoom
-        model: modelHome
+        model: homeModel
     }
     ScrollBar {
         width: 10; height: listViewRoom.height
@@ -71,14 +104,14 @@ Window {
     }
 
     LoginView {
-        opacity: !isLoading && !isLoggedIn?1:0
+        opacity: calaosApp.applicationStatus == Common.NotConnected?1:0
 
         onLoginClicked: {
-            modelHome.load(username, password, hostname)
+            calaosApp.login(username, password, hostname)
         }
     }
 
     Loading {
-        opacity: isLoading?1:0
+        opacity: calaosApp.applicationStatus == Common.Loading?1:0
     }
 }

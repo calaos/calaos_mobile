@@ -2,6 +2,10 @@ TEMPLATE = app
 
 QT += qml quick network
 
+android {
+    QT += androidextras
+}
+
 CONFIG += c++11
 
 SOURCES += src/main.cpp \

@@ -21,11 +21,11 @@ Item {
 
     Rectangle {
         color: "black"
-        radius: 30
+        radius: 30 * calaosApp.density
         smooth: true
 
-        width: isLandscape?300:parent.width-20
-        height: 300
+        width: isLandscape?300 * calaosApp.density:parent.width - 20 * calaosApp.density
+        height: 300 * calaosApp.density
 
         anchors {
             verticalCenter: parent.verticalCenter
@@ -35,17 +35,17 @@ Item {
         Text {
             text: qsTr("Login to your home")
             color: "#dddddd"
-            font { bold: true; pointSize: 14 }
+            font { bold: true; pointSize: 14 * calaosApp.density }
             anchors {
                 horizontalCenter: parent.horizontalCenter
-                top: parent.top; topMargin: 10
+                top: parent.top; topMargin: 10 * calaosApp.density
             }
         }
 
         Column {
             anchors {
-                top: parent.top; topMargin: 50
-                bottom: parent.bottom; bottomMargin: 10
+                top: parent.top; topMargin: 50 * calaosApp.density
+                bottom: parent.bottom; bottomMargin: 10 * calaosApp.density
                 //left: parent.left; leftMargin: 10
                 //right: parent.right; rightMargin: 10
                 horizontalCenter: parent.horizontalCenter
@@ -56,24 +56,24 @@ Item {
             Text {
                 text: qsTr("Login:")
                 color: "#dddddd"
-                font { bold: false; pointSize: 12 }
+                font { bold: false; pointSize: 12 * calaosApp.density }
             }
 
             TextField {
                 id: userField
-                width: 200
+                width: 200 * calaosApp.density
                 text: "demo@calaos.fr"
             }
 
             Text {
                 text: qsTr("Password:")
                 color: "#dddddd"
-                font { bold: false; pointSize: 12 }
+                font { bold: false; pointSize: 12 * calaosApp.density }
             }
 
             TextField {
                 id: passField
-                width: 200
+                width: 200 * calaosApp.density
                 echoMode: TextInput.Password
                 text: "demo"
             }
@@ -81,20 +81,20 @@ Item {
             Text {
                 text: qsTr("Host:")
                 color: "#dddddd"
-                font { bold: false; pointSize: 12 }
+                font { bold: false; pointSize: 12 * calaosApp.density }
             }
 
             TextField {
                 id: hostField
-                width: 200
+                width: 200 * calaosApp.density
                 text: "calaos.fr"
             }
 
-            Item { /* spacer */ height: 20; width: 200 }
+            Item { /* spacer */ height: 20 * calaosApp.density; width: 200 * calaosApp.density }
 
             Button {
                 text: qsTr("Login")
-                width: 200
+                width: 200 * calaosApp.density
                 style: StyleButtonDefault { }
 
                 onClicked: loginClicked(userField.text, passField.text, hostField.text)

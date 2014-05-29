@@ -13,7 +13,8 @@ class Application : public QGuiApplication
     Q_OBJECT
 
 public:
-    QML_WRITABLE_PROPERTY(Common::AppStatus, applicationStatus)
+    QML_READONLY_PROPERTY(Common::AppStatus, applicationStatus)
+    QML_READONLY_PROPERTY(double, density)
 
 public:
     Application(int &argc, char **argv);

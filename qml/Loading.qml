@@ -15,11 +15,11 @@ Item {
 
     Rectangle {
         color: "black"
-        radius: 30
+        radius: 30 * calaosApp.density
         smooth: true
 
-        width: 200
-        height: 200
+        width: 200 * calaosApp.density
+        height: 200 * calaosApp.density
 
         anchors {
             verticalCenter: parent.verticalCenter
@@ -50,10 +50,10 @@ Item {
         Text {
             anchors {
                 horizontalCenter: parent.horizontalCenter
-                top: img.bottom; topMargin: 15
+                top: img.bottom; topMargin: 15 * calaosApp.density
             }
             text: qsTr("Loading")
-            font { bold: true; pointSize: 12 }
+            font { bold: true; pointSize: 12 * calaosApp.density }
             color: "#E7E7E7"
         }
 

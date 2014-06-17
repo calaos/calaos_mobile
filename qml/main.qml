@@ -16,6 +16,8 @@ Window {
 
     property bool isLandscape: rootWindow.width > rootWindow.height
 
+    property variant roomModel
+
     Image {
         source: isLandscape?
                     "qrc:/img/background_landscape.png":
@@ -23,39 +25,53 @@ Window {
         anchors.fill: parent
         fillMode: Image.PreserveAspectCrop
     }
-/*
-    StackView {
-        id: mainStack
-        anchors.fill: parent
-//        delegate: StackViewDelegate {
-//            function transitionFinished(properties)
-//            {
-//                properties.exitItem.opacity = 1
-//            }
 
-//            pushTransition: StackViewTransition {
-//                PropertyAnimation {
-//                    target: enterItem
-//                    property: "opacity"
-//                    from: 0
-//                    to: 1
-//                }
-//                PropertyAnimation {
-//                    target: exitItem
-//                    property: "opacity"
-//                    from: 1
-//                    to: 0
-//                }
-//            }
-//        }
+    Connections {
+        target: calaosApp
+        onApplicationStatusChanged: {
+            if (calaosApp.applicationStatus === Common.LoggedIn)
+                stackView.push(homeView)
+            else if (calaosApp.applicationStatus === Common.NotConnected)
+                stackView.pop(loginView)
+        }
+    }
+
+    StackView {
+        id: stackView
+        anchors.fill: parent
+
+        initialItem: LoginView {
+            onLoginClicked: calaosApp.login(username, password, hostname)
+        }
+
+        // Implements back key navigation
+        focus: true
+        Keys.onReleased: if ((event.key === Qt.Key_Back || event.key === Qt.Key_Backspace) && stackView.depth > 2) {
+                             stackView.pop();
+                             event.accepted = true;
+                         }
     }
 
     Component {
         id: homeView
         Item {
+            Image {
+                source: isLandscape?
+                            "qrc:/img/background_landscape.png":
+                            "qrc:/img/background.png"
+                anchors.fill: parent
+                fillMode: Image.PreserveAspectCrop
+            }
             RoomListView {
                 id: listViewRoom
-                model: modelHome
+                model: homeModel
+
+                onRoomClicked: {
+                    //get room model
+                    console.debug("model: " + homeModel)
+                    roomModel = homeModel.getRoomModel(idx)
+                    stackView.push(roomDetailView)
+                }
             }
             ScrollBar {
                 width: 10; height: listViewRoom.height
@@ -72,9 +88,16 @@ Window {
     Component {
         id: roomDetailView
         Item {
+            Image {
+                source: isLandscape?
+                            "qrc:/img/background_landscape.png":
+                            "qrc:/img/background.png"
+                anchors.fill: parent
+                fillMode: Image.PreserveAspectCrop
+            }
             ItemListView {
                 id: listViewItems
-                model: modelRoom
+                model: roomModel
             }
             ScrollBar {
                 width: 10; height: listViewRoom.height
@@ -87,31 +110,9 @@ Window {
             }
         }
     }
-*/
-
-    RoomListView {
-        id: listViewRoom
-        model: homeModel
-    }
-    ScrollBar {
-        width: 10 * calaosApp.density; height: listViewRoom.height
-        anchors.right: parent.right
-        opacity: 1
-        orientation: Qt.Vertical
-        wantBackground: false
-        position: listViewRoom.visibleArea.yPosition
-        pageSize: listViewRoom.visibleArea.heightRatio
-    }
-
-    LoginView {
-        opacity: calaosApp.applicationStatus == Common.NotConnected?1:0
-
-        onLoginClicked: {
-            calaosApp.login(username, password, hostname)
-        }
-    }
 
     Loading {
+        z: 9999 //on top of everything
         opacity: calaosApp.applicationStatus == Common.Loading?1:0
     }
 }

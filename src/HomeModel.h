@@ -4,12 +4,15 @@
 #include <QObject>
 #include <QStandardItemModel>
 #include "qqmlhelpers.h"
+#include <QQmlApplicationEngine>
+
+class RoomModel;
 
 class HomeModel: public QStandardItemModel
 {
     Q_OBJECT
 public:
-    HomeModel(QObject *parent = 0);
+    HomeModel(QQmlApplicationEngine *engine, QObject *parent = 0);
 
     enum
     {
@@ -20,9 +23,11 @@ public:
 
     void load(QVariantMap &homeData);
 
+    Q_INVOKABLE QObject *getRoomModel(int idx) const;
+
 private:
 
-
+    QQmlApplicationEngine *engine;
 };
 
 class RoomItem: public QObject, public QStandardItem
@@ -33,10 +38,15 @@ class RoomItem: public QObject, public QStandardItem
     QML_READONLY_PROPERTY_MODEL(int, roomHits, HomeModel::RoleHits)
     QML_READONLY_PROPERTY_MODEL(QString, roomName, HomeModel::RoleName)
 public:
-    RoomItem();
+    RoomItem(QQmlApplicationEngine *engine);
+
+    Q_INVOKABLE QObject *getRoomModel() const;
+
+    void load(QVariantMap &roomData);
 
 private:
-
+    RoomModel *room = nullptr;
+    QQmlApplicationEngine *engine;
 };
 
 #endif // HOMEMODEL_H

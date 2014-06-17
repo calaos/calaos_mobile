@@ -12,7 +12,8 @@ SOURCES += src/main.cpp \
     src/HomeModel.cpp \
     src/Application.cpp \
     src/CalaosConnection.cpp \
-    src/Common.cpp
+    src/Common.cpp \
+    src/RoomModel.cpp
 
 RESOURCES += qml.qrc \
     img.qrc
@@ -38,4 +39,5 @@ HEADERS += \
     src/qqmlhelpers.h \
     src/Application.h \
     src/CalaosConnection.h \
-    src/Common.h
+    src/Common.h \
+    src/RoomModel.h

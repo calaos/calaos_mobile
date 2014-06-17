@@ -6,14 +6,41 @@ ListView {
 
     spacing: 10 * calaosApp.density
 
-    delegate: BorderImage {
-        source: "qrc:/img/back_items_home.png"
-        border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
-        border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
+    signal roomClicked(int idx)
+
+    delegate: Item {
 
         anchors.horizontalCenter: parent.horizontalCenter
         width: parent.width - 10 * calaosApp.density
         height: 100 * calaosApp.density
+
+        BorderImage {
+            source: "qrc:/img/back_items_home.png"
+            border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
+            border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
+
+            anchors.fill: parent
+        }
+
+        BorderImage {
+            source: "qrc:/img/back_items_home_glow.png"
+            border.left: 15 * calaosApp.density; border.top: 15 * calaosApp.density
+            border.right: 15 * calaosApp.density; border.bottom: 15 * calaosApp.density
+
+            anchors.fill: parent
+            opacity: 0
+            Behavior on opacity { PropertyAnimation { duration: 100 } }
+
+            MouseArea {
+                id: ms
+                anchors.fill: parent
+                hoverEnabled: true
+                onPressed: parent.opacity = 1
+                onReleased: parent.opacity = 0
+                onExited: parent.opacity = 0
+                onClicked: roomClicked(index)
+            }
+        }
 
         property string roomIconType: roomType
         onRoomIconTypeChanged: roomIcon.source = "qrc:/img/rooms/" + Calaos.getRoomTypeIcon(roomIconType)
@@ -40,6 +67,7 @@ ListView {
                 top: parent.top; topMargin: 18 * calaosApp.density
             }
         }
+
     }
 
 }

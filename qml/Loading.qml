@@ -5,11 +5,11 @@ Item {
     id: loader
 
     visible: opacity > 0?true:false
-    Behavior on opacity { PropertyAnimation { } }
+    Behavior on opacity { PropertyAnimation { duration: 800 } }
 
     Rectangle {
         color: "#1f3e47"
-        opacity: 0.50
+        opacity: 0.80
         anchors.fill: parent
     }
 

@@ -6,6 +6,13 @@ CalaosConnection::CalaosConnection(QObject *parent) :
     QObject(parent)
 {
     accessManager = new QNetworkAccessManager(this);
+    connect(accessManager, SIGNAL(sslErrors(QNetworkReply*, const QList<QSslError> &)),
+            this, SLOT(sslErrors(QNetworkReply*, const QList<QSslError> &)));
+}
+
+void CalaosConnection::sslErrors(QNetworkReply *reply, const QList<QSslError> &)
+{
+    reply->ignoreSslErrors();
 }
 
 void CalaosConnection::login(QString user, QString pass, QString host)

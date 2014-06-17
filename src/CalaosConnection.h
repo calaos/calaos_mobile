@@ -22,6 +22,7 @@ public slots:
     void login(QString user, QString pass, QString host);
 
 private slots:
+    void sslErrors(QNetworkReply *reply, const QList<QSslError> &);
     void loginFinished(QNetworkReply *reply);
     void requestFinished(QNetworkReply *reply);
 

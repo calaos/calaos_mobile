@@ -2,6 +2,7 @@
 #define COMMON_H
 
 #include <QObject>
+#include <QtCore>
 #include <QtQml>
 
 class Common : public QObject
@@ -14,6 +15,39 @@ public:
         LoggedIn
     };
     Q_ENUMS(AppStatus)
+
+    enum IOType {
+        Unkown = 0,
+        Light,
+        Temp,
+        AnalogIn,
+        AnalogOut,
+        LightDimmer,
+        LightRgb,
+        Shutter,
+        ShutterSmart,
+        VarBool,
+        VarInt,
+        VarString,
+        Scenario,
+        AVReceiver,
+        StringIn,
+        StringOut,
+        Timer,
+        Time,
+        TimeRange,
+        Switch,
+        Switch3,
+        SwitchLong,
+        AudioInput,
+        AudioOutput,
+        CameraInput,
+        CameraOutput
+    };
+    Q_ENUMS(IOType)
+
+    static QString IOTypeToString(IOType t);
+    static IOType IOTypeFromString(QString t);
 
     static void registerQml()
     {

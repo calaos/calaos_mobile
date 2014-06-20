@@ -28,13 +28,19 @@ void RoomModel::load(QVariantMap &roomData)
     {
         QVariantMap r = it->toMap();
 
-        //TODO:
-        //if (r["gui_type"] == "XXX")
+        //Hide invisible items
+        if (r["visible"] != "true") continue;
 
-        IOBase *io = new IOBase();
-        io->update_ioName(r["name"].toString());
-        io->update_ioHits(r["hits"].toInt());
-        appendRow(io);
+        if (r["gui_type"] == "temp" ||
+            r["gui_type"] == "analog_in" ||
+            r["gui_type"] == "scenario" ||
+            r["gui_type"] == "sctring_in")
+        {
+            IOBase *io = new IOBase();
+            io->update_ioName(r["name"].toString());
+            io->update_ioHits(r["hits"].toInt());
+            appendRow(io);
+        }
     }
 
     //outputs
@@ -44,13 +50,25 @@ void RoomModel::load(QVariantMap &roomData)
     {
         QVariantMap r = it->toMap();
 
-        //TODO:
-        //if (r["gui_type"] == "XXX")
+        //Hide invisible items
+        if (r["visible"] != "true") continue;
 
-        IOBase *io = new IOBase();
-        io->update_ioName(r["name"].toString());
-        io->update_ioHits(r["hits"].toInt());
-        appendRow(io);
+        if (r["gui_type"] == "light" ||
+            r["gui_type"] == "light_dimmer" ||
+            r["gui_type"] == "light_rgb" ||
+            r["gui_type"] == "analog_out" ||
+            r["gui_type"] == "shutter" ||
+            r["gui_type"] == "shutter_smart" ||
+            r["gui_type"] == "var_bool" ||
+            r["gui_type"] == "var_int" ||
+            r["gui_type"] == "var_string" ||
+            r["gui_type"] == "string_out")
+        {
+            IOBase *io = new IOBase();
+            io->update_ioName(r["name"].toString());
+            io->update_ioHits(r["hits"].toInt());
+            appendRow(io);
+        }
     }
 }
 

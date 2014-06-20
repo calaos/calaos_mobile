@@ -8,5 +8,6 @@
         <file>qml/RoomListView.qml</file>
         <file>qml/ScrollBar.qml</file>
         <file>qml/ItemListView.qml</file>
+        <file>qml/IOLight.qml</file>
     </qresource>
 </RCC>

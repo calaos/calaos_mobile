@@ -39,6 +39,7 @@ void RoomModel::load(QVariantMap &roomData)
             IOBase *io = new IOBase();
             io->update_ioName(r["name"].toString());
             io->update_ioHits(r["hits"].toInt());
+            io->update_ioType(Common::IOTypeFromString(r["gui_type"].toString()));
             appendRow(io);
         }
     }
@@ -67,6 +68,7 @@ void RoomModel::load(QVariantMap &roomData)
             IOBase *io = new IOBase();
             io->update_ioName(r["name"].toString());
             io->update_ioHits(r["hits"].toInt());
+            io->update_ioType(Common::IOTypeFromString(r["gui_type"].toString()));
             appendRow(io);
         }
     }

@@ -5,6 +5,7 @@
 #include <QStandardItemModel>
 #include "qqmlhelpers.h"
 #include <QQmlApplicationEngine>
+#include "Common.h"
 
 class RoomModel: public QStandardItemModel
 {
@@ -30,7 +31,7 @@ class IOBase: public QObject, public QStandardItem
 {
     Q_OBJECT
 
-    //QML_READONLY_PROPERTY_MODEL(QString, roomType, HomeModel::RoleType)
+    QML_READONLY_PROPERTY_MODEL(Common::IOType, ioType, RoomModel::RoleType)
     QML_READONLY_PROPERTY_MODEL(int, ioHits, RoomModel::RoleHits)
     QML_READONLY_PROPERTY_MODEL(QString, ioName, RoomModel::RoleName)
 

@@ -100,19 +100,19 @@ Window {
                 model: roomModel
             }
             ScrollBar {
-                width: 10; height: listViewRoom.height
+                width: 10; height: listViewItems.height
                 anchors.right: parent.right
                 opacity: 1
                 orientation: Qt.Vertical
                 wantBackground: false
-                position: listViewRoom.visibleArea.yPosition
-                pageSize: listViewRoom.visibleArea.heightRatio
+                position: listViewItems.visibleArea.yPosition
+                pageSize: listViewItems.visibleArea.heightRatio
             }
         }
     }
 
     Loading {
         z: 9999 //on top of everything
-        opacity: calaosApp.applicationStatus == Common.Loading?1:0
+        opacity: calaosApp.applicationStatus === Common.Loading?1:0
     }
 }

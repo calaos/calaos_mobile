@@ -28,7 +28,8 @@ OTHER_FILES += \
     qml/ScrollBar.qml \
     qml/ItemListView.qml \
     qml/IOLight.qml \
-    qml/AnimatedIcon.qml
+    qml/AnimatedIcon.qml \
+    qml/ItemButtonAction.qml
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =

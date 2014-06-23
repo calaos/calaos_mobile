@@ -23,21 +23,40 @@ BorderImage {
         }
     }
 
-    MouseArea {
-        anchors.fill: parent
-        onClicked: icon.iconState = !icon.iconState
-    }
-
     Text {
-        color: "#3ab4d7"
+        color: icon.iconState?"#ffda5a":"#3ab4d7"
         font { bold: false; pointSize: 12 * calaosApp.density }
         text: modelData.ioName
         clip: true
         elide: Text.ElideMiddle
         anchors {
             left: icon.right; leftMargin: 8 * calaosApp.density
+            right: btoff.left; rightMargin: 8 * calaosApp.density
+            verticalCenter: parent.verticalCenter
+        }
+
+        Behavior on color { ColorAnimation { duration: 200 } }
+    }
+
+    ItemButtonAction {
+        id: bton
+        anchors {
             right: parent.right; rightMargin: 8 * calaosApp.density
             verticalCenter: parent.verticalCenter
         }
+        imageSource: "qrc:/img/button_light_on.png"
+
+        onButtonClicked: icon.iconState = true
+    }
+
+    ItemButtonAction {
+        id: btoff
+        anchors {
+            right: bton.left; rightMargin: 8 * calaosApp.density
+            verticalCenter: parent.verticalCenter
+        }
+        imageSource: "qrc:/img/button_light_off.png"
+
+        onButtonClicked: icon.iconState = false
     }
 }

@@ -10,5 +10,6 @@
         <file>qml/ItemListView.qml</file>
         <file>qml/IOLight.qml</file>
         <file>qml/AnimatedIcon.qml</file>
+        <file>qml/ItemButtonAction.qml</file>
     </qresource>
 </RCC>

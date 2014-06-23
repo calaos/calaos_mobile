@@ -20,6 +20,10 @@ ListView {
             onLoaded: {
                 item.modelData = Qt.binding(function() { return model })
             }
+
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.horizontalCenterOffset: -3 * calaosApp.density
+            width: parent.width - 15 * calaosApp.density
         }
     }
 
@@ -33,8 +37,7 @@ ListView {
             border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
             border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
 
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: parent.width - 10 * calaosApp.density
+            width: parent.width
             height: 40 * calaosApp.density
 
             Text {

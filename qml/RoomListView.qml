@@ -11,7 +11,8 @@ ListView {
     delegate: Item {
 
         anchors.horizontalCenter: parent.horizontalCenter
-        width: parent.width - 10 * calaosApp.density
+        anchors.horizontalCenterOffset: -3 * calaosApp.density
+        width: parent.width - 16 * calaosApp.density
         height: 100 * calaosApp.density
 
         BorderImage {

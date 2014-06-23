@@ -2,9 +2,10 @@
 #include <QDebug>
 #include "RoomModel.h"
 
-HomeModel::HomeModel(QQmlApplicationEngine *eng, QObject *parent) :
+HomeModel::HomeModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent) :
     QStandardItemModel(parent),
-    engine(eng)
+    engine(eng),
+    connection(con)
 {
     QHash<int, QByteArray> roles;
     roles[RoleType] = "roomType";
@@ -28,7 +29,7 @@ void HomeModel::load(QVariantMap &homeData)
     for (;it != rooms.end();it++)
     {
         QVariantMap r = it->toMap();
-        RoomItem *room = new RoomItem(engine);
+        RoomItem *room = new RoomItem(engine, connection);
         room->update_roomName(r["name"].toString());
         room->update_roomType(r["type"].toString());
         room->update_roomHits(r["hits"].toString().toInt());
@@ -44,11 +45,12 @@ QObject *HomeModel::getRoomModel(int idx) const
     return it->getRoomModel();
 }
 
-RoomItem::RoomItem(QQmlApplicationEngine *eng):
+RoomItem::RoomItem(QQmlApplicationEngine *eng, CalaosConnection *con):
     QStandardItem(),
-    engine(eng)
+    engine(eng),
+    connection(con)
 {
-    room = new RoomModel(this);
+    room = new RoomModel(engine, connection, this);
     engine->setObjectOwnership(room, QQmlEngine::CppOwnership);
 }
 

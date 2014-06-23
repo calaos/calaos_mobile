@@ -5,6 +5,7 @@
 #include <QStandardItemModel>
 #include "qqmlhelpers.h"
 #include <QQmlApplicationEngine>
+#include "CalaosConnection.h"
 
 class RoomModel;
 
@@ -12,7 +13,7 @@ class HomeModel: public QStandardItemModel
 {
     Q_OBJECT
 public:
-    HomeModel(QQmlApplicationEngine *engine, QObject *parent = 0);
+    HomeModel(QQmlApplicationEngine *engine, CalaosConnection *con, QObject *parent = 0);
 
     enum
     {
@@ -28,6 +29,7 @@ public:
 private:
 
     QQmlApplicationEngine *engine;
+    CalaosConnection *connection;
 };
 
 class RoomItem: public QObject, public QStandardItem
@@ -38,7 +40,7 @@ class RoomItem: public QObject, public QStandardItem
     QML_READONLY_PROPERTY_MODEL(int, roomHits, HomeModel::RoleHits)
     QML_READONLY_PROPERTY_MODEL(QString, roomName, HomeModel::RoleName)
 public:
-    RoomItem(QQmlApplicationEngine *engine);
+    RoomItem(QQmlApplicationEngine *engine, CalaosConnection *con);
 
     Q_INVOKABLE QObject *getRoomModel() const;
 
@@ -47,6 +49,7 @@ public:
 private:
     RoomModel *room = nullptr;
     QQmlApplicationEngine *engine;
+    CalaosConnection *connection;
 };
 
 #endif // HOMEMODEL_H

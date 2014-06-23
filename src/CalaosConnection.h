@@ -13,6 +13,9 @@ public:
 private:
     QNetworkAccessManager *accessManager = nullptr;
 
+    QString username, password;
+    QString host;
+
 signals:
     void homeLoaded(QVariantMap &home);
     void disconnected();
@@ -20,6 +23,7 @@ signals:
 
 public slots:
     void login(QString user, QString pass, QString host);
+    void sendCommand(QString id, QString value, QString type = QString(), QString action = QString());
 
 private slots:
     void sslErrors(QNetworkReply *reply, const QList<QSslError> &);

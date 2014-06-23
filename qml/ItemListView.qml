@@ -18,7 +18,7 @@ ListView {
                              default_delegate
 
             onLoaded: {
-                item.modelData = Qt.binding(function() { return model })
+                item.modelData = Qt.binding(function() { return roomModel.getItemModel(model.index) })
             }
 
             anchors.horizontalCenter: parent.horizontalCenter

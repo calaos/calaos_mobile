@@ -1,13 +1,16 @@
 #include "RoomModel.h"
 #include <QDebug>
 
-RoomModel::RoomModel(QObject *parent) :
-    QStandardItemModel(parent)
+RoomModel::RoomModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent) :
+    QStandardItemModel(parent),
+    engine(eng),
+    connection(con)
 {
     QHash<int, QByteArray> roles;
     roles[RoleType] = "ioType";
     roles[RoleHits] = "ioHits";
     roles[RoleName] = "ioName";
+    roles[RoleId] = "ioId";
     setItemRoleNames(roles);
 }
 
@@ -36,10 +39,8 @@ void RoomModel::load(QVariantMap &roomData)
             r["gui_type"] == "scenario" ||
             r["gui_type"] == "sctring_in")
         {
-            IOBase *io = new IOBase();
-            io->update_ioName(r["name"].toString());
-            io->update_ioHits(r["hits"].toInt());
-            io->update_ioType(Common::IOTypeFromString(r["gui_type"].toString()));
+            IOBase *io = new IOBase(connection, IOBase::IOInput);
+            io->load(r);
             appendRow(io);
         }
     }
@@ -65,16 +66,67 @@ void RoomModel::load(QVariantMap &roomData)
             r["gui_type"] == "var_string" ||
             r["gui_type"] == "string_out")
         {
-            IOBase *io = new IOBase();
-            io->update_ioName(r["name"].toString());
-            io->update_ioHits(r["hits"].toInt());
-            io->update_ioType(Common::IOTypeFromString(r["gui_type"].toString()));
+            IOBase *io = new IOBase(connection, IOBase::IOOutput);
+            io->load(r);
             appendRow(io);
         }
     }
 }
 
-IOBase::IOBase():
-    QStandardItem()
+QObject *RoomModel::getItemModel(int idx)
 {
+    IOBase *obj = dynamic_cast<IOBase *>(item(idx));
+    if (obj) engine->setObjectOwnership(obj, QQmlEngine::CppOwnership);
+    return obj;
+}
+
+IOBase::IOBase(CalaosConnection *con, int t):
+    QStandardItem(),
+    connection(con),
+    ioType(t)
+{
+}
+
+void IOBase::load(QVariantMap &io)
+{
+    ioData = io;
+
+    update_ioName(ioData["name"].toString());
+    update_ioHits(ioData["hits"].toInt());
+    update_ioType(Common::IOTypeFromString(ioData["gui_type"].toString()));
+    update_ioId(ioData["id"].toString());
+}
+
+void IOBase::sendTrue()
+{
+    connection->sendCommand(ioData["id"].toString(),
+            "true",
+            ioType == IOOutput?"output":"input",
+            "set_state");
+}
+
+void IOBase::sendFalse()
+{
+    connection->sendCommand(ioData["id"].toString(),
+            "false",
+            ioType == IOOutput?"output":"input",
+            "set_state");
+}
+
+bool IOBase::getStateBool()
+{
+    if (ioData["state"].toString() == "true")
+        return true;
+    else
+        return false;
+}
+
+double IOBase::getStateInt()
+{
+    return ioData["state"].toDouble();
+}
+
+QString IOBase::getStateString()
+{
+    return ioData["state"].toString();
 }

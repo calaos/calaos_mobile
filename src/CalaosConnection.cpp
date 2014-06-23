@@ -15,11 +15,15 @@ void CalaosConnection::sslErrors(QNetworkReply *reply, const QList<QSslError> &)
     reply->ignoreSslErrors();
 }
 
-void CalaosConnection::login(QString user, QString pass, QString host)
+void CalaosConnection::login(QString user, QString pass, QString h)
 {
+    username = user;
+    password = pass;
+    host = h;
+
     QJsonObject jroot;
-    jroot["cn_user"] = user;
-    jroot["cn_pass"] = pass;
+    jroot["cn_user"] = username;
+    jroot["cn_pass"] = password;
     jroot["action"] = QStringLiteral("get_home");
     QJsonDocument jdoc(jroot);
 
@@ -56,9 +60,29 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
     }
     QVariantMap jroot = jdoc.object().toVariantMap();
     emit homeLoaded(jroot);
+
+    connect(accessManager, SIGNAL(finished(QNetworkReply*)),
+            this, SLOT(requestFinished(QNetworkReply*)));
 }
 
 void CalaosConnection::requestFinished(QNetworkReply *reply)
 {
+    //TODO?
+}
 
+void CalaosConnection::sendCommand(QString id, QString value, QString type, QString action)
+{
+    QJsonObject jroot;
+    jroot["cn_user"] = username;
+    jroot["cn_pass"] = password;
+    jroot["action"] = action;
+    jroot["type"] = type;
+    jroot["id"] = id;
+    jroot["value"] = value;
+    QJsonDocument jdoc(jroot);
+
+    QUrl url(QString("https://%1/api.php").arg(host));
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    accessManager->post(request, jdoc.toJson());
 }

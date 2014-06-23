@@ -21,6 +21,8 @@ BorderImage {
             left: parent.left; leftMargin: 8 * calaosApp.density
             verticalCenter: parent.verticalCenter
         }
+
+        iconState: modelData.stateBool
     }
 
     Text {
@@ -46,7 +48,7 @@ BorderImage {
         }
         imageSource: "qrc:/img/button_light_on.png"
 
-        onButtonClicked: icon.iconState = true
+        onButtonClicked: modelData.sendTrue()
     }
 
     ItemButtonAction {
@@ -57,6 +59,6 @@ BorderImage {
         }
         imageSource: "qrc:/img/button_light_off.png"
 
-        onButtonClicked: icon.iconState = false
+        onButtonClicked: modelData.sendFalse()
     }
 }

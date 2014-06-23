@@ -28,7 +28,7 @@ Application::Application(int & argc, char ** argv) :
     connect(calaosConnect, SIGNAL(loginFailed()),
             this, SLOT(loginFailed()));
 
-    homeModel = new HomeModel(&engine, this);
+    homeModel = new HomeModel(&engine, calaosConnect, this);
     engine.rootContext()->setContextProperty("homeModel", homeModel);
     engine.rootContext()->setContextProperty("calaosApp", this);
     engine.load(QUrl(QStringLiteral("qrc:///qml/main.qml")));

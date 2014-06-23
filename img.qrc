@@ -32,5 +32,31 @@
         <file>img/back_items_home_glow@2x.png</file>
         <file>img/logo_simple.png</file>
         <file>img/logo_simple@2x.png</file>
+        <file>img/button_light_off.png</file>
+        <file>img/button_light_off@2x.png</file>
+        <file>img/button_light_on.png</file>
+        <file>img/button_light_on@2x.png</file>
+        <file>img/icon_light_001.png</file>
+        <file>img/icon_light_001@2x.png</file>
+        <file>img/icon_light_002.png</file>
+        <file>img/icon_light_002@2x.png</file>
+        <file>img/icon_light_003.png</file>
+        <file>img/icon_light_003@2x.png</file>
+        <file>img/icon_light_004.png</file>
+        <file>img/icon_light_004@2x.png</file>
+        <file>img/icon_light_005.png</file>
+        <file>img/icon_light_005@2x.png</file>
+        <file>img/icon_light_006.png</file>
+        <file>img/icon_light_006@2x.png</file>
+        <file>img/icon_light_007.png</file>
+        <file>img/icon_light_007@2x.png</file>
+        <file>img/icon_light_008.png</file>
+        <file>img/icon_light_008@2x.png</file>
+        <file>img/icon_light_009.png</file>
+        <file>img/icon_light_009@2x.png</file>
+        <file>img/icon_light_off.png</file>
+        <file>img/icon_light_off@2x.png</file>
+        <file>img/icon_light_on.png</file>
+        <file>img/icon_light_on@2x.png</file>
     </qresource>
 </RCC>

@@ -66,6 +66,10 @@ private:
     CalaosConnection *connection;
     int ioType;
 
+private slots:
+    void inputChanged(QString id, QString state, QString value);
+    void outputChanged(QString id, QString state, QString value);
+
 signals:
     void stateChange();
 };

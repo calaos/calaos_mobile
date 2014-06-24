@@ -95,6 +95,13 @@ void IOBase::load(QVariantMap &io)
     update_ioHits(ioData["hits"].toInt());
     update_ioType(Common::IOTypeFromString(ioData["gui_type"].toString()));
     update_ioId(ioData["id"].toString());
+
+    if (ioType == IOInput)
+        connect(connection, SIGNAL(eventInputChange(QString,QString,QString)),
+                this, SLOT(inputChanged(QString,QString,QString)));
+    else
+        connect(connection, SIGNAL(eventOutputChange(QString,QString,QString)),
+                this, SLOT(outputChanged(QString,QString,QString)));
 }
 
 void IOBase::sendTrue()
@@ -129,4 +136,34 @@ double IOBase::getStateInt()
 QString IOBase::getStateString()
 {
     return ioData["state"].toString();
+}
+
+void IOBase::inputChanged(QString id, QString state, QString value)
+{
+    if (id != ioData["id"].toString()) return; //not for us
+
+    if (state == "state")
+    {
+        ioData["state"] = value;
+        emit stateChange();
+    }
+    else if (state == "name")
+    {
+        update_ioName(value);
+    }
+}
+
+void IOBase::outputChanged(QString id, QString state, QString value)
+{
+    if (id != ioData["id"].toString()) return; //not for us
+
+    if (state == "state")
+    {
+        ioData["state"] = value;
+        emit stateChange();
+    }
+    else if (state == "name")
+    {
+        update_ioName(value);
+    }
 }

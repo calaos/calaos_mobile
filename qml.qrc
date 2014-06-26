@@ -11,5 +11,6 @@
         <file>qml/IOLight.qml</file>
         <file>qml/AnimatedIcon.qml</file>
         <file>qml/ItemButtonAction.qml</file>
+        <file>qml/IOTemp.qml</file>
     </qresource>
 </RCC>

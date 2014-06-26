@@ -14,6 +14,10 @@ Item {
     Image {
         id: img
 
+        fillMode: Image.PreserveAspectFit
+
+        height: sourceSize.height * calaosApp.density
+
         MouseArea {
             anchors.fill: parent
             onClicked: buttonClicked()

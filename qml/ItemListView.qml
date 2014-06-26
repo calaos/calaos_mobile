@@ -15,6 +15,7 @@ ListView {
         Loader {
             z: index
             sourceComponent: model.ioType === Common.Light? light:
+                             model.ioType === Common.Temp? temp:
                              default_delegate
 
             onLoaded: {
@@ -56,5 +57,6 @@ ListView {
     }
 
     Component { id: light; IOLight {} }
+    Component { id: temp; IOTemp {} }
 }
 

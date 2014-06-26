@@ -13,7 +13,7 @@ BorderImage {
     Image {
         id: icon
 
-        source: "qrc:/img/icon_temp.png"
+        source: modelData.stateBool?"qrc:/img/icon_bool_on.png":"qrc:/img/icon_bool_off.png"
 
         anchors {
             left: parent.left; leftMargin: 8 * calaosApp.density
@@ -33,21 +33,35 @@ BorderImage {
         elide: Text.ElideMiddle
         anchors {
             left: icon.right; leftMargin: 8 * calaosApp.density
-            right: temp.left; rightMargin: 8 * calaosApp.density
+            right: btmin.left
+            rightMargin: 8 * calaosApp.density
             verticalCenter: parent.verticalCenter
         }
     }
 
-    Text {
-        id: temp
-        color: "#ffda5a"
-        font { bold: false; pointSize: 12 * calaosApp.density }
-        clip: true
-        text: modelData.stateInt + " °C"
-        elide: Text.ElideNone
+    ItemButtonAction {
+        id: btplus
         anchors {
             right: parent.right; rightMargin: 8 * calaosApp.density
             verticalCenter: parent.verticalCenter
         }
+        imageSource: "qrc:/img/button_check.png"
+
+        onButtonClicked: modelData.sendTrue()
+
+        visible: modelData.rw
+    }
+
+    ItemButtonAction {
+        id: btmin
+        anchors {
+            right: btplus.left; rightMargin: 8 * calaosApp.density
+            verticalCenter: parent.verticalCenter
+        }
+        imageSource: "qrc:/img/button_empty.png"
+
+        onButtonClicked: modelData.sendFalse()
+
+        visible: modelData.rw
     }
 }

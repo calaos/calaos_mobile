@@ -27,12 +27,18 @@ Item {
         id: picon
         source: imageFilenameOn.arg(currentImage)
         opacity: iconState?1:0
+
+        fillMode: Image.PreserveAspectFit
+        height: sourceSize.height * calaosApp.density
     }
 
     Image {
         id: picoff
         source: imageFilenameOff
         opacity: iconState?0:1
+
+        fillMode: Image.PreserveAspectFit
+        height: sourceSize.height * calaosApp.density
     }
 
     Timer {

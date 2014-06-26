@@ -19,6 +19,7 @@ ListView {
                              model.ioType === Common.VarInt? var_int:
                              model.ioType === Common.AnalogIn? var_int:
                              model.ioType === Common.AnalogOut? var_int:
+                             model.ioType === Common.VarBool? var_bool:
                              default_delegate
 
             onLoaded: {
@@ -62,5 +63,6 @@ ListView {
     Component { id: light; IOLight {} }
     Component { id: temp; IOTemp {} }
     Component { id: var_int; IOVarInt {} }
+    Component { id: var_bool; IOVarBool {} }
 }
 

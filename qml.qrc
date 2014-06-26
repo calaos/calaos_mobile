@@ -13,5 +13,6 @@
         <file>qml/ItemButtonAction.qml</file>
         <file>qml/IOTemp.qml</file>
         <file>qml/IOVarInt.qml</file>
+        <file>qml/IOVarBool.qml</file>
     </qresource>
 </RCC>

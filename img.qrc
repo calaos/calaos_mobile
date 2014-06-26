@@ -64,5 +64,13 @@
         <file>img/button_min@2x.png</file>
         <file>img/button_plus.png</file>
         <file>img/button_plus@2x.png</file>
+        <file>img/button_check.png</file>
+        <file>img/button_check@2x.png</file>
+        <file>img/button_empty.png</file>
+        <file>img/button_empty@2x.png</file>
+        <file>img/icon_bool_off.png</file>
+        <file>img/icon_bool_off@2x.png</file>
+        <file>img/icon_bool_on.png</file>
+        <file>img/icon_bool_on@2x.png</file>
     </qresource>
 </RCC>

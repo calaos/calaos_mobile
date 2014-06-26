@@ -14,5 +14,6 @@
         <file>qml/IOTemp.qml</file>
         <file>qml/IOVarInt.qml</file>
         <file>qml/IOVarBool.qml</file>
+        <file>qml/IOVarString.qml</file>
     </qresource>
 </RCC>

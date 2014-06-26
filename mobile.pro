@@ -33,7 +33,8 @@ OTHER_FILES += \
     qml/IOTemp.qml \
     qml/IOVarInt.qml \
     qml/IOVarBool.qml \
-    qml/IOVarString.qml
+    qml/IOVarString.qml \
+    qml/IOScenario.qml
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =

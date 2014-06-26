@@ -21,6 +21,7 @@ ListView {
                              model.ioType === Common.AnalogOut? var_int:
                              model.ioType === Common.VarBool? var_bool:
                              model.ioType === Common.VarString? var_string:
+                             model.ioType === Common.Scenario? scenario:
                              default_delegate
 
             onLoaded: {
@@ -66,5 +67,6 @@ ListView {
     Component { id: var_int; IOVarInt {} }
     Component { id: var_bool; IOVarBool {} }
     Component { id: var_string; IOVarString {} }
+    Component { id: scenario; IOScenario {} }
 }
 

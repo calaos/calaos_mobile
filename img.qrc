@@ -74,5 +74,9 @@
         <file>img/icon_bool_on@2x.png</file>
         <file>img/button_keyboard.png</file>
         <file>img/button_keyboard@2x.png</file>
+        <file>img/button_play.png</file>
+        <file>img/button_play@2x.png</file>
+        <file>img/icon_scenario.png</file>
+        <file>img/icon_scenario@2x.png</file>
     </qresource>
 </RCC>

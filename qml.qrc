@@ -15,5 +15,6 @@
         <file>qml/IOVarInt.qml</file>
         <file>qml/IOVarBool.qml</file>
         <file>qml/IOVarString.qml</file>
+        <file>qml/IOScenario.qml</file>
     </qresource>
 </RCC>

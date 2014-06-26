@@ -30,7 +30,8 @@ OTHER_FILES += \
     qml/IOLight.qml \
     qml/AnimatedIcon.qml \
     qml/ItemButtonAction.qml \
-    qml/IOTemp.qml
+    qml/IOTemp.qml \
+    qml/IOVarInt.qml
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =

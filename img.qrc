@@ -60,5 +60,9 @@
         <file>img/icon_light_on@2x.png</file>
         <file>img/icon_temp.png</file>
         <file>img/icon_temp@2x.png</file>
+        <file>img/button_min.png</file>
+        <file>img/button_min@2x.png</file>
+        <file>img/button_plus.png</file>
+        <file>img/button_plus@2x.png</file>
     </qresource>
 </RCC>

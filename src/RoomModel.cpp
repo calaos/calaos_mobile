@@ -95,6 +95,8 @@ void IOBase::load(QVariantMap &io)
     update_ioHits(ioData["hits"].toInt());
     update_ioType(Common::IOTypeFromString(ioData["gui_type"].toString()));
     update_ioId(ioData["id"].toString());
+    update_unit(ioData["unit"].toString());
+    update_rw(ioData["rw"].toString() == "true");
 
     if (ioType == IOInput)
         connect(connection, SIGNAL(eventInputChange(QString,QString,QString)),
@@ -120,6 +122,22 @@ void IOBase::sendFalse()
             "set_state");
 }
 
+void IOBase::sendInc()
+{
+    connection->sendCommand(ioData["id"].toString(),
+            "inc",
+            ioType == IOOutput?"output":"input",
+            "set_state");
+}
+
+void IOBase::sendDec()
+{
+    connection->sendCommand(ioData["id"].toString(),
+            "dec",
+            ioType == IOOutput?"output":"input",
+            "set_state");
+}
+
 bool IOBase::getStateBool()
 {
     if (ioData["state"].toString() == "true")
@@ -138,31 +156,31 @@ QString IOBase::getStateString()
     return ioData["state"].toString();
 }
 
-void IOBase::inputChanged(QString id, QString state, QString value)
+void IOBase::inputChanged(QString id, QString key, QString value)
 {
     if (id != ioData["id"].toString()) return; //not for us
 
-    if (state == "state")
+    if (key == "state")
     {
         ioData["state"] = value;
         emit stateChange();
     }
-    else if (state == "name")
+    else if (key == "name")
     {
         update_ioName(value);
     }
 }
 
-void IOBase::outputChanged(QString id, QString state, QString value)
+void IOBase::outputChanged(QString id, QString key, QString value)
 {
     if (id != ioData["id"].toString()) return; //not for us
 
-    if (state == "state")
+    if (key == "state")
     {
         ioData["state"] = value;
         emit stateChange();
     }
-    else if (state == "name")
+    else if (key == "name")
     {
         update_ioName(value);
     }

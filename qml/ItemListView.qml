@@ -16,6 +16,7 @@ ListView {
             z: index
             sourceComponent: model.ioType === Common.Light? light:
                              model.ioType === Common.Temp? temp:
+                             model.ioType === Common.VarInt? var_int:
                              default_delegate
 
             onLoaded: {
@@ -58,5 +59,6 @@ ListView {
 
     Component { id: light; IOLight {} }
     Component { id: temp; IOTemp {} }
+    Component { id: var_int; IOVarInt {} }
 }
 

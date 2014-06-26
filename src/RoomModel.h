@@ -19,7 +19,9 @@ public:
         RoleType = Qt::UserRole + 1,
         RoleHits,
         RoleName,
-        RoleId
+        RoleId,
+        RoleUnit,
+        RoleRW
     };
 
     void load(QVariantMap &roomData);
@@ -42,6 +44,9 @@ class IOBase: public QObject, public QStandardItem
     QML_READONLY_PROPERTY_MODEL(QString, ioName, RoomModel::RoleName)
     QML_READONLY_PROPERTY_MODEL(QString, ioId, RoomModel::RoleId)
 
+    QML_READONLY_PROPERTY_MODEL(QString, unit, RoomModel::RoleUnit)
+    QML_READONLY_PROPERTY_MODEL(bool, rw, RoomModel::RoleRW)
+
     Q_PROPERTY(bool stateBool READ getStateBool NOTIFY stateChange)
     Q_PROPERTY(double stateInt READ getStateInt NOTIFY stateChange)
     Q_PROPERTY(QString stateString READ getStateString NOTIFY stateChange)
@@ -57,6 +62,9 @@ public:
 
     Q_INVOKABLE void sendTrue();
     Q_INVOKABLE void sendFalse();
+    Q_INVOKABLE void sendInc();
+    Q_INVOKABLE void sendDec();
+
     Q_INVOKABLE bool getStateBool();
     Q_INVOKABLE double getStateInt();
     Q_INVOKABLE QString getStateString();
@@ -67,8 +75,8 @@ private:
     int ioType;
 
 private slots:
-    void inputChanged(QString id, QString state, QString value);
-    void outputChanged(QString id, QString state, QString value);
+    void inputChanged(QString id, QString key, QString value);
+    void outputChanged(QString id, QString key, QString value);
 
 signals:
     void stateChange();

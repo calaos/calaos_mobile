@@ -78,5 +78,29 @@
         <file>img/button_play@2x.png</file>
         <file>img/icon_scenario.png</file>
         <file>img/icon_scenario@2x.png</file>
+        <file>img/button_down.png</file>
+        <file>img/button_down@2x.png</file>
+        <file>img/button_down2.png</file>
+        <file>img/button_down2@2x.png</file>
+        <file>img/button_down3.png</file>
+        <file>img/button_down3@2x.png</file>
+        <file>img/button_previous.png</file>
+        <file>img/button_previous@2x.png</file>
+        <file>img/button_right.png</file>
+        <file>img/button_right@2x.png</file>
+        <file>img/button_up.png</file>
+        <file>img/button_up@2x.png</file>
+        <file>img/button_up2.png</file>
+        <file>img/button_up2@2x.png</file>
+        <file>img/button_up3.png</file>
+        <file>img/button_up3@2x.png</file>
+        <file>img/icon_shutter_off.png</file>
+        <file>img/icon_shutter_off@2x.png</file>
+        <file>img/icon_shutter_on.png</file>
+        <file>img/icon_shutter_on@2x.png</file>
+        <file>img/button_next.png</file>
+        <file>img/button_next@2x.png</file>
+        <file>img/button_stop.png</file>
+        <file>img/button_stop@2x.png</file>
     </qresource>
 </RCC>

@@ -64,6 +64,9 @@ public:
     Q_INVOKABLE void sendFalse();
     Q_INVOKABLE void sendInc();
     Q_INVOKABLE void sendDec();
+    Q_INVOKABLE void sendDown();
+    Q_INVOKABLE void sendUp();
+    Q_INVOKABLE void sendStop();
 
     Q_INVOKABLE bool getStateBool();
     Q_INVOKABLE double getStateInt();

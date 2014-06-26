@@ -142,6 +142,30 @@ void IOBase::sendDec()
             "set_state");
 }
 
+void IOBase::sendDown()
+{
+    connection->sendCommand(ioData["id"].toString(),
+            "down",
+            ioType == IOOutput?"output":"input",
+            "set_state");
+}
+
+void IOBase::sendUp()
+{
+    connection->sendCommand(ioData["id"].toString(),
+            "up",
+            ioType == IOOutput?"output":"input",
+            "set_state");
+}
+
+void IOBase::sendStop()
+{
+    connection->sendCommand(ioData["id"].toString(),
+            "stop",
+            ioType == IOOutput?"output":"input",
+            "set_state");
+}
+
 bool IOBase::getStateBool()
 {
     if (ioData["state"].toString() == "true")

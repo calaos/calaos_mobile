@@ -17,6 +17,7 @@ ListView {
             sourceComponent: model.ioType === Common.Light? light:
                              model.ioType === Common.Temp? temp:
                              model.ioType === Common.VarInt? var_int:
+                             model.ioType === Common.AnalogIn? var_int:
                              model.ioType === Common.AnalogOut? var_int:
                              default_delegate
 

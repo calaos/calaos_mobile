@@ -98,6 +98,10 @@ void IOBase::load(QVariantMap &io)
     update_unit(ioData["unit"].toString());
     update_rw(ioData["rw"].toString() == "true");
 
+    //force rw for analog_out to let us use the same qml than var_int
+    if (m_ioType == Common::AnalogOut)
+        update_rw(true);
+
     if (ioType == IOInput)
         connect(connection, SIGNAL(eventInputChange(QString,QString,QString)),
                 this, SLOT(inputChanged(QString,QString,QString)));

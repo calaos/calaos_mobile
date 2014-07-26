@@ -3,7 +3,7 @@ import QtQuick 2.0
 BorderImage {
     property variant modelData
 
-    source: "qrc:/img/back_items_home.png"
+    source: calaosApp.getPictureSized("back_items_home")
     border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
     border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
 
@@ -31,7 +31,7 @@ BorderImage {
             right: parent.right; rightMargin: 8 * calaosApp.density
             verticalCenter: parent.verticalCenter
         }
-        imageSource: "qrc:/img/button_keyboard.png"
+        imageSource: "button_keyboard"
 
         onButtonClicked: console.log("TODO")
 

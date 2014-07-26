@@ -3,31 +3,31 @@
 function getRoomTypeIcon(room) {
     var rname;
 
-    if (room == "salon") rname = "lounge.png";
-    else if (room == "lounge") rname = "lounge.png";
-    else if (room == "chambre") rname = "bedroom.png";
-    else if (room == "bedroom") rname = "bedroom.png";
-    else if (room == "cuisine") rname = "kitchen.png";
-    else if (room == "kitchen") rname = "kitchen.png";
-    else if (room == "bureau") rname = "office.png";
-    else if (room == "office") rname = "office.png";
-    else if (room == "sam") rname = "diningroom.png";
-    else if (room == "diningroom") rname = "diningroom.png";
-    else if (room == "cave") rname = "cellar.png";
-    else if (room == "cellar") rname = "cellar.png";
-    else if (room == "divers") rname = "various.png";
-    else if (room == "various") rname = "various.png";
-    else if (room == "misc") rname = "various.png";
-    else if (room == "exterieur") rname = "outside.png";
-    else if (room == "outside") rname = "outside.png";
-    else if (room == "sdb") rname = "bathroom.png";
-    else if (room == "bathroom") rname = "bathroom.png";
-    else if (room == "hall") rname = "corridor.png";
-    else if (room == "couloir") rname = "corridor.png";
-    else if (room == "corridor") rname = "corridor.png";
-    else if (room == "garage") rname = "garage.png";
+    if (room == "salon") rname = "lounge";
+    else if (room == "lounge") rname = "lounge";
+    else if (room == "chambre") rname = "bedroom";
+    else if (room == "bedroom") rname = "bedroom";
+    else if (room == "cuisine") rname = "kitchen";
+    else if (room == "kitchen") rname = "kitchen";
+    else if (room == "bureau") rname = "office";
+    else if (room == "office") rname = "office";
+    else if (room == "sam") rname = "diningroom";
+    else if (room == "diningroom") rname = "diningroom";
+    else if (room == "cave") rname = "cellar";
+    else if (room == "cellar") rname = "cellar";
+    else if (room == "divers") rname = "various";
+    else if (room == "various") rname = "various";
+    else if (room == "misc") rname = "various";
+    else if (room == "exterieur") rname = "outside";
+    else if (room == "outside") rname = "outside";
+    else if (room == "sdb") rname = "bathroom";
+    else if (room == "bathroom") rname = "bathroom";
+    else if (room == "hall") rname = "corridor";
+    else if (room == "couloir") rname = "corridor";
+    else if (room == "corridor") rname = "corridor";
+    else if (room == "garage") rname = "garage";
 
-    else rname = "various.png";
+    else rname = "various";
 
     return rname;
 }

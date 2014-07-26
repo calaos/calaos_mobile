@@ -3,7 +3,7 @@ import QtQuick 2.0
 BorderImage {
     property variant modelData
 
-    source: "qrc:/img/back_items_home.png"
+    source: calaosApp.getPictureSized("back_items_home")
     border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
     border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
 
@@ -14,8 +14,8 @@ BorderImage {
         id: icon
 
         countImage: 9
-        imageFilenameOn: "qrc:/img/icon_light_00%1.png"
-        imageFilenameOff: "qrc:/img/icon_light_off.png"
+        imageFilenameOn: "icon_light_00%1"
+        imageFilenameOff: "icon_light_off"
 
         anchors {
             left: parent.left; leftMargin: 8 * calaosApp.density
@@ -46,7 +46,7 @@ BorderImage {
             right: parent.right; rightMargin: 8 * calaosApp.density
             verticalCenter: parent.verticalCenter
         }
-        imageSource: "qrc:/img/button_light_on.png"
+        imageSource: "button_light_on"
 
         onButtonClicked: modelData.sendTrue()
     }
@@ -57,7 +57,7 @@ BorderImage {
             right: bton.left; rightMargin: 8 * calaosApp.density
             verticalCenter: parent.verticalCenter
         }
-        imageSource: "qrc:/img/button_light_off.png"
+        imageSource: "button_light_off"
 
         onButtonClicked: modelData.sendFalse()
     }

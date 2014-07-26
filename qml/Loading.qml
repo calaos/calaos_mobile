@@ -28,7 +28,7 @@ Item {
 
         Image {
             id: img
-            source: "qrc:/img/logo_simple.png"
+            source: calaosApp.getPictureSized("logo_simple")
             anchors.centerIn: parent
 
             SequentialAnimation on opacity {

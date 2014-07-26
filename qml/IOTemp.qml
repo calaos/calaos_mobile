@@ -3,7 +3,7 @@ import QtQuick 2.0
 BorderImage {
     property variant modelData
 
-    source: "qrc:/img/back_items_home.png"
+    source: calaosApp.getPictureSized("back_items_home")
     border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
     border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
 
@@ -13,15 +13,12 @@ BorderImage {
     Image {
         id: icon
 
-        source: "qrc:/img/icon_temp.png"
+        source: calaosApp.getPictureSized("icon_temp")
 
         anchors {
             left: parent.left; leftMargin: 8 * calaosApp.density
             verticalCenter: parent.verticalCenter
         }
-
-        fillMode: Image.PreserveAspectFit
-        height: sourceSize.height * calaosApp.density
     }
 
     Text {

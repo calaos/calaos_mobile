@@ -16,7 +16,7 @@ ListView {
         height: 100 * calaosApp.density
 
         BorderImage {
-            source: "qrc:/img/back_items_home.png"
+            source: calaosApp.getPictureSized("back_items_home")
             border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
             border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
 
@@ -24,7 +24,7 @@ ListView {
         }
 
         BorderImage {
-            source: "qrc:/img/back_items_home_glow.png"
+            source: calaosApp.getPictureSized("back_items_home_glow")
             border.left: 15 * calaosApp.density; border.top: 15 * calaosApp.density
             border.right: 15 * calaosApp.density; border.bottom: 15 * calaosApp.density
 
@@ -44,7 +44,7 @@ ListView {
         }
 
         property string roomIconType: roomType
-        onRoomIconTypeChanged: roomIcon.source = "qrc:/img/rooms/" + Calaos.getRoomTypeIcon(roomIconType)
+        onRoomIconTypeChanged: roomIcon.source = calaosApp.getPictureSizedPrefix(Calaos.getRoomTypeIcon(roomIconType), "img/rooms")
 
         Image {
             id: roomIcon

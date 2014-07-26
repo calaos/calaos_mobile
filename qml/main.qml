@@ -7,10 +7,10 @@ import "calaos.js" as Calaos;
 Window {
     id: rootWindow
     visible: true
-    width: 320
+    width: 320 * calaosApp.density
 
     //iphone4
-    height: 480
+    height: 480 * calaosApp.density
     //iphone5
     //height: 568
 
@@ -19,9 +19,9 @@ Window {
     property variant roomModel
 
     Image {
-        source: isLandscape?
-                    "qrc:/img/background_landscape.png":
-                    "qrc:/img/background.png"
+        source: calaosApp.getPictureSized(isLandscape?
+                                              "background_landscape":
+                                              "background")
         anchors.fill: parent
         fillMode: Image.PreserveAspectCrop
     }
@@ -56,9 +56,9 @@ Window {
         id: homeView
         Item {
             Image {
-                source: isLandscape?
-                            "qrc:/img/background_landscape.png":
-                            "qrc:/img/background.png"
+                source: calaosApp.getPictureSized(isLandscape?
+                                                      "background_landscape":
+                                                      "background")
                 anchors.fill: parent
                 fillMode: Image.PreserveAspectCrop
             }
@@ -89,9 +89,9 @@ Window {
         id: roomDetailView
         Item {
             Image {
-                source: isLandscape?
-                            "qrc:/img/background_landscape.png":
-                            "qrc:/img/background.png"
+                source: calaosApp.getPictureSized(isLandscape?
+                                                      "background_landscape":
+                                                      "background")
                 anchors.fill: parent
                 fillMode: Image.PreserveAspectCrop
             }

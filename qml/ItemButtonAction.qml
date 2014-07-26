@@ -2,21 +2,21 @@ import QtQuick 2.0
 
 Item {
 
-    property alias imageSource: img.source
-    property alias sourceWidth: img.sourceSize.width
-    property alias sourceHeight: img.sourceSize.height
+    property string imageSource
 
     signal buttonClicked()
 
-    width: img.width
-    height: img.height
+    width: 37 * calaosApp.density
+    height: 31 * calaosApp.density
 
     Image {
         id: img
 
-        fillMode: Image.PreserveAspectFit
+        source: calaosApp.getPictureSized(imageSource)
 
-        height: sourceSize.height * calaosApp.density
+        anchors.fill: parent
+
+        fillMode: Image.PreserveAspectFit
 
         MouseArea {
             anchors.fill: parent

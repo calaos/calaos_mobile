@@ -17,7 +17,10 @@ Application::Application(int & argc, char ** argv) :
     QAndroidJniObject metrics = resource.callObjectMethod("getDisplayMetrics","()Landroid/util/DisplayMetrics;");
     update_density(metrics.getField<float>("density"));
 #else
-    update_density(1.0);
+    if (arguments().contains("--force-hdpi"))
+        update_density(2.0);
+    else
+        update_density(1.0);
 #endif
 
     update_applicationStatus(Common::NotConnected);
@@ -51,4 +54,41 @@ void Application::homeLoaded(QVariantMap &homeData)
 void Application::loginFailed()
 {
     update_applicationStatus(Common::NotConnected);
+}
+
+bool Application::needPictureHDPI()
+{
+#if defined(Q_OS_ANDROID)
+    //if screen has higher dpi, bigger pictures need to be used
+    if (get_density() > 1.0)
+        return true;
+#elif defined(Q_OS_IOS)
+    //it is done automatically on iOS
+    return false;
+#else
+    if (get_density() > 1.0)
+        return true; //force true for testing purpose on desktop
+
+    return false;
+#endif
+}
+
+QString Application::getPictureSized(QString pic)
+{
+    return getPictureSizedPrefix(pic, "img");
+}
+
+QString Application::getPictureSizedPrefix(QString pic, QString prefix)
+{
+    QString ret;
+
+    //force @2x images for specific platform (android) as it's not done automatically by Qt
+    if (needPictureHDPI())
+        ret = QString("qrc:/%1/%2@2x.png").arg(prefix).arg(pic);
+    else
+        ret = QString("qrc:/%1/%2.png").arg(prefix).arg(pic);
+
+    qDebug() << "PIC: " << ret;
+
+    return ret;
 }

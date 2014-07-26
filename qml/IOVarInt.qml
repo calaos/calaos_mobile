@@ -3,7 +3,7 @@ import QtQuick 2.0
 BorderImage {
     property variant modelData
 
-    source: "qrc:/img/back_items_home.png"
+    source: calaosApp.getPictureSized("back_items_home")
     border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
     border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
 
@@ -44,7 +44,7 @@ BorderImage {
             right: parent.right; rightMargin: 8 * calaosApp.density
             verticalCenter: parent.verticalCenter
         }
-        imageSource: "qrc:/img/button_plus.png"
+        imageSource: "button_plus"
 
         onButtonClicked: modelData.sendInc()
 
@@ -57,7 +57,7 @@ BorderImage {
             right: btplus.left; rightMargin: 8 * calaosApp.density
             verticalCenter: parent.verticalCenter
         }
-        imageSource: "qrc:/img/button_min.png"
+        imageSource: "button_min"
 
         onButtonClicked: modelData.sendDec()
 

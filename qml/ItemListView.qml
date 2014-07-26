@@ -41,7 +41,7 @@ ListView {
         BorderImage {
             property variant modelData
 
-            source: "qrc:/img/back_items_home.png"
+            source: calaosApp.getPictureSized("back_items_home")
             border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
             border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
 
@@ -50,13 +50,13 @@ ListView {
 
             Text {
                 color: "#3ab4d7"
-                font { bold: false; pointSize: 12 }
+                font { bold: false; pointSize: 12 * calaosApp.density }
                 text: modelData.ioName
                 clip: true
                 elide: Text.ElideMiddle
                 anchors {
-                    left: parent.left; leftMargin: 8
-                    right: parent.right; rightMargin: 8
+                    left: parent.left; leftMargin: 8 * calaosApp.density
+                    right: parent.right; rightMargin: 8 * calaosApp.density
                     verticalCenter: parent.verticalCenter
                 }
             }

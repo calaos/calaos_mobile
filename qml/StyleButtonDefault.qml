@@ -6,7 +6,7 @@ ButtonStyle {
     background: Item {
         property bool down: control.pressed || (control.checkable && control.checked)
         BorderImage {
-            source: "qrc:/img/back_items_home.png"
+            source: calaosApp.getPictureSized("back_items_home")
             border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
             border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
             anchors.fill: parent
@@ -14,7 +14,7 @@ ButtonStyle {
             Behavior on opacity { PropertyAnimation { duration: 50 } }
         }
         BorderImage {
-            source: "qrc:/img/back_items_home_glow.png"
+            source: calaosApp.getPictureSized("back_items_home_glow")
             border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
             border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
             anchors.fill: parent

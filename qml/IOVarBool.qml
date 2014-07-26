@@ -10,7 +10,7 @@ BorderImage {
     width: parent.width
     height: 40 * calaosApp.density
 
-    Image {
+    IconItem {
         id: icon
 
         source: calaosApp.getPictureSized(modelData.stateBool?"icon_bool_on":"icon_bool_off")

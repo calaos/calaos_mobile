@@ -17,5 +17,6 @@
         <file>qml/IOVarString.qml</file>
         <file>qml/IOScenario.qml</file>
         <file>qml/IOShutter.qml</file>
+        <file>qml/IconItem.qml</file>
     </qresource>
 </RCC>

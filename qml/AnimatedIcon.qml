@@ -23,13 +23,13 @@ Item {
     width: picoff.width
     height: picoff.height
 
-    Image {
+    IconItem {
         id: picon
         source: calaosApp.getPictureSized(imageFilenameOn.arg(currentImage))
         opacity: iconState?1:0
     }
 
-    Image {
+    IconItem {
         id: picoff
         source: calaosApp.getPictureSized(imageFilenameOff)
         opacity: iconState?0:1

@@ -31,6 +31,9 @@ Item {
             source: calaosApp.getPictureSized("logo_simple")
             anchors.centerIn: parent
 
+            width: 90 * calaosApp.density
+            height: 75 * calaosApp.density
+
             SequentialAnimation on opacity {
                 running: loader.visible
                 loops: Animation.Infinite

@@ -25,7 +25,7 @@ Item {
         smooth: true
 
         width: isLandscape?300 * calaosApp.density:parent.width - 20 * calaosApp.density
-        height: 300 * calaosApp.density
+        height: 350 * calaosApp.density
 
         anchors {
             verticalCenter: parent.verticalCenter
@@ -33,6 +33,7 @@ Item {
         }
 
         Text {
+            id: ftitle
             text: qsTr("Login to your home")
             color: "#dddddd"
             font { bold: true; pointSize: 14 * calaosApp.density }
@@ -43,6 +44,7 @@ Item {
         }
 
         Column {
+            id: form
             anchors {
                 top: parent.top; topMargin: 50 * calaosApp.density
                 bottom: parent.bottom; bottomMargin: 10 * calaosApp.density

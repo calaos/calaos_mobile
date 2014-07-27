@@ -38,7 +38,8 @@ OTHER_FILES += \
     qml/IOShutter.qml \
     qml/IconItem.qml \
     qml/MainMenuBar.qml \
-    qml/MainMenuButton.qml
+    qml/MainMenuButton.qml \
+    qml/FavoritesListView.qml
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =

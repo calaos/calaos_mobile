@@ -30,7 +30,7 @@ Window {
         target: calaosApp
         onApplicationStatusChanged: {
             if (calaosApp.applicationStatus === Common.LoggedIn)
-                stackView.push(homeView)
+                stackView.push(favoriteView)
             else if (calaosApp.applicationStatus === Common.NotConnected)
                 stackView.pop(loginView)
         }
@@ -50,6 +50,23 @@ Window {
                              stackView.pop();
                              event.accepted = true;
                          }
+    }
+
+    Component {
+        id: favoriteView
+        Item {
+            Image {
+                source: calaosApp.getPictureSized(isLandscape?
+                                                      "background_landscape":
+                                                      "background")
+                anchors.fill: parent
+                fillMode: Image.PreserveAspectCrop
+            }
+            FavoritesListView {
+                id: listViewFav
+                //model: favoriteModel
+            }
+        }
     }
 
     Component {
@@ -124,6 +141,11 @@ Window {
             right: parent.right
             bottom: parent.bottom
         }
+
+        onButtonHomeClicked: stackView.push(homeView)
+        onButtonMediaClicked: stackView.push(homeView)
+        onButtonScenariosClicked: stackView.push(homeView)
+        onButtonConfigClicked: stackView.push(homeView)
 
         state: calaosApp.applicationStatus === Common.LoggedIn?"visible":"invisible"
 

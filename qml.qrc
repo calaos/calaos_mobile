@@ -20,5 +20,6 @@
         <file>qml/IconItem.qml</file>
         <file>qml/MainMenuBar.qml</file>
         <file>qml/MainMenuButton.qml</file>
+        <file>qml/FavoritesListView.qml</file>
     </qresource>
 </RCC>

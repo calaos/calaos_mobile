@@ -102,5 +102,21 @@
         <file>img/button_next@2x.png</file>
         <file>img/button_stop.png</file>
         <file>img/button_stop@2x.png</file>
+        <file>img/menu_footer_background_left.png</file>
+        <file>img/menu_footer_background_right.png</file>
+        <file>img/menu_footer_background.png</file>
+        <file>img/menu_header_background.png</file>
+        <file>img/button_home_bloom.png</file>
+        <file>img/button_home_glow.png</file>
+        <file>img/button_home.png</file>
+        <file>img/button_configuration_bloom.png</file>
+        <file>img/button_configuration_glow.png</file>
+        <file>img/button_configuration.png</file>
+        <file>img/button_media_bloom.png</file>
+        <file>img/button_media_glow.png</file>
+        <file>img/button_media.png</file>
+        <file>img/button_scenarios_bloom.png</file>
+        <file>img/button_scenarios_glow.png</file>
+        <file>img/button_scenarios.png</file>
     </qresource>
 </RCC>

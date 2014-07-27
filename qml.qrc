@@ -18,5 +18,7 @@
         <file>qml/IOScenario.qml</file>
         <file>qml/IOShutter.qml</file>
         <file>qml/IconItem.qml</file>
+        <file>qml/MainMenuBar.qml</file>
+        <file>qml/MainMenuButton.qml</file>
     </qresource>
 </RCC>

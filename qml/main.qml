@@ -115,4 +115,42 @@ Window {
         z: 9999 //on top of everything
         opacity: calaosApp.applicationStatus === Common.Loading?1:0
     }
+
+    MainMenuBar {
+        id: menuBar
+
+        anchors {
+            left: parent.left
+            right: parent.right
+            bottom: parent.bottom
+        }
+
+        state: calaosApp.applicationStatus === Common.LoggedIn?"visible":"invisible"
+
+        states: [
+            State {
+                name: "visible"
+                PropertyChanges { target: menuBar; opacity: 1 }
+                PropertyChanges { target: menuBar; anchors.bottomMargin: 0 }
+            },
+            State {
+                name: "invisible"
+                PropertyChanges { target: menuBar; opacity: 0.2 }
+                PropertyChanges { target: menuBar; anchors.bottomMargin: -menuBar.height }
+            }
+        ]
+
+        transitions: [
+            Transition {
+                from: "invisible"
+                to: "visible"
+                NumberAnimation { properties: "opacity,anchors.bottomMargin"; easing.type: Easing.OutExpo; duration: 500 }
+            },
+            Transition {
+                from: "visible"
+                to: "invisible"
+                NumberAnimation { properties: "opacity,anchors.bottomMargin"; easing.type: Easing.InExpo; duration: 500 }
+            }
+        ]
+    }
 }

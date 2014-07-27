@@ -20,6 +20,8 @@ Image {
     signal buttonConfigClicked()
     signal buttonBackClicked()
 
+    onMenuTypeChanged: if (menuType === Common.MenuMain) unselectAll()
+
     function unselectAll(bt) {
         if (bt !== btHome) btHome.selected = false
         if (bt !== btMedia) btMedia.selected = false

@@ -29,10 +29,20 @@ Window {
     Connections {
         target: calaosApp
         onApplicationStatusChanged: {
-            if (calaosApp.applicationStatus === Common.LoggedIn)
+            if (calaosApp.applicationStatus === Common.LoggedIn) {
+                menuBar.menuType = Common.MenuMain
                 stackView.push(favoriteView)
+            }
             else if (calaosApp.applicationStatus === Common.NotConnected)
                 stackView.pop(loginView)
+        }
+    }
+
+    function handleBack() {
+        if (stackView.depth > 2) {
+            stackView.pop()
+            if (stackView.depth === 2)
+                menuBar.menuType = Common.MenuMain
         }
     }
 
@@ -46,10 +56,9 @@ Window {
 
         // Implements back key navigation
         focus: true
-        Keys.onReleased: if ((event.key === Qt.Key_Back || event.key === Qt.Key_Backspace) && stackView.depth > 2) {
-                             stackView.pop();
+        Keys.onReleased: if (event.key === Qt.Key_Back || event.key === Qt.Key_Backspace) {
+                             handleBack()
                              event.accepted = true;
-                             menuBar.menuType = Common.MenuMain;
                          }
     }
 
@@ -160,8 +169,7 @@ Window {
             stackView.push(homeView)
         }
         onButtonBackClicked: {
-            menuBar.menuType = Common.MenuMain
-            stackView.pop()
+            handleBack()
         }
 
         state: calaosApp.applicationStatus === Common.LoggedIn?"visible":"invisible"

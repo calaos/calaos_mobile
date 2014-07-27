@@ -21,5 +21,6 @@
         <file>qml/MainMenuBar.qml</file>
         <file>qml/MainMenuButton.qml</file>
         <file>qml/FavoritesListView.qml</file>
+        <file>qml/ButtonFooter.qml</file>
     </qresource>
 </RCC>

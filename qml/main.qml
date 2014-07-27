@@ -49,6 +49,7 @@ Window {
         Keys.onReleased: if ((event.key === Qt.Key_Back || event.key === Qt.Key_Backspace) && stackView.depth > 2) {
                              stackView.pop();
                              event.accepted = true;
+                             menuBar.menuType = Common.MenuMain;
                          }
     }
 
@@ -142,10 +143,26 @@ Window {
             bottom: parent.bottom
         }
 
-        onButtonHomeClicked: stackView.push(homeView)
-        onButtonMediaClicked: stackView.push(homeView)
-        onButtonScenariosClicked: stackView.push(homeView)
-        onButtonConfigClicked: stackView.push(homeView)
+        onButtonHomeClicked: {
+            menuBar.menuType = Common.MenuBack
+            stackView.push(homeView)
+        }
+        onButtonMediaClicked: {
+            menuBar.menuType = Common.MenuBack
+            stackView.push(homeView)
+        }
+        onButtonScenariosClicked: {
+            menuBar.menuType = Common.MenuBack
+            stackView.push(homeView)
+        }
+        onButtonConfigClicked: {
+            menuBar.menuType = Common.MenuBack
+            stackView.push(homeView)
+        }
+        onButtonBackClicked: {
+            menuBar.menuType = Common.MenuMain
+            stackView.pop()
+        }
 
         state: calaosApp.applicationStatus === Common.LoggedIn?"visible":"invisible"
 

@@ -118,5 +118,19 @@
         <file>img/button_scenarios_bloom.png</file>
         <file>img/button_scenarios_glow.png</file>
         <file>img/button_scenarios.png</file>
+        <file>img/button_footer_bg.png</file>
+        <file>img/icon_cancel.png</file>
+        <file>img/icon_close.png</file>
+        <file>img/icon_exit.png</file>
+        <file>img/icon_more.png</file>
+        <file>img/icon_text.png</file>
+        <file>img/icon_valid.png</file>
+        <file>img/icon_cancel@2x.png</file>
+        <file>img/icon_text@2x.png</file>
+        <file>img/icon_close@2x.png</file>
+        <file>img/icon_more@2x.png</file>
+        <file>img/icon_valid@2x.png</file>
+        <file>img/icon_exit@2x.png</file>
+        <file>img/button_footer_bg@2x.png</file>
     </qresource>
 </RCC>

@@ -1,13 +1,18 @@
 import QtQuick 2.0
+import Calaos 1.0
 
 Image {
 
-    height: 98 / 2 * calaosApp.density
+    height: menuType === Common.MenuMain?
+                98 / 2 * calaosApp.density:
+                48 * calaosApp.density
 
     fillMode: Image.TileHorizontally
     verticalAlignment: Image.AlignLeft
 
     source: "qrc:/img/menu_footer_background.png"
+
+    property int menuType: Common.MenuMain
 
     signal buttonHomeClicked()
     signal buttonMediaClicked()
@@ -22,7 +27,30 @@ Image {
         if (bt !== btConfig) btConfig.selected = false
     }
 
+    ButtonFooter {
+
+        opacity: menuType === Common.MenuBack?1:0
+        Behavior on opacity { NumberAnimation {} }
+        visible: opacity > 0
+
+        icon: calaosApp.getPictureSized("icon_exit")
+        buttonLabel: qsTr("Back")
+        onButtonClicked: {
+            unselectAll()
+            buttonBackClicked()
+        }
+        anchors {
+            verticalCenter: parent.verticalCenter
+            left: parent.left
+            leftMargin: 10 * calaosApp.density
+        }
+    }
+
     Row {
+
+        opacity: menuType === Common.MenuMain?1:0
+        Behavior on opacity { NumberAnimation {} }
+        visible: opacity > 0
 
         height: btHome.height
         width: btHome.width * 4

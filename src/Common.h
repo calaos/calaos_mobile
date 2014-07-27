@@ -16,6 +16,13 @@ public:
     };
     Q_ENUMS(AppStatus)
 
+    enum MenuType {
+        MenuNone,
+        MenuMain,
+        MenuBack
+    };
+    Q_ENUMS(MenuType)
+
     enum IOType {
         Unkown = 0,
         Light,

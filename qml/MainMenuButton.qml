@@ -6,6 +6,7 @@ Item {
     property string iconGlow
     property string iconBloom
     property bool selected: false
+    property alias label: txt.text
     signal buttonClicked()
 
     width: 142 / 2 * calaosApp.density
@@ -33,6 +34,16 @@ Item {
         anchors.fill: parent
 
         opacity: 0
+    }
+
+    Text {
+        id: txt
+        color: "#e7e7e7"
+        font { bold: false; pointSize: 10 * calaosApp.density }
+        anchors {
+            centerIn: parent
+            verticalCenterOffset: 12
+        }
     }
 
     SequentialAnimation {

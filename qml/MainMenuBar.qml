@@ -48,7 +48,21 @@ Image {
         }
     }
 
+    Image {
+        source: "qrc:/img/menu_footer_background_left.png"
+
+        width: 2 * calaosApp.density
+        height: parent.height
+
+        anchors {
+            right: row.left
+            verticalCenterOffset: 1
+        }
+        opacity: row.opacity
+    }
+
     Row {
+        id: row
 
         opacity: menuType === Common.MenuMain?1:0
         Behavior on opacity { NumberAnimation {} }
@@ -69,6 +83,7 @@ Image {
                 buttonHomeClicked()
             }
 
+            label: qsTr("Home")
             iconBase: "qrc:/img/button_home.png"
             iconGlow: "qrc:/img/button_home_glow.png"
             iconBloom: "qrc:/img/button_home_bloom.png"
@@ -82,6 +97,7 @@ Image {
                 buttonMediaClicked()
             }
 
+            label: qsTr("Media")
             iconBase: "qrc:/img/button_media.png"
             iconGlow: "qrc:/img/button_media_glow.png"
             iconBloom: "qrc:/img/button_media_bloom.png"
@@ -95,6 +111,7 @@ Image {
                 buttonScenariosClicked()
             }
 
+            label: qsTr("Scenarios")
             iconBase: "qrc:/img/button_scenarios.png"
             iconGlow: "qrc:/img/button_scenarios_glow.png"
             iconBloom: "qrc:/img/button_scenarios_bloom.png"
@@ -108,10 +125,24 @@ Image {
                 buttonConfigClicked()
             }
 
+            label: qsTr("Config")
             iconBase: "qrc:/img/button_configuration.png"
             iconGlow: "qrc:/img/button_configuration_glow.png"
             iconBloom: "qrc:/img/button_configuration_bloom.png"
         }
+
     }
 
+    Image {
+        source: "qrc:/img/menu_footer_background_right.png"
+
+        width: 2 * calaosApp.density
+        height: parent.height
+
+        anchors {
+            left: row.right
+            verticalCenterOffset: 1
+        }
+        opacity: row.opacity
+    }
 }

@@ -25,7 +25,7 @@ Item {
         smooth: true
 
         width: isLandscape?300 * calaosApp.density:parent.width - 20 * calaosApp.density
-        height: 350 * calaosApp.density
+        height: 300 * calaosApp.density
 
         anchors {
             verticalCenter: parent.verticalCenter

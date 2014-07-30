@@ -163,7 +163,7 @@ Window {
                     icon: IconCamera {}
                 }
 
-                width: Math.floor(parent.width / 198 * calaosApp.density) * 198 * calaosApp.density
+                width: Math.floor(parent.width / (198 * calaosApp.density)) * 198 * calaosApp.density
                 height: parent.height
 
                 anchors.centerIn: parent

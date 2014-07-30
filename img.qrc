@@ -132,5 +132,13 @@
         <file>img/icon_valid@2x.png</file>
         <file>img/icon_exit@2x.png</file>
         <file>img/button_footer_bg@2x.png</file>
+        <file>img/menu_media_item_separator.png</file>
+        <file>img/menu_media_item.png</file>
+        <file>img/cd_01.png</file>
+        <file>img/cd_01@2x.png</file>
+        <file>img/cd_back.png</file>
+        <file>img/cd_back@2x.png</file>
+        <file>img/menu_media_icon_camera_back.png</file>
+        <file>img/menu_media_icon_camera_red.png</file>
     </qresource>
 </RCC>

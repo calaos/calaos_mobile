@@ -138,6 +138,40 @@ Window {
         }
     }
 
+    Component {
+        id: mediaView
+        Item {
+            Image {
+                source: calaosApp.getPictureSized(isLandscape?
+                                                      "background_landscape":
+                                                      "background")
+                anchors.fill: parent
+                fillMode: Image.PreserveAspectCrop
+            }
+
+            Flow {
+                id: listViewItems
+                spacing: 10
+
+                MediaMenuItem {
+                    label: qsTr("Music")
+                    icon: IconMusic {}
+                }
+
+                MediaMenuItem {
+                    label: qsTr("Surveillance")
+                    icon: IconCamera {}
+                }
+
+                width: Math.floor(parent.width / 198 * calaosApp.density) * 198 * calaosApp.density
+                height: parent.height
+
+                anchors.centerIn: parent
+                anchors.verticalCenterOffset: 30
+            }
+        }
+    }
+
     Loading {
         z: 9999 //on top of everything
         opacity: calaosApp.applicationStatus === Common.Loading?1:0
@@ -158,7 +192,7 @@ Window {
         }
         onButtonMediaClicked: {
             menuBar.menuType = Common.MenuBack
-            stackView.push(homeView)
+            stackView.push(mediaView)
         }
         onButtonScenariosClicked: {
             menuBar.menuType = Common.MenuBack

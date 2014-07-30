@@ -22,5 +22,8 @@
         <file>qml/MainMenuButton.qml</file>
         <file>qml/FavoritesListView.qml</file>
         <file>qml/ButtonFooter.qml</file>
+        <file>qml/MediaMenuItem.qml</file>
+        <file>qml/IconMusic.qml</file>
+        <file>qml/IconCamera.qml</file>
     </qresource>
 </RCC>

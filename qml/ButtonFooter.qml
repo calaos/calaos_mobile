@@ -36,7 +36,7 @@ BorderImage {
     Text {
         id: txt
         color: "#e7e7e7"
-        font { bold: false; pointSize: 12 * calaosApp.density }
+        font { bold: false; pointSize: 12 }
         anchors {
             left: ic.right; leftMargin: 5 * calaosApp.density
             verticalCenter: parent.verticalCenter

@@ -151,7 +151,7 @@ Window {
 
             Flow {
                 id: listViewItems
-                spacing: 10
+                spacing: 10 * calaosApp.density
 
                 MediaMenuItem {
                     label: qsTr("Music")
@@ -167,7 +167,7 @@ Window {
                 height: parent.height
 
                 anchors.centerIn: parent
-                anchors.verticalCenterOffset: 30
+                anchors.verticalCenterOffset: 30 * calaosApp.density
             }
         }
     }

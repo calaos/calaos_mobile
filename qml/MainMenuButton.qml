@@ -39,10 +39,10 @@ Item {
     Text {
         id: txt
         color: "#e7e7e7"
-        font { bold: false; pointSize: 10 * calaosApp.density }
+        font { bold: false; pointSize: 10 }
         anchors {
             centerIn: parent
-            verticalCenterOffset: 12
+            verticalCenterOffset: 12 * calaosApp.density
         }
     }
 

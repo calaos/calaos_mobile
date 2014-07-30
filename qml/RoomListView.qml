@@ -58,7 +58,7 @@ ListView {
 
         Text {
             color: "#3ab4d7"
-            font { bold: false; pointSize: 13 * calaosApp.density }
+            font { bold: false; pointSize: 13 }
             text: roomName
             clip: true
             elide: Text.ElideRight

@@ -42,7 +42,7 @@ Image {
         color: "#e7e7e7"
         verticalAlignment: Text.AlignVCenter
         horizontalAlignment: Text.AlignHCenter
-        font { bold: true; pointSize: 14 * calaosApp.density }
+        font { bold: true; pointSize: 14 }
         anchors {
             left: parent.left
             right: parent.right

@@ -50,7 +50,7 @@ ListView {
 
             Text {
                 color: "#3ab4d7"
-                font { bold: false; pointSize: 12 * calaosApp.density }
+                font { bold: false; pointSize: 12 }
                 text: modelData.ioName
                 clip: true
                 elide: Text.ElideMiddle

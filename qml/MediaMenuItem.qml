@@ -5,6 +5,8 @@ Image {
     property Component icon
     property alias label: txt.text
 
+    signal buttonClicked()
+
     width: 198 * calaosApp.density
     height: 138 * calaosApp.density
 
@@ -51,5 +53,10 @@ Image {
             bottom: parent.bottom
         }
         elide: Text.ElideMiddle
+    }
+
+    MouseArea {
+        anchors.fill: parent
+        onClicked: buttonClicked()
     }
 }

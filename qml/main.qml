@@ -173,6 +173,7 @@ Window {
                 MediaMenuItem {
                     label: qsTr("Music")
                     icon: IconMusic {}
+                    onButtonClicked: stackView.push(musicView)
                 }
 
                 MediaMenuItem {

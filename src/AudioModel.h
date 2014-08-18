@@ -58,12 +58,12 @@ public:
     Q_INVOKABLE void sendNext();
     Q_INVOKABLE void sendPrevious();
 
-private slots:
-    void audioChange(QString playerid);
-    void audioStatusChange(QString playerid, QString status);
-    void audioVolumeChange(QString playerid, double volume);
+public slots:
+    void audioChanged(QString playerid);
+    void audioStatusChanged(QString playerid, QString status);
+    void audioVolumeChanged(QString playerid, double volume);
 
-    void audioStateChange(QVariantMap &data);
+    void audioStateChanged(QVariantMap &data);
 
 private:
     QVariantMap playerData;

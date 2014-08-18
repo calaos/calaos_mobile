@@ -35,6 +35,8 @@ Application::Application(int & argc, char ** argv) :
 
     homeModel = new HomeModel(&engine, calaosConnect, this);
     engine.rootContext()->setContextProperty("homeModel", homeModel);
+    audioModel = new AudioModel(&engine, calaosConnect, this);
+    engine.rootContext()->setContextProperty("audioModel", audioModel);
     engine.rootContext()->setContextProperty("calaosApp", this);
     engine.load(QUrl(QStringLiteral("qrc:///qml/main.qml")));
 }
@@ -48,6 +50,7 @@ void Application::login(QString user, QString pass, QString host)
 void Application::homeLoaded(QVariantMap &homeData)
 {
     homeModel->load(homeData);
+    audioModel->load(homeData);
     update_applicationStatus(Common::LoggedIn);
 }
 

@@ -54,6 +54,8 @@ void AudioPlayer::load(QVariantMap &d)
     update_name(playerData["name"].toString());
     update_volume(playerData["volume"].toDouble());
 
+    qDebug() << "New player loaded: " << get_name();
+
     QVariantMap currentTrack = playerData["current_track"].toMap();
     update_title(currentTrack["title"].toString());
     update_album(currentTrack["album"].toString());
@@ -107,7 +109,7 @@ void AudioPlayer::sendStop()
             "set_state");
 }
 
-void AudioPlayer::audioChange(QString playerid)
+void AudioPlayer::audioChanged(QString playerid)
 {
     if (playerid != playerData["player_id"].toString()) return;
 
@@ -115,10 +117,10 @@ void AudioPlayer::audioChange(QString playerid)
                            QStringList(),
                            QStringList() << playerid,
                            this,
-                           "audioStateChange");
+                           "audioStateChanged");
 }
 
-void AudioPlayer::audioStateChange(QVariantMap &data)
+void AudioPlayer::audioStateChanged(QVariantMap &data)
 {
     QVariantList players = data["audio_players"].toList();
     QVariantList::iterator it = players.begin();
@@ -133,7 +135,7 @@ void AudioPlayer::audioStateChange(QVariantMap &data)
     }
 }
 
-void AudioPlayer::audioStatusChange(QString playerid, QString status)
+void AudioPlayer::audioStatusChanged(QString playerid, QString status)
 {
     if (playerid != playerData["player_id"].toString()) return;
 
@@ -141,7 +143,7 @@ void AudioPlayer::audioStatusChange(QString playerid, QString status)
     update_status(Common::audioStatusFromString(status));
 }
 
-void AudioPlayer::audioVolumeChange(QString playerid, double volume)
+void AudioPlayer::audioVolumeChanged(QString playerid, double volume)
 {
     if (playerid != playerData["player_id"].toString()) return;
 

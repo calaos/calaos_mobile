@@ -53,6 +53,8 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
     QJsonParseError err;
     QJsonDocument jdoc = QJsonDocument::fromJson(bytes, &err);
 
+    qDebug() << jdoc.toJson();
+
     if (err.error != QJsonParseError::NoError)
     {
         qDebug() << "JSON parse error " << err.errorString();
@@ -60,10 +62,11 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
         return;
     }
     QVariantMap jroot = jdoc.object().toVariantMap();
-    emit homeLoaded(jroot);
 
     //start polling
     startJsonPolling();
+
+    emit homeLoaded(jroot);
 }
 
 void CalaosConnection::requestFinished()
@@ -83,6 +86,8 @@ void CalaosConnection::requestFinished()
         qDebug() << "JSON parse error " << err.errorString();
         return;
     }
+
+    qDebug() << jdoc.toJson();
 
     if (cbObject)
     {

@@ -91,7 +91,7 @@ QString Application::getPictureSizedPrefix(QString pic, QString prefix)
     else
         ret = QString("qrc:/%1/%2.png").arg(prefix).arg(pic);
 
-    qDebug() << "PIC: " << ret;
+    //qDebug() << "PIC: " << ret;
 
     return ret;
 }

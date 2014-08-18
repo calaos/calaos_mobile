@@ -1,5 +1,5 @@
 import QtQuick 2.2
-import "calaos.js" as Calaos;
+import Calaos 1.0
 import QtQuick.Controls 1.2
 
 Item {
@@ -43,13 +43,13 @@ Item {
                 }
 
                 IconMusicPlayer {
-                    id: cover
-                    coverSource: audioCoverSource
+                    id: iconcover
+                    coverSource: cover
+                    playing: status === Common.StatusPlay
 
                     anchors {
                         left: parent.left; leftMargin: 8 * calaosApp.density
                         top: parent.top; topMargin: 8 * calaosApp.density
-                        bottom: parent.bottom; bottomMargin: 8 * calaosApp.density
                     }
                 }
 
@@ -57,11 +57,11 @@ Item {
                     id: tname
                     color: "#3ab4d7"
                     font { bold: false; pointSize: 13 }
-                    text: audioName
+                    text: modelData.name
                     clip: true
                     elide: Text.ElideRight
                     anchors {
-                        left: cover.right; leftMargin: 8 * calaosApp.density
+                        left: iconcover.right; leftMargin: 8 * calaosApp.density
                         right: parent.right; rightMargin: 8 * calaosApp.density
                         top: parent.top; topMargin: 18 * calaosApp.density
                     }
@@ -71,12 +71,12 @@ Item {
                     id: ttitle
                     color: "#e7e7e7"
                     font { bold: false; pointSize: 11 }
-                    text: audioTitle
+                    text: modelData.title
                     horizontalAlignment: Text.AlignRight
                     clip: true
                     elide: Text.ElideRight
                     anchors {
-                        left: cover.right; leftMargin: 8 * calaosApp.density
+                        left: iconcover.right; leftMargin: 8 * calaosApp.density
                         right: parent.right; rightMargin: 8 * calaosApp.density
                         top: tname.bottom; topMargin: 4 * calaosApp.density
                     }
@@ -86,12 +86,12 @@ Item {
                     id: tartist
                     color: "#e7e7e7"
                     font { bold: false; pointSize: 11 }
-                    text: audioArtist
+                    text: modelData.artist
                     horizontalAlignment: Text.AlignRight
                     clip: true
                     elide: Text.ElideRight
                     anchors {
-                        left: cover.right; leftMargin: 8 * calaosApp.density
+                        left: iconcover.right; leftMargin: 8 * calaosApp.density
                         right: parent.right; rightMargin: 8 * calaosApp.density
                         top: ttitle.bottom; topMargin: 4 * calaosApp.density
                     }
@@ -101,12 +101,12 @@ Item {
                     id: talbum
                     color: "#e7e7e7"
                     font { bold: false; pointSize: 11 }
-                    text: audioAlbum
+                    text: modelData.album
                     horizontalAlignment: Text.AlignRight
                     clip: true
                     elide: Text.ElideRight
                     anchors {
-                        left: cover.right; leftMargin: 8 * calaosApp.density
+                        left: iconcover.right; leftMargin: 8 * calaosApp.density
                         right: parent.right; rightMargin: 8 * calaosApp.density
                         top: tartist.bottom; topMargin: 4 * calaosApp.density
                     }
@@ -123,7 +123,7 @@ Item {
                     anchors {
                         left: parent.left; leftMargin: 8 * calaosApp.density
                         right: parent.right; rightMargin: 8 * calaosApp.density
-                        top: talbum.bottom; topMargin: 8 * calaosApp.density
+                        bottom: volumeSlider.top; bottomMargin: 4 * calaosApp.density
                     }
                 }
 
@@ -132,11 +132,19 @@ Item {
                     anchors {
                         left: parent.left; leftMargin: 8 * calaosApp.density
                         right: parent.right; rightMargin: 8 * calaosApp.density
-                        top: tvol.bottom; topMargin: 4 * calaosApp.density
+                        bottom: row.top; bottomMargin: 8 * calaosApp.density
+                    }
+                    value: modelData.volume
+                    updateValueWhileDragging: false
+                    onValueChanged: {
+                        modelData.sendVolume(value)
+                        value = Qt.binding(function() { return modelData.audioVolume })
                     }
                 }
 
                 Row {
+
+                    id: row
 
                     spacing: 4 * calaosApp.density
 

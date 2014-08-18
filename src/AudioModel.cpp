@@ -56,7 +56,7 @@ void AudioPlayer::load(QVariantMap &d)
     playerData = d;
 
     update_status(Common::audioStatusFromString(playerData["status"].toString()));
-    update_id(playerData["player_id"].toString());
+    update_id(playerData["id"].toString());
     update_cover(playerData["cover_url"].toString());
     update_name(playerData["name"].toString());
     update_volume(playerData["volume"].toDouble());
@@ -71,9 +71,15 @@ void AudioPlayer::load(QVariantMap &d)
     connect(connection, SIGNAL(eventAudioChange(QString)),
             this, SLOT(audioChanged(QString)));
     connect(connection, SIGNAL(eventAudioStatusChange(QString,QString)),
-            this, SLOT(audioChangedStatus(QString,QString)));
+            this, SLOT(audioStatusChanged(QString,QString)));
     connect(connection, SIGNAL(eventAudioVolumeChange(QString,double)),
             this, SLOT(audioVolumeChanged(QString,double)));
+
+    if (!loaded)
+    {
+        loaded = true;
+        audioChanged(get_id());
+    }
 }
 
 void AudioPlayer::sendNext()
@@ -119,7 +125,7 @@ void AudioPlayer::sendStop()
 
 void AudioPlayer::audioChanged(QString playerid)
 {
-    if (playerid != playerData["player_id"].toString()) return;
+    if (playerid != playerData["id"].toString()) return;
 
     connection->queryState(QStringList(),
                            QStringList(),
@@ -135,7 +141,7 @@ void AudioPlayer::audioStateChanged(QVariantMap &data)
     for (;it != players.end();it++)
     {
         QVariantMap r = it->toMap();
-        if (r["player_id"].toString() == playerData["player_id"].toString())
+        if (r["id"].toString() == playerData["id"].toString())
         {
             load(r);
             break;
@@ -145,7 +151,7 @@ void AudioPlayer::audioStateChanged(QVariantMap &data)
 
 void AudioPlayer::audioStatusChanged(QString playerid, QString status)
 {
-    if (playerid != playerData["player_id"].toString()) return;
+    if (playerid != playerData["id"].toString()) return;
 
     playerData["volume"] = status;
     update_status(Common::audioStatusFromString(status));
@@ -153,7 +159,7 @@ void AudioPlayer::audioStatusChanged(QString playerid, QString status)
 
 void AudioPlayer::audioVolumeChanged(QString playerid, double volume)
 {
-    if (playerid != playerData["player_id"].toString()) return;
+    if (playerid != playerData["id"].toString()) return;
 
     playerData["volume"] = QString("%1").arg(volume);
     update_volume(volume);

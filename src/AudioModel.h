@@ -28,6 +28,8 @@ public:
 
     void load(QVariantMap &homeData);
 
+    Q_INVOKABLE QObject *getItemModel(int idx);
+
 private:
 
     QQmlApplicationEngine *engine;

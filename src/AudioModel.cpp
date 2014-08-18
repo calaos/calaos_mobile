@@ -38,6 +38,13 @@ void AudioModel::load(QVariantMap &homeData)
     }
 }
 
+QObject *AudioModel::getItemModel(int idx)
+{
+    AudioPlayer *obj = dynamic_cast<AudioPlayer *>(item(idx));
+    if (obj) engine->setObjectOwnership(obj, QQmlEngine::CppOwnership);
+    return obj;
+}
+
 AudioPlayer::AudioPlayer(CalaosConnection *con):
     QStandardItem(),
     connection(con)
@@ -91,6 +98,7 @@ void AudioPlayer::sendPlay()
             "play",
             "audio",
             "set_state");
+    qDebug() << "play";
 }
 
 void AudioPlayer::sendPrevious()

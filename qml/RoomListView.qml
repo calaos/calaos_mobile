@@ -86,5 +86,6 @@ Item {
     ViewHeader {
         id: header
         headerLabel: qsTr("Home")
+        iconSource: calaosApp.getPictureSized("icon_home")
     }
 }

@@ -163,6 +163,7 @@ Window {
             ViewHeader {
                 id: header
                 headerLabel: qsTr("Media")
+                iconSource: calaosApp.getPictureSized("icon_media")
             }
 
             Flow {

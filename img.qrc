@@ -144,5 +144,13 @@
         <file>img/fav@2x.png</file>
         <file>img/icon_room.png</file>
         <file>img/icon_room@2x.png</file>
+        <file>img/icon_config.png</file>
+        <file>img/icon_config@2x.png</file>
+        <file>img/icon_home.png</file>
+        <file>img/icon_home@2x.png</file>
+        <file>img/icon_media.png</file>
+        <file>img/icon_media@2x.png</file>
+        <file>img/icon_scenario2.png</file>
+        <file>img/icon_scenario2@2x.png</file>
     </qresource>
 </RCC>

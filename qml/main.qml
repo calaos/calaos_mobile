@@ -190,6 +190,36 @@ Window {
         }
     }
 
+    Component {
+        id: musicView
+        Item {
+            Image {
+                source: calaosApp.getPictureSized(isLandscape?
+                                                      "background_landscape":
+                                                      "background")
+                anchors.fill: parent
+                fillMode: Image.PreserveAspectCrop
+            }
+
+            MusicListView {
+                id: musicViewRoom
+                model: audioModel
+
+                width: parent.width
+                height: parent.height
+            }
+            ScrollBar {
+                width: 10; height: musicViewRoom.height
+                anchors.right: parent.right
+                opacity: 1
+                orientation: Qt.Vertical
+                wantBackground: false
+                position: musicViewRoom.visibleArea.yPosition
+                pageSize: musicViewRoom.visibleArea.heightRatio
+            }
+        }
+    }
+
     Loading {
         z: 9999 //on top of everything
         opacity: calaosApp.applicationStatus === Common.Loading?1:0

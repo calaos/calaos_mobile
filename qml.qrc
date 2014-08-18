@@ -26,5 +26,6 @@
         <file>qml/IconMusic.qml</file>
         <file>qml/IconCamera.qml</file>
         <file>qml/ViewHeader.qml</file>
+        <file>qml/MusicListView.qml</file>
     </qresource>
 </RCC>

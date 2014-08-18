@@ -68,7 +68,32 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
 
 void CalaosConnection::requestFinished()
 {
-    //TODO?
+    if (reqReply->error() != QNetworkReply::NoError)
+    {
+        qDebug() << "Error in " << reqReply->url() << ":" << reqReply->errorString();
+        return;
+    }
+
+    QByteArray bytes = reqReply->readAll();
+    QJsonParseError err;
+    QJsonDocument jdoc = QJsonDocument::fromJson(bytes, &err);
+
+    if (err.error != QJsonParseError::NoError)
+    {
+        qDebug() << "JSON parse error " << err.errorString();
+        return;
+    }
+
+    if (cbObject)
+    {
+        QVariantMap jroot = jdoc.object().toVariantMap();
+        QMetaObject::invokeMethod(cbObject,
+                                  cbMember.toLatin1().constData(),
+                                  Qt::DirectConnection,
+                                  Q_ARG(QVariantMap, jroot));
+        cbObject = nullptr;
+        cbMember.clear();
+    }
 }
 
 void CalaosConnection::requestError(QNetworkReply::NetworkError code)
@@ -85,7 +110,10 @@ void CalaosConnection::sendCommand(QString id, QString value, QString type, QStr
     jroot["cn_pass"] = password;
     jroot["action"] = action;
     jroot["type"] = type;
-    jroot["id"] = id;
+    if (type == "audio")
+        jroot["player_id"] = id;
+    else
+        jroot["id"] = id;
     jroot["value"] = value;
     QJsonDocument jdoc(jroot);
 
@@ -93,6 +121,29 @@ void CalaosConnection::sendCommand(QString id, QString value, QString type, QStr
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     reqReply = accessManager->post(request, jdoc.toJson());
+
+    connect(reqReply, SIGNAL(finished()), this, SLOT(requestFinished()));
+    connect(reqReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestError(QNetworkReply::NetworkError)));
+}
+
+void CalaosConnection::queryState(QStringList inputs, QStringList outputs, QStringList audio_players, QObject *obj, QString member)
+{
+    QJsonObject jroot;
+    jroot["cn_user"] = username;
+    jroot["cn_pass"] = password;
+    jroot["action"] = "get_state";
+    jroot["inputs"] = QJsonValue::fromVariant(inputs);
+    jroot["outputs"] = QJsonValue::fromVariant(outputs);
+    jroot["audio_players"] = QJsonValue::fromVariant(audio_players);
+    QJsonDocument jdoc(jroot);
+
+    QUrl url(QString("https://%1/api.php").arg(host));
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    reqReply = accessManager->post(request, jdoc.toJson());
+
+    cbObject = obj;
+    cbMember = member;
 
     connect(reqReply, SIGNAL(finished()), this, SLOT(requestFinished()));
     connect(reqReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestError(QNetworkReply::NetworkError)));
@@ -186,6 +237,22 @@ void CalaosConnection::processEvents(QString msg)
             emit eventInputChange(id, s.at(0), val);
         else
             emit eventOutputChange(id, s.at(0), val);
+    }
+    else if (spl.at(0) == "audio_volume")
+    {
+        if (spl.count() < 4) return;
+
+        emit eventAudioVolumeChange(spl.at(1), spl.at(3).toDouble());
+    }
+    else if (spl.at(0) == "audio_status")
+    {
+        emit eventAudioStatusChange(spl.at(1), spl.at(2));
+    }
+    else if (spl.at(0) == "audio")
+    {
+        if (spl.count() > 2 &&
+            spl.at(2) == "song")
+            emit eventAudioChange(spl.at(1));
     }
 
     //TODO all other event types

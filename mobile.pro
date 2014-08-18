@@ -13,7 +13,8 @@ SOURCES += src/main.cpp \
     src/Application.cpp \
     src/CalaosConnection.cpp \
     src/Common.cpp \
-    src/RoomModel.cpp
+    src/RoomModel.cpp \
+    src/AudioModel.cpp
 
 RESOURCES += qml.qrc \
     img.qrc
@@ -44,7 +45,8 @@ OTHER_FILES += \
     qml/MediaMenuItem.qml \
     qml/IconMusic.qml \
     qml/IconCamera.qml \
-    qml/ViewHeader.qml
+    qml/ViewHeader.qml \
+    qml/MusicListView.qml
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =
@@ -58,4 +60,5 @@ HEADERS += \
     src/Application.h \
     src/CalaosConnection.h \
     src/Common.h \
-    src/RoomModel.h
+    src/RoomModel.h \
+    src/AudioModel.h

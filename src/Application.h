@@ -7,6 +7,7 @@
 #include "HomeModel.h"
 #include "qqmlhelpers.h"
 #include "Common.h"
+#include "AudioModel.h"
 
 class Application : public QGuiApplication
 {
@@ -34,6 +35,7 @@ private:
     QQmlApplicationEngine engine;
     CalaosConnection *calaosConnect;
     HomeModel *homeModel;
+    AudioModel *audioModel;
 
 };
 

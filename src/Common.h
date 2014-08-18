@@ -53,8 +53,18 @@ public:
     };
     Q_ENUMS(IOType)
 
+    enum AudioStatusType {
+        StatusUnknown = 0,
+        StatusPlay,
+        StatusPause,
+        StatusStop
+    };
+    Q_ENUMS(AudioStatusType)
+
     static QString IOTypeToString(IOType t);
     static IOType IOTypeFromString(QString t);
+    static QString audioStatusToString(AudioStatusType t);
+    static AudioStatusType audioStatusFromString(QString t);
 
     static void registerQml()
     {

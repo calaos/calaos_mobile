@@ -65,3 +65,25 @@ Common::IOType Common::IOTypeFromString(QString t)
 
     return Unkown;
 }
+
+QString Common::audioStatusToString(Common::AudioStatusType t)
+{
+    switch (t)
+    {
+    case StatusPause: return "pause";
+    case StatusPlay: return "play";
+    case StatusStop: return "stop";
+    default: break;
+    }
+
+    return QString();
+}
+
+Common::AudioStatusType Common::audioStatusFromString(QString t)
+{
+    if (t == "play") return StatusPlay;
+    if (t == "pause") return StatusPause;
+    if (t == "stop") return StatusStop;
+
+    return StatusUnknown;
+}

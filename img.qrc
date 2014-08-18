@@ -140,5 +140,9 @@
         <file>img/cd_back@2x.png</file>
         <file>img/menu_media_icon_camera_back.png</file>
         <file>img/menu_media_icon_camera_red.png</file>
+        <file>img/fav.png</file>
+        <file>img/fav@2x.png</file>
+        <file>img/icon_room.png</file>
+        <file>img/icon_room@2x.png</file>
     </qresource>
 </RCC>

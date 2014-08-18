@@ -43,7 +43,8 @@ OTHER_FILES += \
     qml/ButtonFooter.qml \
     qml/MediaMenuItem.qml \
     qml/IconMusic.qml \
-    qml/IconCamera.qml
+    qml/IconCamera.qml \
+    qml/ViewHeader.qml
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =

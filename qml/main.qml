@@ -17,6 +17,7 @@ Window {
     property bool isLandscape: rootWindow.width > rootWindow.height
 
     property variant roomModel
+    property string currentRoomName
 
     Image {
         source: calaosApp.getPictureSized(isLandscape?
@@ -89,14 +90,19 @@ Window {
                 anchors.fill: parent
                 fillMode: Image.PreserveAspectCrop
             }
+
             RoomListView {
                 id: listViewRoom
                 model: homeModel
+
+                width: parent.width
+                height: parent.height
 
                 onRoomClicked: {
                     //get room model
                     console.debug("model: " + homeModel)
                     roomModel = homeModel.getRoomModel(idx)
+                    currentRoomName = room_name
                     stackView.push(roomDetailView)
                 }
             }
@@ -125,6 +131,11 @@ Window {
             ItemListView {
                 id: listViewItems
                 model: roomModel
+
+                roomName: currentRoomName
+
+                width: parent.width
+                height: parent.height
             }
             ScrollBar {
                 width: 10; height: listViewItems.height
@@ -149,6 +160,11 @@ Window {
                 fillMode: Image.PreserveAspectCrop
             }
 
+            ViewHeader {
+                id: header
+                headerLabel: qsTr("Media")
+            }
+
             Flow {
                 id: listViewItems
                 spacing: 10 * calaosApp.density
@@ -164,7 +180,8 @@ Window {
                 }
 
                 width: Math.floor(parent.width / (198 * calaosApp.density)) * 198 * calaosApp.density
-                height: parent.height
+                height: parent.height - header.height
+                y: header.height
 
                 anchors.centerIn: parent
                 anchors.verticalCenterOffset: 30 * calaosApp.density

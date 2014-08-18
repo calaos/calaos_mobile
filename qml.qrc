@@ -25,5 +25,6 @@
         <file>qml/MediaMenuItem.qml</file>
         <file>qml/IconMusic.qml</file>
         <file>qml/IconCamera.qml</file>
+        <file>qml/ViewHeader.qml</file>
     </qresource>
 </RCC>

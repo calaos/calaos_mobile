@@ -1,6 +1,11 @@
 import QtQuick 2.0
 
-Rectangle {
-    width: 100
-    height: 62
+Item {
+
+    anchors.fill: parent
+
+    ViewHeader {
+        headerLabel: qsTr("Favorites")
+        iconSource: calaosApp.getPictureSized("fav")
+    }
 }

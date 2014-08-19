@@ -76,6 +76,9 @@ Window {
             FavoritesListView {
                 id: listViewFav
                 //model: favoriteModel
+
+                width: parent.width
+                height: parent.height - menuBar.height
             }
         }
     }
@@ -96,7 +99,7 @@ Window {
                 model: homeModel
 
                 width: parent.width
-                height: parent.height
+                height: parent.height - menuBar.height
 
                 onRoomClicked: {
                     //get room model
@@ -135,7 +138,7 @@ Window {
                 roomName: currentRoomName
 
                 width: parent.width
-                height: parent.height
+                height: parent.height - menuBar.height
             }
             ScrollBar {
                 width: 10; height: listViewItems.height
@@ -182,7 +185,7 @@ Window {
                 }
 
                 width: Math.floor(parent.width / (198 * calaosApp.density)) * 198 * calaosApp.density
-                height: parent.height - header.height
+                height: parent.height - header.height - menuBar.height
                 y: header.height
 
                 anchors.centerIn: parent
@@ -207,7 +210,7 @@ Window {
                 model: audioModel
 
                 width: parent.width
-                height: parent.height
+                height: parent.height - menuBar.height
             }
             ScrollBar {
                 width: 10; height: musicViewRoom.height

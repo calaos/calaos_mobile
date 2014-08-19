@@ -52,6 +52,11 @@ Window {
         anchors.fill: parent
 
         initialItem: LoginView {
+
+            username: calaosApp.username
+            password: calaosApp.password
+            hostname: calaosApp.hostname
+
             onLoginClicked: calaosApp.login(username, password, hostname)
         }
 

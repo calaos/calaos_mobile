@@ -2,6 +2,8 @@
 #include <QtQml>
 #include <QQmlContext>
 #include <QQmlEngine>
+#include <QSettings>
+#include <QStandardPaths>
 #ifdef Q_OS_ANDROID
 #include <QtAndroidExtras/QAndroidJniObject>
 #endif
@@ -9,6 +11,10 @@
 Application::Application(int & argc, char ** argv) :
     QGuiApplication(argc, argv)
 {
+    QCoreApplication::setOrganizationName("Calaos");
+    QCoreApplication::setOrganizationDomain("calaos.fr");
+    QCoreApplication::setApplicationName("CalaosMobile");
+
     Common::registerQml();
 
 #ifdef Q_OS_ANDROID
@@ -22,6 +28,8 @@ Application::Application(int & argc, char ** argv) :
     else
         update_density(1.0);
 #endif
+
+    loadSettings();
 
     update_applicationStatus(Common::NotConnected);
 
@@ -43,6 +51,10 @@ Application::Application(int & argc, char ** argv) :
 
 void Application::login(QString user, QString pass, QString host)
 {
+    update_username(user);
+    update_password(pass);
+    update_hostname(host);
+
     update_applicationStatus(Common::Loading);
     calaosConnect->login(user, pass, host);
 }
@@ -52,6 +64,8 @@ void Application::homeLoaded(QVariantMap &homeData)
     homeModel->load(homeData);
     audioModel->load(homeData);
     update_applicationStatus(Common::LoggedIn);
+
+    saveSettings();
 }
 
 void Application::loginFailed()
@@ -94,4 +108,26 @@ QString Application::getPictureSizedPrefix(QString pic, QString prefix)
     //qDebug() << "PIC: " << ret;
 
     return ret;
+}
+
+void Application::saveSettings()
+{
+    QString file = QString("%1/calaos.conf").arg(QStandardPaths::writableLocation(QStandardPaths::DataLocation));
+    QSettings settings(file, QSettings::IniFormat);
+
+    settings.setValue("calaos/cn_user", get_username());
+    settings.setValue("calaos/cn_pass", get_password());
+    settings.setValue("calaos/host", get_hostname());
+
+    settings.sync();
+}
+
+void Application::loadSettings()
+{
+    QString file = QString("%1/calaos.conf").arg(QStandardPaths::writableLocation(QStandardPaths::DataLocation));
+    QSettings settings(file, QSettings::IniFormat);
+
+    update_username(settings.value("calaos/cn_user", "demo@calaos.fr").toString());
+    update_password(settings.value("calaos/cn_pass", "demo").toString());
+    update_hostname(settings.value("calaos/host", "calaos.fr").toString());
 }

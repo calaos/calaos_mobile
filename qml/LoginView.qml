@@ -64,7 +64,6 @@ Item {
             TextField {
                 id: userField
                 width: 200 * calaosApp.density
-                text: "demo@calaos.fr"
             }
 
             Text {
@@ -77,7 +76,6 @@ Item {
                 id: passField
                 width: 200 * calaosApp.density
                 echoMode: TextInput.Password
-                text: "demo"
             }
 
             Text {
@@ -89,7 +87,6 @@ Item {
             TextField {
                 id: hostField
                 width: 200 * calaosApp.density
-                text: "calaos.fr"
             }
 
             Item { /* spacer */ height: 20 * calaosApp.density; width: 200 * calaosApp.density }

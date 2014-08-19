@@ -16,6 +16,9 @@ class Application : public QGuiApplication
 public:
     QML_READONLY_PROPERTY(Common::AppStatus, applicationStatus)
     QML_READONLY_PROPERTY(double, density)
+    QML_READONLY_PROPERTY(QString, username)
+    QML_READONLY_PROPERTY(QString, password)
+    QML_READONLY_PROPERTY(QString, hostname)
 
 public:
     Application(int &argc, char **argv);
@@ -36,6 +39,9 @@ private:
     CalaosConnection *calaosConnect;
     HomeModel *homeModel;
     AudioModel *audioModel;
+
+    void loadSettings();
+    void saveSettings();
 
 };
 

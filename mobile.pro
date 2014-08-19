@@ -47,7 +47,9 @@ OTHER_FILES += \
     qml/IconCamera.qml \
     qml/ViewHeader.qml \
     qml/MusicListView.qml \
-    qml/IconMusicPlayer.qml
+    qml/IconMusicPlayer.qml \
+    qml/SettingsView.qml \
+    qml/ListGroupHeader.qml
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =

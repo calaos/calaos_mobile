@@ -50,6 +50,7 @@ signals:
 
 public slots:
     void login(QString user, QString pass, QString host);
+    void logout();
     void sendCommand(QString id, QString value, QString type = QString(), QString action = QString());
     void queryState(QStringList inputs, QStringList outputs, QStringList audio_players, QObject *obj, QString member);
 

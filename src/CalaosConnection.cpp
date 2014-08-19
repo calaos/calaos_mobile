@@ -37,6 +37,28 @@ void CalaosConnection::login(QString user, QString pass, QString h)
     accessManager->post(request, jdoc.toJson());
 }
 
+void CalaosConnection::logout()
+{
+    if (pollReply)
+    {
+        pollReply->abort();
+        pollReply->deleteLater();
+        pollReply = nullptr;
+    }
+
+    if (reqReply)
+    {
+        reqReply->abort();
+        reqReply->deleteLater();
+        reqReply = nullptr;
+    }
+
+    uuidPolling.clear();
+    cbObject = nullptr;
+    cbMember.clear();
+    emit disconnected();
+}
+
 void CalaosConnection::loginFinished(QNetworkReply *reply)
 {
     disconnect(accessManager, SIGNAL(finished(QNetworkReply*)),
@@ -104,7 +126,7 @@ void CalaosConnection::requestFinished()
 void CalaosConnection::requestError(QNetworkReply::NetworkError code)
 {
     qDebug() << "Request error!";
-    emit disconnected();
+    logout();
     return;
 }
 
@@ -183,11 +205,14 @@ void CalaosConnection::startJsonPolling()
         if (pollReply->error() != QNetworkReply::NoError)
         {
             qDebug() << "Error in " << pollReply->url() << ":" << pollReply->errorString();
-            emit disconnected();
+            logout();
             return;
         }
 
         QByteArray bytes = pollReply->readAll();
+        pollReply->deleteLater();
+        pollReply = nullptr;
+
         QJsonParseError err;
         QJsonDocument jdoc = QJsonDocument::fromJson(bytes, &err);
 

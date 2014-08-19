@@ -35,7 +35,7 @@ Window {
                 stackView.push(favoriteView)
             }
             else if (calaosApp.applicationStatus === Common.NotConnected)
-                stackView.pop(loginView)
+                stackView.pop({ item: loginView, immediate: true })
         }
     }
 
@@ -51,14 +51,7 @@ Window {
         id: stackView
         anchors.fill: parent
 
-        initialItem: LoginView {
-
-            username: calaosApp.username
-            password: calaosApp.password
-            hostname: calaosApp.hostname
-
-            onLoginClicked: calaosApp.login(username, password, hostname)
-        }
+        initialItem: loginView
 
         // Implements back key navigation
         focus: true
@@ -66,6 +59,18 @@ Window {
                              handleBack()
                              event.accepted = true;
                          }
+    }
+
+    Component {
+        id: loginView
+
+        LoginView {
+            username: calaosApp.username
+            password: calaosApp.password
+            hostname: calaosApp.hostname
+
+            onLoginClicked: calaosApp.login(username, password, hostname)
+        }
     }
 
     Component {
@@ -229,6 +234,15 @@ Window {
         }
     }
 
+    Component {
+        id: settingsView
+
+        SettingsView {
+            width: parent.width
+            height: parent.height - menuBar.height
+        }
+    }
+
     Loading {
         z: 9999 //on top of everything
         opacity: calaosApp.applicationStatus === Common.Loading?1:0
@@ -257,7 +271,7 @@ Window {
         }
         onButtonConfigClicked: {
             menuBar.menuType = Common.MenuBack
-            stackView.push(homeView)
+            stackView.push(settingsView)
         }
         onButtonBackClicked: {
             handleBack()

@@ -59,6 +59,24 @@ void Application::login(QString user, QString pass, QString host)
     calaosConnect->login(user, pass, host);
 }
 
+void Application::logout()
+{
+    calaosConnect->logout();
+    update_applicationStatus(Common::NotConnected);
+}
+
+void Application::resetAllData()
+{
+    QString file = QString("%1/calaos.conf").arg(QStandardPaths::writableLocation(QStandardPaths::DataLocation));
+    QSettings settings(file, QSettings::IniFormat);
+    settings.clear();
+    settings.sync();
+    update_username("demo@calaos.fr");
+    update_password("demo");
+    update_hostname("calaos.fr");
+    logout();
+}
+
 void Application::homeLoaded(QVariantMap &homeData)
 {
     homeModel->load(homeData);

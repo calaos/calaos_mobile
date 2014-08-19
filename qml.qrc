@@ -28,5 +28,7 @@
         <file>qml/ViewHeader.qml</file>
         <file>qml/MusicListView.qml</file>
         <file>qml/IconMusicPlayer.qml</file>
+        <file>qml/SettingsView.qml</file>
+        <file>qml/ListGroupHeader.qml</file>
     </qresource>
 </RCC>

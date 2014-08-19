@@ -24,6 +24,8 @@ public:
     Application(int &argc, char **argv);
 
     Q_INVOKABLE void login(QString user, QString pass, QString host);
+    Q_INVOKABLE void logout();
+    Q_INVOKABLE void resetAllData();
 
     //Pictures utility functions
     Q_INVOKABLE bool needPictureHDPI();

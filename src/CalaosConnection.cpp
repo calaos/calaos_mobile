@@ -125,6 +125,7 @@ void CalaosConnection::requestFinished()
 
 void CalaosConnection::requestError(QNetworkReply::NetworkError code)
 {
+    Q_UNUSED(code)
     qDebug() << "Request error!";
     logout();
     return;

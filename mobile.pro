@@ -1,9 +1,24 @@
 TEMPLATE = app
 
+TARGET=CalaosHome
+
 QT += qml quick network
 
 android {
     QT += androidextras
+}
+
+ios {
+    QMAKE_INFO_PLIST = ios/AppInfo.plist
+    ICON.files = ios/Default.png \
+    ios/Default@2x.png \
+    ios/Icon-72.png \
+    ios/Icon-Small-50.png \
+    ios/Icon-Small.png \
+    ios/Icon-Small@2x.png \
+    ios/Icon.png \
+    ios/Icon@2x.png
+    QMAKE_BUNDLE_DATA += ICON
 }
 
 CONFIG += c++11
@@ -49,7 +64,16 @@ OTHER_FILES += \
     qml/MusicListView.qml \
     qml/IconMusicPlayer.qml \
     qml/SettingsView.qml \
-    qml/ListGroupHeader.qml
+    qml/ListGroupHeader.qml \
+    ios/Default.png \
+    ios/Default@2x.png \
+    ios/Icon-72.png \
+    ios/Icon-Small-50.png \
+    ios/Icon-Small.png \
+    ios/Icon-Small@2x.png \
+    ios/Icon.png \
+    ios/Icon@2x.png \
+    ios/AppInfo.plist
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =

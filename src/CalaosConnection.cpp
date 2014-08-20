@@ -46,16 +46,14 @@ void CalaosConnection::logout()
         pollReply = nullptr;
     }
 
-    if (reqReply)
+    foreach (QNetworkReply *reply, reqReplies)
     {
-        reqReply->abort();
-        reqReply->deleteLater();
-        reqReply = nullptr;
+        reply->abort();
+        reply->deleteLater();
     }
+    reqReplies.clear();
 
     uuidPolling.clear();
-    cbObject = nullptr;
-    cbMember.clear();
     emit disconnected();
 }
 
@@ -64,6 +62,7 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
     disconnect(accessManager, SIGNAL(finished(QNetworkReply*)),
                this, SLOT(loginFinished(QNetworkReply*)));
 
+    reply->deleteLater();
     if (reply->error() != QNetworkReply::NoError)
     {
         qDebug() << "Error in " << reply->url() << ":" << reply->errorString();
@@ -75,7 +74,7 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
     QJsonParseError err;
     QJsonDocument jdoc = QJsonDocument::fromJson(bytes, &err);
 
-    qDebug() << jdoc.toJson();
+    qDebug() << "RECV: " << jdoc.toJson();
 
     if (err.error != QJsonParseError::NoError)
     {
@@ -93,6 +92,14 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
 
 void CalaosConnection::requestFinished()
 {
+    QNetworkReply *reqReply = qobject_cast<QNetworkReply*>(QObject::sender());
+
+    if (!reqReply)
+    {
+        qWarning() << "Error reqReply is NULL!";
+        return;
+    }
+
     if (reqReply->error() != QNetworkReply::NoError)
     {
         qDebug() << "Error in " << reqReply->url() << ":" << reqReply->errorString();
@@ -105,21 +112,36 @@ void CalaosConnection::requestFinished()
 
     if (err.error != QJsonParseError::NoError)
     {
-        qDebug() << "JSON parse error " << err.errorString();
+        qDebug() << bytes;
+        qDebug() << "JSON parse error at " << err.offset << " : " << err.errorString();
         return;
     }
 
-    qDebug() << jdoc.toJson();
+    qDebug() << "RECV: " << jdoc.toJson();
 
-    if (cbObject)
+    reqReplies.removeAll(reqReply);
+
+    QVariantMap jroot = jdoc.object().toVariantMap();
+
+    if (jroot.contains("audio_players") &&
+        !jroot["audio_players"].toList().isEmpty())
     {
-        QVariantMap jroot = jdoc.object().toVariantMap();
-        QMetaObject::invokeMethod(cbObject,
-                                  cbMember.toLatin1().constData(),
-                                  Qt::DirectConnection,
-                                  Q_ARG(QVariantMap, jroot));
-        cbObject = nullptr;
-        cbMember.clear();
+        //emit event for audio player change
+        emit eventAudioStateChange(jroot);
+    }
+
+    if (jroot.contains("inputs") &&
+        !jroot["inputs"].toList().isEmpty())
+    {
+        //emit event for specific input change
+        emit eventInputStateChange(jroot);
+    }
+
+    if (jroot.contains("outputs") &&
+        !jroot["outputs"].toList().isEmpty())
+    {
+        //emit event for output change
+        emit eventOutputStateChange(jroot);
     }
 }
 
@@ -145,16 +167,20 @@ void CalaosConnection::sendCommand(QString id, QString value, QString type, QStr
     jroot["value"] = value;
     QJsonDocument jdoc(jroot);
 
+    qDebug() << "SEND: " << jdoc.toJson();
+
     QUrl url(QString("https://%1/api.php").arg(host));
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    reqReply = accessManager->post(request, jdoc.toJson());
+    QNetworkReply *reqReply = accessManager->post(request, jdoc.toJson());
 
     connect(reqReply, SIGNAL(finished()), this, SLOT(requestFinished()));
     connect(reqReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestError(QNetworkReply::NetworkError)));
+
+    reqReplies.append(reqReply);
 }
 
-void CalaosConnection::queryState(QStringList inputs, QStringList outputs, QStringList audio_players, QObject *obj, QString member)
+void CalaosConnection::queryState(QStringList inputs, QStringList outputs, QStringList audio_players)
 {
     QJsonObject jroot;
     jroot["cn_user"] = username;
@@ -165,16 +191,17 @@ void CalaosConnection::queryState(QStringList inputs, QStringList outputs, QStri
     jroot["audio_players"] = QJsonValue::fromVariant(audio_players);
     QJsonDocument jdoc(jroot);
 
+    qDebug() << "SEND: " << jdoc.toJson();
+
     QUrl url(QString("https://%1/api.php").arg(host));
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    reqReply = accessManager->post(request, jdoc.toJson());
-
-    cbObject = obj;
-    cbMember = member;
+    QNetworkReply *reqReply = accessManager->post(request, jdoc.toJson());
 
     connect(reqReply, SIGNAL(finished()), this, SLOT(requestFinished()));
     connect(reqReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestError(QNetworkReply::NetworkError)));
+
+    reqReplies.append(reqReply);
 }
 
 void CalaosConnection::startJsonPolling()

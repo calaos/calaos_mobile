@@ -75,6 +75,8 @@ void AudioPlayer::load(QVariantMap &d)
 
     connect(connection, SIGNAL(eventAudioChange(QString)),
             this, SLOT(audioChanged(QString)));
+    connect(connection, SIGNAL(eventAudioStateChange(QVariantMap)),
+            this, SLOT(audioStateChanged(QVariantMap)));
     connect(connection, SIGNAL(eventAudioStatusChange(QString,QString)),
             this, SLOT(audioStatusChanged(QString,QString)));
     connect(connection, SIGNAL(eventAudioVolumeChange(QString,double)),
@@ -134,9 +136,7 @@ void AudioPlayer::audioChanged(QString playerid)
 
     connection->queryState(QStringList(),
                            QStringList(),
-                           QStringList() << playerid,
-                           this,
-                           "audioStateChanged");
+                           QStringList() << playerid);
 }
 
 void AudioPlayer::audioStateChanged(const QVariantMap &data)

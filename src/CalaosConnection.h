@@ -17,11 +17,8 @@ private:
     QString host;
     QString uuidPolling;
 
-    QNetworkReply *reqReply = nullptr;
+    QList<QNetworkReply *> reqReplies;
     QNetworkReply *pollReply = nullptr;
-
-    QObject *cbObject = nullptr;
-    QString cbMember;
 
     void processEvents(QString msg);
 
@@ -44,6 +41,9 @@ signals:
     void eventAudioPlaylistChange(QString playerid);
     void eventAudioStatusChange(QString playerid, QString status);
     void eventAudioVolumeChange(QString playerid, double volume);
+    void eventAudioStateChange(const QVariantMap &data);
+    void eventInputStateChange(const QVariantMap &data);
+    void eventOutputStateChange(const QVariantMap &data);
     void eventScenarioNew();
     void eventScenarioDel();
     void eventScenarioChange();
@@ -52,7 +52,7 @@ public slots:
     void login(QString user, QString pass, QString host);
     void logout();
     void sendCommand(QString id, QString value, QString type = QString(), QString action = QString());
-    void queryState(QStringList inputs, QStringList outputs, QStringList audio_players, QObject *obj, QString member);
+    void queryState(QStringList inputs, QStringList outputs, QStringList audio_players);
 
 private slots:
     void sslErrors(QNetworkReply *reply, const QList<QSslError> &);

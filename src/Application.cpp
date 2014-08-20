@@ -22,11 +22,15 @@ Application::Application(int & argc, char ** argv) :
     QAndroidJniObject resource = activity.callObjectMethod("getResources","()Landroid/content/res/Resources;");
     QAndroidJniObject metrics = resource.callObjectMethod("getDisplayMetrics","()Landroid/util/DisplayMetrics;");
     update_density(metrics.getField<float>("density"));
+
+    update_needBackButton(false);
 #else
     if (arguments().contains("--force-hdpi"))
         update_density(2.0);
     else
         update_density(1.0);
+
+    update_needBackButton(true);
 #endif
 
     loadSettings();

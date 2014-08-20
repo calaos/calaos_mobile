@@ -5,7 +5,11 @@ Image {
 
     height: menuType === Common.MenuMain?
                 98 / 2 * calaosApp.density:
-                48 * calaosApp.density
+                calaosApp.needBackButton?
+                    48 * calaosApp.density:
+                    0
+
+    Behavior on height { NumberAnimation { easing.type: Easing.OutExpo; duration: 500 } }
 
     fillMode: Image.TileHorizontally
     verticalAlignment: Image.AlignLeft
@@ -33,7 +37,7 @@ Image {
 
         opacity: menuType === Common.MenuBack?1:0
         Behavior on opacity { NumberAnimation {} }
-        visible: opacity > 0
+        visible: calaosApp.needBackButton?opacity > 0:false
 
         icon: calaosApp.getPictureSized("icon_exit")
         buttonLabel: qsTr("Back")
@@ -72,8 +76,9 @@ Image {
         width: btHome.width * 4
         anchors {
             centerIn: parent
-            verticalCenterOffset: 1
+            verticalCenterOffset: !calaosApp.needBackButton && menuType === Common.MenuBack?height/2:1
         }
+        Behavior on anchors.verticalCenterOffset { NumberAnimation { easing.type: Easing.OutExpo; duration: 500 } }
 
         MainMenuButton {
             id: btHome

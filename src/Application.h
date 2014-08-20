@@ -20,6 +20,7 @@ public:
     QML_READONLY_PROPERTY(QString, username)
     QML_READONLY_PROPERTY(QString, password)
     QML_READONLY_PROPERTY(QString, hostname)
+    QML_READONLY_PROPERTY(bool, needBackButton)
 
 public:
     Application(int &argc, char **argv);

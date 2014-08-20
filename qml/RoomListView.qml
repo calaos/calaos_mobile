@@ -9,6 +9,14 @@ Item {
 
     signal roomClicked(int idx, string room_name)
 
+    Image {
+        source: calaosApp.getPictureSized(isLandscape?
+                                              "background_landscape":
+                                              "background")
+        anchors.fill: parent
+        fillMode: Image.PreserveAspectCrop
+    }
+
     ListView {
         id: lst
 
@@ -22,7 +30,7 @@ Item {
 
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.horizontalCenterOffset: -3 * calaosApp.density
-            width: parent.width - 16 * calaosApp.density
+            width: parent.width - 11 * calaosApp.density
             height: 100 * calaosApp.density
 
             BorderImage {
@@ -82,6 +90,8 @@ Item {
         }
 
     }
+
+    ScrollBar { listObject: lst }
 
     ViewHeader {
         id: header

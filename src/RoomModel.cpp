@@ -6,6 +6,11 @@ ScenarioModel::ScenarioModel(QQmlApplicationEngine *eng, CalaosConnection *con, 
     engine(eng),
     connection(con)
 {
+    QHash<int, QByteArray> roles;
+    roles[RoleType] = "ioType";
+    roles[RoleName] = "ioName";
+    roles[RoleId] = "ioId";
+    setItemRoleNames(roles);
 }
 
 QObject *ScenarioModel::getItemModel(int idx)

@@ -1,6 +1,9 @@
 import QtQuick 2.0
 
 Item {
+
+    property alias headerLabel: header.headerLabel
+
     Image {
         source: calaosApp.getPictureSized(isLandscape?
                                               "background_landscape":
@@ -10,19 +13,19 @@ Item {
     }
 
     ItemListView {
-        id: listViewFav
-        //model: favoriteModel
+        id: listView
+
+        model: roomModel
 
         y: header.height
         width: parent.width
         height: parent.height - header.height
     }
 
-    ScrollBar { listObject: listViewFav }
+    ScrollBar { listObject: listView }
 
     ViewHeader {
         id: header
-        headerLabel: qsTr("Favorites")
-        iconSource: calaosApp.getPictureSized("fav")
+        iconSource: calaosApp.getPictureSized("icon_room")
     }
 }

@@ -18,6 +18,7 @@ HomeModel::HomeModel(QQmlApplicationEngine *eng, CalaosConnection *con, Scenario
 void HomeModel::load(QVariantMap &homeData)
 {
     clear();
+    scenarioModel->clear();
 
     if (!homeData.contains("home"))
     {

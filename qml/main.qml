@@ -49,7 +49,12 @@ Window {
 
     StackView {
         id: stackView
-        anchors.fill: parent
+        anchors {
+            top: parent.top
+            left: parent.left
+            right: parent.right
+            bottom: menuBar.top
+        }
 
         initialItem: loginView
 
@@ -75,162 +80,67 @@ Window {
 
     Component {
         id: favoriteView
-        Item {
-            Image {
-                source: calaosApp.getPictureSized(isLandscape?
-                                                      "background_landscape":
-                                                      "background")
-                anchors.fill: parent
-                fillMode: Image.PreserveAspectCrop
-            }
-            FavoritesListView {
-                id: listViewFav
-                //model: favoriteModel
 
-                width: parent.width
-                height: parent.height - menuBar.height
-            }
+        FavoritesListView {
+            height: parent.height
+            width: parent.width
         }
     }
 
     Component {
         id: homeView
-        Item {
-            Image {
-                source: calaosApp.getPictureSized(isLandscape?
-                                                      "background_landscape":
-                                                      "background")
-                anchors.fill: parent
-                fillMode: Image.PreserveAspectCrop
-            }
 
-            RoomListView {
-                id: listViewRoom
-                model: homeModel
+        RoomListView {
+            height: parent.height
+            width: parent.width
 
-                width: parent.width
-                height: parent.height - menuBar.height
+            model: homeModel
 
-                onRoomClicked: {
-                    //get room model
-                    console.debug("model: " + homeModel)
-                    roomModel = homeModel.getRoomModel(idx)
-                    currentRoomName = room_name
-                    stackView.push(roomDetailView)
-                }
-            }
-            ScrollBar {
-                width: 10; height: listViewRoom.height
-                anchors.right: parent.right
-                opacity: 1
-                orientation: Qt.Vertical
-                wantBackground: false
-                position: listViewRoom.visibleArea.yPosition
-                pageSize: listViewRoom.visibleArea.heightRatio
+            onRoomClicked: {
+                //get room model
+                console.debug("model: " + homeModel)
+                roomModel = homeModel.getRoomModel(idx)
+                currentRoomName = room_name
+                stackView.push(roomDetailView)
             }
         }
     }
 
     Component {
         id: roomDetailView
-        Item {
-            Image {
-                source: calaosApp.getPictureSized(isLandscape?
-                                                      "background_landscape":
-                                                      "background")
-                anchors.fill: parent
-                fillMode: Image.PreserveAspectCrop
-            }
-            ItemListView {
-                id: listViewItems
-                model: roomModel
 
-                roomName: currentRoomName
+        RoomDetailView {
+            height: parent.height
+            width: parent.width
 
-                width: parent.width
-                height: parent.height - menuBar.height
-            }
-            ScrollBar {
-                width: 10; height: listViewItems.height
-                anchors.right: parent.right
-                opacity: 1
-                orientation: Qt.Vertical
-                wantBackground: false
-                position: listViewItems.visibleArea.yPosition
-                pageSize: listViewItems.visibleArea.heightRatio
-            }
+            headerLabel: currentRoomName
+        }
+    }
+
+    Component {
+        id: scenarioView
+
+        ScenarioView {
+            width: parent.width
+            height: parent.height
         }
     }
 
     Component {
         id: mediaView
-        Item {
-            Image {
-                source: calaosApp.getPictureSized(isLandscape?
-                                                      "background_landscape":
-                                                      "background")
-                anchors.fill: parent
-                fillMode: Image.PreserveAspectCrop
-            }
 
-            ViewHeader {
-                id: header
-                headerLabel: qsTr("Media")
-                iconSource: calaosApp.getPictureSized("icon_media")
-            }
-
-            Flow {
-                id: listViewItems
-                spacing: 10 * calaosApp.density
-
-                MediaMenuItem {
-                    label: qsTr("Music")
-                    icon: IconMusic {}
-                    onButtonClicked: stackView.push(musicView)
-                }
-
-                MediaMenuItem {
-                    label: qsTr("Surveillance")
-                    icon: IconCamera {}
-                }
-
-                width: Math.floor(parent.width / (198 * calaosApp.density)) * 198 * calaosApp.density
-                height: parent.height - header.height - menuBar.height
-                y: header.height
-
-                anchors.centerIn: parent
-                anchors.verticalCenterOffset: 30 * calaosApp.density
-            }
+        MediaMenuView {
+            width: parent.width
+            height: parent.height
         }
     }
 
     Component {
         id: musicView
-        Item {
-            Image {
-                source: calaosApp.getPictureSized(isLandscape?
-                                                      "background_landscape":
-                                                      "background")
-                anchors.fill: parent
-                fillMode: Image.PreserveAspectCrop
-            }
 
-            MusicListView {
-                id: musicViewRoom
-                model: audioModel
-
-                width: parent.width
-                height: parent.height - menuBar.height
-            }
-            ScrollBar {
-                width: 10; height: musicViewRoom.height
-                anchors.right: parent.right
-                opacity: 1
-                orientation: Qt.Vertical
-                wantBackground: false
-                position: musicViewRoom.visibleArea.yPosition
-                pageSize: musicViewRoom.visibleArea.heightRatio
-            }
+        MusicListView {
+            width: parent.width
+            height: parent.height
         }
     }
 
@@ -267,7 +177,7 @@ Window {
         }
         onButtonScenariosClicked: {
             menuBar.menuType = Common.MenuBack
-            stackView.push(homeView)
+            stackView.push(scenarioView)
         }
         onButtonConfigClicked: {
             menuBar.menuType = Common.MenuBack

@@ -4,8 +4,13 @@ import QtQuick.Controls 1.2
 
 Item {
 
-    property alias model: lst.model
-    property alias visibleArea: lst.visibleArea
+    Image {
+        source: calaosApp.getPictureSized(isLandscape?
+                                              "background_landscape":
+                                              "background")
+        anchors.fill: parent
+        fillMode: Image.PreserveAspectCrop
+    }
 
     ListView {
         id: lst
@@ -17,6 +22,8 @@ Item {
         spacing: 10 * calaosApp.density
 
         delegate: delegate
+
+        model: audioModel
 
         Component {
             id: delegate
@@ -181,6 +188,8 @@ Item {
 
         }
     }
+
+    ScrollBar { listObject: lst }
 
     ViewHeader {
         id: header

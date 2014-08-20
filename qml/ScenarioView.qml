@@ -10,19 +10,19 @@ Item {
     }
 
     ItemListView {
-        id: listViewFav
-        //model: favoriteModel
+        id: listViewItems
+        model: scenarioModel
 
         y: header.height
         width: parent.width
         height: parent.height - header.height
     }
 
-    ScrollBar { listObject: listViewFav }
+    ScrollBar { listObject: listViewItems }
 
     ViewHeader {
         id: header
-        headerLabel: qsTr("Favorites")
-        iconSource: calaosApp.getPictureSized("fav")
+        headerLabel: qsTr("Scenarios")
+        iconSource: calaosApp.getPictureSized("icon_scenario")
     }
 }

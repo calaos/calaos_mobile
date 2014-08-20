@@ -55,15 +55,7 @@ Item {
         flickableDirection: Flickable.VerticalFlick
     }
 
-    ScrollBar {
-        width: 10; height: listFlick.height
-        anchors.right: parent.right
-        opacity: 1
-        orientation: Qt.Vertical
-        wantBackground: false
-        position: listFlick.visibleArea.yPosition
-        pageSize: listFlick.visibleArea.heightRatio
-    }
+    ScrollBar { listObject: listFlick }
 
     ViewHeader {
         id: header

@@ -43,24 +43,22 @@ import QtQuick 2.0
 Item {
     id: scrollBar
 
+    property Flickable listObject
+
+    y: listObject.y
+    height: listObject.height
+    width: 5
+    anchors.right: parent.right
+    opacity: 1
+
     // The properties that define the scrollbar's state.
     // position and pageSize are in the range 0.0 - 1.0.  They are relative to the
     // height of the page, i.e. a pageSize of 0.5 means that you can see 50%
     // of the height of the view.
     // orientation can be either Qt.Vertical or Qt.Horizontal
-    property real position
-    property real pageSize
+    property real position: listObject.visibleArea.yPosition
+    property real pageSize: listObject.visibleArea.heightRatio
     property int orientation : Qt.Vertical
-    property alias wantBackground: background.visible
-
-    // A light, semi-transparent background
-    Rectangle {
-        id: background
-        anchors.fill: parent
-        radius: orientation == Qt.Vertical ? (width/2 - 1 * calaosApp.density) : (height/2 - 1 * calaosApp.density)
-        color: "white"
-        opacity: 0.3
-    }
 
     // Size the bar to the required size, depending upon the orientation.
     Rectangle {
@@ -69,7 +67,7 @@ Item {
         width: orientation == Qt.Vertical ? (parent.width-2 * calaosApp.density) : (scrollBar.pageSize * (scrollBar.width-2 * calaosApp.density))
         height: orientation == Qt.Vertical ? (scrollBar.pageSize * (scrollBar.height-2 * calaosApp.density)) : (parent.height-2 * calaosApp.density)
         radius: orientation == Qt.Vertical ? (width/2 * calaosApp.density - 1 * calaosApp.density) : (height/2 * calaosApp.density - 1 * calaosApp.density)
-        color: "black"
-        opacity: 0.7
+        color: "#3ab4d7"
+        opacity: 0.27
     }
 }

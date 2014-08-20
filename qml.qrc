@@ -30,5 +30,8 @@
         <file>qml/IconMusicPlayer.qml</file>
         <file>qml/SettingsView.qml</file>
         <file>qml/ListGroupHeader.qml</file>
+        <file>qml/ScenarioView.qml</file>
+        <file>qml/RoomDetailView.qml</file>
+        <file>qml/MediaMenuView.qml</file>
     </qresource>
 </RCC>

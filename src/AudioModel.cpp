@@ -53,7 +53,12 @@ AudioPlayer::AudioPlayer(CalaosConnection *con):
 
 void AudioPlayer::load(QVariantMap &d)
 {
-    playerData = d;
+    QMap<QString, QVariant>::const_iterator i = d.constBegin();
+    while (i != d.constEnd())
+    {
+        playerData[i.key()] = i.value();
+        ++i;
+    }
 
     update_status(Common::audioStatusFromString(playerData["status"].toString()));
     update_id(playerData["id"].toString());
@@ -134,14 +139,14 @@ void AudioPlayer::audioChanged(QString playerid)
                            "audioStateChanged");
 }
 
-void AudioPlayer::audioStateChanged(QVariantMap &data)
+void AudioPlayer::audioStateChanged(const QVariantMap &data)
 {
     QVariantList players = data["audio_players"].toList();
     QVariantList::iterator it = players.begin();
     for (;it != players.end();it++)
     {
         QVariantMap r = it->toMap();
-        if (r["id"].toString() == playerData["id"].toString())
+        if (r["player_id"].toString() == playerData["id"].toString())
         {
             load(r);
             break;

@@ -282,7 +282,7 @@ void CalaosConnection::processEvents(QString msg)
     else if (spl.at(0) == "audio")
     {
         if (spl.count() > 2 &&
-            spl.at(2) == "song")
+            spl.at(2) == "songchanged")
             emit eventAudioChange(spl.at(1));
     }
 

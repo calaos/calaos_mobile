@@ -52,7 +52,7 @@ Item {
                 IconMusicPlayer {
                     id: iconcover
                     coverSource: cover
-                    playing: status === Common.StatusPlay
+                    playing: modelData.status === Common.StatusPlay
 
                     anchors {
                         left: parent.left; leftMargin: 8 * calaosApp.density

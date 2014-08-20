@@ -81,7 +81,7 @@ QString Common::audioStatusToString(Common::AudioStatusType t)
 
 Common::AudioStatusType Common::audioStatusFromString(QString t)
 {
-    if (t == "play") return StatusPlay;
+    if (t == "play" || t == "playing") return StatusPlay;
     if (t == "pause") return StatusPause;
     if (t == "stop") return StatusStop;
 

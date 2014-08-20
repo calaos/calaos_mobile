@@ -65,7 +65,7 @@ public slots:
     void audioStatusChanged(QString playerid, QString status);
     void audioVolumeChanged(QString playerid, double volume);
 
-    void audioStateChanged(QVariantMap &data);
+    void audioStateChanged(const QVariantMap &data);
 
 private:
     QVariantMap playerData;

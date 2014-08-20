@@ -143,6 +143,7 @@ Item {
                     }
                     value: modelData.volume
                     updateValueWhileDragging: false
+                    maximumValue: 100
                     onValueChanged: {
                         modelData.sendVolume(value)
                         value = Qt.binding(function() { return modelData.audioVolume })

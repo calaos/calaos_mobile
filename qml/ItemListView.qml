@@ -1,5 +1,4 @@
 import QtQuick 2.2
-import "calaos.js" as Calaos;
 import Calaos 1.0
 
 ListView {
@@ -26,6 +25,7 @@ ListView {
                              model.ioType === Common.VarString? var_string:
                              model.ioType === Common.Scenario? scenario:
                              model.ioType === Common.Shutter? shutter:
+                             model.ioType === Common.LightDimmer? light_dimmer:
                              default_delegate
 
             onLoaded: {
@@ -73,4 +73,5 @@ ListView {
     Component { id: var_string; IOVarString {} }
     Component { id: scenario; IOScenario {} }
     Component { id: shutter; IOShutter {} }
+    Component { id: light_dimmer; IOLightDimmer {} }
 }

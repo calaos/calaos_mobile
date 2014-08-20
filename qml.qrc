@@ -33,5 +33,6 @@
         <file>qml/ScenarioView.qml</file>
         <file>qml/RoomDetailView.qml</file>
         <file>qml/MediaMenuView.qml</file>
+        <file>qml/IOLightDimmer.qml</file>
     </qresource>
 </RCC>

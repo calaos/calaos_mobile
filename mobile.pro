@@ -76,7 +76,8 @@ OTHER_FILES += \
     ios/AppInfo.plist \
     qml/ScenarioView.qml \
     qml/RoomDetailView.qml \
-    qml/MediaMenuView.qml
+    qml/MediaMenuView.qml \
+    qml/IOLightDimmer.qml
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =

@@ -89,6 +89,8 @@ public:
     Q_INVOKABLE void sendDown();
     Q_INVOKABLE void sendUp();
     Q_INVOKABLE void sendStop();
+    Q_INVOKABLE void sendStringValue(QString value);
+    Q_INVOKABLE void sendIntValue(double value);
 
     Q_INVOKABLE bool getStateBool();
     Q_INVOKABLE double getStateInt();

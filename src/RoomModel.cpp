@@ -193,6 +193,22 @@ void IOBase::sendStop()
             "set_state");
 }
 
+void IOBase::sendStringValue(QString value)
+{
+    connection->sendCommand(ioData["id"].toString(),
+            value,
+            ioType == IOOutput?"output":"input",
+            "set_state");
+}
+
+void IOBase::sendIntValue(double value)
+{
+    connection->sendCommand(ioData["id"].toString(),
+            QString("set %1").arg(value),
+            ioType == IOOutput?"output":"input",
+            "set_state");
+}
+
 bool IOBase::getStateBool()
 {
     if (ioData["state"].toString() == "true")

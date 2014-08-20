@@ -2,10 +2,11 @@
 #include <QDebug>
 #include "RoomModel.h"
 
-HomeModel::HomeModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent) :
+HomeModel::HomeModel(QQmlApplicationEngine *eng, CalaosConnection *con, ScenarioModel *scModel, QObject *parent) :
     QStandardItemModel(parent),
     engine(eng),
-    connection(con)
+    connection(con),
+    scenarioModel(scModel)
 {
     QHash<int, QByteArray> roles;
     roles[RoleType] = "roomType";
@@ -33,7 +34,7 @@ void HomeModel::load(QVariantMap &homeData)
         room->update_roomName(r["name"].toString());
         room->update_roomType(r["type"].toString());
         room->update_roomHits(r["hits"].toString().toInt());
-        room->load(r);
+        room->load(r, scenarioModel);
         appendRow(room);
     }
 }
@@ -59,7 +60,7 @@ QObject *RoomItem::getRoomModel() const
     return room;
 }
 
-void RoomItem::load(QVariantMap &roomData)
+void RoomItem::load(QVariantMap &roomData, ScenarioModel *scenarioModel)
 {
-    room->load(roomData);
+    room->load(roomData, scenarioModel);
 }

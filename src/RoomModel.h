@@ -8,6 +8,28 @@
 #include "Common.h"
 #include "CalaosConnection.h"
 
+class ScenarioModel: public QStandardItemModel
+{
+    Q_OBJECT
+public:
+    explicit ScenarioModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent = 0);
+
+    enum
+    {
+        RoleType = Qt::UserRole + 1,
+        RoleName,
+        RoleId,
+    };
+
+    Q_INVOKABLE QObject *getItemModel(int idx);
+
+private:
+    QString name, type;
+
+    QQmlApplicationEngine *engine;
+    CalaosConnection *connection;
+};
+
 class RoomModel: public QStandardItemModel
 {
     Q_OBJECT
@@ -24,7 +46,7 @@ public:
         RoleRW
     };
 
-    void load(QVariantMap &roomData);
+    void load(QVariantMap &roomData, ScenarioModel *scenarioModel);
 
     Q_INVOKABLE QObject *getItemModel(int idx);
 

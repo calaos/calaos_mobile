@@ -8,6 +8,7 @@
 #include "qqmlhelpers.h"
 #include "Common.h"
 #include "AudioModel.h"
+#include "RoomModel.h"
 
 class Application : public QGuiApplication
 {
@@ -41,6 +42,7 @@ private:
     CalaosConnection *calaosConnect;
     HomeModel *homeModel;
     AudioModel *audioModel;
+    ScenarioModel *scenarioModel;
 
     void loadSettings();
     void saveSettings();

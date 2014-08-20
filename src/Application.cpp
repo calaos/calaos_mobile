@@ -41,7 +41,9 @@ Application::Application(int & argc, char ** argv) :
     connect(calaosConnect, SIGNAL(disconnected()),
             this, SLOT(loginFailed()));
 
-    homeModel = new HomeModel(&engine, calaosConnect, this);
+    scenarioModel = new ScenarioModel(&engine, calaosConnect, this);
+    engine.rootContext()->setContextProperty("scenarioModel", scenarioModel);
+    homeModel = new HomeModel(&engine, calaosConnect, scenarioModel, this);
     engine.rootContext()->setContextProperty("homeModel", homeModel);
     audioModel = new AudioModel(&engine, calaosConnect, this);
     engine.rootContext()->setContextProperty("audioModel", audioModel);

@@ -1,6 +1,20 @@
 #include "RoomModel.h"
 #include <QDebug>
 
+ScenarioModel::ScenarioModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent):
+    QStandardItemModel(parent),
+    engine(eng),
+    connection(con)
+{
+}
+
+QObject *ScenarioModel::getItemModel(int idx)
+{
+    IOBase *obj = dynamic_cast<IOBase *>(item(idx));
+    if (obj) engine->setObjectOwnership(obj, QQmlEngine::CppOwnership);
+    return obj;
+}
+
 RoomModel::RoomModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent) :
     QStandardItemModel(parent),
     engine(eng),
@@ -14,7 +28,7 @@ RoomModel::RoomModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject 
     setItemRoleNames(roles);
 }
 
-void RoomModel::load(QVariantMap &roomData)
+void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel)
 {
     clear();
 
@@ -30,6 +44,14 @@ void RoomModel::load(QVariantMap &roomData)
     for (;it != inputs.end();it++)
     {
         QVariantMap r = it->toMap();
+
+        //create scenario items
+        if (r["gui_type"] == "scenario")
+        {
+            IOBase *io = new IOBase(connection, IOBase::IOInput);
+            io->load(r);
+            scenarioModel->appendRow(io);
+        }
 
         //Hide invisible items
         if (r["visible"] != "true") continue;

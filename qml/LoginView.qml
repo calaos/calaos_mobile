@@ -64,6 +64,7 @@ Item {
             TextField {
                 id: userField
                 width: 200 * calaosApp.density
+                inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase
             }
 
             Text {
@@ -76,6 +77,7 @@ Item {
                 id: passField
                 width: 200 * calaosApp.density
                 echoMode: TextInput.Password
+                inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase
             }
 
             Text {
@@ -87,6 +89,7 @@ Item {
             TextField {
                 id: hostField
                 width: 200 * calaosApp.density
+                inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase
             }
 
             Item { /* spacer */ height: 20 * calaosApp.density; width: 200 * calaosApp.density }

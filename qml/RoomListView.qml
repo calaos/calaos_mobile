@@ -17,49 +17,28 @@ Item {
         fillMode: Image.PreserveAspectCrop
     }
 
-    ListView {
+    function calcGridSize(rootWidth) {
+        //calc GridView size to correctly fit the center of the parent
+        var numItem = Math.round(rootWidth / (150 * calaosApp.density))
+        lst.width = numItem * (150 * calaosApp.density)
+    }
+
+    onWidthChanged: calcGridSize(width)
+
+    GridView {
         id: lst
 
-        width: parent.width
+        cellHeight: 120 * calaosApp.density
+        cellWidth: 150 * calaosApp.density
+
+        anchors.horizontalCenter: parent.horizontalCenter
         height: parent.height - header.height
         y: header.height
 
-        spacing: 10 * calaosApp.density
-
         delegate: Item {
 
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.horizontalCenterOffset: -3 * calaosApp.density
-            width: parent.width - 11 * calaosApp.density
-            height: 100 * calaosApp.density
-
-            BorderImage {
-                source: calaosApp.getPictureSized("back_items_home")
-                border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
-                border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
-
-                anchors.fill: parent
-            }
-
-            BorderImage {
-                source: calaosApp.getPictureSized("back_items_home_glow")
-                border.left: 15 * calaosApp.density; border.top: 15 * calaosApp.density
-                border.right: 15 * calaosApp.density; border.bottom: 15 * calaosApp.density
-
-                anchors.fill: parent
-                opacity: 0
-                Behavior on opacity { PropertyAnimation { duration: 100 } }
-
-                MouseArea {
-                    id: ms
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    onPressed: parent.opacity = 1
-                    onReleased: parent.opacity = 0
-                    onExited: parent.opacity = 0
-                    onClicked: roomClicked(index, roomName)
-                }
-            }
+            height: 120 * calaosApp.density
+            width: 150 * calaosApp.density
 
             property string roomIconType: roomType
             onRoomIconTypeChanged: roomIcon.source = calaosApp.getPictureSizedPrefix(Calaos.getRoomTypeIcon(roomIconType), "img/rooms")
@@ -67,28 +46,39 @@ Item {
             Image {
                 id: roomIcon
                 fillMode: Image.PreserveAspectFit
+                width: parent.width - 10 * calaosApp.density
                 anchors {
-                    left: parent.left; leftMargin: 8 * calaosApp.density
-                    top: parent.top; topMargin: 8 * calaosApp.density
-                    bottom: parent.bottom; bottomMargin: 8 * calaosApp.density
+                    centerIn: parent
+                    verticalCenterOffset: 5 * calaosApp.density
                 }
+
+                Behavior on opacity { PropertyAnimation { duration: 100 } }
+            }
+
+            MouseArea {
+                id: ms
+                anchors.fill: parent
+                hoverEnabled: true
+                onPressed: roomIcon.opacity = 0.5
+                onReleased: roomIcon.opacity = 1
+                onExited: roomIcon.opacity = 1
+                onClicked: roomClicked(index, roomName)
             }
 
             Text {
                 color: "#3ab4d7"
                 font { bold: false; pointSize: 13 }
                 text: roomName
+                horizontalAlignment: Text.AlignHCenter
                 clip: true
                 elide: Text.ElideRight
+                width: parent.width
                 anchors {
-                    left: roomIcon.right; leftMargin: 8 * calaosApp.density
-                    right: parent.right; rightMargin: 8 * calaosApp.density
-                    top: parent.top; topMargin: 18 * calaosApp.density
+                    horizontalCenter: parent.horizontalCenter
+                    top: parent.top; topMargin: 5 * calaosApp.density
                 }
             }
-
         }
-
     }
 
     ScrollBar { listObject: lst }

@@ -29,7 +29,7 @@ BorderImage {
         elide: Text.ElideMiddle
         anchors {
             left: icon.right; leftMargin: 8 * calaosApp.density
-            right: btdown.left; rightMargin: 8 * calaosApp.density
+            right: btup.left; rightMargin: 8 * calaosApp.density
             verticalCenter: parent.verticalCenter
         }
 

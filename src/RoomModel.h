@@ -78,6 +78,12 @@ class IOBase: public QObject, public QStandardItem
     Q_PROPERTY(int stateGreen READ getStateGreen NOTIFY stateChange)
     Q_PROPERTY(int stateBlue READ getStateBlue NOTIFY stateChange)
 
+    //for shutter smart only
+    Q_PROPERTY(int stateShutterPos READ getStateShutterPos NOTIFY stateChange)
+    QML_READONLY_PROPERTY(bool, stateShutterBool)
+    QML_READONLY_PROPERTY(QString, stateShutterTxt)
+    QML_READONLY_PROPERTY(QString, stateShutterTxtAction)
+
 public:
     IOBase(CalaosConnection *con, int t);
 
@@ -104,6 +110,8 @@ public:
     Q_INVOKABLE int getStateRed();
     Q_INVOKABLE int getStateGreen();
     Q_INVOKABLE int getStateBlue();
+
+    Q_INVOKABLE int getStateShutterPos();
 
     Q_INVOKABLE void sendValueRed(int value);
     Q_INVOKABLE void sendValueGreen(int value);

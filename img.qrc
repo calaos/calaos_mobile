@@ -152,5 +152,9 @@
         <file>img/icon_media@2x.png</file>
         <file>img/icon_scenario2.png</file>
         <file>img/icon_scenario2@2x.png</file>
+        <file>img/part_shutter.png</file>
+        <file>img/part_shutter@2x.png</file>
+        <file>img/part_shutter2.png</file>
+        <file>img/part_shutter2@2x.png</file>
     </qresource>
 </RCC>

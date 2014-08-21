@@ -285,6 +285,42 @@ void IOBase::sendValueBlue(int value)
     sendRGB(getStateRed(), getStateGreen(), value);
 }
 
+int IOBase::getStateShutterPos()
+{
+    QStringList sl = ioData["state"].toString().split(' ');
+    if (sl.count() < 1)
+        return 0;
+
+    int percent = 0;
+    QString status = sl.at(0);
+    if (sl.count() > 1)
+        percent = sl.at(1).toInt();
+
+    if (percent < 100)
+        update_stateShutterBool(true);
+    else
+        update_stateShutterBool(false);
+
+    if (percent == 0)
+        update_stateShutterTxt(tr("State: Opened."));
+    else if (percent > 0 && percent < 50)
+        update_stateShutterTxt(tr("State: %1% Opened.").arg(percent));
+    else if (percent >= 50 && percent < 100)
+        update_stateShutterTxt(tr("State: %1% Closed.").arg(percent));
+
+    if (percent == 100)
+        update_stateShutterTxt(tr("State: Closed."));
+
+    if (status == "stop" || status == "")
+        update_stateShutterTxtAction(tr("Action: stopped."));
+    else if (status == "down")
+        update_stateShutterTxtAction(tr("Action: Closing..."));
+    else if (status == "up")
+        update_stateShutterTxtAction(tr("Action: Opening..."));
+
+    return percent;
+}
+
 void IOBase::inputChanged(QString id, QString key, QString value)
 {
     if (id != ioData["id"].toString()) return; //not for us

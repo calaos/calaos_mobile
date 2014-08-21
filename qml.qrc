@@ -35,5 +35,6 @@
         <file>qml/MediaMenuView.qml</file>
         <file>qml/IOLightDimmer.qml</file>
         <file>qml/IOLightRGB.qml</file>
+        <file>qml/IOShutterSmart.qml</file>
     </qresource>
 </RCC>

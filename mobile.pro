@@ -78,7 +78,8 @@ OTHER_FILES += \
     qml/RoomDetailView.qml \
     qml/MediaMenuView.qml \
     qml/IOLightDimmer.qml \
-    qml/IOLightRGB.qml
+    qml/IOLightRGB.qml \
+    qml/IOShutterSmart.qml
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =

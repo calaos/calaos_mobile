@@ -9,6 +9,7 @@
 #include "Common.h"
 #include "AudioModel.h"
 #include "RoomModel.h"
+#include "FavoritesModel.h"
 
 class Application : public QGuiApplication
 {
@@ -44,6 +45,9 @@ private:
     HomeModel *homeModel;
     AudioModel *audioModel;
     ScenarioModel *scenarioModel;
+    FavoritesModel *favModel;
+
+    QVariantMap favoritesList;
 
     void loadSettings();
     void saveSettings();

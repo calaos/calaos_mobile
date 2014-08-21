@@ -51,6 +51,8 @@ Application::Application(int & argc, char ** argv) :
     engine.rootContext()->setContextProperty("homeModel", homeModel);
     audioModel = new AudioModel(&engine, calaosConnect, this);
     engine.rootContext()->setContextProperty("audioModel", audioModel);
+    favModel = new FavoritesModel(&engine, calaosConnect, this);
+    engine.rootContext()->setContextProperty("favoritesModel", favModel);
     engine.rootContext()->setContextProperty("calaosApp", this);
     engine.load(QUrl(QStringLiteral("qrc:///qml/main.qml")));
 }
@@ -137,11 +139,13 @@ QString Application::getPictureSizedPrefix(QString pic, QString prefix)
 void Application::saveSettings()
 {
     QString file = QString("%1/calaos.conf").arg(QStandardPaths::writableLocation(QStandardPaths::DataLocation));
-    QSettings settings(file, QSettings::IniFormat);
+    QSettings settings(file, QSettings::NativeFormat);
 
     settings.setValue("calaos/cn_user", get_username());
     settings.setValue("calaos/cn_pass", get_password());
     settings.setValue("calaos/host", get_hostname());
+
+    settings.setValue("app/favorites", favoritesList);
 
     settings.sync();
 }
@@ -149,9 +153,12 @@ void Application::saveSettings()
 void Application::loadSettings()
 {
     QString file = QString("%1/calaos.conf").arg(QStandardPaths::writableLocation(QStandardPaths::DataLocation));
-    QSettings settings(file, QSettings::IniFormat);
+    QSettings settings(file, QSettings::NativeFormat);
 
     update_username(settings.value("calaos/cn_user", "demo@calaos.fr").toString());
     update_password(settings.value("calaos/cn_pass", "demo").toString());
     update_hostname(settings.value("calaos/host", "calaos.fr").toString());
+
+    favoritesList = settings.value("app/favorites").toMap();
+    favModel->load(homeModel, favoritesList);
 }

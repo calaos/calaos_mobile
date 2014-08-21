@@ -29,7 +29,8 @@ SOURCES += src/main.cpp \
     src/CalaosConnection.cpp \
     src/Common.cpp \
     src/RoomModel.cpp \
-    src/AudioModel.cpp
+    src/AudioModel.cpp \
+    src/FavoritesModel.cpp
 
 RESOURCES += qml.qrc \
     img.qrc
@@ -94,4 +95,5 @@ HEADERS += \
     src/CalaosConnection.h \
     src/Common.h \
     src/RoomModel.h \
-    src/AudioModel.h
+    src/AudioModel.h \
+    src/FavoritesModel.h

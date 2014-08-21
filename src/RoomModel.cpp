@@ -227,6 +227,64 @@ QString IOBase::getStateString()
     return ioData["state"].toString();
 }
 
+int IOBase::getStateRed()
+{
+    int state = ioData["state"].toInt();
+
+    int r;
+    r = ((state >> 16) * 100) / 255;
+
+    return r;
+}
+
+int IOBase::getStateGreen()
+{
+    int state = ioData["state"].toInt();
+
+    int g;
+    g = (((state >> 8) & 0x0000FF) * 100) / 255;
+
+    return g;
+}
+
+int IOBase::getStateBlue()
+{
+    int state = ioData["state"].toInt();
+
+    int b;
+    b = ((state & 0x0000FF) * 100) / 255;
+
+    return b;
+}
+
+void IOBase::sendRGB(int r, int g, int b)
+{
+    qDebug() << "Send rgb value: " << r << "," << g << "," << b;
+    quint32 val = (((quint32)(r * 255 / 100)) << 16) +
+              (((quint32)(g * 255 / 100)) << 8) +
+              ((quint32)(b * 255 / 100));
+
+    connection->sendCommand(ioData["id"].toString(),
+            QString("set %1").arg(val),
+            ioType == IOOutput?"output":"input",
+            "set_state");
+}
+
+void IOBase::sendValueRed(int value)
+{
+    sendRGB(value, getStateGreen(), getStateBlue());
+}
+
+void IOBase::sendValueGreen(int value)
+{
+    sendRGB(getStateRed(), value, getStateBlue());
+}
+
+void IOBase::sendValueBlue(int value)
+{
+    sendRGB(getStateRed(), getStateGreen(), value);
+}
+
 void IOBase::inputChanged(QString id, QString key, QString value)
 {
     if (id != ioData["id"].toString()) return; //not for us

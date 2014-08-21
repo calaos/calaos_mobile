@@ -73,6 +73,11 @@ class IOBase: public QObject, public QStandardItem
     Q_PROPERTY(double stateInt READ getStateInt NOTIFY stateChange)
     Q_PROPERTY(QString stateString READ getStateString NOTIFY stateChange)
 
+    //for rgb only
+    Q_PROPERTY(int stateRed READ getStateRed NOTIFY stateChange)
+    Q_PROPERTY(int stateGreen READ getStateGreen NOTIFY stateChange)
+    Q_PROPERTY(int stateBlue READ getStateBlue NOTIFY stateChange)
+
 public:
     IOBase(CalaosConnection *con, int t);
 
@@ -96,10 +101,20 @@ public:
     Q_INVOKABLE double getStateInt();
     Q_INVOKABLE QString getStateString();
 
+    Q_INVOKABLE int getStateRed();
+    Q_INVOKABLE int getStateGreen();
+    Q_INVOKABLE int getStateBlue();
+
+    Q_INVOKABLE void sendValueRed(int value);
+    Q_INVOKABLE void sendValueGreen(int value);
+    Q_INVOKABLE void sendValueBlue(int value);
+
 private:
     QVariantMap ioData;
     CalaosConnection *connection;
     int ioType;
+
+    void sendRGB(int r, int g, int b);
 
 private slots:
     void inputChanged(QString id, QString key, QString value);

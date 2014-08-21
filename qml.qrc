@@ -34,5 +34,6 @@
         <file>qml/RoomDetailView.qml</file>
         <file>qml/MediaMenuView.qml</file>
         <file>qml/IOLightDimmer.qml</file>
+        <file>qml/IOLightRGB.qml</file>
     </qresource>
 </RCC>

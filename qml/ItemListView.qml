@@ -26,6 +26,7 @@ ListView {
                              model.ioType === Common.Scenario? scenario:
                              model.ioType === Common.Shutter? shutter:
                              model.ioType === Common.LightDimmer? light_dimmer:
+                             model.ioType === Common.LightRgb? light_rgb:
                              default_delegate
 
             onLoaded: {
@@ -74,4 +75,5 @@ ListView {
     Component { id: scenario; IOScenario {} }
     Component { id: shutter; IOShutter {} }
     Component { id: light_dimmer; IOLightDimmer {} }
+    Component { id: light_rgb; IOLightRGB {} }
 }

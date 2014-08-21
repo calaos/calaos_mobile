@@ -53,6 +53,15 @@ public:
     };
     Q_ENUMS(IOType)
 
+    enum FavoriteType {
+        FavIO = 0,
+        FavLightsCount,
+        FavShutterCount,
+        FavAudio,
+        FavCamera
+    };
+    Q_ENUMS(FavoriteType)
+
     enum AudioStatusType {
         StatusUnknown = 0,
         StatusPlay,

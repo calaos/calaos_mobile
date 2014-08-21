@@ -8,6 +8,34 @@
 #include "Common.h"
 #include "CalaosConnection.h"
 
+class IOBase;
+
+class IOCache
+{
+public:
+    static IOCache &Instance()
+    {
+        static IOCache cache;
+        return cache;
+    }
+    ~IOCache() { clearCache(); }
+
+    IOBase *searchInput(QString id);
+    IOBase *searchOutput(QString id);
+    void addInput(IOBase *io);
+    void addOutput(IOBase *io);
+    void delInput(IOBase *io);
+    void delOutput(IOBase *io);
+
+    void clearCache();
+
+private:
+    IOCache() {}
+
+    QHash<QString, IOBase *> inputCache;
+    QHash<QString, IOBase *> outputCache;
+};
+
 class ScenarioModel: public QStandardItemModel
 {
     Q_OBJECT
@@ -91,7 +119,9 @@ public:
         IOInput, IOOutput
     };
 
-    void load(QVariantMap &io);
+    IOBase *cloneIO() const;
+
+    void load(const QVariantMap &io);
 
     Q_INVOKABLE void sendTrue();
     Q_INVOKABLE void sendFalse();

@@ -91,6 +91,8 @@ void Application::homeLoaded(QVariantMap &homeData)
     audioModel->load(homeData);
     update_applicationStatus(Common::LoggedIn);
 
+    favModel->load(favoritesList);
+
     saveSettings();
 }
 
@@ -145,6 +147,7 @@ void Application::saveSettings()
     settings.setValue("calaos/cn_pass", get_password());
     settings.setValue("calaos/host", get_hostname());
 
+    favoritesList = favModel->save();
     settings.setValue("app/favorites", favoritesList);
 
     settings.sync();
@@ -159,6 +162,12 @@ void Application::loadSettings()
     update_password(settings.value("calaos/cn_pass", "demo").toString());
     update_hostname(settings.value("calaos/host", "calaos.fr").toString());
 
-    favoritesList = settings.value("app/favorites").toMap();
-    favModel->load(homeModel, favoritesList);
+    favoritesList = settings.value("app/favorites").toList();
+}
+
+void Application::addItemFavorite(QString ioid, int type)
+{
+    favModel->addFavorite(ioid, type);
+
+    saveSettings();
 }

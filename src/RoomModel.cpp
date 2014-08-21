@@ -1,6 +1,62 @@
 #include "RoomModel.h"
 #include <QDebug>
 
+IOBase *IOCache::searchInput(QString id)
+{
+    if (inputCache.contains(id))
+        return inputCache[id];
+
+    return nullptr;
+}
+
+IOBase *IOCache::searchOutput(QString id)
+{
+    if (outputCache.contains(id))
+        return outputCache[id];
+
+    return nullptr;
+}
+
+void IOCache::addInput(IOBase *io)
+{
+    if (io)
+        inputCache[io->get_ioId()] = io;
+}
+
+void IOCache::addOutput(IOBase *io)
+{
+    if (io)
+        outputCache[io->get_ioId()] = io;
+}
+
+void IOCache::delInput(IOBase *io)
+{
+    if (io)
+        inputCache.remove(io->get_ioId());
+}
+
+void IOCache::delOutput(IOBase *io)
+{
+    if (io)
+        outputCache.remove(io->get_ioId());
+}
+
+void IOCache::clearCache()
+{
+    foreach (IOBase *io, inputCache)
+    {
+        delete io;
+    }
+
+    foreach (IOBase *io, outputCache)
+    {
+        delete io;
+    }
+
+    inputCache.clear();
+    outputCache.clear();
+}
+
 ScenarioModel::ScenarioModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent):
     QStandardItemModel(parent),
     engine(eng),
@@ -50,11 +106,14 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel)
     {
         QVariantMap r = it->toMap();
 
+        IOBase *io = new IOBase(connection, IOBase::IOInput);
+        io->load(r);
+        IOCache::Instance().addInput(io);
+
         //create scenario items
         if (r["gui_type"] == "scenario")
         {
-            IOBase *io = new IOBase(connection, IOBase::IOInput);
-            io->load(r);
+            IOBase *io = IOCache::Instance().searchInput(r["id"].toString())->cloneIO();
             scenarioModel->appendRow(io);
         }
 
@@ -66,8 +125,7 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel)
             r["gui_type"] == "scenario" ||
             r["gui_type"] == "sctring_in")
         {
-            IOBase *io = new IOBase(connection, IOBase::IOInput);
-            io->load(r);
+            IOBase *io = IOCache::Instance().searchInput(r["id"].toString())->cloneIO();
             appendRow(io);
         }
     }
@@ -78,6 +136,10 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel)
     for (;it != outputs.end();it++)
     {
         QVariantMap r = it->toMap();
+
+        IOBase *io = new IOBase(connection, IOBase::IOOutput);
+        io->load(r);
+        IOCache::Instance().addOutput(io);
 
         //Hide invisible items
         if (r["visible"] != "true") continue;
@@ -93,8 +155,7 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel)
             r["gui_type"] == "var_string" ||
             r["gui_type"] == "string_out")
         {
-            IOBase *io = new IOBase(connection, IOBase::IOOutput);
-            io->load(r);
+            IOBase *io = IOCache::Instance().searchOutput(r["id"].toString())->cloneIO();
             appendRow(io);
         }
     }
@@ -114,7 +175,7 @@ IOBase::IOBase(CalaosConnection *con, int t):
 {
 }
 
-void IOBase::load(QVariantMap &io)
+void IOBase::load(const QVariantMap &io)
 {
     ioData = io;
 
@@ -135,6 +196,14 @@ void IOBase::load(QVariantMap &io)
     else
         connect(connection, SIGNAL(eventOutputChange(QString,QString,QString)),
                 this, SLOT(outputChanged(QString,QString,QString)));
+}
+
+IOBase *IOBase::cloneIO() const
+{
+    IOBase *newIO = new IOBase(connection, ioType);
+    newIO->load(ioData);
+
+    return newIO;
 }
 
 void IOBase::sendTrue()

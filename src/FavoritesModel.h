@@ -19,13 +19,15 @@ public:
     enum
     {
         RoleType = Qt::UserRole + 1,
-        RoleName,
         RoleId,
     };
 
     Q_INVOKABLE QObject *getItemModel(int idx);
 
-    void load(HomeModel *homeModel, QVariantMap favList);
+    void load(QVariantList favList);
+    QVariantList save();
+
+    bool addFavorite(QString ioid, int type);
 
 private:
     QString name, type;

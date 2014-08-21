@@ -36,5 +36,6 @@
         <file>qml/IOLightDimmer.qml</file>
         <file>qml/IOLightRGB.qml</file>
         <file>qml/IOShutterSmart.qml</file>
+        <file>qml/FavoritesAddView.qml</file>
     </qresource>
 </RCC>

@@ -30,6 +30,8 @@ public:
     Q_INVOKABLE void logout();
     Q_INVOKABLE void resetAllData();
 
+    Q_INVOKABLE void addItemFavorite(QString ioid, int type);
+
     //Pictures utility functions
     Q_INVOKABLE bool needPictureHDPI();
     Q_INVOKABLE QString getPictureSized(QString pic);
@@ -47,7 +49,7 @@ private:
     ScenarioModel *scenarioModel;
     FavoritesModel *favModel;
 
-    QVariantMap favoritesList;
+    QVariantList favoritesList;
 
     void loadSettings();
     void saveSettings();

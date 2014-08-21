@@ -8,9 +8,8 @@ FavoritesModel::FavoritesModel(QQmlApplicationEngine *eng, CalaosConnection *con
     connection(con)
 {
     QHash<int, QByteArray> roles;
-    roles[RoleType] = "ioType";
-    roles[RoleName] = "ioName";
-    roles[RoleId] = "ioId";
+    roles[RoleType] = "type";
+    roles[RoleId] = "id";
     setItemRoleNames(roles);
 }
 
@@ -21,7 +20,63 @@ QObject *FavoritesModel::getItemModel(int idx)
     return obj;
 }
 
-void FavoritesModel::load(HomeModel *homeModel, QVariantMap favList)
+QVariantList FavoritesModel::save()
 {
+    QVariantList lst;
 
+    for (int i = 0;i < rowCount();i++)
+    {
+        QStandardItem *it = dynamic_cast<QStandardItem *>(item(i));
+        if (!it) continue;
+
+        int type = it->data(RoleType).toInt();
+        if (type == Common::FavIO)
+        {
+            QVariantMap vmap;
+            vmap["id"] = it->data(RoleId).toString();
+            vmap["type"] = type;
+            lst.append(vmap);
+        }
+        else
+        {
+            qDebug() << "TODO!";
+        }
+    }
+
+    return lst;
+}
+
+void FavoritesModel::load(QVariantList favList)
+{
+    clear();
+
+    foreach (QVariant var, favList)
+    {
+        QVariantMap vmap = var.toMap();
+
+        if (!addFavorite(vmap["id"].toString(), vmap["type"].toInt()))
+            qDebug() << "Failed to add IO: " << vmap["id"].toString();
+    }
+}
+
+bool FavoritesModel::addFavorite(QString ioid, int type)
+{
+    if (type == Common::FavIO)
+    {
+        IOBase *io = IOCache::Instance().searchInput(ioid);
+        if (!io) io = IOCache::Instance().searchOutput(ioid);
+        if (!io) return false;
+
+        IOBase *newIO = io->cloneIO();
+        newIO->setData(ioid, RoleId);
+        newIO->setData(type, RoleType);
+        appendRow(newIO);
+    }
+    else
+    {
+        qDebug() << "TODO!";
+        return false;
+    }
+
+    return true;
 }

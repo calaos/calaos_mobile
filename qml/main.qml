@@ -150,8 +150,35 @@ Window {
         SettingsView {
             width: parent.width
             height: parent.height - menuBar.height
+
+            onFavoriteAddClicked: {
+                menuBar.menuType = Common.MenuBack
+                stackView.push(favAddView)
+            }
+            onFavoriteEditClicked: {
+                menuBar.menuType = Common.MenuBack
+                stackView.push(favEditView)
+            }
         }
     }
+
+    Component {
+        id: favAddView
+
+        FavoritesAddView {
+            width: parent.width
+            height: parent.height - menuBar.height
+        }
+    }
+
+//    Component {
+//        id: favEditView
+
+//        FavoritesEditView {
+//            width: parent.width
+//            height: parent.height - menuBar.height
+//        }
+//    }
 
     Loading {
         z: 9999 //on top of everything

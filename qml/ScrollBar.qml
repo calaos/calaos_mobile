@@ -45,10 +45,11 @@ Item {
 
     property Flickable listObject
 
-    y: listObject.y
-    height: listObject.height
-    width: 5
-    anchors.right: parent.right
+    y: orientation == Qt.Vertical ?listObject.y:listObject.y+listObject.height
+    height: orientation == Qt.Vertical ?listObject.height: 5
+    width: orientation == Qt.Vertical ?5:listObject.width
+    anchors.right: orientation == Qt.Vertical ?parent.right:undefined
+    anchors.top: orientation == Qt.Vertical ?undefined:listObject.bottom
     opacity: 1
 
     // The properties that define the scrollbar's state.
@@ -56,8 +57,8 @@ Item {
     // height of the page, i.e. a pageSize of 0.5 means that you can see 50%
     // of the height of the view.
     // orientation can be either Qt.Vertical or Qt.Horizontal
-    property real position: listObject.visibleArea.yPosition
-    property real pageSize: listObject.visibleArea.heightRatio
+    property real position: orientation == Qt.Vertical ?listObject.visibleArea.yPosition:listObject.visibleArea.xPosition
+    property real pageSize: orientation == Qt.Vertical ?listObject.visibleArea.heightRatio:listObject.visibleArea.widthRatio
     property int orientation : Qt.Vertical
 
     // Size the bar to the required size, depending upon the orientation.

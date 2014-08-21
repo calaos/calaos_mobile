@@ -2,6 +2,10 @@ import QtQuick 2.0
 import QtQuick.Controls 1.2
 
 Item {
+
+    signal favoriteAddClicked()
+    signal favoriteEditClicked()
+
     Image {
         source: calaosApp.getPictureSized(isLandscape?
                                               "background_landscape":
@@ -44,6 +48,32 @@ Item {
             }
 
             ListGroupHeader { width: listFlick.width; title: qsTr("Favorites:") }
+
+            Item {
+                width: listFlick.width;
+                height: 40 * calaosApp.density
+                Button {
+                    text: qsTr("Add a favorite")
+                    width: 200 * calaosApp.density
+                    height: parent.height
+                    style: StyleButtonDefault { }
+                    onClicked: favoriteAddClicked()
+                    anchors.horizontalCenter: parent.horizontalCenter
+                }
+            }
+
+            Item {
+                width: listFlick.width;
+                height: 40 * calaosApp.density
+                Button {
+                    text: qsTr("Edit favorites list")
+                    width: 200 * calaosApp.density
+                    height: parent.height
+                    style: StyleButtonDefault { }
+                    onClicked: favoriteEditClicked()
+                    anchors.horizontalCenter: parent.horizontalCenter
+                }
+            }
 
         }
 

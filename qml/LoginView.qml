@@ -74,7 +74,23 @@ Item {
             TextField {
                 id: userField
                 width: 200 * calaosApp.density
-                inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase
+                inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
+
+                Image {
+                    fillMode: Image.PreserveAspectFit
+                    source: calaosApp.getPictureSized("icon_cancel")
+                    opacity: parent.text != ""?1:0
+                    Behavior on opacity { NumberAnimation { duration: 100 } }
+                    anchors {
+                        right: parent.right
+                        top: parent.top
+                        bottom: parent.bottom
+                    }
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: { userField.selectAll(); userField.cut() }
+                    }
+                }
             }
 
             Text {
@@ -87,7 +103,23 @@ Item {
                 id: passField
                 width: 200 * calaosApp.density
                 echoMode: TextInput.Password
-                inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase
+                inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
+
+                Image {
+                    fillMode: Image.PreserveAspectFit
+                    source: calaosApp.getPictureSized("icon_cancel")
+                    opacity: parent.text != ""?1:0
+                    Behavior on opacity { NumberAnimation { duration: 100 } }
+                    anchors {
+                        right: parent.right
+                        top: parent.top
+                        bottom: parent.bottom
+                    }
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: { passField.selectAll(); passField.cut() }
+                    }
+                }
             }
 
             Text {
@@ -99,7 +131,23 @@ Item {
             TextField {
                 id: hostField
                 width: 200 * calaosApp.density
-                inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase
+                inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
+
+                Image {
+                    fillMode: Image.PreserveAspectFit
+                    source: calaosApp.getPictureSized("icon_cancel")
+                    opacity: parent.text != ""?1:0
+                    Behavior on opacity { NumberAnimation { duration: 100 } }
+                    anchors {
+                        right: parent.right
+                        top: parent.top
+                        bottom: parent.bottom
+                    }
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: { hostField.selectAll(); hostField.cut() }
+                    }
+                }
             }
 
             Item { /* spacer */ height: 20 * calaosApp.density; width: 200 * calaosApp.density }

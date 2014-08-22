@@ -171,14 +171,14 @@ Window {
         }
     }
 
-//    Component {
-//        id: favEditView
+    Component {
+        id: favEditView
 
-//        FavoritesEditView {
-//            width: parent.width
-//            height: parent.height - menuBar.height
-//        }
-//    }
+        FavoritesEditView {
+            width: parent.width
+            height: parent.height - menuBar.height
+        }
+    }
 
     Loading {
         z: 9999 //on top of everything

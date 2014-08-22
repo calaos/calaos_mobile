@@ -81,7 +81,8 @@ OTHER_FILES += \
     qml/IOLightDimmer.qml \
     qml/IOLightRGB.qml \
     qml/IOShutterSmart.qml \
-    qml/FavoritesAddView.qml
+    qml/FavoritesAddView.qml \
+    qml/FavoritesEditView.qml
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =

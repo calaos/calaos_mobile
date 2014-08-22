@@ -11,6 +11,7 @@ FavoritesModel::FavoritesModel(QQmlApplicationEngine *eng, CalaosConnection *con
     roles[RoleType] = "favType";
     roles[RoleId] = "ioId";
     roles[RoleIOType] = "ioType";
+    roles[RoleName] = "favName";
     setItemRoleNames(roles);
 }
 
@@ -72,6 +73,7 @@ bool FavoritesModel::addFavorite(QString ioid, int type)
         newIO->setData(ioid, RoleId);
         newIO->setData(type, RoleType);
         newIO->setData(newIO->get_ioType(), RoleIOType);
+        newIO->setData(newIO->get_ioName(), RoleName);
         appendRow(newIO);
     }
     else

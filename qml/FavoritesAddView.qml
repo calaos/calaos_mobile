@@ -102,10 +102,6 @@ Item {
         iconSource: calaosApp.getPictureSized("fav")
     }
 
-    Timer {
-
-    }
-
     Component {
         id: default_delegate
 

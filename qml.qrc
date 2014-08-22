@@ -37,5 +37,6 @@
         <file>qml/IOLightRGB.qml</file>
         <file>qml/IOShutterSmart.qml</file>
         <file>qml/FavoritesAddView.qml</file>
+        <file>qml/FavoritesEditView.qml</file>
     </qresource>
 </RCC>

@@ -102,6 +102,10 @@ Item {
         iconSource: calaosApp.getPictureSized("fav")
     }
 
+    Timer {
+
+    }
+
     Component {
         id: default_delegate
 
@@ -136,9 +140,45 @@ Item {
                 }
                 imageSource: "button_plus"
 
-                onButtonClicked: calaosApp.addItemFavorite(ioId, Common.FavIO)
+                onButtonClicked: {
+                    popup.opacity = 1
+                    tmr.start()
+                    calaosApp.addItemFavorite(ioId, Common.FavIO)
+                }
             }
         }
 
+    }
+
+    Timer {
+        id: tmr
+        interval: 1000
+        repeat: false
+        running: false
+        onTriggered: popup.opacity = 0
+    }
+
+    Rectangle {
+        id: popup
+        color: "black"
+        anchors {
+            left: parent.left; right: parent.right
+            verticalCenter: parent.verticalCenter
+        }
+        height: txt.implicitHeight + 36 * calaosApp.density
+
+        visible: opacity > 0
+        opacity: 0
+        Behavior on opacity { NumberAnimation {} }
+
+        Text {
+            id: txt
+            color: "#e7e7e7"
+            font { bold: false; pointSize: 12 }
+            text: "Item added to favorites"
+            clip: true
+            elide: Text.ElideMiddle
+            anchors.centerIn: parent
+        }
     }
 }

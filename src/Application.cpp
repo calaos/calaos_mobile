@@ -140,8 +140,7 @@ QString Application::getPictureSizedPrefix(QString pic, QString prefix)
 
 void Application::saveSettings()
 {
-    QString file = QString("%1/calaos.conf").arg(QStandardPaths::writableLocation(QStandardPaths::DataLocation));
-    QSettings settings(file, QSettings::NativeFormat);
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
 
     settings.setValue("calaos/cn_user", get_username());
     settings.setValue("calaos/cn_pass", get_password());
@@ -155,14 +154,13 @@ void Application::saveSettings()
 
 void Application::loadSettings()
 {
-    QString file = QString("%1/calaos.conf").arg(QStandardPaths::writableLocation(QStandardPaths::DataLocation));
-    QSettings settings(file, QSettings::NativeFormat);
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
 
     update_username(settings.value("calaos/cn_user", "demo@calaos.fr").toString());
     update_password(settings.value("calaos/cn_pass", "demo").toString());
     update_hostname(settings.value("calaos/host", "calaos.fr").toString());
 
-    favoritesList = settings.value("app/favorites").toList();
+    favoritesList = settings.value("app/favorites");
 }
 
 void Application::addItemFavorite(QString ioid, int type)

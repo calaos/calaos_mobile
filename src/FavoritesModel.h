@@ -30,6 +30,7 @@ public:
     QVariantList save();
 
     bool addFavorite(QString ioid, int type);
+    void delItemFavorite(int idx);
 
 private:
     QString name, type;

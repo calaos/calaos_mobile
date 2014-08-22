@@ -169,3 +169,10 @@ void Application::addItemFavorite(QString ioid, int type)
 
     saveSettings();
 }
+
+void Application::delItemFavorite(int idx)
+{
+    favModel->delItemFavorite(idx);
+
+    saveSettings();
+}

@@ -84,3 +84,10 @@ bool FavoritesModel::addFavorite(QString ioid, int type)
 
     return true;
 }
+
+void FavoritesModel::delItemFavorite(int idx)
+{
+    if (idx < 0 || idx >= rowCount()) return;
+
+    removeRow(idx);
+}

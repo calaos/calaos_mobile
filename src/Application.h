@@ -31,6 +31,7 @@ public:
     Q_INVOKABLE void resetAllData();
 
     Q_INVOKABLE void addItemFavorite(QString ioid, int type);
+    Q_INVOKABLE void delItemFavorite(int idx);
 
     //Pictures utility functions
     Q_INVOKABLE bool needPictureHDPI();

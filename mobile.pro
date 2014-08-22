@@ -6,6 +6,7 @@ QT += qml quick network
 
 android {
     QT += androidextras
+    ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
 }
 
 ios {
@@ -82,7 +83,11 @@ OTHER_FILES += \
     qml/IOLightRGB.qml \
     qml/IOShutterSmart.qml \
     qml/FavoritesAddView.qml \
-    qml/FavoritesEditView.qml
+    qml/FavoritesEditView.qml \
+    android/AndroidManifest.xml \
+    android/res/drawable-hdpi/icon.png \
+    android/res/drawable-ldpi/icon.png \
+    android/res/drawable-mdpi/icon.png
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =

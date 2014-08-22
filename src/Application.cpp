@@ -176,3 +176,10 @@ void Application::delItemFavorite(int idx)
 
     saveSettings();
 }
+
+void Application::moveFavorite(int idx, int newidx)
+{
+    favModel->moveFavorite(idx, newidx);
+
+    saveSettings();
+}

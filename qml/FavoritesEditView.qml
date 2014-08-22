@@ -56,6 +56,30 @@ Item {
             width: parent.width - 10 * calaosApp.density
             height: 40 * calaosApp.density
 
+            Item {
+                id: icon
+
+                width: 20 * calaosApp.density
+                height: (5 * 1 + 4 * 2) * calaosApp.density
+
+                Column {
+                    spacing: 2 * calaosApp.density
+                    Repeater {
+                        model: 5
+                        delegate: Rectangle {
+                            color: "#C7C7C7"
+                            width: 20 * calaosApp.density
+                            height: 1 * calaosApp.density
+                        }
+                    }
+                }
+
+                anchors {
+                    left: parent.left; leftMargin: 8 * calaosApp.density
+                    verticalCenter: parent.verticalCenter
+                }
+            }
+
             Text {
                 color: "#3ab4d7"
                 font { bold: false; pointSize: 12 }
@@ -63,7 +87,7 @@ Item {
                 clip: true
                 elide: Text.ElideMiddle
                 anchors {
-                    left: parent.left; leftMargin: 8 * calaosApp.density
+                    left: icon.right; leftMargin: 8 * calaosApp.density
                     right: btadd.left; rightMargin: 8 * calaosApp.density
                     verticalCenter: parent.verticalCenter
                 }
@@ -81,6 +105,67 @@ Item {
                     popup.opacity = 1
                     tmr.restart()
                     calaosApp.delItemFavorite(index)
+                }
+            }
+
+            MouseArea {
+                id: dragArea
+                anchors.fill: icon
+                property int positionStarted: 0
+                property int positionEnded: 0
+                property int positionsMoved: Math.floor((positionEnded - positionStarted)/parent.height)
+                property int newPosition: index + positionsMoved
+                property bool held: false
+                drag.axis: Drag.YAxis
+                onPressAndHold: {
+                    parent.z = 2
+                    positionStarted = parent.y
+                    dragArea.drag.target = parent
+                    parent.opacity = 0.5
+                    listViewFav.interactive = false
+                    held = true
+                    drag.maximumY = (listViewFav.height - parent.height - 1 + listViewFav.contentY)
+                    drag.minimumY = 0
+                }
+                onPositionChanged: {
+                    positionEnded = parent.y
+                }
+                onReleased: {
+                    if (Math.abs(positionsMoved) < 1 && held == true) {
+                        parent.y = positionStarted
+                        parent.opacity = 1
+                        listViewFav.interactive = true
+                        dragArea.drag.target = null
+                        held = false
+                    }
+                    else {
+                        if (held == true) {
+                            if (newPosition < 1) {
+                                parent.z = 1
+                                calaosApp.moveFavorite(index, 0)
+                                parent.opacity = 1
+                                listViewFav.interactive = true
+                                dragArea.drag.target = null
+                                held = false
+                            }
+                            else if (newPosition > listViewFav.count - 1) {
+                                parent.z = 1
+                                calaosApp.moveFavorite(index, listViewFav.count - 1)
+                                parent.opacity = 1
+                                listViewFav.interactive = true
+                                dragArea.drag.target = null
+                                held = false
+                            }
+                            else {
+                                parent.z = 1
+                                calaosApp.moveFavorite(index, newPosition)
+                                parent.opacity = 1
+                                listViewFav.interactive = true
+                                dragArea.drag.target = null
+                                held = false
+                            }
+                        }
+                    }
                 }
             }
         }

@@ -31,6 +31,7 @@ public:
 
     bool addFavorite(QString ioid, int type);
     void delItemFavorite(int idx);
+    void moveFavorite(int idx, int newidx);
 
 private:
     QString name, type;

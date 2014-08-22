@@ -142,6 +142,7 @@ Item {
                     calaosApp.addItemFavorite(ioId, Common.FavIO)
                 }
             }
+
         }
 
     }

@@ -91,3 +91,9 @@ void FavoritesModel::delItemFavorite(int idx)
 
     removeRow(idx);
 }
+
+void FavoritesModel::moveFavorite(int idx, int newidx)
+{
+    QList<QStandardItem *> it = takeRow(idx);
+    insertRow(newidx, it.at(0));
+}

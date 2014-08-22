@@ -20,6 +20,7 @@ public:
     {
         RoleType = Qt::UserRole + 1,
         RoleId,
+        RoleIOType
     };
 
     Q_INVOKABLE QObject *getItemModel(int idx);

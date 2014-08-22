@@ -160,7 +160,7 @@ void Application::loadSettings()
     update_password(settings.value("calaos/cn_pass", "demo").toString());
     update_hostname(settings.value("calaos/host", "calaos.fr").toString());
 
-    favoritesList = settings.value("app/favorites");
+    favoritesList = settings.value("app/favorites").toList();
 }
 
 void Application::addItemFavorite(QString ioid, int type)

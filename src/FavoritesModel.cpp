@@ -8,8 +8,9 @@ FavoritesModel::FavoritesModel(QQmlApplicationEngine *eng, CalaosConnection *con
     connection(con)
 {
     QHash<int, QByteArray> roles;
-    roles[RoleType] = "type";
-    roles[RoleId] = "id";
+    roles[RoleType] = "favType";
+    roles[RoleId] = "ioId";
+    roles[RoleIOType] = "ioType";
     setItemRoleNames(roles);
 }
 
@@ -70,6 +71,7 @@ bool FavoritesModel::addFavorite(QString ioid, int type)
         IOBase *newIO = io->cloneIO();
         newIO->setData(ioid, RoleId);
         newIO->setData(type, RoleType);
+        newIO->setData(newIO->get_ioType(), RoleIOType);
         appendRow(newIO);
     }
     else

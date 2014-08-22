@@ -49,6 +49,7 @@ AudioPlayer::AudioPlayer(CalaosConnection *con):
     QStandardItem(),
     connection(con)
 {
+    loaded = false;
 }
 
 void AudioPlayer::load(QVariantMap &d)

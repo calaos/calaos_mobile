@@ -100,7 +100,7 @@ signals:
     void sig_light_off(IOBase *io);
 
 private:
-    RoomModel *room = nullptr;
+    RoomModel *room;
     QQmlApplicationEngine *engine;
     CalaosConnection *connection;
 };

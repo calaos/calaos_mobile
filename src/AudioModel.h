@@ -70,7 +70,7 @@ public slots:
 private:
     QVariantMap playerData;
     CalaosConnection *connection;
-    bool loaded = false;
+    bool loaded;
 
 };
 

@@ -7,6 +7,7 @@ CalaosConnection::CalaosConnection(QObject *parent) :
     QObject(parent)
 {
     accessManager = new QNetworkAccessManager(this);
+    pollReply = nullptr;
     connect(accessManager, SIGNAL(sslErrors(QNetworkReply*, const QList<QSslError> &)),
             this, SLOT(sslErrors(QNetworkReply*, const QList<QSslError> &)));
 }
@@ -202,7 +203,7 @@ void CalaosConnection::queryState(QStringList inputs, QStringList outputs, QStri
     QJsonObject jroot;
     jroot["cn_user"] = username;
     jroot["cn_pass"] = password;
-    jroot["action"] = "get_state";
+    jroot["action"] = QString("get_state");
     jroot["inputs"] = QJsonValue::fromVariant(inputs);
     jroot["outputs"] = QJsonValue::fromVariant(outputs);
     jroot["audio_players"] = QJsonValue::fromVariant(audio_players);
@@ -229,12 +230,12 @@ void CalaosConnection::startJsonPolling()
     QJsonObject jroot;
     jroot["cn_user"] = username;
     jroot["cn_pass"] = password;
-    jroot["action"] = "poll_listen";
+    jroot["action"] = QString("poll_listen");
     if (uuidPolling.isEmpty())
-        jroot["type"] = "register";
+        jroot["type"] = QString("register");
     else
     {
-        jroot["type"] = "get";
+        jroot["type"] = QString("get");
         jroot["uuid"] = uuidPolling;
     }
     QJsonDocument jdoc(jroot);

@@ -11,14 +11,14 @@ public:
     explicit CalaosConnection(QObject *parent = 0);
 
 private:
-    QNetworkAccessManager *accessManager = nullptr;
+    QNetworkAccessManager *accessManager;
 
     QString username, password;
     QString host;
     QString uuidPolling;
 
     QList<QNetworkReply *> reqReplies;
-    QNetworkReply *pollReply = nullptr;
+    QNetworkReply *pollReply;
 
     void processEvents(QString msg);
 

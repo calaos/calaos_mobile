@@ -156,5 +156,7 @@
         <file>img/part_shutter@2x.png</file>
         <file>img/part_shutter2.png</file>
         <file>img/part_shutter2@2x.png</file>
+        <file>img/logo_full.png</file>
+        <file>img/logo_full@2x.png</file>
     </qresource>
 </RCC>

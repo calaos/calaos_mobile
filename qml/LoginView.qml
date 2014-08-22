@@ -14,14 +14,24 @@ Item {
     Behavior on opacity { PropertyAnimation { } }
 
     Rectangle {
-        color: "#1f3e47"
-        opacity: 0.50
+        color: "black"
+        opacity: 1
         anchors.fill: parent
+
     }
 
+    Image {
+        id: logo
+        source: calaosApp.getPictureSized("logo_full")
+        anchors {
+            bottom: formbg.top; bottomMargin: 20 * calaosApp.density
+            horizontalCenter: formbg.horizontalCenter
+        }
+    }
     Rectangle {
-        color: "black"
-        radius: 30 * calaosApp.density
+        id: formbg
+        color: "#080808"
+        radius: 2 * calaosApp.density
         smooth: true
 
         width: isLandscape?300 * calaosApp.density:parent.width - 20 * calaosApp.density

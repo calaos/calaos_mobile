@@ -19,7 +19,7 @@ Item {
 
     function calcGridSize(rootWidth) {
         //calc GridView size to correctly fit the center of the parent
-        var numItem = Math.round(rootWidth / (150 * calaosApp.density))
+        var numItem = Math.floor(rootWidth / (150 * calaosApp.density))
         if (numItem > lst.count) numItem = lst.count
         lst.width = numItem * (150 * calaosApp.density)
     }

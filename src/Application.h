@@ -50,6 +50,7 @@ private:
     AudioModel *audioModel;
     ScenarioModel *scenarioModel;
     FavoritesModel *favModel;
+    HomeFavModel *favHomeModel;
 
     QVariantList favoritesList;
 

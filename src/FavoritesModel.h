@@ -9,6 +9,30 @@
 #include "Common.h"
 
 class HomeModel;
+class IOBase;
+
+class HomeFavModel: public QStandardItemModel
+{
+    Q_OBJECT
+public:
+    HomeFavModel(QQmlApplicationEngine *engine, CalaosConnection *con, QObject *parent = 0);
+
+    enum
+    {
+        RoleType = Qt::UserRole + 1,
+        RoleHits,
+        RoleName
+    };
+
+    void load(QVariantMap &homeData);
+
+    Q_INVOKABLE QObject *getRoomModel(int idx) const;
+
+private:
+
+    QQmlApplicationEngine *engine;
+    CalaosConnection *connection;
+};
 
 class FavoritesModel: public QStandardItemModel
 {

@@ -42,11 +42,12 @@ class RoomItem: public QObject, public QStandardItem
     QML_READONLY_PROPERTY_MODEL(int, roomHits, HomeModel::RoleHits)
     QML_READONLY_PROPERTY_MODEL(QString, roomName, HomeModel::RoleName)
 public:
+
     RoomItem(QQmlApplicationEngine *engine, CalaosConnection *con);
 
     Q_INVOKABLE QObject *getRoomModel() const;
 
-    void load(QVariantMap &roomData, ScenarioModel *scenarioModel);
+    void load(QVariantMap &roomData, ScenarioModel *scenarioModel, int load_flag);
 
 private:
     RoomModel *room = nullptr;

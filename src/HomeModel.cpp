@@ -36,7 +36,7 @@ void HomeModel::load(QVariantMap &homeData)
         room->update_roomName(r["name"].toString());
         room->update_roomType(r["type"].toString());
         room->update_roomHits(r["hits"].toString().toInt());
-        room->load(r, scenarioModel);
+        room->load(r, scenarioModel, RoomModel::LoadNormal);
         appendRow(room);
     }
 }
@@ -44,7 +44,7 @@ void HomeModel::load(QVariantMap &homeData)
 QObject *HomeModel::getRoomModel(int idx) const
 {
     RoomItem *it = dynamic_cast<RoomItem *>(item(idx));
-    if (!it) return NULL;
+    if (!it) return nullptr;
     return it->getRoomModel();
 }
 
@@ -62,7 +62,7 @@ QObject *RoomItem::getRoomModel() const
     return room;
 }
 
-void RoomItem::load(QVariantMap &roomData, ScenarioModel *scenarioModel)
+void RoomItem::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int load_flag)
 {
-    room->load(roomData, scenarioModel);
+    room->load(roomData, scenarioModel, load_flag);
 }

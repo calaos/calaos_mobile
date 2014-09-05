@@ -13,7 +13,7 @@ Item {
 
     ListView {
         id: roomList
-        model: homeModel
+        model: favoritesHomeModel
         orientation: ListView.Horizontal
 
         y: header.height
@@ -80,7 +80,7 @@ Item {
     ListView {
         id: itemView
 
-        model: homeModel.getRoomModel(roomList.currentIndex)
+        model: favoritesHomeModel.getRoomModel(roomList.currentIndex)
 
         clip: true
         anchors {

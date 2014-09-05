@@ -26,6 +26,7 @@ function getRoomTypeIcon(room) {
     else if (room == "couloir") rname = "corridor";
     else if (room == "corridor") rname = "corridor";
     else if (room == "garage") rname = "garage";
+    else if (room == "fav") rname = "fav";
 
     else rname = "various";
 

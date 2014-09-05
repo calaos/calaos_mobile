@@ -89,7 +89,7 @@ RoomModel::RoomModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject 
     setItemRoleNames(roles);
 }
 
-void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel)
+void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int load_flag)
 {
     clear();
 
@@ -111,14 +111,15 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel)
         IOCache::Instance().addInput(io);
 
         //create scenario items
-        if (r["gui_type"] == "scenario")
+        if (r["gui_type"] == "scenario" && scenarioModel)
         {
             IOBase *io = IOCache::Instance().searchInput(r["id"].toString())->cloneIO();
             scenarioModel->appendRow(io);
         }
 
         //Hide invisible items
-        if (r["visible"] != "true") continue;
+        if (r["visible"] != "true")
+            continue;
 
         if (r["gui_type"] == "temp" ||
             r["gui_type"] == "analog_in" ||
@@ -141,8 +142,20 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel)
         io->load(r);
         IOCache::Instance().addOutput(io);
 
+        if (load_flag == RoomModel::LoadAll)
+        {
+            if (r["gui_type"] == "audio_output" ||
+                r["gui_type"] == "camera_output" ||
+                r["gui_type"] == "fav")
+            {
+                IOBase *io = IOCache::Instance().searchOutput(r["id"].toString())->cloneIO();
+                appendRow(io);
+            }
+        }
+
         //Hide invisible items
-        if (r["visible"] != "true") continue;
+        if (r["visible"] != "true")
+            continue;
 
         if (r["gui_type"] == "light" ||
             r["gui_type"] == "light_dimmer" ||

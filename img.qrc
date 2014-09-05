@@ -158,5 +158,7 @@
         <file>img/part_shutter2@2x.png</file>
         <file>img/logo_full.png</file>
         <file>img/logo_full@2x.png</file>
+        <file>img/rooms/fav.png</file>
+        <file>img/rooms/fav@2x.png</file>
     </qresource>
 </RCC>

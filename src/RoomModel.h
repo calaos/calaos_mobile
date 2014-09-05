@@ -74,7 +74,12 @@ public:
         RoleRW
     };
 
-    void load(QVariantMap &roomData, ScenarioModel *scenarioModel);
+    enum {
+        LoadNormal = 0, //Load only normal IOs
+        LoadAll //load everything (even camera, audio, ...)
+    };
+
+    void load(QVariantMap &roomData, ScenarioModel *scenarioModel, int load_flag);
 
     Q_INVOKABLE QObject *getItemModel(int idx);
 

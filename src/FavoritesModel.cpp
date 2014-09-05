@@ -97,3 +97,76 @@ void FavoritesModel::moveFavorite(int idx, int newidx)
     QList<QStandardItem *> it = takeRow(idx);
     insertRow(newidx, it.at(0));
 }
+
+HomeFavModel::HomeFavModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent) :
+    QStandardItemModel(parent),
+    engine(eng),
+    connection(con)
+{
+    QHash<int, QByteArray> roles;
+    roles[RoleType] = "roomType";
+    roles[RoleHits] = "roomHits";
+    roles[RoleName] = "roomName";
+    setItemRoleNames(roles);
+}
+
+void HomeFavModel::load(QVariantMap &homeData)
+{
+    clear();
+
+    if (!homeData.contains("home"))
+    {
+        qDebug() << "no home entry";
+        return;
+    }
+
+    //Create a special favorites Room for adding special items to favorites list (non IO items)
+    RoomItem *room = new RoomItem(engine, connection);
+
+    QVariantList lst;
+
+    {
+        QVariantMap it;
+        it["name"] = tr("All lights On");
+        it["type"] = "fav_all_lights";
+        it["gui_type"] = "fav";
+        it["id"] = "fav_all_lights";
+        lst.append(it);
+    }
+
+    QVariantMap items;
+    items["outputs"] = lst;
+
+    QVariantMap r;
+    r["name"] = tr("Special");
+    r["type"] = "fav";
+    r["hits"] = 9999999;
+    r["items"] = items;
+
+    room->update_roomName(r["name"].toString());
+    room->update_roomType(r["type"].toString());
+    room->update_roomHits(r["hits"].toString().toInt());
+    room->load(r, nullptr, RoomModel::LoadAll);
+    appendRow(room);
+
+    //Add normal rooms
+    QVariantList rooms = homeData["home"].toList();
+    QVariantList::iterator it = rooms.begin();
+    for (;it != rooms.end();it++)
+    {
+        QVariantMap r = it->toMap();
+        RoomItem *room = new RoomItem(engine, connection);
+        room->update_roomName(r["name"].toString());
+        room->update_roomType(r["type"].toString());
+        room->update_roomHits(r["hits"].toString().toInt());
+        room->load(r, nullptr, RoomModel::LoadAll);
+        appendRow(room);
+    }
+}
+
+QObject *HomeFavModel::getRoomModel(int idx) const
+{
+    RoomItem *it = dynamic_cast<RoomItem *>(item(idx));
+    if (!it) return nullptr;
+    return it->getRoomModel();
+}

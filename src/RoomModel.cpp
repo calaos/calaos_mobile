@@ -86,6 +86,7 @@ RoomModel::RoomModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject 
     roles[RoleHits] = "ioHits";
     roles[RoleName] = "ioName";
     roles[RoleId] = "ioId";
+    roles[RoleRoomName] = "roomName";
     setItemRoleNames(roles);
 }
 
@@ -108,6 +109,7 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
 
         IOBase *io = new IOBase(connection, IOBase::IOInput);
         io->load(r);
+        io->update_room_name(name);
         IOCache::Instance().addInput(io);
 
         //create scenario items
@@ -142,6 +144,7 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
         connect(io, SIGNAL(light_on()), this, SIGNAL(sig_light_on()));
         connect(io, SIGNAL(light_off()), this, SIGNAL(sig_light_off()));
         io->load(r);
+        io->update_room_name(name);
         IOCache::Instance().addOutput(io);
 
         if (load_flag == RoomModel::LoadAll)
@@ -229,6 +232,7 @@ IOBase *IOBase::cloneIO() const
 {
     IOBase *newIO = new IOBase(connection, ioType);
     newIO->load(ioData);
+    newIO->update_room_name(get_room_name());
 
     return newIO;
 }

@@ -4,6 +4,48 @@ import Calaos 1.0
 ListView {
     id: lst
 
+    Component {
+        id: sectionHeading
+        Rectangle {
+            z: 99
+            width: lst.width
+            color: "black"
+            height: 45 * calaosApp.density
+
+            Image {
+                id: ic
+                source: calaosApp.getPictureSized("icon_room")
+                anchors {
+                    verticalCenter: parent.verticalCenter
+                    left: parent.left; leftMargin: 10 * calaosApp.density
+                }
+            }
+
+            Text {
+                id: txt
+                color: "#e7e7e7"
+                font { bold: false; pointSize: 12 }
+                text: section
+                anchors {
+                    left: ic.source === ""?parent.left:ic.right
+                    leftMargin: 5 * calaosApp.density
+                    verticalCenter: parent.verticalCenter
+                }
+            }
+
+            Rectangle {
+                anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+                color: "#333333"
+                height: 2 * calaosApp.density
+            }
+        }
+    }
+
+    section.property: "roomName"
+    section.criteria: ViewSection.FullString
+    section.delegate: sectionHeading
+    section.labelPositioning: ViewSection.InlineLabels | ViewSection.CurrentLabelAtStart
+
     width: parent.width
     height: parent.height
 

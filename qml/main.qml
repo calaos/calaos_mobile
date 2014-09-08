@@ -112,8 +112,6 @@ Window {
         RoomDetailView {
             height: parent.height
             width: parent.width
-
-            headerLabel: currentRoomName
         }
     }
 

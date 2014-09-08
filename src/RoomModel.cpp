@@ -109,6 +109,7 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
 
         IOBase *io = new IOBase(connection, IOBase::IOInput);
         io->load(r);
+        io->checkFirstState();
         io->update_room_name(name);
         IOCache::Instance().addInput(io);
 
@@ -144,6 +145,7 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
         connect(io, SIGNAL(light_on(IOBase*)), this, SIGNAL(sig_light_on(IOBase*)));
         connect(io, SIGNAL(light_off(IOBase*)), this, SIGNAL(sig_light_off(IOBase*)));
         io->load(r);
+        io->checkFirstState();
         io->update_room_name(name);
         IOCache::Instance().addOutput(io);
 
@@ -214,7 +216,10 @@ void IOBase::load(const QVariantMap &io)
     else
         connect(connection, SIGNAL(eventOutputChange(QString,QString,QString)),
                 this, SLOT(outputChanged(QString,QString,QString)));
+}
 
+void IOBase::checkFirstState()
+{
     if (get_ioType() == Common::Light)
     {
         if (getStateBool())
@@ -446,6 +451,7 @@ void IOBase::outputChanged(QString id, QString key, QString value)
         {
             if (getStateBool() != (value == "true"))
             {
+                ioData["state"] = value;
                 if (value == "true")
                     emit light_on(this);
                 else
@@ -457,6 +463,7 @@ void IOBase::outputChanged(QString id, QString key, QString value)
         {
             if ((getStateInt() > 0) != (value.toDouble() > 0))
             {
+                ioData["state"] = value;
                 if (value.toDouble() > 0)
                     emit light_on(this);
                 else

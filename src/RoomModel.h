@@ -135,6 +135,8 @@ public:
 
     void load(const QVariantMap &io);
 
+    void checkFirstState();
+
     Q_INVOKABLE void sendTrue();
     Q_INVOKABLE void sendFalse();
     Q_INVOKABLE void sendInc();

@@ -58,6 +58,33 @@ Item {
                 Behavior on opacity { PropertyAnimation { duration: 100 } }
             }
 
+            Image {
+                id: lighticon
+                source: calaosApp.getPictureSized("icon_light_on")
+
+                visible: lights_on_count > 0
+
+                anchors {
+                    horizontalCenter: parent.horizontalCenter
+                    horizontalCenterOffset: 30 * calaosApp.density
+                    bottom: parent.bottom
+                    bottomMargin: 8 * calaosApp.density
+                }
+            }
+
+            Text {
+                text: lights_on_count
+                visible: lights_on_count > 0
+                color: "#ffda5a"
+                elide: Text.ElideRight
+                anchors {
+                    verticalCenter: lighticon.verticalCenter
+                    left: lighticon.right; leftMargin: 5 * calaosApp.density
+                    right: parent.right; rightMargin: 2 * calaosApp.density
+                }
+                font { bold: false; pointSize: 8 }
+            }
+
             MouseArea {
                 id: ms
                 anchors.fill: parent

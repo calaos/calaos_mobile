@@ -24,7 +24,7 @@ public:
         RoleType = Qt::UserRole + 1,
         RoleHits,
         RoleName,
-        LightsCountName
+        RoleLightsCount
     };
 
     void load(QVariantMap &homeData);
@@ -50,7 +50,7 @@ class RoomItem: public QObject, public QStandardItem
     QML_READONLY_PROPERTY_MODEL(int, roomHits, HomeModel::RoleHits)
     QML_READONLY_PROPERTY_MODEL(QString, roomName, HomeModel::RoleName)
 
-    QML_READONLY_PROPERTY_MODEL(int, lights_on_count, HomeModel::LightsCountName)
+    QML_READONLY_PROPERTY_MODEL(int, lights_on_count, HomeModel::RoleLightsCount)
 public:
 
     RoomItem(QQmlApplicationEngine *engine, CalaosConnection *con);

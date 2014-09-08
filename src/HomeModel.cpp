@@ -12,6 +12,7 @@ HomeModel::HomeModel(QQmlApplicationEngine *eng, CalaosConnection *con, Scenario
     roles[RoleType] = "roomType";
     roles[RoleHits] = "roomHits";
     roles[RoleName] = "roomName";
+    roles[RoleLightsCount] = "lights_on_count";
     setItemRoleNames(roles);
 
     update_lights_on_count(0);

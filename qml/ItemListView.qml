@@ -28,6 +28,7 @@ ListView {
                              model.ioType === Common.LightDimmer? light_dimmer:
                              model.ioType === Common.LightRgb? light_rgb:
                              model.ioType === Common.ShutterSmart? shutter_smart:
+                             model.ioType === Common.FavoritesLightsCount? fav_all_lights:
                              default_delegate
 
             onLoaded: {
@@ -78,4 +79,5 @@ ListView {
     Component { id: light_dimmer; IOLightDimmer {} }
     Component { id: light_rgb; IOLightRGB {} }
     Component { id: shutter_smart; IOShutterSmart {} }
+    Component { id: fav_all_lights; IOFavAllLights {} }
 }

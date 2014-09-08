@@ -129,7 +129,7 @@ void HomeFavModel::load(QVariantMap &homeData)
         QVariantMap it;
         it["name"] = tr("All lights On");
         it["type"] = "fav_all_lights";
-        it["gui_type"] = "fav";
+        it["gui_type"] = "fav_all_lights";
         it["id"] = "fav_all_lights";
         lst.append(it);
     }

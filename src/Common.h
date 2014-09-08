@@ -49,7 +49,8 @@ public:
         AudioInput,
         AudioOutput,
         CameraInput,
-        CameraOutput
+        CameraOutput,
+        FavoritesLightsCount
     };
     Q_ENUMS(IOType)
 

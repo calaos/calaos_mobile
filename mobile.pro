@@ -87,7 +87,8 @@ OTHER_FILES += \
     android/AndroidManifest.xml \
     android/res/drawable-hdpi/icon.png \
     android/res/drawable-ldpi/icon.png \
-    android/res/drawable-mdpi/icon.png
+    android/res/drawable-mdpi/icon.png \
+    qml/IOFavAllLights.qml
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =

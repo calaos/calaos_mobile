@@ -13,6 +13,9 @@ class ScenarioModel;
 class HomeModel: public QStandardItemModel
 {
     Q_OBJECT
+
+    QML_READONLY_PROPERTY(int, lights_on_count)
+
 public:
     HomeModel(QQmlApplicationEngine *engine, CalaosConnection *con, ScenarioModel *scModel, QObject *parent = 0);
 
@@ -20,12 +23,17 @@ public:
     {
         RoleType = Qt::UserRole + 1,
         RoleHits,
-        RoleName
+        RoleName,
+        LightsCountName
     };
 
     void load(QVariantMap &homeData);
 
     Q_INVOKABLE QObject *getRoomModel(int idx) const;
+
+public slots:
+    void newlight_on();
+    void newlight_off();
 
 private:
 
@@ -41,6 +49,8 @@ class RoomItem: public QObject, public QStandardItem
     QML_READONLY_PROPERTY_MODEL(QString, roomType, HomeModel::RoleType)
     QML_READONLY_PROPERTY_MODEL(int, roomHits, HomeModel::RoleHits)
     QML_READONLY_PROPERTY_MODEL(QString, roomName, HomeModel::RoleName)
+
+    QML_READONLY_PROPERTY_MODEL(int, lights_on_count, HomeModel::LightsCountName)
 public:
 
     RoomItem(QQmlApplicationEngine *engine, CalaosConnection *con);
@@ -48,6 +58,14 @@ public:
     Q_INVOKABLE QObject *getRoomModel() const;
 
     void load(QVariantMap &roomData, ScenarioModel *scenarioModel, int load_flag);
+
+public slots:
+    void newlight_on();
+    void newlight_off();
+
+signals:
+    void sig_light_on();
+    void sig_light_off();
 
 private:
     RoomModel *room = nullptr;

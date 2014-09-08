@@ -160,5 +160,7 @@
         <file>img/logo_full@2x.png</file>
         <file>img/rooms/fav.png</file>
         <file>img/rooms/fav@2x.png</file>
+        <file>img/button_more.png</file>
+        <file>img/button_more@2x.png</file>
     </qresource>
 </RCC>

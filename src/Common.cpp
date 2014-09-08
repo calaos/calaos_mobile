@@ -29,6 +29,7 @@ QString Common::IOTypeToString(Common::IOType t)
     case AudioOutput: return "audio_output";
     case CameraInput: return "camera_input";
     case CameraOutput: return "camera_output";
+    case FavoritesLightsCount: return "fav_all_lights";
     default: break;
     }
 
@@ -62,6 +63,7 @@ Common::IOType Common::IOTypeFromString(QString t)
     if (t == "audio_output") return AudioOutput;
     if (t == "camera_input") return CameraInput;
     if (t == "camera_output") return CameraOutput;
+    if (t == "fav_all_lights") return FavoritesLightsCount;
 
     return Unkown;
 }

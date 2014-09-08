@@ -19,7 +19,6 @@ void CalaosConnection::login(QString user, QString pass, QString h)
 {
     username = user;
     password = pass;
-    host = h;
     uuidPolling.clear();
 
     QJsonObject jroot;
@@ -31,7 +30,12 @@ void CalaosConnection::login(QString user, QString pass, QString h)
     connect(accessManager, SIGNAL(finished(QNetworkReply*)),
             this, SLOT(loginFinished(QNetworkReply*)));
 
-    QUrl url(QString("https://%1/api.php").arg(host));
+    if (host.startsWith("http://") || host.startsWith("https://"))
+        host = h;
+    else
+        host = QString("https://%1/api.php").arg(h);
+
+    QUrl url(host);
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     accessManager->post(request, jdoc.toJson());
@@ -169,7 +173,7 @@ void CalaosConnection::sendCommand(QString id, QString value, QString type, QStr
 
     qDebug() << "SEND: " << jdoc.toJson();
 
-    QUrl url(QString("https://%1/api.php").arg(host));
+    QUrl url(host);
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     QNetworkReply *reqReply = accessManager->post(request, jdoc.toJson());
@@ -193,7 +197,7 @@ void CalaosConnection::queryState(QStringList inputs, QStringList outputs, QStri
 
     qDebug() << "SEND: " << jdoc.toJson();
 
-    QUrl url(QString("https://%1/api.php").arg(host));
+    QUrl url(host);
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     QNetworkReply *reqReply = accessManager->post(request, jdoc.toJson());
@@ -222,7 +226,7 @@ void CalaosConnection::startJsonPolling()
     }
     QJsonDocument jdoc(jroot);
 
-    QUrl url(QString("https://%1/api.php").arg(host));
+    QUrl url(host);
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     pollReply = accessManager->post(request, jdoc.toJson());

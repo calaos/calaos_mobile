@@ -75,6 +75,7 @@ ListView {
 
             onLoaded: {
                 item.modelData = Qt.binding(function() { return lst.model.getItemModel(model.index) })
+                console.debug("model is: " + model.roomName)
             }
 
             anchors.horizontalCenter: parent.horizontalCenter

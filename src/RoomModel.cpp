@@ -109,8 +109,8 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
 
         IOBase *io = new IOBase(connection, IOBase::IOInput);
         io->load(r);
-        io->checkFirstState();
         io->update_room_name(name);
+        io->checkFirstState();
         IOCache::Instance().addInput(io);
 
         //create scenario items
@@ -145,8 +145,8 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
         connect(io, SIGNAL(light_on(IOBase*)), this, SIGNAL(sig_light_on(IOBase*)));
         connect(io, SIGNAL(light_off(IOBase*)), this, SIGNAL(sig_light_off(IOBase*)));
         io->load(r);
-        io->checkFirstState();
         io->update_room_name(name);
+        io->checkFirstState();
         IOCache::Instance().addOutput(io);
 
         if (load_flag == RoomModel::LoadAll)

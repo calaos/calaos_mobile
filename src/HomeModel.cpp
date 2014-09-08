@@ -2,11 +2,12 @@
 #include <QDebug>
 #include "RoomModel.h"
 
-HomeModel::HomeModel(QQmlApplicationEngine *eng, CalaosConnection *con, ScenarioModel *scModel, QObject *parent) :
+HomeModel::HomeModel(QQmlApplicationEngine *eng, CalaosConnection *con, ScenarioModel *scModel, LightOnModel *lModel, QObject *parent) :
     QStandardItemModel(parent),
     engine(eng),
     connection(con),
-    scenarioModel(scModel)
+    scenarioModel(scModel),
+    lightOnModel(lModel)
 {
     QHash<int, QByteArray> roles;
     roles[RoleType] = "roomType";
@@ -36,8 +37,8 @@ void HomeModel::load(QVariantMap &homeData)
     {
         QVariantMap r = it->toMap();
         RoomItem *room = new RoomItem(engine, connection);
-        connect(room, SIGNAL(sig_light_on()), this, SLOT(newlight_on()));
-        connect(room, SIGNAL(sig_light_off()), this, SLOT(newlight_off()));
+        connect(room, SIGNAL(sig_light_on(IOBase*)), this, SLOT(newlight_on(IOBase*)));
+        connect(room, SIGNAL(sig_light_off(IOBase*)), this, SLOT(newlight_off(IOBase*)));
 
         room->update_roomName(r["name"].toString());
         room->update_roomType(r["type"].toString());
@@ -54,16 +55,20 @@ QObject *HomeModel::getRoomModel(int idx) const
     return it->getRoomModel();
 }
 
-void HomeModel::newlight_on()
+void HomeModel::newlight_on(IOBase *io)
 {
     update_lights_on_count(get_lights_on_count() + 1);
+
+    lightOnModel->addLight(io);
 }
 
-void HomeModel::newlight_off()
+void HomeModel::newlight_off(IOBase *io)
 {
     int l = get_lights_on_count() - 1;
     if (l < 0) l = 0;
     update_lights_on_count(l);
+
+    lightOnModel->removeLight(io);
 }
 
 RoomItem::RoomItem(QQmlApplicationEngine *eng, CalaosConnection *con):
@@ -73,8 +78,8 @@ RoomItem::RoomItem(QQmlApplicationEngine *eng, CalaosConnection *con):
 {
     update_lights_on_count(0);
     room = new RoomModel(engine, connection, this);
-    connect(room, SIGNAL(sig_light_on()), this, SLOT(newlight_on()));
-    connect(room, SIGNAL(sig_light_off()), this, SLOT(newlight_off()));
+    connect(room, SIGNAL(sig_light_on(IOBase*)), this, SLOT(newlight_on(IOBase*)));
+    connect(room, SIGNAL(sig_light_off(IOBase*)), this, SLOT(newlight_off(IOBase*)));
     engine->setObjectOwnership(room, QQmlEngine::CppOwnership);
 }
 
@@ -88,16 +93,55 @@ void RoomItem::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int loa
     room->load(roomData, scenarioModel, load_flag);
 }
 
-void RoomItem::newlight_on()
+void RoomItem::newlight_on(IOBase *io)
 {
     update_lights_on_count(get_lights_on_count() + 1);
-    emit sig_light_on();
+    emit sig_light_on(io);
 }
 
-void RoomItem::newlight_off()
+void RoomItem::newlight_off(IOBase *io)
 {
     int l = get_lights_on_count() - 1;
     if (l < 0) l = 0;
     update_lights_on_count(l);
-    emit sig_light_off();
+    emit sig_light_off(io);
+}
+
+LightOnModel::LightOnModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent):
+    QStandardItemModel(parent),
+    engine(eng),
+    connection(con)
+{
+    QHash<int, QByteArray> roles;
+    roles[RoleType] = "ioType";
+    roles[RoleHits] = "ioHits";
+    roles[RoleName] = "ioName";
+    roles[RoleId] = "ioId";
+    roles[RoleRoomName] = "roomName";
+    setItemRoleNames(roles);
+}
+
+QObject *LightOnModel::getItemModel(int idx)
+{
+    IOBase *obj = dynamic_cast<IOBase *>(item(idx));
+    if (obj) engine->setObjectOwnership(obj, QQmlEngine::CppOwnership);
+    return obj;
+}
+
+void LightOnModel::addLight(IOBase *io)
+{
+    appendRow(io->cloneIO());
+}
+
+void LightOnModel::removeLight(IOBase *io)
+{
+    for (int i = 0;i < rowCount();i++)
+    {
+        IOBase *cur = dynamic_cast<IOBase *>(item(i));
+        if (cur->get_ioId() == io->get_ioId())
+        {
+            removeRow(i);
+            break;
+        }
+    }
 }

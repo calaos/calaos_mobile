@@ -47,7 +47,9 @@ Application::Application(int & argc, char ** argv) :
 
     scenarioModel = new ScenarioModel(&engine, calaosConnect, this);
     engine.rootContext()->setContextProperty("scenarioModel", scenarioModel);
-    homeModel = new HomeModel(&engine, calaosConnect, scenarioModel, this);
+    lightOnModel = new LightOnModel(&engine, calaosConnect, this);
+    engine.rootContext()->setContextProperty("lightOnModel", lightOnModel);
+    homeModel = new HomeModel(&engine, calaosConnect, scenarioModel, lightOnModel, this);
     engine.rootContext()->setContextProperty("homeModel", homeModel);
     audioModel = new AudioModel(&engine, calaosConnect, this);
     engine.rootContext()->setContextProperty("audioModel", audioModel);

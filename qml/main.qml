@@ -112,6 +112,24 @@ Window {
         RoomDetailView {
             height: parent.height
             width: parent.width
+
+            roomItemModel: roomModel
+        }
+    }
+
+    function openLightsOnView() {
+        menuBar.menuType = Common.MenuBack
+        stackView.push(lightsOnDetailView)
+    }
+
+    Component {
+        id: lightsOnDetailView
+
+        RoomDetailView {
+            height: parent.height
+            width: parent.width
+
+            roomItemModel: lightOnModel
         }
     }
 

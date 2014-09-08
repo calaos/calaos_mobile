@@ -2,6 +2,8 @@ import QtQuick 2.0
 
 Item {
 
+    property alias roomItemModel: listView.model
+
     Image {
         source: calaosApp.getPictureSized(isLandscape?
                                               "background_landscape":
@@ -12,8 +14,6 @@ Item {
 
     ItemListView {
         id: listView
-
-        model: roomModel
 
         width: parent.width
         height: parent.height

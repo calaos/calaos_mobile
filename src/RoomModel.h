@@ -85,8 +85,8 @@ public:
     Q_INVOKABLE QObject *getItemModel(int idx);
 
 signals:
-    void sig_light_on();
-    void sig_light_off();
+    void sig_light_on(IOBase *io);
+    void sig_light_off(IOBase *io);
 
 private:
     QString name, type, hits;
@@ -173,8 +173,10 @@ private slots:
 signals:
     void stateChange();
 
-    void light_on();
-    void light_off();
+    void light_on(IOBase *io);
+    void light_off(IOBase *io);
 };
+
+Q_DECLARE_METATYPE(IOBase *)
 
 #endif // ROOMMODEL_H

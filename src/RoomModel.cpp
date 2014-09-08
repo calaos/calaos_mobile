@@ -141,8 +141,8 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
         QVariantMap r = it->toMap();
 
         IOBase *io = new IOBase(connection, IOBase::IOOutput);
-        connect(io, SIGNAL(light_on()), this, SIGNAL(sig_light_on()));
-        connect(io, SIGNAL(light_off()), this, SIGNAL(sig_light_off()));
+        connect(io, SIGNAL(light_on(IOBase*)), this, SIGNAL(sig_light_on(IOBase*)));
+        connect(io, SIGNAL(light_off(IOBase*)), this, SIGNAL(sig_light_off(IOBase*)));
         io->load(r);
         io->update_room_name(name);
         IOCache::Instance().addOutput(io);
@@ -218,13 +218,13 @@ void IOBase::load(const QVariantMap &io)
     if (get_ioType() == Common::Light)
     {
         if (getStateBool())
-            emit light_on();
+            emit light_on(this);
     }
     else if (get_ioType() == Common::LightDimmer ||
              get_ioType() == Common::LightRgb)
     {
         if (getStateInt() > 0)
-            emit light_on();
+            emit light_on(this);
     }
 }
 
@@ -447,9 +447,9 @@ void IOBase::outputChanged(QString id, QString key, QString value)
             if (getStateBool() != (value == "true"))
             {
                 if (value == "true")
-                    emit light_on();
+                    emit light_on(this);
                 else
-                    emit light_off();
+                    emit light_off(this);
             }
         }
         else if (get_ioType() == Common::LightDimmer ||
@@ -458,9 +458,9 @@ void IOBase::outputChanged(QString id, QString key, QString value)
             if ((getStateInt() > 0) != (value.toDouble() > 0))
             {
                 if (value.toDouble() > 0)
-                    emit light_on();
+                    emit light_on(this);
                 else
-                    emit light_off();
+                    emit light_off(this);
             }
         }
 

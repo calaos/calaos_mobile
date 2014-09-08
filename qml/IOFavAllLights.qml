@@ -46,7 +46,7 @@ BorderImage {
         }
         imageSource: "button_more"
 
-        //onButtonClicked: modelData.sendTrue()
+        onButtonClicked: openLightsOnView()
     }
 
 }

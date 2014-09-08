@@ -51,6 +51,7 @@ private:
     ScenarioModel *scenarioModel;
     FavoritesModel *favModel;
     HomeFavModel *favHomeModel;
+    LightOnModel *lightOnModel;
 
     QVariantList favoritesList;
 

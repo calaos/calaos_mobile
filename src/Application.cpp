@@ -35,6 +35,7 @@ Application::Application(int & argc, char ** argv) :
 
     loadSettings();
 
+    hwUtils = new HardwareUtils(this);
     update_applicationStatus(Common::NotConnected);
 
     calaosConnect = new CalaosConnection(this);
@@ -104,6 +105,8 @@ void Application::homeLoaded(QVariantMap &homeData)
 void Application::loginFailed()
 {
     update_applicationStatus(Common::NotConnected);
+
+    hwUtils->showAlertMessage(tr("Error"), tr("Login failed!"));
 }
 
 bool Application::needPictureHDPI()

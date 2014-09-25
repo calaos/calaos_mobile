@@ -10,6 +10,7 @@
 #include "AudioModel.h"
 #include "RoomModel.h"
 #include "FavoritesModel.h"
+#include "HardwareUtils.h"
 
 class Application : public QGuiApplication
 {
@@ -44,6 +45,7 @@ private slots:
     void loginFailed();
 
 private:
+    HardwareUtils *hwUtils;
     QQmlApplicationEngine engine;
     CalaosConnection *calaosConnect;
     HomeModel *homeModel;

@@ -20,6 +20,12 @@ ios {
     ios/Icon.png \
     ios/Icon@2x.png
     QMAKE_BUNDLE_DATA += ICON
+
+    OBJECTIVE_SOURCES += ios/HardwareUtils.mm
+}
+
+!ios {
+SOURCES += src/HardwareUtils.cpp
 }
 
 CONFIG += c++11
@@ -104,4 +110,5 @@ HEADERS += \
     src/Common.h \
     src/RoomModel.h \
     src/AudioModel.h \
-    src/FavoritesModel.h
+    src/FavoritesModel.h \
+    src/HardwareUtils.h

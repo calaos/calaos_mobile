@@ -62,7 +62,7 @@ void HardwareUtils::showNetworkActivity(bool en)
     Q_UNUSED(en)
 }
 
-void HardwareUtils::emitApplicationWillResignActive()
+void HardwareUtils::emitApplicationActiveChanged(bool active)
 {
     emit applicationWillResignActive();
 }

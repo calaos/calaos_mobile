@@ -22,6 +22,13 @@ Application::Application(int & argc, char ** argv) :
         logout();
     });
 
+    connect(HardwareUtils::Instance(), &HardwareUtils::applicationBecomeActive, [=]()
+    {
+        //TOFIX: does not work...
+        //qDebug() << "Application is in foreground, login again";
+        //login(get_username(), get_password(), get_hostname());
+    });
+
     QCoreApplication::setOrganizationName("Calaos");
     QCoreApplication::setOrganizationDomain("calaos.fr");
     QCoreApplication::setApplicationName("CalaosMobile");
@@ -53,8 +60,10 @@ Application::Application(int & argc, char ** argv) :
             this, SLOT(homeLoaded(QVariantMap&)));
     connect(calaosConnect, SIGNAL(loginFailed()),
             this, SLOT(loginFailed()));
-    connect(calaosConnect, SIGNAL(disconnected()),
-            this, SLOT(loginFailed()));
+    connect(calaosConnect, &CalaosConnection::disconnected, [=]()
+    {
+        update_applicationStatus(Common::NotConnected);
+    });
 
     scenarioModel = new ScenarioModel(&engine, calaosConnect, this);
     engine.rootContext()->setContextProperty("scenarioModel", scenarioModel);
@@ -126,6 +135,8 @@ void Application::loginFailed()
 {
     if (m_applicationStatus == Common::NotConnected)
         return;
+
+    qDebug() << "loginFailed called";
 
     update_applicationStatus(Common::NotConnected);
 

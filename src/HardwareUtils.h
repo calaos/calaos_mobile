@@ -33,11 +33,12 @@ public:
 
     //This is used by private classes
     void emitNetworkStatusChanged();
-    void emitApplicationWillResignActive();
+    void emitApplicationActiveChanged(bool active);
 
 signals:
     void networkStatusChanged();
     void applicationWillResignActive();
+    void applicationBecomeActive();
 };
 
 #endif // HARDWAREUTILS_H

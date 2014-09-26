@@ -33,7 +33,13 @@ HardwareUtils *hwobj;
 -(void)applicationWillResignActive:(NSNotification*)notif
 {
     Q_UNUSED(notif)
-    hwobj->emitApplicationWillResignActive();
+    hwobj->emitApplicationActiveChanged(false);
+}
+
+-(void)applicationDidBecomeActive:(NSNotification*)notif
+{
+    Q_UNUSED(notif)
+    hwobj->emitApplicationActiveChanged(true);
 }
 
 @end
@@ -58,6 +64,11 @@ HardwareUtils::HardwareUtils(QObject *parent):
     [[NSNotificationCenter defaultCenter] addObserver:hwclass
                                              selector:@selector(applicationWillResignActive:)
                                                  name:UIApplicationWillResignActiveNotification
+                                               object:nil];
+
+    [[NSNotificationCenter defaultCenter] addObserver:hwclass
+                                             selector:@selector(applicationDidBecomeActive:)
+                                                 name:UIApplicationDidBecomeActiveNotification
                                                object:nil];
 
     [reach startNotifier];
@@ -97,7 +108,10 @@ void HardwareUtils::showNetworkActivity(bool en)
     [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:en];
 }
 
-void HardwareUtils::emitApplicationWillResignActive()
+void HardwareUtils::emitApplicationActiveChanged(bool active)
 {
-    emit applicationWillResignActive();
+    if (active)
+        emit applicationBecomeActive();
+    else
+        emit applicationWillResignActive();
 }

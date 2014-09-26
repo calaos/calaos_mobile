@@ -43,6 +43,7 @@ public:
 private slots:
     void homeLoaded(QVariantMap &homeData);
     void loginFailed();
+    void networkStatusChanged();
 
 private:
     QQmlApplicationEngine engine;

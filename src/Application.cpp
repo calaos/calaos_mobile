@@ -13,6 +13,9 @@ Application::Application(int & argc, char ** argv) :
 {
     HardwareUtils::Instance(this);
 
+    connect(HardwareUtils::Instance(), SIGNAL(networkStatusChanged()),
+            this, SLOT(networkStatusChanged()));
+
     QCoreApplication::setOrganizationName("Calaos");
     QCoreApplication::setOrganizationDomain("calaos.fr");
     QCoreApplication::setApplicationName("CalaosMobile");
@@ -197,4 +200,13 @@ void Application::moveFavorite(int idx, int newidx)
     favModel->moveFavorite(idx, newidx);
 
     saveSettings();
+}
+
+void Application::networkStatusChanged()
+{
+    qDebug() << "Network status changed, " << HardwareUtils::Instance()->getNetworkStatus();
+    if (HardwareUtils::Instance()->getNetworkStatus() == HardwareUtils::NotConnected)
+    {
+        logout();
+    }
 }

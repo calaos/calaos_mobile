@@ -16,20 +16,29 @@ public class HardwareUtils extends org.qtproject.qt5.android.bindings.QtActivity
         _context = this;
     }
 
-    public static void showAlertMessage(String title, String message, String buttontext)
+    public static void showAlertMessage(String _title, String _message, String _buttontext)
     {
-        final AlertDialog alertDialog = new AlertDialog.Builder(_context).create();
-        alertDialog.setTitle(title);
-        alertDialog.setMessage(message);
-        alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, buttontext, new DialogInterface.OnClickListener()
+        final String title = _title;
+        final String msg = _message;
+        final String bt = _buttontext;
+        _context.runOnUiThread(new Runnable()
         {
-            public void onClick(DialogInterface dialog, int which)
+            public void run()
             {
-                alertDialog.dismiss();
+                final AlertDialog alertDialog = new AlertDialog.Builder(_context).create();
+                alertDialog.setTitle(title);
+                alertDialog.setMessage(msg);
+                alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, bt, new DialogInterface.OnClickListener()
+                {
+                    public void onClick(DialogInterface dialog, int which)
+                    {
+                        alertDialog.dismiss();
+                    }
+                });
+                alertDialog.setIcon(R.drawable.icon);
+                alertDialog.show();
             }
         });
-        alertDialog.setIcon(R.drawable.icon);
-        alertDialog.show();
     }
 
     public static int getNetworkStatus()

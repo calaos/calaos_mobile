@@ -27,7 +27,11 @@ void HardwareUtils::showAlertMessage(QString title, QString message, QString but
     //Clear exception if any
     QAndroidJniEnvironment env;
     if (env->ExceptionCheck())
+    {
+        qDebug() << "JNI call failed";
+        env->ExceptionDescribe();
         env->ExceptionClear();
+    }
 }
 
 void HardwareUtils::emitNetworkStatusChanged()
@@ -38,12 +42,17 @@ void HardwareUtils::emitNetworkStatusChanged()
 int HardwareUtils::getNetworkStatus()
 {
     jint status = QAndroidJniObject::callStaticMethod<jint>("fr/calaos/calaosmobile/HardwareUtils",
-                                                            "getNetworkStatus",
-                                                            "(V)I");
+                                                            "getNetworkStatus");
+
+    qDebug() << "Android: HardwareUtils::getNetworkStatus(): " << status;
     //Clear exception if any
     QAndroidJniEnvironment env;
     if (env->ExceptionCheck())
+    {
+        qDebug() << "JNI call failed";
+        env->ExceptionDescribe();
         env->ExceptionClear();
+    }
 
     return status;
 }

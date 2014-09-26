@@ -1,6 +1,7 @@
 #include "CalaosConnection.h"
 #include <QJsonDocument>
 #include <QDebug>
+#include "HardwareUtils.h"
 
 CalaosConnection::CalaosConnection(QObject *parent) :
     QObject(parent)
@@ -17,6 +18,8 @@ void CalaosConnection::sslErrors(QNetworkReply *reply, const QList<QSslError> &)
 
 void CalaosConnection::login(QString user, QString pass, QString h)
 {
+    HardwareUtils::Instance()->showNetworkActivity(true);
+
     username = user;
     password = pass;
     uuidPolling.clear();
@@ -43,6 +46,8 @@ void CalaosConnection::login(QString user, QString pass, QString h)
 
 void CalaosConnection::logout()
 {
+    HardwareUtils::Instance()->showNetworkActivity(false);
+
     if (pollReply)
     {
         pollReply->abort();
@@ -63,6 +68,8 @@ void CalaosConnection::logout()
 
 void CalaosConnection::loginFinished(QNetworkReply *reply)
 {
+    HardwareUtils::Instance()->showNetworkActivity(false);
+
     disconnect(accessManager, SIGNAL(finished(QNetworkReply*)),
                this, SLOT(loginFinished(QNetworkReply*)));
 
@@ -96,6 +103,8 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
 
 void CalaosConnection::requestFinished()
 {
+    HardwareUtils::Instance()->showNetworkActivity(false);
+
     QNetworkReply *reqReply = qobject_cast<QNetworkReply*>(QObject::sender());
 
     if (!reqReply)
@@ -159,6 +168,8 @@ void CalaosConnection::requestError(QNetworkReply::NetworkError code)
 
 void CalaosConnection::sendCommand(QString id, QString value, QString type, QString action)
 {
+    HardwareUtils::Instance()->showNetworkActivity(true);
+
     QJsonObject jroot;
     jroot["cn_user"] = username;
     jroot["cn_pass"] = password;
@@ -186,6 +197,8 @@ void CalaosConnection::sendCommand(QString id, QString value, QString type, QStr
 
 void CalaosConnection::queryState(QStringList inputs, QStringList outputs, QStringList audio_players)
 {
+    HardwareUtils::Instance()->showNetworkActivity(true);
+
     QJsonObject jroot;
     jroot["cn_user"] = username;
     jroot["cn_pass"] = password;

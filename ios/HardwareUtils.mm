@@ -79,3 +79,8 @@ void HardwareUtils::emitNetworkStatusChanged()
 {
     emit networkStatusChanged();
 }
+
+void HardwareUtils::showNetworkActivity(bool en)
+{
+    [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:en];
+}

@@ -29,6 +29,7 @@ public:
     };
     int getNetworkStatus();
 
+    void showNetworkActivity(bool en);
 
     //This is used by private classes
     void emitNetworkStatusChanged();

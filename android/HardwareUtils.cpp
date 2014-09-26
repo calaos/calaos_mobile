@@ -56,3 +56,8 @@ int HardwareUtils::getNetworkStatus()
 
     return status;
 }
+
+void HardwareUtils::showNetworkActivity(bool en)
+{
+    Q_UNUSED(en)
+}

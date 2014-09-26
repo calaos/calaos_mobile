@@ -6,10 +6,10 @@ QT += qml quick network
 
 android {
     QT += androidextras
+    OTHER_FILES += android/src/fr/calaos/calaosmobile/HardwareUtils.java
     ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
-}
-
-ios {
+    SOURCES += android/HardwareUtils.cpp
+} else:ios {
     QMAKE_INFO_PLIST = ios/AppInfo.plist
     ICON.files = ios/Default.png \
     ios/Default@2x.png \
@@ -24,10 +24,8 @@ ios {
     OBJECTIVE_SOURCES += ios/HardwareUtils.mm \
         ios/Reachability.h \
         ios/Reachability.m
-}
-
-!ios {
-SOURCES += src/HardwareUtils.cpp
+} else {
+    SOURCES += src/HardwareUtils.cpp
 }
 
 CONFIG += c++11

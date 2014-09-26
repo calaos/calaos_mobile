@@ -24,9 +24,16 @@ HardwareUtils *hwobj;
     return self;
 }
 
--(void)reachabilityChanged:(NSNotification*)note
+-(void)reachabilityChanged:(NSNotification*)notif
 {
+    Q_UNUSED(notif)
     hwobj->emitNetworkStatusChanged();
+}
+
+-(void)applicationWillResignActive:(NSNotification*)notif
+{
+    Q_UNUSED(notif)
+    hwobj->emitApplicationWillResignActive();
 }
 
 @end
@@ -46,6 +53,11 @@ HardwareUtils::HardwareUtils(QObject *parent):
     [[NSNotificationCenter defaultCenter] addObserver:hwclass
                                              selector:@selector(reachabilityChanged:)
                                                  name:kReachabilityChangedNotification
+                                               object:nil];
+
+    [[NSNotificationCenter defaultCenter] addObserver:hwclass
+                                             selector:@selector(applicationWillResignActive:)
+                                                 name:UIApplicationWillResignActiveNotification
                                                object:nil];
 
     [reach startNotifier];
@@ -83,4 +95,9 @@ void HardwareUtils::emitNetworkStatusChanged()
 void HardwareUtils::showNetworkActivity(bool en)
 {
     [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:en];
+}
+
+void HardwareUtils::emitApplicationWillResignActive()
+{
+    emit applicationWillResignActive();
 }

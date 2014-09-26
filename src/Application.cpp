@@ -16,6 +16,12 @@ Application::Application(int & argc, char ** argv) :
     connect(HardwareUtils::Instance(), SIGNAL(networkStatusChanged()),
             this, SLOT(networkStatusChanged()));
 
+    connect(HardwareUtils::Instance(), &HardwareUtils::applicationWillResignActive, [=]()
+    {
+        qDebug() << "Application is in background, logout";
+        logout();
+    });
+
     QCoreApplication::setOrganizationName("Calaos");
     QCoreApplication::setOrganizationDomain("calaos.fr");
     QCoreApplication::setApplicationName("CalaosMobile");

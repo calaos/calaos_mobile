@@ -30,3 +30,8 @@ void HardwareUtils::showNetworkActivity(bool en)
 {
     Q_UNUSED(en)
 }
+
+void HardwareUtils::emitApplicationWillResignActive()
+{
+    emit applicationWillResignActive();
+}

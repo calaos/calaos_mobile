@@ -118,6 +118,9 @@ void Application::homeLoaded(QVariantMap &homeData)
 
 void Application::loginFailed()
 {
+    if (m_applicationStatus == Common::NotConnected)
+        return;
+
     update_applicationStatus(Common::NotConnected);
 
     HardwareUtils::Instance()->showAlertMessage(tr("Login failed"),

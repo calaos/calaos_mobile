@@ -1,5 +1,6 @@
 #import "../src/HardwareUtils.h"
 #import <UIKit/UIKit.h>
+#import "Reachability.h"
 
 @interface HWClass : NSObject
 {
@@ -72,4 +73,9 @@ void HardwareUtils::showAlertMessage(QString title, QString message, QString but
 int HardwareUtils::getNetworkStatus()
 {
     return (int)[reach currentReachabilityStatus];
+}
+
+void HardwareUtils::emitNetworkStatusChanged()
+{
+    emit networkStatusChanged();
 }

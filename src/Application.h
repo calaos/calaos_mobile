@@ -45,7 +45,6 @@ private slots:
     void loginFailed();
 
 private:
-    HardwareUtils *hwUtils;
     QQmlApplicationEngine engine;
     CalaosConnection *calaosConnect;
     HomeModel *homeModel;

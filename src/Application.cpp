@@ -11,6 +11,8 @@
 Application::Application(int & argc, char ** argv) :
     QGuiApplication(argc, argv)
 {
+    HardwareUtils::Instance(this);
+
     QCoreApplication::setOrganizationName("Calaos");
     QCoreApplication::setOrganizationDomain("calaos.fr");
     QCoreApplication::setApplicationName("CalaosMobile");
@@ -35,7 +37,6 @@ Application::Application(int & argc, char ** argv) :
 
     loadSettings();
 
-    hwUtils = new HardwareUtils(this);
     update_applicationStatus(Common::NotConnected);
 
     calaosConnect = new CalaosConnection(this);
@@ -64,6 +65,12 @@ Application::Application(int & argc, char ** argv) :
 
 void Application::login(QString user, QString pass, QString host)
 {
+    if (HardwareUtils::Instance()->getNetworkStatus() == HardwareUtils::NotConnected)
+    {
+        HardwareUtils::Instance()->showAlertMessage(tr("Error"), tr("Network not available!"));
+        return;
+    }
+
     update_username(user);
     update_password(pass);
     update_hostname(host);
@@ -106,7 +113,7 @@ void Application::loginFailed()
 {
     update_applicationStatus(Common::NotConnected);
 
-    hwUtils->showAlertMessage(tr("Error"), tr("Login failed!"));
+    HardwareUtils::Instance()->showAlertMessage(tr("Error"), tr("Login failed!"));
 }
 
 bool Application::needPictureHDPI()

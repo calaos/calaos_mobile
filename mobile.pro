@@ -21,7 +21,9 @@ ios {
     ios/Icon@2x.png
     QMAKE_BUNDLE_DATA += ICON
 
-    OBJECTIVE_SOURCES += ios/HardwareUtils.mm
+    OBJECTIVE_SOURCES += ios/HardwareUtils.mm \
+        ios/Reachability.h \
+        ios/Reachability.m
 }
 
 !ios {

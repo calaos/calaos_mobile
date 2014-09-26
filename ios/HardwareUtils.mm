@@ -39,7 +39,7 @@ HardwareUtils::HardwareUtils(QObject *parent):
     hwclass = [[HWClass alloc] initWithHwObject: this];
 
     // Allocate a reachability object
-    reach = [Reachability reachabilityWithHostname:@"www.google.com"];
+    reach = [Reachability reachabilityForInternetConnection];
 
     // Here we set up a NSNotification observer.
     [[NSNotificationCenter defaultCenter] addObserver:hwclass

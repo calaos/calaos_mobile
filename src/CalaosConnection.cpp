@@ -33,7 +33,7 @@ void CalaosConnection::login(QString user, QString pass, QString h)
     connect(accessManager, SIGNAL(finished(QNetworkReply*)),
             this, SLOT(loginFinished(QNetworkReply*)));
 
-    if (host.startsWith("http://") || host.startsWith("https://"))
+    if (h.startsWith("http://") || h.startsWith("https://"))
         host = h;
     else
         host = QString("https://%1/api.php").arg(h);

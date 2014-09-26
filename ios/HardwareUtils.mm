@@ -57,13 +57,13 @@ HardwareUtils::~HardwareUtils()
     [hwclass release];
 }
 
-void HardwareUtils::showAlertMessage(QString title, QString message)
+void HardwareUtils::showAlertMessage(QString title, QString message, QString buttontext)
 {
     UIAlertView *errorAlert = [[UIAlertView alloc]
             initWithTitle:[NSString stringWithUTF8String: title.toUtf8().data()]
             message:[NSString stringWithUTF8String: message.toUtf8().data()]
             delegate:nil
-            cancelButtonTitle:@"Ok"
+            cancelButtonTitle:[NSString stringWithUTF8String: buttontext.toUtf8().data()]
             otherButtonTitles:nil];
     [errorAlert show];
     [errorAlert release];

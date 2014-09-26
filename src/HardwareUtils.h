@@ -19,7 +19,7 @@ public:
 
     ~HardwareUtils();
 
-    void showAlertMessage(QString title, QString message);
+    void showAlertMessage(QString title, QString message, QString buttontext);
 
     enum NetworkStatus
     {

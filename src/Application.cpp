@@ -70,7 +70,11 @@ void Application::login(QString user, QString pass, QString host)
 {
     if (HardwareUtils::Instance()->getNetworkStatus() == HardwareUtils::NotConnected)
     {
-        HardwareUtils::Instance()->showAlertMessage(tr("Error"), tr("Network not available!"));
+        HardwareUtils::Instance()->showAlertMessage(tr("Network error"),
+                                                    tr("No network connection found, "
+                                                       "this application requires a "
+                                                       "network connection to work."),
+                                                    tr("Close"));
         return;
     }
 
@@ -116,7 +120,9 @@ void Application::loginFailed()
 {
     update_applicationStatus(Common::NotConnected);
 
-    HardwareUtils::Instance()->showAlertMessage(tr("Error"), tr("Login failed!"));
+    HardwareUtils::Instance()->showAlertMessage(tr("Login failed"),
+                                                tr("Connection failed, please check your credentials."),
+                                                tr("Close"));
 }
 
 bool Application::needPictureHDPI()

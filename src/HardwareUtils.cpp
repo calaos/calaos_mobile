@@ -9,10 +9,11 @@ HardwareUtils::~HardwareUtils()
 {
 }
 
-void HardwareUtils::showAlertMessage(QString title, QString message)
+void HardwareUtils::showAlertMessage(QString title, QString message, QString buttontext)
 {
     Q_UNUSED(title)
     Q_UNUSED(message)
+    Q_UNUSED(buttontext)
 }
 
 void HardwareUtils::emitNetworkStatusChanged()

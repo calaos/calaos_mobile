@@ -138,8 +138,8 @@ bool Application::needPictureHDPI()
     if (get_density() > 1.0)
         return true; //force true for testing purpose on desktop
 
-    return false;
 #endif
+    return false;
 }
 
 QString Application::getPictureSized(QString pic)

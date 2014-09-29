@@ -5,7 +5,7 @@
 	<key>CFBundleDisplayName</key>
 	<string>${PRODUCT_NAME}</string>
 	<key>CFBundleExecutable</key>
-	<string>CalaosHome</string>
+        <string>CalaosMobile</string>
 	<key>CFBundleIconFiles</key>
 	<array>
 		<string>Icon.png</string>

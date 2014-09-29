@@ -1,6 +1,6 @@
 TEMPLATE = app
 
-TARGET=CalaosHome
+TARGET=CalaosMobile
 
 QT += qml quick network
 
@@ -8,7 +8,8 @@ android {
     QT += androidextras
     OTHER_FILES += android/src/fr/calaos/calaosmobile/HardwareUtils.java
     ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
-    SOURCES += android/HardwareUtils.cpp
+    SOURCES += android/HardwareUtils_Android.cpp
+    HEADERS += android/HardwareUtils_Android.h
 } else:ios {
     QMAKE_INFO_PLIST = ios/AppInfo.plist
     ICON.files = ios/Default.png \
@@ -21,11 +22,12 @@ android {
     ios/Icon@2x.png
     QMAKE_BUNDLE_DATA += ICON
 
+    HEADERS += ios/HardwareUtils_iOS.h
     OBJECTIVE_SOURCES += ios/HardwareUtils.mm \
         ios/Reachability.h \
-        ios/Reachability.m
-} else {
-    SOURCES += src/HardwareUtils.cpp
+        ios/Reachability.m \
+        ios/KeychainItemWrapper.h \
+        ios/KeychainItemWrapper.m
 }
 
 CONFIG += c++11
@@ -37,7 +39,8 @@ SOURCES += src/main.cpp \
     src/Common.cpp \
     src/RoomModel.cpp \
     src/AudioModel.cpp \
-    src/FavoritesModel.cpp
+    src/FavoritesModel.cpp \
+    src/HardwareUtils.cpp
 
 RESOURCES += qml.qrc \
     img.qrc
@@ -111,4 +114,5 @@ HEADERS += \
     src/RoomModel.h \
     src/AudioModel.h \
     src/FavoritesModel.h \
-    src/HardwareUtils.h
+    src/HardwareUtils.h \
+    android/HardwareUtils_Android.h

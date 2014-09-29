@@ -186,8 +186,7 @@ void Application::saveSettings()
 {
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
 
-    settings.setValue("calaos/cn_user", get_username());
-    settings.setValue("calaos/cn_pass", get_password());
+    HardwareUtils::Instance()->saveAuthKeychain(get_username(), get_password());
     settings.setValue("calaos/host", get_hostname());
 
     favoritesList = favModel->save();
@@ -200,8 +199,13 @@ void Application::loadSettings()
 {
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
 
-    update_username(settings.value("calaos/cn_user", "demo@calaos.fr").toString());
-    update_password(settings.value("calaos/cn_pass", "demo").toString());
+    QString cnuser, cnpass;
+    HardwareUtils::Instance()->loadAuthKeychain(cnuser, cnpass);
+    if (cnuser.isEmpty()) cnuser = "demo@calaos.fr";
+    if (cnpass.isEmpty()) cnpass = "demo";
+
+    update_username(cnuser);
+    update_password(cnpass);
     update_hostname(settings.value("calaos/host", "calaos.fr").toString());
 
     favoritesList = settings.value("app/favorites").toList();

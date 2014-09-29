@@ -1,6 +1,7 @@
-#import "../src/HardwareUtils.h"
+#import "HardwareUtils_iOS.h"
 #import <UIKit/UIKit.h>
 #import "Reachability.h"
+#import "KeychainItemWrapper.h"
 
 @interface HWClass : NSObject
 {
@@ -8,13 +9,13 @@
 HardwareUtils *hwobj;
 }
 
--(id)initWithHwObject:(HardwareUtils *)obj;
+-(id)initWithHwObject:(HardwareUtils_iOS *)obj;
 
 @end
 
 @implementation HWClass
 
--(id)initWithHwObject:(HardwareUtils *)obj
+-(id)initWithHwObject:(HardwareUtils_iOS *)obj
 {
     self = [super init];
     if (self)
@@ -46,11 +47,15 @@ HardwareUtils *hwobj;
 
 static HWClass *hwclass;
 static Reachability *reach;
+static KeychainItemWrapper *authItem;
 
-HardwareUtils::HardwareUtils(QObject *parent):
-    QObject(parent)
+HardwareUtils_iOS::HardwareUtils_iOS(QObject *parent):
+    HardwareUtils(parent)
 {
     hwclass = [[HWClass alloc] initWithHwObject: this];
+
+    // This is the item wrapper used to access password information stored in the KeyChain
+    authItem = [[KeychainItemWrapper alloc] initWithIdentifier:@"Password" accessGroup:nil];
 
     // Allocate a reachability object
     reach = [Reachability reachabilityForInternetConnection];
@@ -74,44 +79,44 @@ HardwareUtils::HardwareUtils(QObject *parent):
     [reach startNotifier];
 }
 
-HardwareUtils::~HardwareUtils()
+HardwareUtils_iOS::~HardwareUtils_iOS()
 {
     [[NSNotificationCenter defaultCenter] removeObserver:hwclass];
     [reach release];
     [hwclass release];
+    [authItem release];
 }
 
-void HardwareUtils::showAlertMessage(QString title, QString message, QString buttontext)
+void HardwareUtils_iOS::showAlertMessage(QString title, QString message, QString buttontext)
 {
     UIAlertView *errorAlert = [[UIAlertView alloc]
-            initWithTitle:[NSString stringWithUTF8String: title.toUtf8().data()]
-            message:[NSString stringWithUTF8String: message.toUtf8().data()]
-            delegate:nil
-            cancelButtonTitle:[NSString stringWithUTF8String: buttontext.toUtf8().data()]
-            otherButtonTitles:nil];
+                    initWithTitle:title.toNSString()
+                          message:message.toNSString()
+                         delegate:nil
+                cancelButtonTitle:buttontext.toNSString()
+                otherButtonTitles:nil];
     [errorAlert show];
     [errorAlert release];
 }
 
-int HardwareUtils::getNetworkStatus()
+int HardwareUtils_iOS::getNetworkStatus()
 {
     return (int)[reach currentReachabilityStatus];
 }
 
-void HardwareUtils::emitNetworkStatusChanged()
-{
-    emit networkStatusChanged();
-}
-
-void HardwareUtils::showNetworkActivity(bool en)
+void HardwareUtils_iOS::showNetworkActivity(bool en)
 {
     [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:en];
 }
 
-void HardwareUtils::emitApplicationActiveChanged(bool active)
+void HardwareUtils_iOS::loadAuthKeychain(QString &email, QString &pass)
 {
-    if (active)
-        emit applicationBecomeActive();
-    else
-        emit applicationWillResignActive();
+    email = QString::fromNSString([authItem objectForKey:(id)kSecAttrAccount]);
+    pass = QString::fromNSString([authItem objectForKey:(id)kSecValueData]);
+}
+
+void HardwareUtils_iOS::saveAuthKeychain(const QString &email, const QString &pass)
+{
+    [authItem setObject:email.toNSString() forKey:(id)kSecAttrAccount];
+    [authItem setObject:pass.toNSString() forKey:(id)kSecValueData];
 }

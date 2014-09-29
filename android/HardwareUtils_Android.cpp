@@ -1,18 +1,18 @@
 
-#include "../src/HardwareUtils.h"
+#include "HardwareUtils_Android.h"
 #include <QtAndroidExtras/QAndroidJniObject>
 #include <QtAndroidExtras/QAndroidJniEnvironment>
 
-HardwareUtils::HardwareUtils(QObject *parent):
-    QObject(parent)
+HardwareUtilsAndroid::HardwareUtilsAndroid(QObject *parent):
+    HardwareUtils(parent)
 {
 }
 
-HardwareUtils::~HardwareUtils()
+HardwareUtilsAndroid::~HardwareUtilsAndroid()
 {
 }
 
-void HardwareUtils::showAlertMessage(QString title, QString message, QString buttontext)
+void HardwareUtilsAndroid::showAlertMessage(QString title, QString message, QString buttontext)
 {
     QAndroidJniObject jTitle = QAndroidJniObject::fromString(title);
     QAndroidJniObject jMessage = QAndroidJniObject::fromString(message);
@@ -34,17 +34,12 @@ void HardwareUtils::showAlertMessage(QString title, QString message, QString but
     }
 }
 
-void HardwareUtils::emitNetworkStatusChanged()
-{
-    emit networkStatusChanged();
-}
-
-int HardwareUtils::getNetworkStatus()
+int HardwareUtilsAndroid::getNetworkStatus()
 {
     jint status = QAndroidJniObject::callStaticMethod<jint>("fr/calaos/calaosmobile/HardwareUtils",
                                                             "getNetworkStatus");
 
-    qDebug() << "Android: HardwareUtils::getNetworkStatus(): " << status;
+    qDebug() << "Android: HardwareUtilsAndroid::getNetworkStatus(): " << status;
     //Clear exception if any
     QAndroidJniEnvironment env;
     if (env->ExceptionCheck())
@@ -55,14 +50,4 @@ int HardwareUtils::getNetworkStatus()
     }
 
     return status;
-}
-
-void HardwareUtils::showNetworkActivity(bool en)
-{
-    Q_UNUSED(en)
-}
-
-void HardwareUtils::emitApplicationActiveChanged(bool active)
-{
-    emit applicationWillResignActive();
 }

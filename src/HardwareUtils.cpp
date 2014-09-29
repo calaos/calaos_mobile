@@ -1,4 +1,25 @@
 #include "HardwareUtils.h"
+#include <QSettings>
+
+#ifdef Q_OS_IOS
+#include "../ios/HardwareUtils_iOS.h"
+#elif defined(Q_OS_ANDROID)
+#include "../android/HardwareUtils_Android.h"
+#endif
+
+HardwareUtils *HardwareUtils::Instance(QObject *parent)
+{
+    static HardwareUtils *hu = NULL;
+    if (hu) return hu;
+#ifdef Q_OS_IOS
+    hu = new HardwareUtils_iOS(parent);
+#elif defined(Q_OS_ANDROID)
+    hu = new HardwareUtils_Android(parent);
+#else
+    hu = new HardwareUtils(parent);
+#endif
+    return hu;
+}
 
 HardwareUtils::HardwareUtils(QObject *parent):
     QObject(parent)
@@ -33,5 +54,26 @@ void HardwareUtils::showNetworkActivity(bool en)
 
 void HardwareUtils::emitApplicationActiveChanged(bool active)
 {
-    Q_UNUSED(active)
+    if (active)
+        emit applicationBecomeActive();
+    else
+        emit applicationWillResignActive();
+}
+
+void HardwareUtils::loadAuthKeychain(QString &email, QString &pass)
+{
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+
+    email = settings.value("calaos/cn_user").toString();
+    pass = settings.value("calaos/cn_pass").toString();
+}
+
+void HardwareUtils::saveAuthKeychain(const QString &email, const QString &pass)
+{
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+
+    settings.setValue("calaos/cn_user", email);
+    settings.setValue("calaos/cn_pass", pass);
+
+    settings.sync();
 }

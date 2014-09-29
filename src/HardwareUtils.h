@@ -7,19 +7,15 @@ class HardwareUtils: public QObject
 {
     Q_OBJECT
 
-private:
+protected:
     HardwareUtils(QObject *parent = 0);
 
 public:
-    static HardwareUtils *Instance(QObject *parent = NULL)
-    {
-        static HardwareUtils *hu = new HardwareUtils(parent);
-        return hu;
-    }
+    static HardwareUtils *Instance(QObject *parent = NULL);
 
-    ~HardwareUtils();
+    virtual ~HardwareUtils();
 
-    void showAlertMessage(QString title, QString message, QString buttontext);
+    virtual void showAlertMessage(QString title, QString message, QString buttontext);
 
     enum NetworkStatus
     {
@@ -27,9 +23,12 @@ public:
         ConnectedWiFi = 2,
         ConnectedWWAN = 1
     };
-    int getNetworkStatus();
+    virtual int getNetworkStatus();
 
-    void showNetworkActivity(bool en);
+    virtual void showNetworkActivity(bool en);
+
+    virtual void saveAuthKeychain(const QString &email, const QString &pass);
+    virtual void loadAuthKeychain(QString &email, QString &pass);
 
     //This is used by private classes
     void emitNetworkStatusChanged();

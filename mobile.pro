@@ -14,12 +14,16 @@ android {
     QMAKE_INFO_PLIST = ios/AppInfo.plist
     ICON.files = ios/Default.png \
     ios/Default@2x.png \
+    ios/Default-568h@2x.png \
     ios/Icon-72.png \
     ios/Icon-Small-50.png \
     ios/Icon-Small.png \
     ios/Icon-Small@2x.png \
     ios/Icon.png \
-    ios/Icon@2x.png
+    ios/Icon@2x.png \
+    ios/Icon-76.png \
+    ios/Icon-120.png \
+    ios/Icon-152.png
     QMAKE_BUNDLE_DATA += ICON
 
     HEADERS += ios/HardwareUtils_iOS.h
@@ -97,7 +101,11 @@ OTHER_FILES += \
     android/res/drawable-hdpi/icon.png \
     android/res/drawable-ldpi/icon.png \
     android/res/drawable-mdpi/icon.png \
-    qml/IOFavAllLights.qml
+    qml/IOFavAllLights.qml \
+    ios/Default-568h@2x.png \
+    ios/Icon-76.png \
+    ios/Icon-120.png \
+    ios/Icon-152.png
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =

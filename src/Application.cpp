@@ -42,6 +42,8 @@ Application::Application(int & argc, char ** argv) :
     update_density(metrics.getField<float>("density"));
 
     update_needBackButton(false);
+    // Need to fix a bug on Android where text is scratched at runtime on some devices
+    qputenv("QML_USE_GLYPHCACHE_WORKAROUND", QByteArray("1"));
 #else
     if (arguments().contains("--force-hdpi"))
         update_density(2.0);

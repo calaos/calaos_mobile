@@ -75,14 +75,10 @@
             return m_##name ; \
         } \
     public Q_SLOTS: \
-        bool set_##name (type name) { \
-            bool ret = false; \
-            if ((ret = m_##name != name)) { \
-                m_##name = name; \
-                setData(name, role); \
-                emit name##Changed (m_##name); \
-            } \
-            return ret; \
+        void set_##name (type name) { \
+            m_##name = name; \
+            setData(name, role); \
+            emit name##Changed (m_##name); \
         } \
     Q_SIGNALS: \
         void name##Changed (type name); \
@@ -97,14 +93,10 @@
         type get_##name () const { \
             return m_##name ; \
         } \
-        bool update_##name (type name) { \
-            bool ret = false; \
-            if ((ret = m_##name != name)) { \
-                m_##name = name; \
-                setData(name, role); \
-                emit name##Changed (m_##name); \
-            } \
-            return ret; \
+        void update_##name (type name) { \
+            m_##name = name; \
+            setData(name, role); \
+            emit name##Changed (m_##name); \
         } \
     Q_SIGNALS: \
         void name##Changed (type name); \

@@ -89,6 +89,7 @@ Item {
 
     ViewHeader {
         id: header
+        voiceButtonVisible: false
         headerLabel: qsTr("Settings")
         iconSource: calaosApp.getPictureSized("icon_config")
     }

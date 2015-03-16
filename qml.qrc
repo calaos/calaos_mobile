@@ -39,5 +39,7 @@
         <file>qml/FavoritesAddView.qml</file>
         <file>qml/FavoritesEditView.qml</file>
         <file>qml/IOFavAllLights.qml</file>
+        <file>qml/VoiceView.qml</file>
+        <file>qml/ButtonVoice.qml</file>
     </qresource>
 </RCC>

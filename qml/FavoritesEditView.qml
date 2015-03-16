@@ -39,6 +39,7 @@ Item {
 
     ViewHeader {
         id: header
+        voiceButtonVisible: false
         headerLabel: qsTr("Edit favorites list")
         iconSource: calaosApp.getPictureSized("fav")
     }

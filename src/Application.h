@@ -39,6 +39,7 @@ public:
     Q_INVOKABLE bool needPictureHDPI();
     Q_INVOKABLE QString getPictureSized(QString pic);
     Q_INVOKABLE QString getPictureSizedPrefix(QString pic, QString prefix);
+    Q_INVOKABLE int dp(int i);
 
 private slots:
     void homeLoaded(QVariantMap &homeData);

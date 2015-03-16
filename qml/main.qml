@@ -19,6 +19,8 @@ Window {
     property variant roomModel
     property string currentRoomName
 
+    property string voiceContext: "default"
+
     Image {
         source: calaosApp.getPictureSized(isLandscape?
                                               "background_landscape":
@@ -45,6 +47,12 @@ Window {
             if (stackView.depth === 2)
                 menuBar.menuType = Common.MenuMain
         }
+    }
+
+    function voiceClicked(ctx) {
+        voiceContext = ctx
+        menuBar.menuType = Common.MenuBack
+        stackView.push(voiceView)
     }
 
     StackView {
@@ -191,6 +199,15 @@ Window {
         id: favEditView
 
         FavoritesEditView {
+            width: parent.width
+            height: parent.height - menuBar.height
+        }
+    }
+
+    Component {
+        id: voiceView
+
+        VoiceView {
             width: parent.width
             height: parent.height - menuBar.height
         }

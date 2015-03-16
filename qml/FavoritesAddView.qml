@@ -98,6 +98,7 @@ Item {
 
     ViewHeader {
         id: header
+        voiceButtonVisible: false
         headerLabel: qsTr("Add a favorite")
         iconSource: calaosApp.getPictureSized("fav")
     }

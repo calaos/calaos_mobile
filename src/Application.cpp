@@ -184,6 +184,11 @@ QString Application::getPictureSizedPrefix(QString pic, QString prefix)
     return ret;
 }
 
+int Application::dp(int i)
+{
+    return double(i) * get_density();
+}
+
 void Application::saveSettings()
 {
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());

@@ -5,6 +5,9 @@ Rectangle {
     property alias headerLabel: txt.text
     property alias iconSource: ic.source
 
+    property bool voiceButtonVisible: true
+    property string voiceContext: "default"
+
     anchors { left: parent.left; right: parent.right; top: parent.top }
     color: "black"
     height: 45 * calaosApp.density
@@ -33,5 +36,27 @@ Rectangle {
         anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
         color: "#333333"
         height: 2 * calaosApp.density
+    }
+
+    Image {
+        id: voice
+
+        visible: voiceButtonVisible
+
+        source: calaosApp.getPictureSized("voice")
+
+        anchors {
+            verticalCenter: parent.verticalCenter
+            right: parent.right; rightMargin: 10 * calaosApp.density
+        }
+    }
+    MouseArea {
+        anchors {
+            right: parent.right
+            top: parent.top
+            bottom: parent.bottom
+            left: voice.left; leftMargin: calaosApp.dp(-10);
+        }
+        onClicked: voiceClicked(voiceContext)
     }
 }

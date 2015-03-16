@@ -162,5 +162,9 @@
         <file>img/rooms/fav@2x.png</file>
         <file>img/button_more.png</file>
         <file>img/button_more@2x.png</file>
+        <file>img/voice.png</file>
+        <file>img/voice@2x.png</file>
+        <file>img/button_voice.png</file>
+        <file>img/button_voice@2x.png</file>
     </qresource>
 </RCC>

@@ -124,3 +124,7 @@ HEADERS += \
     src/FavoritesModel.h \
     src/HardwareUtils.h \
     android/HardwareUtils_Android.h
+
+DISTFILES += \
+    qml/VoiceView.qml \
+    qml/ButtonVoice.qml

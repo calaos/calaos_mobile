@@ -4,6 +4,8 @@ import Calaos 1.0
 ListView {
     id: lst
 
+    property bool voiceButtonVisible: true
+
     Component {
         id: sectionHeading
         Rectangle {
@@ -37,6 +39,24 @@ ListView {
                 anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
                 color: "#333333"
                 height: 2 * calaosApp.density
+            }
+
+            Image {
+                id: voice
+
+                visible: voiceButtonVisible
+
+                source: calaosApp.getPictureSized("voice")
+
+                anchors {
+                    verticalCenter: parent.verticalCenter
+                    right: parent.right; rightMargin: 10 * calaosApp.density
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: voiceClicked("")
+                }
             }
         }
     }

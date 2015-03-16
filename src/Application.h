@@ -11,6 +11,7 @@
 #include "RoomModel.h"
 #include "FavoritesModel.h"
 #include "HardwareUtils.h"
+#include "VoiceApiAi.h"
 
 class Application : public QGuiApplication
 {
@@ -55,6 +56,7 @@ private:
     FavoritesModel *favModel;
     HomeFavModel *favHomeModel;
     LightOnModel *lightOnModel;
+    VoiceApiAi *voiceApi;
 
     QVariantList favoritesList;
 

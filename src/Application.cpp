@@ -80,6 +80,8 @@ Application::Application(int & argc, char ** argv) :
     favHomeModel = new HomeFavModel(&engine, calaosConnect, this);
     engine.rootContext()->setContextProperty("favoritesHomeModel", favHomeModel);
     engine.rootContext()->setContextProperty("calaosApp", this);
+    voiceApi = new VoiceApiAi(this);
+    engine.rootContext()->setContextProperty("voiceApi", voiceApi);
     engine.load(QUrl(QStringLiteral("qrc:///qml/main.qml")));
 }
 

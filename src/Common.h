@@ -71,6 +71,14 @@ public:
     };
     Q_ENUMS(AudioStatusType)
 
+    enum VoiceStatus {
+        VoiceStatusIdle,
+        VoiceStatusRecording,
+        VoiceStatusSending,
+        VoiceStatusFailure
+    };
+    Q_ENUMS(VoiceStatus)
+
     static QString IOTypeToString(IOType t);
     static IOType IOTypeFromString(QString t);
     static QString audioStatusToString(AudioStatusType t);

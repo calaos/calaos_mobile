@@ -2,7 +2,7 @@ TEMPLATE = app
 
 TARGET=CalaosMobile
 
-QT += qml quick network
+QT += qml quick network multimedia
 
 android {
     QT += androidextras
@@ -44,7 +44,8 @@ SOURCES += src/main.cpp \
     src/RoomModel.cpp \
     src/AudioModel.cpp \
     src/FavoritesModel.cpp \
-    src/HardwareUtils.cpp
+    src/HardwareUtils.cpp \
+    src/VoiceApiAi.cpp
 
 RESOURCES += qml.qrc \
     img.qrc
@@ -123,7 +124,8 @@ HEADERS += \
     src/AudioModel.h \
     src/FavoritesModel.h \
     src/HardwareUtils.h \
-    android/HardwareUtils_Android.h
+    android/HardwareUtils_Android.h \
+    src/VoiceApiAi.h
 
 DISTFILES += \
     qml/VoiceView.qml \

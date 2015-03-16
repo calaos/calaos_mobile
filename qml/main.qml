@@ -53,6 +53,8 @@ Window {
         voiceContext = ctx
         menuBar.menuType = Common.MenuBack
         stackView.push(voiceView)
+
+        voiceApi.startVoiceRecord()
     }
 
     StackView {

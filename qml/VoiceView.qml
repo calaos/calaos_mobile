@@ -1,4 +1,5 @@
 import QtQuick 2.2
+import Calaos 1.0
 
 Item {
     Image {
@@ -17,10 +18,9 @@ Item {
         }
     }
     Text {
+        id: textAction
         color: "#e7e7e7"
         font { bold: false; pointSize: 12 }
-        anchors.centerIn: listViewFav
-        text: qsTr("Listening...")
         verticalAlignment: Text.AlignVCenter
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.WordWrap
@@ -35,5 +35,19 @@ Item {
         voiceButtonVisible: false
         headerLabel: qsTr("Voice")
         iconSource: calaosApp.getPictureSized("voice")
+    }
+
+    Connections {
+        target: voiceApi
+        onVoiceStatusChanged: {
+            if (voiceApi.voiceStatus === Common.VoiceStatusIdle)
+                textAction.text = ""
+            else if (voiceApi.voiceStatus === Common.VoiceStatusFailure)
+                textAction.text = qsTr("Failed!")
+            else if (voiceApi.voiceStatus === Common.VoiceStatusRecording)
+                textAction.text = qsTr("Listening")
+            else if (voiceApi.voiceStatus === Common.VoiceStatusSending)
+                textAction.text = qsTr("Sending")
+        }
     }
 }

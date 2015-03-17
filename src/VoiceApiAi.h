@@ -33,6 +33,8 @@ private slots:
     void netRequestError(QNetworkReply::NetworkError code);
 
 private:
+    void doRequest();
+
     QNetworkAccessManager *accessManager;
     QAudioInput *audioInput = nullptr;
     QTemporaryFile *recordFile;

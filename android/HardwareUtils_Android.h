@@ -3,14 +3,14 @@
 
 #include "../src/HardwareUtils.h"
 
-class HardwareUtilsAndroid: public HardwareUtils
+class HardwareUtils_Android: public HardwareUtils
 {
 private:
     friend class HardwareUtils;
-    HardwareUtilsAndroid(QObject *parent = 0);
+    HardwareUtils_Android(QObject *parent = 0);
 
 public:
-    virtual ~HardwareUtilsAndroid();
+    virtual ~HardwareUtils_Android();
 
     virtual void showAlertMessage(QString title, QString message, QString buttontext);
 

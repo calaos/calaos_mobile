@@ -3,16 +3,16 @@
 #include <QtAndroidExtras/QAndroidJniObject>
 #include <QtAndroidExtras/QAndroidJniEnvironment>
 
-HardwareUtilsAndroid::HardwareUtilsAndroid(QObject *parent):
+HardwareUtils_Android::HardwareUtils_Android(QObject *parent):
     HardwareUtils(parent)
 {
 }
 
-HardwareUtilsAndroid::~HardwareUtilsAndroid()
+HardwareUtils_Android::~HardwareUtils_Android()
 {
 }
 
-void HardwareUtilsAndroid::showAlertMessage(QString title, QString message, QString buttontext)
+void HardwareUtils_Android::showAlertMessage(QString title, QString message, QString buttontext)
 {
     QAndroidJniObject jTitle = QAndroidJniObject::fromString(title);
     QAndroidJniObject jMessage = QAndroidJniObject::fromString(message);
@@ -34,12 +34,12 @@ void HardwareUtilsAndroid::showAlertMessage(QString title, QString message, QStr
     }
 }
 
-int HardwareUtilsAndroid::getNetworkStatus()
+int HardwareUtils_Android::getNetworkStatus()
 {
     jint status = QAndroidJniObject::callStaticMethod<jint>("fr/calaos/calaosmobile/HardwareUtils",
                                                             "getNetworkStatus");
 
-    qDebug() << "Android: HardwareUtilsAndroid::getNetworkStatus(): " << status;
+    qDebug() << "Android: HardwareUtils_Android::getNetworkStatus(): " << status;
     //Clear exception if any
     QAndroidJniEnvironment env;
     if (env->ExceptionCheck())

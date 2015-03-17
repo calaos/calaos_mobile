@@ -15,7 +15,9 @@ Item {
         anchors {
             horizontalCenter: parent.horizontalCenter
             verticalCenter: parent.verticalCenter
+            verticalCenterOffset: voiceApi.resultJson == ""?0:-(buttonVoice.x - calaosApp.dp(10))
         }
+        Behavior on anchors.verticalCenterOffset { PropertyAnimation { easing.type: Easing.OutCubic } }
     }
     Text {
         id: textAction
@@ -27,6 +29,23 @@ Item {
         anchors {
             horizontalCenter: parent.horizontalCenter
             top: buttonVoice.bottom; topMargin: calaosApp.dp(10)
+        }
+    }
+
+    Flickable {
+        anchors {
+            left: parent.left; right: parent.right
+            top: buttonVoice.bottom; topMargin: calaosApp.dp(10)
+            bottom: parent.bottom
+        }
+        contentWidth: textResult.width
+        contentHeight: textResult.height
+        Text {
+            id: textResult
+            color: "#e7e7e7"
+            font { bold: false; pointSize: 9 }
+            wrapMode: Text.WordWrap
+            text: voiceApi.resultJson
         }
     }
 

@@ -12,6 +12,8 @@ class VoiceApiAi: public QObject
     Q_OBJECT
 
     QML_READONLY_PROPERTY(Common::VoiceStatus, voiceStatus)
+    QML_READONLY_PROPERTY(double, voiceLevel)
+    QML_READONLY_PROPERTY(QString, resultJson)
 
 public:
     VoiceApiAi(QObject *parent);
@@ -27,6 +29,7 @@ signals:
 
 private slots:
     void handleStateChanged(QAudio::State state);
+    void recordData();
 
     void sslErrors(QNetworkReply *reply, const QList<QSslError> &);
     void netRequestFinished();

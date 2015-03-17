@@ -9,6 +9,23 @@ Item {
     height: ico.implicitHeight
 
     Rectangle {
+        id: voicelevel
+
+        anchors.centerIn: parent
+        radius: voicelevel.width / 2
+
+        height: width
+        width: parent.width + (3 * parent.width * voiceApi.voiceLevel)
+        Behavior on width { PropertyAnimation { duration: 100 } }
+        Behavior on height { PropertyAnimation { duration: 100 } }
+
+        color: "#e7e7e7"
+
+        opacity: voiceApi.voiceStatus !== Common.VoiceStatusRecording?0.0:0.5
+        Behavior on opacity { PropertyAnimation {} }
+    }
+
+    Rectangle {
         color: voiceApi.voiceStatus === Common.VoiceStatusFailure?Qt.rgba(235, 84, 84, 1.0):
                voiceApi.voiceStatus === Common.VoiceStatusRecording?"#3ab4d7":"010101"
         Behavior on color { ColorAnimation { duration: 100 } }

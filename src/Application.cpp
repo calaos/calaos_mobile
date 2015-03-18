@@ -83,6 +83,9 @@ Application::Application(int & argc, char ** argv) :
     voiceApi = new VoiceApiAi(this);
     engine.rootContext()->setContextProperty("voiceApi", voiceApi);
     engine.load(QUrl(QStringLiteral("qrc:///qml/main.qml")));
+
+    apiMatcher = new ApiMatcher(this);
+    connect(voiceApi, SIGNAL(requestFinished(QVariantMap)), apiMatcher, SLOT(processJson(QVariantMap)));
 }
 
 void Application::login(QString user, QString pass, QString host)

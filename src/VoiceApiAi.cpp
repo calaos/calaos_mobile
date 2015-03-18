@@ -184,6 +184,8 @@ void VoiceApiAi::netRequestFinished()
     {
         qDebug() << jdoc.toJson();
         update_resultJson(jdoc.toJson());
+
+        emit requestFinished(jdoc.object().toVariantMap());
     }
 
     reply->deleteLater();

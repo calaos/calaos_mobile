@@ -66,6 +66,9 @@ public slots:
     void newlight_on(IOBase *io);
     void newlight_off(IOBase *io);
 
+    void actionIO(QString ioname, QString action, QString room_context, bool plural);
+    void actionIORoom(QString ioname, QString action, QString room_name, bool plural);
+
 private:
 
     QQmlApplicationEngine *engine;

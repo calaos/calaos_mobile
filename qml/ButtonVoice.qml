@@ -26,7 +26,7 @@ Item {
     }
 
     Rectangle {
-        color: voiceApi.voiceStatus === Common.VoiceStatusFailure?Qt.rgba(235, 84, 84, 1.0):
+        color: voiceApi.voiceStatus === Common.VoiceStatusFailure?"#EB5454":
                voiceApi.voiceStatus === Common.VoiceStatusRecording?"#3ab4d7":"010101"
         Behavior on color { ColorAnimation { duration: 100 } }
         anchors.centerIn: parent

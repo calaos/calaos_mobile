@@ -12,7 +12,6 @@
 #include "FavoritesModel.h"
 #include "HardwareUtils.h"
 #include "VoiceApiAi.h"
-#include "ApiMatcher.h"
 
 class Application : public QGuiApplication
 {
@@ -58,7 +57,6 @@ private:
     HomeFavModel *favHomeModel;
     LightOnModel *lightOnModel;
     VoiceApiAi *voiceApi;
-    ApiMatcher *apiMatcher;
 
     QVariantList favoritesList;
 

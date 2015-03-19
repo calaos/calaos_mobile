@@ -75,7 +75,7 @@ void VoiceApiAi::startVoiceRecord()
     qDebug() << "start recording";
 
     update_voiceStatus(Common::VoiceStatusRecording);
-    update_resultJson(QString());
+    update_resultText(QString());
 }
 
 void VoiceApiAi::recordData()
@@ -131,7 +131,28 @@ void VoiceApiAi::stopRecording()
 
 void VoiceApiAi::cancel()
 {
-    //TODO
+    qDebug() << "Cancel";
+
+    if (get_voiceStatus() == Common::VoiceStatusRecording)
+    {
+        audioInput->stop();
+        delete audioInput;
+        delete recTimer;
+        delete recordFile;
+        audioInput = nullptr;
+        recTimer = nullptr;
+    }
+
+    if (netReply)
+    {
+        netReply->abort();
+        netReply->deleteLater();
+        netReply = nullptr;
+    }
+
+    update_resultText("");
+    update_voiceLevel(0);
+    update_voiceStatus(Common::VoiceStatusIdle);
 }
 
 void VoiceApiAi::handleStateChanged(QAudio::State state)
@@ -178,19 +199,15 @@ void VoiceApiAi::netRequestFinished()
     if (err.error != QJsonParseError::NoError)
     {
         qWarning() << "JSON parse error " << err.errorString();
-        update_resultJson(QString("JSON parse error: %1").arg(err.errorString()));
+        update_voiceStatus(Common::VoiceStatusFailure);
     }
     else
     {
         qDebug() << jdoc.toJson();
-        update_resultJson(jdoc.toJson());
-
-        emit requestFinished(jdoc.object().toVariantMap());
+        processJson(jdoc.object().toVariantMap());
     }
 
     reply->deleteLater();
-
-    update_voiceStatus(Common::VoiceStatusIdle);
 }
 
 void VoiceApiAi::netRequestError(QNetworkReply::NetworkError code)
@@ -222,11 +239,49 @@ void VoiceApiAi::doRequest()
     wavpart.setBodyDevice(recordFile);
     multipart->append(wavpart);
 
-    QNetworkReply *reply = accessManager->post(request, multipart);
-    connect(reply, SIGNAL(finished()),
+    netReply = accessManager->post(request, multipart);
+    connect(netReply, SIGNAL(finished()),
             this, SLOT(netRequestFinished()));
 
-    multipart->setParent(reply); // delete the multiPart with the reply
+    multipart->setParent(netReply); // delete the multiPart with the reply
+}
+
+void VoiceApiAi::processJson(const QVariantMap &vmap)
+{
+    if (!vmap.contains("result"))
+    {
+        update_voiceStatus(Common::VoiceStatusFailure);
+        return;
+    }
+
+    QVariantMap result = vmap["result"].toMap();
+
+    if (result.contains("resolvedQuery"))
+        update_resultText(result["resolvedQuery"].toString());
+
+    if (!result.contains("action"))
+    {
+        update_voiceStatus(Common::VoiceStatusNotRecognized);
+        return;
+    }
+
+    update_voiceStatus(Common::VoiceStatusResult);
+
+    QVariantMap params = vmap["parameters"].toMap();
+    if (params["room_name"].toString() == "")
+    {
+        emit actionIO(params["io_name"].toString(),
+                      params["action"].toString(),
+                      room_context,
+                      params["art_io"].toString() == "plural");
+    }
+    else
+    {
+        emit actionIORoom(params["io_name"].toString(),
+                          params["action"].toString(),
+                          params["room_name"].toString(),
+                          params["art_io"].toString() == "plural");
+    }
 }
 
 // This function returns the maximum possible sample value for a given audio format

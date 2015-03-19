@@ -89,3 +89,40 @@ Common::AudioStatusType Common::audioStatusFromString(QString t)
 
     return StatusUnknown;
 }
+
+//This function is used to completely clean a string from
+//any accent, diacritic marks, ligature letter without diacritics, ...
+//It will then be used to search for the best matching string in the Rooms names/IO names
+QString Common::removeSpecialChar(const QString &s)
+{
+    static QString diacriticLetters = QString::fromUtf8("ŠŒŽšœžŸ¥µÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýÿ");
+    static QStringList noDiacriticLetters = QStringList() << "S" << "OE" << "Z" << "s" << "oe" << "z" << "Y" << "Y" << "u"
+                                                          << "A" << "A" << "A" << "A" << "A" << "A" << "AE" << "C" << "E"
+                                                          << "E" << "E" << "E" << "I" << "I" << "I" << "I" << "D" << "N"
+                                                          << "O" << "O" << "O" << "O" << "O" << "O" << "U" << "U" << "U"
+                                                          << "U" << "Y" << "s" << "a" << "a" << "a" << "a" << "a" << "a"
+                                                          << "ae" << "c" << "e" << "e" << "e" << "e" << "i" << "i" << "i"
+                                                          << "i" << "o" << "n" << "o" << "o" << "o" << "o" << "o" << "o"
+                                                          << "u" << "u" << "u" << "u" << "y" << "y";
+
+    //Replace the special characters from our list
+    QString output = "";
+    for (int i = 0; i < s.length(); i++)
+    {
+        QChar c = s[i];
+        int dIndex = diacriticLetters.indexOf(c);
+        if (dIndex < 0)
+            output.append(c);
+        else
+        {
+            QString replacement = noDiacriticLetters[dIndex];
+            output.append(replacement);
+        }
+    }
+
+    //Decompose string if some chars were forgotten
+    QString out(output.normalized(QString::NormalizationForm_KD));
+
+    //return only ascii chars, no punctuation marks
+    return out.replace(QRegExp("[^a-zA-Z\\s]"), "").toLower();
+}

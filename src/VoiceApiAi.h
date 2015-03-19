@@ -13,7 +13,7 @@ class VoiceApiAi: public QObject
 
     QML_READONLY_PROPERTY(Common::VoiceStatus, voiceStatus)
     QML_READONLY_PROPERTY(double, voiceLevel)
-    QML_READONLY_PROPERTY(QString, resultJson)
+    QML_READONLY_PROPERTY(QString, resultText)
 
 public:
     VoiceApiAi(QObject *parent);
@@ -25,7 +25,9 @@ public:
 
 signals:
     void recordFailed();
-    void requestFinished(const QVariantMap &data);
+
+    void actionIO(QString ioname, QString action, QString room_context, bool plural);
+    void actionIORoom(QString ioname, QString action, QString room_name, bool plural);
 
 private slots:
     void handleStateChanged(QAudio::State state);
@@ -38,10 +40,15 @@ private slots:
 private:
     void doRequest();
 
+    void processJson(const QVariantMap &vmap);
+
     QNetworkAccessManager *accessManager;
+    QNetworkReply *netReply = nullptr;
     QAudioInput *audioInput = nullptr;
     QTemporaryFile *recordFile;
     QTimer *recTimer = nullptr;
+
+    QString room_context;
 };
 
 #endif // VOICEAPIAI_H

@@ -19,8 +19,6 @@ Window {
     property variant roomModel
     property string currentRoomName
 
-    property string voiceContext: "default"
-
     Image {
         source: calaosApp.getPictureSized(isLandscape?
                                               "background_landscape":
@@ -41,17 +39,22 @@ Window {
         }
     }
 
+    property bool __isVoice: false
     function handleBack() {
         if (stackView.depth > 2) {
             stackView.pop()
+            if (__isVoice) {
+                __isVoice = false
+                voiceApi.cancel()
+            }
             if (stackView.depth === 2)
                 menuBar.menuType = Common.MenuMain
         }
     }
 
-    function voiceClicked(ctx) {
-        voiceContext = ctx
+    function voiceClicked() {
         menuBar.menuType = Common.MenuBack
+        __isVoice = true
         stackView.push(voiceView)
 
         voiceApi.startVoiceRecord()

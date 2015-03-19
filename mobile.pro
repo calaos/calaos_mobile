@@ -45,8 +45,7 @@ SOURCES += src/main.cpp \
     src/AudioModel.cpp \
     src/FavoritesModel.cpp \
     src/HardwareUtils.cpp \
-    src/VoiceApiAi.cpp \
-    src/ApiMatcher.cpp
+    src/VoiceApiAi.cpp
 
 RESOURCES += qml.qrc \
     img.qrc
@@ -126,8 +125,7 @@ HEADERS += \
     src/FavoritesModel.h \
     src/HardwareUtils.h \
     android/HardwareUtils_Android.h \
-    src/VoiceApiAi.h \
-    src/ApiMatcher.h
+    src/VoiceApiAi.h
 
 DISTFILES += \
     qml/VoiceView.qml \

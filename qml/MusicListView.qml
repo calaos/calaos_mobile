@@ -194,7 +194,6 @@ Item {
 
     ViewHeader {
         id: header
-        voiceContext: "music"
         headerLabel: qsTr("Music")
         iconSource: calaosApp.getPictureSized("icon_media")
     }

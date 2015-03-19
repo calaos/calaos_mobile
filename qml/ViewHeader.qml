@@ -6,7 +6,6 @@ Rectangle {
     property alias iconSource: ic.source
 
     property bool voiceButtonVisible: true
-    property string voiceContext: "default"
 
     anchors { left: parent.left; right: parent.right; top: parent.top }
     color: "black"
@@ -57,6 +56,6 @@ Rectangle {
             bottom: parent.bottom
             left: voice.left; leftMargin: calaosApp.dp(-10);
         }
-        onClicked: voiceClicked(voiceContext)
+        onClicked: voiceClicked()
     }
 }

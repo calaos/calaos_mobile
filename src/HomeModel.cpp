@@ -145,3 +145,13 @@ void LightOnModel::removeLight(IOBase *io)
         }
     }
 }
+
+void HomeModel::actionIO(QString ioname, QString action, QString room_context, bool plural)
+{
+
+}
+
+void HomeModel::actionIORoom(QString ioname, QString action, QString room_name, bool plural)
+{
+
+}

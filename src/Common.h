@@ -75,7 +75,9 @@ public:
         VoiceStatusIdle,
         VoiceStatusRecording,
         VoiceStatusSending,
-        VoiceStatusFailure
+        VoiceStatusFailure,
+        VoiceStatusNotRecognized,
+        VoiceStatusResult
     };
     Q_ENUMS(VoiceStatus)
 
@@ -83,6 +85,8 @@ public:
     static IOType IOTypeFromString(QString t);
     static QString audioStatusToString(AudioStatusType t);
     static AudioStatusType audioStatusFromString(QString t);
+
+    static QString removeSpecialChar(const QString &s);
 
     static void registerQml()
     {

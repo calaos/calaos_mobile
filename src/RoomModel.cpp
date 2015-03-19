@@ -20,13 +20,19 @@ IOBase *IOCache::searchOutput(QString id)
 void IOCache::addInput(IOBase *io)
 {
     if (io)
+    {
         inputCache[io->get_ioId()] = io;
+        inputList.append(io);
+    }
 }
 
 void IOCache::addOutput(IOBase *io)
 {
     if (io)
+    {
         outputCache[io->get_ioId()] = io;
+        outputList.append(io);
+    }
 }
 
 void IOCache::delInput(IOBase *io)
@@ -55,6 +61,28 @@ void IOCache::clearCache()
 
     inputCache.clear();
     outputCache.clear();
+}
+
+QList<IOBase *> IOCache::lookupName(const QString &_io_name)
+{
+    QString io_name = Common::removeSpecialChar(_io_name).trimmed();
+    QList<IOBase *> iofound;
+
+    foreach (IOBase *io, inputList)
+    {
+        QString n = Common::removeSpecialChar(io->get_ioName()).trimmed();
+        if (n.contains(io_name))
+            iofound.append(io);
+    }
+
+    foreach (IOBase *io, outputList)
+    {
+        QString n = Common::removeSpecialChar(io->get_ioName()).trimmed();
+        if (n.contains(io_name))
+            iofound.append(io);
+    }
+
+    return iofound;
 }
 
 ScenarioModel::ScenarioModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent):
@@ -388,6 +416,29 @@ void IOBase::sendValueGreen(int value)
 void IOBase::sendValueBlue(int value)
 {
     sendRGB(getStateRed(), getStateGreen(), value);
+}
+
+void IOBase::processAction(QString action)
+{
+    //Do action based on type
+    switch (get_ioType())
+    {
+    case Common::Light:
+    case Common::LightDimmer:
+    case Common::LightRgb:
+    case Common::VarBool:
+    case Common::Scenario:
+        if (action == "true") sendTrue();
+        else if (action == "false") sendFalse();
+        break;
+    case Common::Shutter:
+    case Common::ShutterSmart:
+        if (action == "up") sendUp();
+        else if (action == "down") sendDown();
+        else if (action == "stop") sendStop();
+        break;
+    default: break;
+    }
 }
 
 int IOBase::getStateShutterPos()

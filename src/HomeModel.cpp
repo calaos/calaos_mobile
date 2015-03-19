@@ -55,6 +55,11 @@ QObject *HomeModel::getRoomModel(int idx) const
     return it->getRoomModel();
 }
 
+void HomeModel::setCurrentRoom(int idx)
+{
+    currentRoomId = idx;
+}
+
 void HomeModel::newlight_on(IOBase *io)
 {
     update_lights_on_count(get_lights_on_count() + 1);
@@ -146,12 +151,120 @@ void LightOnModel::removeLight(IOBase *io)
     }
 }
 
-void HomeModel::actionIO(QString ioname, QString action, QString room_context, bool plural)
+void HomeModel::actionIO(QString io_name, QString action, bool plural)
 {
+    if (plural)
+    {
+        //TODO, can we make that work like that?
+        //remove trailing 's' for plural
+        if (io_name.at(io_name.length() - 1) == 's')
+            io_name.remove(io_name.length() - 1, 1);
+    }
 
+    //try to find io name from the full list
+    QList<IOBase *> iolist = IOCache::Instance().lookupName(io_name);
+
+    if (!plural)
+    {
+        if (iolist.size() > 1)
+        {
+            qDebug() << "Found " << iolist.size() << " IO with name: " << io_name;
+            //TODO, ask which one
+        }
+        else if (iolist.isEmpty())
+        {
+            qDebug() << "No IO found with name: " << io_name;
+            //TODO, show error
+        }
+        else
+        {
+            IOBase *io = iolist.at(0);
+            io->processAction(action);
+        }
+    }
+
+    if (!plural && iolist.size() > 1)
+    {
+        qDebug() << "Too much IO found with name: " << io_name;
+    }
+
+    if (plural)
+    {
+        foreach (IOBase *io, iolist)
+        {
+            io->processAction(action);
+        }
+    }
 }
 
-void HomeModel::actionIORoom(QString ioname, QString action, QString room_name, bool plural)
+void HomeModel::actionIORoom(QString io_name, QString action, QString room_name, bool plural)
 {
+    QString rname = Common::removeSpecialChar(room_name).trimmed();
+    RoomItem *found = nullptr;
 
+    //find room
+    for (int i = 0;i < rowCount();i++)
+    {
+        RoomItem *it = dynamic_cast<RoomItem *>(item(i));
+        QString n = Common::removeSpecialChar(it->get_roomName()).trimmed();
+        if (n.contains(rname))
+            found = it;
+    }
+
+    if (!found)
+    {
+        qDebug() << "Room not found !";
+        return;
+    }
+
+    if (plural)
+    {
+        //TODO, can we make that work like that?
+        //remove trailing 's' for plural
+        if (io_name.at(io_name.length() - 1) == 's')
+            io_name.remove(io_name.length() - 1, 1);
+    }
+    io_name = Common::removeSpecialChar(io_name).trimmed();
+    QList<IOBase *> iolist;
+
+    RoomModel *rmodel = dynamic_cast<RoomModel *>(found->getRoomModel());
+    for (int i = 0;i < rmodel->rowCount();i++)
+    {
+        IOBase *io = dynamic_cast<IOBase *>(rmodel->getItemModel(i));
+        QString n = Common::removeSpecialChar(io->get_ioName()).trimmed();
+        if (n.contains(io_name))
+            iolist.append(io);
+    }
+
+    if (!plural)
+    {
+        if (iolist.size() > 1)
+        {
+            qDebug() << "Found " << iolist.size() << " IO with name: " << io_name;
+            //TODO, ask which one
+        }
+        else if (iolist.isEmpty())
+        {
+            qDebug() << "No IO found with name: " << io_name;
+            //TODO, show error
+        }
+        else
+        {
+            IOBase *io = iolist.at(0);
+            io->processAction(action);
+        }
+    }
+
+    if (!plural && iolist.size() > 1)
+    {
+        qDebug() << "Too much IO found with name: " << io_name;
+    }
+
+    if (plural)
+    {
+        foreach (IOBase *io, iolist)
+        {
+            io->processAction(action);
+        }
+    }
 }

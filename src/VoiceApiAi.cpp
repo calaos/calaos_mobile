@@ -272,7 +272,6 @@ void VoiceApiAi::processJson(const QVariantMap &vmap)
     {
         emit actionIO(params["io_name"].toString(),
                       params["action"].toString(),
-                      room_context,
                       params["art_io"].toString() == "plural");
     }
     else

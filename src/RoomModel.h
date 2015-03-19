@@ -29,11 +29,18 @@ public:
 
     void clearCache();
 
+    //Used by the voiceApi to search for an IO name
+    //a name can be found multiple times
+    QList<IOBase *> lookupName(const QString &_io_name);
+
 private:
     IOCache() {}
 
     QHash<QString, IOBase *> inputCache;
     QHash<QString, IOBase *> outputCache;
+
+    QList<IOBase *> inputList;
+    QList<IOBase *> outputList;
 };
 
 class ScenarioModel: public QStandardItemModel
@@ -160,6 +167,8 @@ public:
     Q_INVOKABLE void sendValueRed(int value);
     Q_INVOKABLE void sendValueGreen(int value);
     Q_INVOKABLE void sendValueBlue(int value);
+
+    void processAction(QString action);
 
 private:
     QVariantMap ioData;

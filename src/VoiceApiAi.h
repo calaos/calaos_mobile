@@ -26,7 +26,7 @@ public:
 signals:
     void recordFailed();
 
-    void actionIO(QString ioname, QString action, QString room_context, bool plural);
+    void actionIO(QString ioname, QString action, bool plural);
     void actionIORoom(QString ioname, QString action, QString room_name, bool plural);
 
 private slots:
@@ -47,8 +47,6 @@ private:
     QAudioInput *audioInput = nullptr;
     QTemporaryFile *recordFile;
     QTimer *recTimer = nullptr;
-
-    QString room_context;
 };
 
 #endif // VOICEAPIAI_H

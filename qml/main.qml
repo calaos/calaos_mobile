@@ -114,6 +114,7 @@ Window {
                 console.debug("model: " + homeModel)
                 roomModel = homeModel.getRoomModel(idx)
                 currentRoomName = room_name
+                homeModel.setCurrentRoom(idx)
                 stackView.push(roomDetailView)
             }
         }

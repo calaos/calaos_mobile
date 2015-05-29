@@ -128,7 +128,7 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
         if (r["gui_type"] == "temp" ||
             r["gui_type"] == "analog_in" ||
             r["gui_type"] == "scenario" ||
-            r["gui_type"] == "sctring_in")
+            r["gui_type"] == "string_in")
         {
             IOBase *io = IOCache::Instance().searchInput(r["id"].toString())->cloneIO();
             appendRow(io);

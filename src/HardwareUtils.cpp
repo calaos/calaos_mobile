@@ -1,11 +1,12 @@
 #include "HardwareUtils.h"
 #include <QSettings>
-#include <QInputDialog>
 
 #ifdef Q_OS_IOS
 #include "../ios/HardwareUtils_iOS.h"
 #elif defined(Q_OS_ANDROID)
 #include "../android/HardwareUtils_Android.h"
+#else
+#include <QInputDialog>
 #endif
 
 HardwareUtils *HardwareUtils::Instance(QObject *parent)
@@ -15,7 +16,7 @@ HardwareUtils *HardwareUtils::Instance(QObject *parent)
 #ifdef Q_OS_IOS
     hu = new HardwareUtils_iOS(parent);
 #elif defined(Q_OS_ANDROID)
-    hu = new HardwareUtils_Android(parent);
+    hu = new HardwareUtilsAndroid(parent);
 #else
     hu = new HardwareUtils(parent);
 #endif
@@ -91,6 +92,7 @@ void HardwareUtils::saveAuthKeychain(const QString &email, const QString &pass)
 
 void HardwareUtils::inputTextDialog(const QString &title, const QString &message)
 {
+#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
     QInputDialog *d = new QInputDialog();
     d->setWindowTitle(title);
     d->setInputMode(QInputDialog::TextInput);
@@ -106,4 +108,8 @@ void HardwareUtils::inputTextDialog(const QString &title, const QString &message
         d->deleteLater();
         emit dialogTextValid(d->textValue());
     });
+#else
+    Q_UNUSED(title);
+    Q_UNUSED(message);
+#endif
 }

@@ -21,6 +21,8 @@ public:
         ConnectedWWAN = 1
     };
     virtual int getNetworkStatus();
+
+    virtual void inputTextDialog(const QString &title, const QString &message);
 };
 
 #endif // HARDWAREUTILS_ANDROID_H

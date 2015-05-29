@@ -7,6 +7,12 @@ import android.content.DialogInterface;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
+class HardwareUtilsNatives
+{
+    public static native void emitDialogTextValid(String text);
+    public static native void emitDialogCancel();
+}
+
 public class HardwareUtils extends org.qtproject.qt5.android.bindings.QtActivity
 {
     private static HardwareUtils _context;
@@ -65,6 +71,46 @@ public class HardwareUtils extends org.qtproject.qt5.android.bindings.QtActivity
         }
 
         return 1; //We don't know. Say it's connected.
+    }
+
+    public static void inputtextDialog(String _title, String _message)
+    {
+        final String title = _title;
+        final String msg = _message;
+        final String bt = _buttontext;
+        _context.runOnUiThread(new Runnable()
+        {
+            public void run()
+            {
+                final AlertDialog alertDialog = new AlertDialog.Builder(_context).create();
+                // Set an EditText view to get user input
+                final EditText input = new EditText(this);
+
+                alertDialog.setTitle(title);
+                alertDialog.setMessage(msg);
+                alertDialog.setView(input);
+
+                alertDialog.setPositiveButton("Confirm", new DialogInterface.OnClickListener()
+                {
+                    public void onClick(DialogInterface dialog, int which)
+                    {
+                        HardwareUtilsNatives.emitDialogTextValid(input.getText());
+                        alertDialog.dismiss();
+                    }
+                });
+                alertDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener()
+                {
+                    public void onClick(DialogInterface dialog, int which)
+                    {
+                        HardwareUtilsNatives.emitDialogCancel();
+                        alertDialog.dismiss();
+                    }
+                });
+
+                alertDialog.setIcon(R.drawable.icon);
+                alertDialog.show();
+            }
+        });
     }
 
 

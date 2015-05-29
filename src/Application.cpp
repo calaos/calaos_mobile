@@ -95,6 +95,9 @@ void Application::login(QString user, QString pass, QString host)
         return;
     }
 
+    if (get_applicationStatus() != Common::NotConnected)
+        return;
+
     update_username(user);
     update_password(pass);
     update_hostname(host);

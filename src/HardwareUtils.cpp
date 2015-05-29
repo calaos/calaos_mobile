@@ -108,6 +108,9 @@ void HardwareUtils::inputTextDialog(const QString &title, const QString &message
         d->deleteLater();
         emit dialogTextValid(d->textValue());
     });
+
+    d->setModal(true);
+    d->show();
 #else
     Q_UNUSED(title);
     Q_UNUSED(message);

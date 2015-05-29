@@ -1,7 +1,17 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
+#include <QObject>
+#ifndef Q_MOC_RUN
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
 #include <QGuiApplication>
+#define QAPP    QGuiApplication
+#else
+#include <QApplication>
+#define QAPP    QApplication
+#endif
+#endif
+
 #include <QQmlApplicationEngine>
 #include "CalaosConnection.h"
 #include "HomeModel.h"
@@ -12,7 +22,7 @@
 #include "FavoritesModel.h"
 #include "HardwareUtils.h"
 
-class Application : public QGuiApplication
+class Application : public QAPP
 {
     Q_OBJECT
 

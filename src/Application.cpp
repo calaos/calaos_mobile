@@ -9,7 +9,7 @@
 #endif
 
 Application::Application(int & argc, char ** argv) :
-    QGuiApplication(argc, argv)
+    QAPP(argc, argv)
 {
     HardwareUtils::Instance(this);
 

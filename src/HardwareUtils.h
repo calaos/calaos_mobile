@@ -30,14 +30,21 @@ public:
     virtual void saveAuthKeychain(const QString &email, const QString &pass);
     virtual void loadAuthKeychain(QString &email, QString &pass);
 
+    virtual void inputTextDialog(const QString &title, const QString &message);
+
     //This is used by private classes
     void emitNetworkStatusChanged();
     void emitApplicationActiveChanged(bool active);
+    void emitDialogTextValid(const QString &s);
+    void emitDialogCancel();
 
 signals:
     void networkStatusChanged();
     void applicationWillResignActive();
     void applicationBecomeActive();
+
+    void dialogCanceled();
+    void dialogTextValid(const QString &text);
 };
 
 #endif // HARDWAREUTILS_H

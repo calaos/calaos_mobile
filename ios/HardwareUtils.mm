@@ -2,6 +2,7 @@
 #import <UIKit/UIKit.h>
 #import "Reachability.h"
 #import "KeychainItemWrapper.h"
+#import "AlertPrompt.h"
 
 @interface HWClass : NSObject
 {
@@ -41,6 +42,19 @@ HardwareUtils *hwobj;
 {
     Q_UNUSED(notif)
     hwobj->emitApplicationActiveChanged(true);
+}
+
+- (void)alertView:(UIAlertView *)alertView willDismissWithButtonIndex:(NSInteger)buttonIndex
+{
+    if (buttonIndex != [alertView cancelButtonIndex])
+    {
+        QString val = QString::fromNSString([(AlertPrompt *)alertView enteredText]);
+        hwobj->emitDialogTextValid(val);
+    }
+    else
+    {
+        hwobj->emitDialogCancel();
+    }
 }
 
 @end
@@ -119,4 +133,15 @@ void HardwareUtils_iOS::saveAuthKeychain(const QString &email, const QString &pa
 {
     [authItem setObject:email.toNSString() forKey:(id)kSecAttrAccount];
     [authItem setObject:pass.toNSString() forKey:(id)kSecValueData];
+}
+
+void HardwareUtils_iOS::inputTextDialog(const QString &title, const QString &message)
+{
+    QString cancel(tr("Cancel"));
+    QString valid(tr("Confirm"));
+
+    AlertPrompt *prompt = [AlertPrompt alloc];
+    prompt = [prompt initWithTitle:title.toNSString() message:message.toNSString() delegate:hwclass cancelButtonTitle:cancel.toNSString() okButtonTitle:valid.toNSString()];
+    [prompt show];
+    [prompt release];
 }

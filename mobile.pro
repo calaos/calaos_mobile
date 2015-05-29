@@ -31,7 +31,11 @@ android {
         ios/Reachability.h \
         ios/Reachability.m \
         ios/KeychainItemWrapper.h \
-        ios/KeychainItemWrapper.m
+        ios/KeychainItemWrapper.m \
+        ios/AlertPrompt.h \
+        ios/AlertPrompt.m
+} else {
+    QT += widgets
 }
 
 CONFIG += c++11

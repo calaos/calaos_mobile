@@ -33,7 +33,7 @@ BorderImage {
         }
         imageSource: "button_keyboard"
 
-        onButtonClicked: console.log("TODO")
+        onButtonClicked: modelData.askStateText()
 
         visible: modelData.rw
     }

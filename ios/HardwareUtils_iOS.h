@@ -26,6 +26,8 @@ public:
 
     virtual void saveAuthKeychain(const QString &email, const QString &pass);
     virtual void loadAuthKeychain(QString &email, QString &pass);
+
+    virtual void inputTextDialog(const QString &title, const QString &message);
 };
 
 #endif // HARDWAREUTILS_IOS_H

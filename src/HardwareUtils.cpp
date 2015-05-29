@@ -1,5 +1,6 @@
 #include "HardwareUtils.h"
 #include <QSettings>
+#include <QInputDialog>
 
 #ifdef Q_OS_IOS
 #include "../ios/HardwareUtils_iOS.h"
@@ -60,6 +61,16 @@ void HardwareUtils::emitApplicationActiveChanged(bool active)
         emit applicationWillResignActive();
 }
 
+void HardwareUtils::emitDialogTextValid(const QString &s)
+{
+    emit dialogTextValid(s);
+}
+
+void HardwareUtils::emitDialogCancel()
+{
+    emit dialogCanceled();
+}
+
 void HardwareUtils::loadAuthKeychain(QString &email, QString &pass)
 {
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
@@ -76,4 +87,23 @@ void HardwareUtils::saveAuthKeychain(const QString &email, const QString &pass)
     settings.setValue("calaos/cn_pass", pass);
 
     settings.sync();
+}
+
+void HardwareUtils::inputTextDialog(const QString &title, const QString &message)
+{
+    QInputDialog *d = new QInputDialog();
+    d->setWindowTitle(title);
+    d->setInputMode(QInputDialog::TextInput);
+    d->setLabelText(message);
+
+    connect(d, &QInputDialog::rejected, [=]()
+    {
+        d->deleteLater();
+        emit dialogCanceled();
+    });
+    connect(d, &QInputDialog::accepted, [=]()
+    {
+        d->deleteLater();
+        emit dialogTextValid(d->textValue());
+    });
 }

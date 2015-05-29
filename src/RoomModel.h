@@ -161,6 +161,8 @@ public:
     Q_INVOKABLE void sendValueGreen(int value);
     Q_INVOKABLE void sendValueBlue(int value);
 
+    Q_INVOKABLE void askStateText();
+
 private:
     QVariantMap ioData;
     CalaosConnection *connection;
@@ -171,6 +173,8 @@ private:
 private slots:
     void inputChanged(QString id, QString key, QString value);
     void outputChanged(QString id, QString key, QString value);
+
+    void textDialogValid(const QString &text);
 
 signals:
     void stateChange();

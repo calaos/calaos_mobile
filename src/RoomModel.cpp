@@ -1,5 +1,6 @@
 #include "RoomModel.h"
 #include <QDebug>
+#include "HardwareUtils.h"
 
 IOBase *IOCache::searchInput(QString id)
 {
@@ -478,4 +479,18 @@ void IOBase::outputChanged(QString id, QString key, QString value)
     {
         update_ioName(value);
     }
+}
+
+void IOBase::askStateText()
+{
+    connect(HardwareUtils::Instance(), SIGNAL(dialogTextValid(QString)),
+            this, SLOT(textDialogValid(QString)));
+    HardwareUtils::Instance()->inputTextDialog(tr("Change value"), tr("Enter new value"));
+}
+
+void IOBase::textDialogValid(const QString &text)
+{
+    disconnect(HardwareUtils::Instance(), SIGNAL(dialogTextValid(QString)),
+               this, SLOT(textDialogValid(QString)));
+    sendStringValue(text);
 }

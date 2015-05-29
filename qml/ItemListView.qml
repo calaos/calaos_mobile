@@ -65,6 +65,8 @@ ListView {
                              model.ioType === Common.AnalogOut? var_int:
                              model.ioType === Common.VarBool? var_bool:
                              model.ioType === Common.VarString? var_string:
+                             model.ioType === Common.StringIn? var_string:
+                             model.ioType === Common.StringOut? var_string:
                              model.ioType === Common.Scenario? scenario:
                              model.ioType === Common.Shutter? shutter:
                              model.ioType === Common.LightDimmer? light_dimmer:

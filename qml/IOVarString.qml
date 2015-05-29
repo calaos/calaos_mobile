@@ -1,4 +1,5 @@
-import QtQuick 2.0
+import QtQuick 2.2
+import Calaos 1.0
 
 BorderImage {
     property variant modelData
@@ -35,6 +36,7 @@ BorderImage {
 
         onButtonClicked: modelData.askStateText()
 
-        visible: modelData.rw
+        visible: (modelData.rw || modelData.ioType === Common.StringOut) &&
+                 modelData.ioType !== Common.StringIn
     }
 }

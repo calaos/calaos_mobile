@@ -194,8 +194,12 @@ void Application::saveSettings()
     HardwareUtils::Instance()->saveAuthKeychain(get_username(), get_password());
     settings.setValue("calaos/host", get_hostname());
 
-    favoritesList = favModel->save();
-    settings.setValue("app/favorites", favoritesList);
+    //Do not save a wrong or empty model
+    if (favModel->isLoaded())
+    {
+        favoritesList = favModel->save();
+        settings.setValue("app/favorites", favoritesList);
+    }
 
     settings.sync();
 }

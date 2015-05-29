@@ -57,11 +57,15 @@ public:
     void delItemFavorite(int idx);
     void moveFavorite(int idx, int newidx);
 
+    bool isLoaded() { return loaded; }
+
 private:
     QString name, type;
 
     QQmlApplicationEngine *engine;
     CalaosConnection *connection;
+
+    bool loaded = false;
 };
 
 #endif // FAVORITESMODEL_H

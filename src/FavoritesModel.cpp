@@ -50,6 +50,7 @@ QVariantList FavoritesModel::save()
 
 void FavoritesModel::load(QVariantList favList)
 {
+    loaded = false;
     clear();
 
     foreach (QVariant var, favList)
@@ -59,6 +60,7 @@ void FavoritesModel::load(QVariantList favList)
         if (!addFavorite(vmap["id"].toString(), vmap["type"].toInt()))
             qDebug() << "Failed to add IO: " << vmap["id"].toString();
     }
+    loaded = true;
 }
 
 bool FavoritesModel::addFavorite(QString ioid, int type)

@@ -21,6 +21,7 @@
 #include "RoomModel.h"
 #include "FavoritesModel.h"
 #include "HardwareUtils.h"
+#include "CameraModel.h"
 
 class Application : public QAPP
 {
@@ -64,6 +65,7 @@ private:
     FavoritesModel *favModel;
     HomeFavModel *favHomeModel;
     LightOnModel *lightOnModel;
+    CameraModel *cameraModel;
 
     QVariantList favoritesList;
 

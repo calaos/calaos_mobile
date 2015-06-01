@@ -159,6 +159,56 @@ void CalaosConnection::requestFinished()
     }
 }
 
+void CalaosConnection::requestCamFinished(QNetworkReply *reqReply, const QString &camid)
+{
+    if (!reqReply)
+    {
+        qWarning() << "Error reqReply is NULL!";
+        return;
+    }
+
+    if (reqReply->error() != QNetworkReply::NoError)
+    {
+        qDebug() << "Error in " << reqReply->url() << ":" << reqReply->errorString();
+        return;
+    }
+
+    QByteArray bytes = reqReply->readAll();
+    QJsonParseError err;
+    QJsonDocument jdoc = QJsonDocument::fromJson(bytes, &err);
+
+    if (err.error != QJsonParseError::NoError)
+    {
+        qDebug() << bytes;
+        qDebug() << "JSON parse error at " << err.offset << " : " << err.errorString();
+        return;
+    }
+
+    qDebug() << "RECV: " << jdoc.toJson();
+
+    reqReplies.removeAll(reqReply);
+
+    QVariantMap jroot = jdoc.object().toVariantMap();
+
+    if (jroot.contains("error"))
+    {
+        qWarning() << "Error getting camera picture";
+        return;
+    }
+
+    if (jroot.contains("contenttype") &&
+        jroot.contains("data") &&
+        jroot.contains("encoding"))
+    {
+        //we have a new picture
+        emit cameraPictureDownloaded(
+                    camid,
+                    jroot["data"].toString(),
+                    jroot["encoding"].toString(),
+                    jroot["contenttype"].toString());
+    }
+}
+
 void CalaosConnection::requestError(QNetworkReply::NetworkError code)
 {
     Q_UNUSED(code)
@@ -217,6 +267,28 @@ void CalaosConnection::queryState(QStringList inputs, QStringList outputs, QStri
     QNetworkReply *reqReply = accessManager->post(request, jdoc.toJson());
 
     connect(reqReply, SIGNAL(finished()), this, SLOT(requestFinished()));
+    connect(reqReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestError(QNetworkReply::NetworkError)));
+
+    reqReplies.append(reqReply);
+}
+
+void CalaosConnection::getCameraPicture(const QString &camid)
+{
+    QJsonObject jroot;
+    jroot["cn_user"] = username;
+    jroot["cn_pass"] = password;
+    jroot["action"] = QString("get_camera_pic");
+    jroot["camera_id"] = camid;
+    QJsonDocument jdoc(jroot);
+
+    qDebug() << "SEND: " << jdoc.toJson();
+
+    QUrl url(host);
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    QNetworkReply *reqReply = accessManager->post(request, jdoc.toJson());
+
+    connect(reqReply, &QNetworkReply::finished, [=]() { requestCamFinished(reqReply, camid); });
     connect(reqReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestError(QNetworkReply::NetworkError)));
 
     reqReplies.append(reqReply);

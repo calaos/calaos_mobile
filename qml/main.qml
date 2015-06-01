@@ -161,6 +161,15 @@ Window {
     }
 
     Component {
+        id: cameraView
+
+        CameraListView {
+            width: parent.width
+            height: parent.height
+        }
+    }
+
+    Component {
         id: settingsView
 
         SettingsView {

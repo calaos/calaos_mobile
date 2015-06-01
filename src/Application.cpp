@@ -79,6 +79,9 @@ Application::Application(int & argc, char ** argv) :
     engine.rootContext()->setContextProperty("favoritesModel", favModel);
     favHomeModel = new HomeFavModel(&engine, calaosConnect, this);
     engine.rootContext()->setContextProperty("favoritesHomeModel", favHomeModel);
+    cameraModel = new CameraModel(&engine, calaosConnect);
+    engine.rootContext()->setContextProperty("cameraModel", cameraModel);
+
     engine.rootContext()->setContextProperty("calaosApp", this);
     engine.load(QUrl(QStringLiteral("qrc:///qml/main.qml")));
 }
@@ -129,6 +132,7 @@ void Application::homeLoaded(QVariantMap &homeData)
     homeModel->load(homeData);
     audioModel->load(homeData);
     favHomeModel->load(homeData);
+    cameraModel->load(homeData);
     update_applicationStatus(Common::LoggedIn);
 
     favModel->load(favoritesList);

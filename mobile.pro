@@ -48,7 +48,8 @@ SOURCES += src/main.cpp \
     src/RoomModel.cpp \
     src/AudioModel.cpp \
     src/FavoritesModel.cpp \
-    src/HardwareUtils.cpp
+    src/HardwareUtils.cpp \
+    src/CameraModel.cpp
 
 RESOURCES += qml.qrc \
     img.qrc
@@ -127,4 +128,8 @@ HEADERS += \
     src/AudioModel.h \
     src/FavoritesModel.h \
     src/HardwareUtils.h \
-    android/HardwareUtils_Android.h
+    android/HardwareUtils_Android.h \
+    src/CameraModel.h
+
+DISTFILES += \
+    qml/CameraListView.qml

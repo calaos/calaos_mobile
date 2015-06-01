@@ -47,18 +47,21 @@ signals:
     void eventScenarioNew();
     void eventScenarioDel();
     void eventScenarioChange();
+    void cameraPictureDownloaded(const QString &camid, const QString &data, const QString &encoding, const QString &contenttype);
 
 public slots:
     void login(QString user, QString pass, QString host);
     void logout();
     void sendCommand(QString id, QString value, QString type = QString(), QString action = QString());
     void queryState(QStringList inputs, QStringList outputs, QStringList audio_players);
+    void getCameraPicture(const QString &camid);
 
 private slots:
     void sslErrors(QNetworkReply *reply, const QList<QSslError> &);
     void loginFinished(QNetworkReply *reply);
 
     void requestFinished();
+    void requestCamFinished(QNetworkReply *reqReply, const QString &camid);
     void requestError(QNetworkReply::NetworkError code);
 
     void startJsonPolling();

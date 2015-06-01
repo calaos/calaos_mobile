@@ -162,5 +162,10 @@
         <file>img/rooms/fav@2x.png</file>
         <file>img/button_more.png</file>
         <file>img/button_more@2x.png</file>
+        <file>img/camera_back.png</file>
+        <file>img/camera_back@2x.png</file>
+        <file>img/camera_back_big.png</file>
+        <file>img/camera_back_big@2x.png</file>
+        <file>img/camera_nocam.png</file>
     </qresource>
 </RCC>

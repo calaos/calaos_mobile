@@ -19,6 +19,8 @@ Window {
     property variant roomModel
     property string currentRoomName
 
+    property bool isSingleCameraView: false
+
     Image {
         source: calaosApp.getPictureSized(isLandscape?
                                               "background_landscape":
@@ -40,6 +42,14 @@ Window {
     }
 
     function handleBack() {
+        //enable all cameras if going back to CameraListView
+        if (isSingleCameraView) {
+            cameraModel.cameraVisible = true
+            isSingleCameraView = false
+        }
+        else
+            cameraModel.cameraVisible = false
+
         if (stackView.depth > 2) {
             stackView.pop()
             if (stackView.depth === 2)
@@ -164,6 +174,17 @@ Window {
         id: cameraView
 
         CameraListView {
+            width: parent.width
+            height: parent.height
+        }
+    }
+
+    property variant currentCameraModel
+    Component {
+        id: cameraSingleView
+
+        CameraSingleView {
+            modelData: currentCameraModel
             width: parent.width
             height: parent.height
         }

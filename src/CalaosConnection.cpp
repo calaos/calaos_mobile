@@ -7,8 +7,11 @@ CalaosConnection::CalaosConnection(QObject *parent) :
     QObject(parent)
 {
     accessManager = new QNetworkAccessManager(this);
+    accessManagerCam = new QNetworkAccessManager(this);
     pollReply = nullptr;
     connect(accessManager, SIGNAL(sslErrors(QNetworkReply*, const QList<QSslError> &)),
+            this, SLOT(sslErrors(QNetworkReply*, const QList<QSslError> &)));
+    connect(accessManagerCam, SIGNAL(sslErrors(QNetworkReply*, const QList<QSslError> &)),
             this, SLOT(sslErrors(QNetworkReply*, const QList<QSslError> &)));
 }
 
@@ -114,6 +117,8 @@ void CalaosConnection::requestFinished()
         return;
     }
 
+    reqReply->deleteLater();
+
     if (reqReply->error() != QNetworkReply::NoError)
     {
         qDebug() << "Error in " << reqReply->url() << ":" << reqReply->errorString();
@@ -167,9 +172,12 @@ void CalaosConnection::requestCamFinished(QNetworkReply *reqReply, const QString
         return;
     }
 
+    reqReply->deleteLater();
+
     if (reqReply->error() != QNetworkReply::NoError)
     {
         qDebug() << "Error in " << reqReply->url() << ":" << reqReply->errorString();
+        emit cameraPictureFailed(camid);
         return;
     }
 
@@ -181,10 +189,11 @@ void CalaosConnection::requestCamFinished(QNetworkReply *reqReply, const QString
     {
         qDebug() << bytes;
         qDebug() << "JSON parse error at " << err.offset << " : " << err.errorString();
+        emit cameraPictureFailed(camid);
         return;
     }
 
-    qDebug() << "RECV: " << jdoc.toJson();
+    //qDebug() << "RECV: " << jdoc.toJson();
 
     reqReplies.removeAll(reqReply);
 
@@ -193,6 +202,7 @@ void CalaosConnection::requestCamFinished(QNetworkReply *reqReply, const QString
     if (jroot.contains("error"))
     {
         qWarning() << "Error getting camera picture";
+        emit cameraPictureFailed(camid);
         return;
     }
 
@@ -200,13 +210,18 @@ void CalaosConnection::requestCamFinished(QNetworkReply *reqReply, const QString
         jroot.contains("data") &&
         jroot.contains("encoding"))
     {
+        qDebug() << "New camera picture for cam: " << camid;
+
         //we have a new picture
         emit cameraPictureDownloaded(
                     camid,
                     jroot["data"].toString(),
                     jroot["encoding"].toString(),
                     jroot["contenttype"].toString());
+        return;
     }
+
+    emit cameraPictureFailed(camid);
 }
 
 void CalaosConnection::requestError(QNetworkReply::NetworkError code)
@@ -286,7 +301,7 @@ void CalaosConnection::getCameraPicture(const QString &camid)
     QUrl url(host);
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    QNetworkReply *reqReply = accessManager->post(request, jdoc.toJson());
+    QNetworkReply *reqReply = accessManagerCam->post(request, jdoc.toJson());
 
     connect(reqReply, &QNetworkReply::finished, [=]() { requestCamFinished(reqReply, camid); });
     connect(reqReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestError(QNetworkReply::NetworkError)));
@@ -320,6 +335,7 @@ void CalaosConnection::startJsonPolling()
     connect(pollReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestError(QNetworkReply::NetworkError)));
     connect(pollReply, &QNetworkReply::finished, [=]()
     {
+        pollReply->deleteLater();
         if (pollReply->error() != QNetworkReply::NoError)
         {
             qDebug() << "Error in " << pollReply->url() << ":" << pollReply->errorString();
@@ -328,7 +344,6 @@ void CalaosConnection::startJsonPolling()
         }
 
         QByteArray bytes = pollReply->readAll();
-        pollReply->deleteLater();
         pollReply = nullptr;
 
         QJsonParseError err;

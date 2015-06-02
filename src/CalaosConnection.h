@@ -13,6 +13,10 @@ public:
 private:
     QNetworkAccessManager *accessManager;
 
+    //Only for queuing camera requests, on desktop max 6 // requests
+    //This is to prevent blocking the main accessManager for the cameras
+    QNetworkAccessManager *accessManagerCam;
+
     QString username, password;
     QString host;
     QString uuidPolling;
@@ -48,6 +52,7 @@ signals:
     void eventScenarioDel();
     void eventScenarioChange();
     void cameraPictureDownloaded(const QString &camid, const QString &data, const QString &encoding, const QString &contenttype);
+    void cameraPictureFailed(const QString &camid);
 
 public slots:
     void login(QString user, QString pass, QString host);

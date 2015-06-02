@@ -40,5 +40,6 @@
         <file>qml/FavoritesEditView.qml</file>
         <file>qml/IOFavAllLights.qml</file>
         <file>qml/CameraListView.qml</file>
+        <file>qml/CameraSingleView.qml</file>
     </qresource>
 </RCC>

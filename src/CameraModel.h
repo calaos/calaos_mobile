@@ -12,6 +12,9 @@
 class CameraModel: public QStandardItemModel, public QQuickImageProvider
 {
     Q_OBJECT
+
+    QML_WRITABLE_PROPERTY(bool, cameraVisible)
+
 public:
     CameraModel(QQmlApplicationEngine *engine, CalaosConnection *con, QObject *parent = 0);
 
@@ -42,6 +45,7 @@ class CameraItem: public QObject, public QStandardItem
     QML_READONLY_PROPERTY_MODEL(QString, name, CameraModel::RoleName)
     QML_READONLY_PROPERTY_MODEL(QString, url_single, CameraModel::RoleUrl)
     QML_READONLY_PROPERTY_MODEL(QString, cameraId, CameraModel::RoleId)
+    QML_WRITABLE_PROPERTY(bool, cameraVisible)
 
 public:
     CameraItem(CalaosConnection *con);
@@ -50,11 +54,14 @@ public:
 
     void getPictureImage(QImage &image);
 
+    void startCamera();
+
 signals:
     void newFrameReceived();
 
 private slots:
     void cameraPictureDownloaded(const QString &camid, const QString &pic, const QString &encoding, const QString &contenttype);
+    void cameraPictureFailed(const QString &camid);
 
 private:
     QVariantMap cameraData;

@@ -74,11 +74,6 @@ Item {
                             right: parent.right; rightMargin: 13 * calaosApp.density
                             bottom: parent.bottom; bottomMargin: 13 * calaosApp.density
                         }
-
-//                        Connections {
-//                            target: modelData
-//                            onNewFrameReceived: cameraPic.reload()
-//                        }
                     }
                 }
 
@@ -93,6 +88,18 @@ Item {
                         left: backcam.right; leftMargin: 8 * calaosApp.density
                         right: parent.right; rightMargin: 8 * calaosApp.density
                         top: parent.top; topMargin: 18 * calaosApp.density
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        //set only camera visible for current camera
+                        isSingleCameraView = true
+                        cameraModel.cameraVisible = false
+                        modelData.cameraVisible = true
+                        currentCameraModel = modelData
+                        stackView.push(cameraSingleView)
                     }
                 }
             }

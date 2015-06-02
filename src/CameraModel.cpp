@@ -12,8 +12,21 @@ CameraModel::CameraModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObj
     roles[RoleUrl] = "url_single";
     setItemRoleNames(roles);
 
+    set_cameraVisible(false);
+
     //add a special image provider for single pictures of cameras
     engine->addImageProvider(QLatin1String("camera"), this);
+
+    connect(this, &CameraModel::cameraVisibleChanged, [=](bool visible)
+    {
+        for (int i = 0;i < rowCount();i++)
+        {
+            CameraItem *obj = dynamic_cast<CameraItem *>(item(i));
+            obj->set_cameraVisible(visible);
+            if (visible)
+                obj->startCamera();
+        }
+    });
 }
 
 void CameraModel::load(QVariantMap &homeData)
@@ -48,6 +61,17 @@ CameraItem::CameraItem(CalaosConnection *con):
     QStandardItem(),
     connection(con)
 {
+    set_cameraVisible(false);
+    connect(connection, SIGNAL(cameraPictureDownloaded(QString,QString,QString,QString)),
+            this, SLOT(cameraPictureDownloaded(QString,QString,QString,QString)));
+    connect(connection, SIGNAL(cameraPictureFailed(QString)),
+            this, SLOT(cameraPictureFailed(QString)));
+
+    connect(this, &CameraItem::cameraVisibleChanged, [=](bool visible)
+    {
+        if (visible)
+            startCamera();
+    });
 }
 
 void CameraItem::load(QVariantMap &d)
@@ -128,4 +152,37 @@ void CameraItem::cameraPictureDownloaded(const QString &camid, const QString &pi
     currentImage = QImage::fromData(QByteArray::fromBase64(pic.toLatin1()));
 
     update_url_single(QString("image://camera/%1/%2").arg(get_cameraId()).arg(qrand()));
+
+    if (get_cameraVisible())
+    {
+        QTimer::singleShot(200, [=]()
+        {
+            connection->getCameraPicture(get_cameraId());
+        });
+    }
+}
+
+void CameraItem::cameraPictureFailed(const QString &camid)
+{
+    if (camid != get_cameraId())
+        return;
+
+    qDebug() << "Camera picture download failed " << camid;
+
+    if (get_cameraVisible())
+    {
+        QTimer::singleShot(200, [=]()
+        {
+            connection->getCameraPicture(get_cameraId());
+        });
+    }
+}
+
+void CameraItem::startCamera()
+{
+    QTimer::singleShot(0, [=]()
+    {
+        qDebug() << "Start camera " << get_cameraId();
+        connection->getCameraPicture(get_cameraId());
+    });
 }

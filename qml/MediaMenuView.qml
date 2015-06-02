@@ -22,7 +22,10 @@ Item {
         MediaMenuItem {
             label: qsTr("Surveillance")
             icon: IconCamera {}
-            onButtonClicked: stackView.push(cameraView)
+            onButtonClicked: {
+                cameraModel.cameraVisible = true
+                stackView.push(cameraView)
+            }
         }
 
         width: Math.floor(parent.width / (198 * calaosApp.density)) * 198 * calaosApp.density

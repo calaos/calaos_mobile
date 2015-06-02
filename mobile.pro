@@ -132,4 +132,5 @@ HEADERS += \
     src/CameraModel.h
 
 DISTFILES += \
-    qml/CameraListView.qml
+    qml/CameraListView.qml \
+    qml/CameraSingleView.qml

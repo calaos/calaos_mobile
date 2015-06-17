@@ -6,6 +6,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.widget.EditText;
 
 class HardwareUtilsNatives
 {
@@ -77,38 +78,37 @@ public class HardwareUtils extends org.qtproject.qt5.android.bindings.QtActivity
     {
         final String title = _title;
         final String msg = _message;
-        final String bt = _buttontext;
         _context.runOnUiThread(new Runnable()
         {
             public void run()
             {
-                final AlertDialog alertDialog = new AlertDialog.Builder(_context).create();
+                final AlertDialog.Builder builder = new AlertDialog.Builder(_context);
                 // Set an EditText view to get user input
-                final EditText input = new EditText(this);
+                final EditText input = new EditText(_context);
 
-                alertDialog.setTitle(title);
-                alertDialog.setMessage(msg);
-                alertDialog.setView(input);
+                builder.setTitle(title);
+                builder.setMessage(msg);
+                builder.setView(input);
 
-                alertDialog.setPositiveButton("Confirm", new DialogInterface.OnClickListener()
+                builder.setPositiveButton("Confirm", new DialogInterface.OnClickListener()
                 {
                     public void onClick(DialogInterface dialog, int which)
                     {
-                        HardwareUtilsNatives.emitDialogTextValid(input.getText());
-                        alertDialog.dismiss();
+                        HardwareUtilsNatives.emitDialogTextValid(input.getText().toString());
+                        dialog.dismiss();
                     }
                 });
-                alertDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener()
+                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener()
                 {
                     public void onClick(DialogInterface dialog, int which)
                     {
                         HardwareUtilsNatives.emitDialogCancel();
-                        alertDialog.dismiss();
+                        dialog.dismiss();
                     }
                 });
 
-                alertDialog.setIcon(R.drawable.icon);
-                alertDialog.show();
+                builder.setIcon(R.drawable.icon);
+                builder.show();
             }
         });
     }

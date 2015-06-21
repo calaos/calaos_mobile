@@ -44,6 +44,10 @@ Application::Application(int & argc, char ** argv) :
     update_needBackButton(false);
     // Need to fix a bug on Android where text is scratched at runtime on some devices
     qputenv("QML_USE_GLYPHCACHE_WORKAROUND", QByteArray("1"));
+
+    update_isAndroid(true);
+    update_isIOS(false);
+    update_isDesktop(false);
 #else
     if (arguments().contains("--force-hdpi"))
         update_density(2.0);
@@ -51,6 +55,16 @@ Application::Application(int & argc, char ** argv) :
         update_density(1.0);
 
     update_needBackButton(true);
+
+#ifdef Q_OS_IOS
+    update_isAndroid(false);
+    update_isIOS(true);
+    update_isDesktop(false);
+#else
+    update_isAndroid(false);
+    update_isIOS(false);
+    update_isDesktop(true);
+#endif
 #endif
 
     loadSettings();

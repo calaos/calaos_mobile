@@ -34,6 +34,9 @@ public:
     QML_READONLY_PROPERTY(QString, password)
     QML_READONLY_PROPERTY(QString, hostname)
     QML_READONLY_PROPERTY(bool, needBackButton)
+    QML_READONLY_PROPERTY(bool, isAndroid)
+    QML_READONLY_PROPERTY(bool, isIOS)
+    QML_READONLY_PROPERTY(bool, isDesktop)
 
 public:
     Application(int &argc, char **argv);

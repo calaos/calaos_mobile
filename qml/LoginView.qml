@@ -8,6 +8,8 @@ Item {
     property alias hostname: hostField.text
     signal loginClicked(var user, var pass, var host)
 
+    property color textEditColor: calaosApp.isAndroid? "white": "black"
+
     anchors.fill: parent
 
     visible: opacity > 0?true:false
@@ -75,7 +77,7 @@ Item {
                 id: userField
                 width: 200 * calaosApp.density
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
-                textColor: "white"
+                textColor: textEditColor
 
                 Image {
                     fillMode: Image.PreserveAspectFit
@@ -105,7 +107,7 @@ Item {
                 width: 200 * calaosApp.density
                 echoMode: TextInput.Password
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
-                textColor: "white"
+                textColor: textEditColor
 
                 Image {
                     fillMode: Image.PreserveAspectFit
@@ -134,7 +136,7 @@ Item {
                 id: hostField
                 width: 200 * calaosApp.density
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
-                textColor: "white"
+                textColor: textEditColor
 
                 Image {
                     fillMode: Image.PreserveAspectFit

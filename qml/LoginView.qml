@@ -75,6 +75,7 @@ Item {
                 id: userField
                 width: 200 * calaosApp.density
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
+                textColor: "white"
 
                 Image {
                     fillMode: Image.PreserveAspectFit
@@ -104,6 +105,7 @@ Item {
                 width: 200 * calaosApp.density
                 echoMode: TextInput.Password
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
+                textColor: "white"
 
                 Image {
                     fillMode: Image.PreserveAspectFit
@@ -132,6 +134,7 @@ Item {
                 id: hostField
                 width: 200 * calaosApp.density
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
+                textColor: "white"
 
                 Image {
                     fillMode: Image.PreserveAspectFit

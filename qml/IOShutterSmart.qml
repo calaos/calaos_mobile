@@ -21,7 +21,7 @@ BorderImage {
             left: parent.left; leftMargin: 8 * calaosApp.density
             right: btup.left; rightMargin: 8 * calaosApp.density
             verticalCenter: parent.verticalCenter
-            verticalCenterOffset: -40
+            verticalCenterOffset: -40 * calaosApp.density
         }
 
         Behavior on color { ColorAnimation { duration: 200 } }
@@ -32,7 +32,7 @@ BorderImage {
         anchors {
             right: parent.right; rightMargin: 8 * calaosApp.density
             verticalCenter: parent.verticalCenter
-            verticalCenterOffset: -40
+            verticalCenterOffset: -40 * calaosApp.density
         }
         imageSource: "button_down2"
 
@@ -44,7 +44,7 @@ BorderImage {
         anchors {
             right: btdown.left; rightMargin: 8 * calaosApp.density
             verticalCenter: parent.verticalCenter
-            verticalCenterOffset: -40
+            verticalCenterOffset: -40 * calaosApp.density
         }
         imageSource: "button_stop"
 
@@ -56,7 +56,7 @@ BorderImage {
         anchors {
             right: btstop.left; rightMargin: 8 * calaosApp.density
             verticalCenter: parent.verticalCenter
-            verticalCenterOffset: -40
+            verticalCenterOffset: -40 * calaosApp.density
         }
         imageSource: "button_up2"
 
@@ -96,8 +96,8 @@ BorderImage {
     onShutterPosChanged: {
         // shutterPos can be 0 <-> 100
         // picture should be -45 <-> 0
-        var val = Math.round(shutterPos * 45 / 100) - 45
-        shutter.anchors.verticalCenterOffset = val * calaosApp.density
+        var val = Math.round(shutterPos * 45 * calaosApp.density / 100) - 45 * calaosApp.density
+         shutter.anchors.verticalCenterOffset = val
     }
 
     Item {

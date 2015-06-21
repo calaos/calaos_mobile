@@ -21,7 +21,7 @@ BorderImage {
         anchors {
             left: parent.left; leftMargin: 8 * calaosApp.density
             verticalCenter: parent.verticalCenter
-            verticalCenterOffset: -15
+            verticalCenterOffset: -18 * calaosApp.density
         }
 
         iconState: modelData.stateInt > 0
@@ -37,7 +37,7 @@ BorderImage {
             left: icon.right; leftMargin: 8 * calaosApp.density
             right: btoff.left; rightMargin: 8 * calaosApp.density
             verticalCenter: parent.verticalCenter
-            verticalCenterOffset: -15
+            verticalCenterOffset: -18 * calaosApp.density
         }
 
         Behavior on color { ColorAnimation { duration: 200 } }
@@ -48,7 +48,7 @@ BorderImage {
         anchors {
             right: parent.right; rightMargin: 8 * calaosApp.density
             verticalCenter: parent.verticalCenter
-            verticalCenterOffset: -15
+            verticalCenterOffset: -18 * calaosApp.density
         }
         imageSource: "button_light_on"
 
@@ -60,7 +60,7 @@ BorderImage {
         anchors {
             right: bton.left; rightMargin: 8 * calaosApp.density
             verticalCenter: parent.verticalCenter
-            verticalCenterOffset: -15
+            verticalCenterOffset: -18 * calaosApp.density
         }
         imageSource: "button_light_off"
 
@@ -72,7 +72,9 @@ BorderImage {
         anchors {
             left: parent.left; leftMargin: 8 * calaosApp.density
             right: parent.right; rightMargin: 8 * calaosApp.density
-            bottom: parent.bottom; bottomMargin: 14 * calaosApp.density
+            verticalCenter: parent.verticalCenter
+            verticalCenterOffset: 18 * calaosApp.density
+            //bottom: parent.bottom; bottomMargin: 14 * calaosApp.density
         }
         updateValueWhileDragging: false
         maximumValue: 100

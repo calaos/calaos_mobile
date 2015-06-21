@@ -9,7 +9,7 @@ BorderImage {
     border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
 
     width: parent.width
-    height: 120 * calaosApp.density
+    height: slider_blue.height * 3 + 5 * 8 * calaosApp.density + btoff.height
 
     AnimatedIcon {
         id: icon
@@ -20,8 +20,8 @@ BorderImage {
 
         anchors {
             left: parent.left; leftMargin: 8 * calaosApp.density
-            verticalCenter: parent.verticalCenter
-            verticalCenterOffset: -40
+            verticalCenter: parent.top
+            verticalCenterOffset: 22 * calaosApp.density
         }
 
         iconState: modelData.stateInt > 0
@@ -36,8 +36,7 @@ BorderImage {
         anchors {
             left: icon.right; leftMargin: 8 * calaosApp.density
             right: btoff.left; rightMargin: 8 * calaosApp.density
-            verticalCenter: parent.verticalCenter
-            verticalCenterOffset: -40
+            verticalCenter: icon.verticalCenter
         }
 
         Behavior on color { ColorAnimation { duration: 200 } }
@@ -47,8 +46,7 @@ BorderImage {
         id: bton
         anchors {
             right: parent.right; rightMargin: 8 * calaosApp.density
-            verticalCenter: parent.verticalCenter
-            verticalCenterOffset: -40
+            verticalCenter: icon.verticalCenter
         }
         imageSource: "button_light_on"
 
@@ -59,8 +57,7 @@ BorderImage {
         id: btoff
         anchors {
             right: bton.left; rightMargin: 8 * calaosApp.density
-            verticalCenter: parent.verticalCenter
-            verticalCenterOffset: -40
+            verticalCenter: icon.verticalCenter
         }
         imageSource: "button_light_off"
 
@@ -80,7 +77,7 @@ BorderImage {
     Slider {
         id: slider_red
         anchors {
-            left: parent.left; leftMargin: 28 * calaosApp.density
+            left: parent.left; leftMargin: height + 16 * calaosApp.density
             right: parent.right; rightMargin: 8 * calaosApp.density
             bottom: slider_green.top; bottomMargin: 8 * calaosApp.density
         }
@@ -106,7 +103,7 @@ BorderImage {
     Slider {
         id: slider_green
         anchors {
-            left: parent.left; leftMargin: 28 * calaosApp.density
+            left: parent.left; leftMargin: height + 16 * calaosApp.density
             right: parent.right; rightMargin: 8 * calaosApp.density
             bottom: slider_blue.top; bottomMargin: 8 * calaosApp.density
         }
@@ -132,7 +129,7 @@ BorderImage {
     Slider {
         id: slider_blue
         anchors {
-            left: parent.left; leftMargin: 28 * calaosApp.density
+            left: parent.left; leftMargin: height + 16 * calaosApp.density
             right: parent.right; rightMargin: 8 * calaosApp.density
             bottom: parent.bottom; bottomMargin: 14 * calaosApp.density
         }

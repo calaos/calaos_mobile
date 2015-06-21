@@ -12,18 +12,18 @@ android {
     HEADERS += android/HardwareUtils_Android.h
 } else:ios {
     QMAKE_INFO_PLIST = ios/AppInfo.plist
-    ICON.files = ios/Default.png \
-    ios/Default@2x.png \
-    ios/Default-568h@2x.png \
-    ios/Icon-72.png \
-    ios/Icon-Small-50.png \
-    ios/Icon-Small.png \
-    ios/Icon-Small@2x.png \
-    ios/Icon.png \
-    ios/Icon@2x.png \
-    ios/Icon-76.png \
-    ios/Icon-120.png \
-    ios/Icon-152.png
+    ICON.files = $$PWD/ios/Default.png \
+    $$PWD/ios/Default@2x.png \
+    $$PWD/ios/Default-568h@2x.png \
+    $$PWD/ios/Icon-72.png \
+    $$PWD/ios/Icon-Small-50.png \
+    $$PWD/ios/Icon-Small.png \
+    $$PWD/ios/Icon-Small@2x.png \
+    $$PWD/ios/Icon.png \
+    $$PWD/ios/Icon@2x.png \
+    $$PWD/ios/Icon-76.png \
+    $$PWD/ios/Icon-120.png \
+    $$PWD/ios/Icon-152.png
     QMAKE_BUNDLE_DATA += ICON
 
     HEADERS += ios/HardwareUtils_iOS.h

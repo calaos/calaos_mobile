@@ -100,15 +100,18 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void */*reserved*/)
         return JNI_ERR;
 
     // search for Java class which declares the native methods
-    jclass javaClass = env->FindClass("fr/calaos/calaosmobile/HardwareUtils");
+    jclass javaClass = env->FindClass("fr/calaos/calaosmobile/HardwareUtilsNatives");
     if (!javaClass)
         return JNI_ERR;
 
     // register our native methods
-    if (env->RegisterNatives(javaClass,
+    jint res;
+    res = env->RegisterNatives(javaClass,
                              jniMethods,
-                             sizeof(jniMethods) / sizeof(jniMethods[0])) < 0)
+                             sizeof(jniMethods) / sizeof(jniMethods[0]));
+    if (res < 0)
     {
+        qDebug() << "RegisterNatives failed with code: " << res;
         env->DeleteLocalRef(javaClass);
         return JNI_ERR;
     }

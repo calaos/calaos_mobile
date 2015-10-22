@@ -60,7 +60,7 @@ signals:
     void newFrameReceived();
 
 private slots:
-    void cameraPictureDownloaded(const QString &camid, const QString &pic, const QString &encoding, const QString &contenttype);
+    void cameraPictureDownloaded(const QString &camid, const QByteArray &data);
     void cameraPictureFailed(const QString &camid);
 
 private:

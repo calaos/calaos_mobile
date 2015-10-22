@@ -62,8 +62,8 @@ CameraItem::CameraItem(CalaosConnection *con):
     connection(con)
 {
     set_cameraVisible(false);
-    connect(connection, SIGNAL(cameraPictureDownloaded(QString,QString,QString,QString)),
-            this, SLOT(cameraPictureDownloaded(QString,QString,QString,QString)));
+    connect(connection, SIGNAL(cameraPictureDownloaded(QString,QByteArray)),
+            this, SLOT(cameraPictureDownloaded(QString,QByteArray)));
     connect(connection, SIGNAL(cameraPictureFailed(QString)),
             this, SLOT(cameraPictureFailed(QString)));
 
@@ -140,16 +140,12 @@ QPixmap CameraModel::requestPixmap(const QString &id, QSize *size, const QSize &
     return QPixmap::fromImage(requestImage(id, size, requestedSize));
 }
 
-void CameraItem::cameraPictureDownloaded(const QString &camid, const QString &pic, const QString &encoding, const QString &contenttype)
+void CameraItem::cameraPictureDownloaded(const QString &camid, const QByteArray &data)
 {
-    Q_UNUSED(contenttype);
     if (camid != get_cameraId())
         return;
 
-    if (encoding != "base64")
-        return;
-
-    currentImage = QImage::fromData(QByteArray::fromBase64(pic.toLatin1()));
+    currentImage = QImage::fromData(data);
 
     update_url_single(QString("image://camera/%1/%2").arg(get_cameraId()).arg(qrand()));
 

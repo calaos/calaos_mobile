@@ -10,6 +10,9 @@ class CalaosConnection : public QObject
 public:
     explicit CalaosConnection(QObject *parent = 0);
 
+    void updateHttpApiV2(bool en) { isV2HttpApi = en; }
+    bool isHttpApiV2() { return isV2HttpApi; }
+
 private:
     QNetworkAccessManager *accessManager;
 
@@ -24,7 +27,10 @@ private:
     QList<QNetworkReply *> reqReplies;
     QNetworkReply *pollReply;
 
-    void processEvents(QString msg);
+    bool isV2HttpApi = true;
+
+    void processEventsV2(QString msg);
+    void processEventsV3(QVariantMap msg);
 
 signals:
     void homeLoaded(QVariantMap &home);
@@ -51,7 +57,7 @@ signals:
     void eventScenarioNew();
     void eventScenarioDel();
     void eventScenarioChange();
-    void cameraPictureDownloaded(const QString &camid, const QString &data, const QString &encoding, const QString &contenttype);
+    void cameraPictureDownloaded(const QString &camid, const QByteArray data);
     void cameraPictureFailed(const QString &camid);
 
 public slots:

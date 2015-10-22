@@ -101,8 +101,24 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
 
     QVariantMap items = roomData["items"].toMap();
 
+    QVariantList inputs;
+    QVariantList outputs;
+
+    //Support old protocol and new one
+    if (items.contains("inputs"))
+    {
+        connection->updateHttpApiV2(true);
+        inputs = items["inputs"].toList();
+        outputs = items["outputs"].toList();
+    }
+    else
+    {
+        connection->updateHttpApiV2(false);
+        inputs = roomData["items"].toList();
+        outputs = roomData["items"].toList();
+    }
+
     //inputs
-    QVariantList inputs = items["inputs"].toList();
     QVariantList::iterator it = inputs.begin();
     for (;it != inputs.end();it++)
     {
@@ -136,7 +152,6 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
     }
 
     //outputs
-    QVariantList outputs = items["outputs"].toList();
     it = outputs.begin();
     for (;it != outputs.end();it++)
     {
@@ -335,45 +350,80 @@ QString IOBase::getStateString()
 
 int IOBase::getStateRed()
 {
-    int state = ioData["state"].toInt();
+    if (connection->isHttpApiV2())
+    {
+        int state = ioData["state"].toInt();
 
-    int r;
-    r = ((state >> 16) * 100) / 255;
+        int r;
+        r = ((state >> 16) * 100) / 255;
 
-    return r;
+        return r;
+    }
+    else
+    {
+        QColor c(ioData["state"].toString());
+        return c.red();
+    }
 }
 
 int IOBase::getStateGreen()
 {
-    int state = ioData["state"].toInt();
+    if (connection->isHttpApiV2())
+    {
+        int state = ioData["state"].toInt();
 
-    int g;
-    g = (((state >> 8) & 0x0000FF) * 100) / 255;
+        int g;
+        g = (((state >> 8) & 0x0000FF) * 100) / 255;
 
-    return g;
+        return g;
+    }
+    else
+    {
+        QColor c(ioData["state"].toString());
+        return c.green();
+    }
 }
 
 int IOBase::getStateBlue()
 {
-    int state = ioData["state"].toInt();
+    if (connection->isHttpApiV2())
+    {
+        int state = ioData["state"].toInt();
 
-    int b;
-    b = ((state & 0x0000FF) * 100) / 255;
+        int b;
+        b = ((state & 0x0000FF) * 100) / 255;
 
-    return b;
+        return b;
+    }
+    else
+    {
+        QColor c(ioData["state"].toString());
+        return c.blue();
+    }
 }
 
 void IOBase::sendRGB(int r, int g, int b)
 {
-    qDebug() << "Send rgb value: " << r << "," << g << "," << b;
-    quint32 val = (((quint32)(r * 255 / 100)) << 16) +
-              (((quint32)(g * 255 / 100)) << 8) +
-              ((quint32)(b * 255 / 100));
+    if (connection->isHttpApiV2())
+    {
+        qDebug() << "Send rgb value: " << r << "," << g << "," << b;
+        quint32 val = (((quint32)(r * 255 / 100)) << 16) +
+                  (((quint32)(g * 255 / 100)) << 8) +
+                  ((quint32)(b * 255 / 100));
 
-    connection->sendCommand(ioData["id"].toString(),
-            QString("set %1").arg(val),
-            ioType == IOOutput?"output":"input",
-            "set_state");
+        connection->sendCommand(ioData["id"].toString(),
+                QString("set %1").arg(val),
+                ioType == IOOutput?"output":"input",
+                "set_state");
+    }
+    else
+    {
+        QColor c(r, g, b);
+        connection->sendCommand(ioData["id"].toString(),
+                QString("set %1").arg(c.name(QColor::HexRgb)),
+                QString(),
+                "set_state");
+    }
 }
 
 void IOBase::sendValueRed(int value)

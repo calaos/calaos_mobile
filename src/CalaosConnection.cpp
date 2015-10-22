@@ -89,7 +89,7 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
     QJsonParseError err;
     QJsonDocument jdoc = QJsonDocument::fromJson(bytes, &err);
 
-    qDebug() << "RECV: " << jdoc.toJson();
+    qDebug().noquote() << "RECV: " << jdoc.toJson();
 
     if (err.error != QJsonParseError::NoError)
     {
@@ -136,7 +136,7 @@ void CalaosConnection::requestFinished()
         return;
     }
 
-    qDebug() << "RECV: " << jdoc.toJson();
+    qDebug().noquote() << "RECV: " << jdoc.toJson();
 
     reqReplies.removeAll(reqReply);
 
@@ -149,18 +149,31 @@ void CalaosConnection::requestFinished()
         emit eventAudioStateChange(jroot);
     }
 
-    if (jroot.contains("inputs") &&
-        !jroot["inputs"].toList().isEmpty())
+    if (isHttpApiV2())
     {
-        //emit event for specific input change
-        emit eventInputStateChange(jroot);
-    }
+        if (jroot.contains("inputs") &&
+            !jroot["inputs"].toList().isEmpty())
+        {
+            //emit event for specific input change
+            emit eventInputStateChange(jroot);
+        }
 
-    if (jroot.contains("outputs") &&
-        !jroot["outputs"].toList().isEmpty())
+        if (jroot.contains("outputs") &&
+            !jroot["outputs"].toList().isEmpty())
+        {
+            //emit event for output change
+            emit eventOutputStateChange(jroot);
+        }
+    }
+    else
     {
-        //emit event for output change
-        emit eventOutputStateChange(jroot);
+        if (jroot.contains("items") &&
+            !jroot["items"].toList().isEmpty())
+        {
+            //emit event for specific input/output change
+            emit eventInputStateChange(jroot);
+            emit eventOutputStateChange(jroot);
+        }
     }
 }
 
@@ -182,46 +195,10 @@ void CalaosConnection::requestCamFinished(QNetworkReply *reqReply, const QString
     }
 
     QByteArray bytes = reqReply->readAll();
-    QJsonParseError err;
-    QJsonDocument jdoc = QJsonDocument::fromJson(bytes, &err);
-
-    if (err.error != QJsonParseError::NoError)
-    {
-        qDebug() << bytes;
-        qDebug() << "JSON parse error at " << err.offset << " : " << err.errorString();
-        emit cameraPictureFailed(camid);
-        return;
-    }
-
-    //qDebug() << "RECV: " << jdoc.toJson();
-
     reqReplies.removeAll(reqReply);
 
-    QVariantMap jroot = jdoc.object().toVariantMap();
-
-    if (jroot.contains("error"))
-    {
-        qWarning() << "Error getting camera picture";
-        emit cameraPictureFailed(camid);
-        return;
-    }
-
-    if (jroot.contains("contenttype") &&
-        jroot.contains("data") &&
-        jroot.contains("encoding"))
-    {
-        qDebug() << "New camera picture for cam: " << camid;
-
-        //we have a new picture
-        emit cameraPictureDownloaded(
-                    camid,
-                    jroot["data"].toString(),
-                    jroot["encoding"].toString(),
-                    jroot["contenttype"].toString());
-        return;
-    }
-
-    emit cameraPictureFailed(camid);
+    //we have a new picture
+    emit cameraPictureDownloaded(camid, bytes);
 }
 
 void CalaosConnection::requestError(QNetworkReply::NetworkError code)
@@ -248,7 +225,7 @@ void CalaosConnection::sendCommand(QString id, QString value, QString type, QStr
     jroot["value"] = value;
     QJsonDocument jdoc(jroot);
 
-    qDebug() << "SEND: " << jdoc.toJson();
+    qDebug().noquote() << "SEND: " << jdoc.toJson();
 
     QUrl url(host);
     QNetworkRequest request(url);
@@ -269,12 +246,21 @@ void CalaosConnection::queryState(QStringList inputs, QStringList outputs, QStri
     jroot["cn_user"] = username;
     jroot["cn_pass"] = password;
     jroot["action"] = QString("get_state");
-    jroot["inputs"] = QJsonValue::fromVariant(inputs);
-    jroot["outputs"] = QJsonValue::fromVariant(outputs);
+    if (isHttpApiV2())
+    {
+        jroot["inputs"] = QJsonValue::fromVariant(inputs);
+        jroot["outputs"] = QJsonValue::fromVariant(outputs);
+    }
+    else
+    {
+        QStringList io = inputs;
+        io.append(outputs);
+        jroot["items"] = QJsonValue::fromVariant(io);
+    }
     jroot["audio_players"] = QJsonValue::fromVariant(audio_players);
     QJsonDocument jdoc(jroot);
 
-    qDebug() << "SEND: " << jdoc.toJson();
+    qDebug().noquote() << "SEND: " << jdoc.toJson();
 
     QUrl url(host);
     QNetworkRequest request(url);
@@ -292,11 +278,12 @@ void CalaosConnection::getCameraPicture(const QString &camid)
     QJsonObject jroot;
     jroot["cn_user"] = username;
     jroot["cn_pass"] = password;
-    jroot["action"] = QString("get_camera_pic");
-    jroot["camera_id"] = camid;
+    jroot["action"] = QString("camera");
+    jroot["type"] = QString("get_picture");
+    jroot["id"] = camid;
     QJsonDocument jdoc(jroot);
 
-    qDebug() << "SEND: " << jdoc.toJson();
+    qDebug().noquote() << "SEND: " << jdoc.toJson();
 
     QUrl url(host);
     QNetworkRequest request(url);
@@ -349,6 +336,8 @@ void CalaosConnection::startJsonPolling()
         QJsonParseError err;
         QJsonDocument jdoc = QJsonDocument::fromJson(bytes, &err);
 
+        //qDebug().noquote() << "RECV: " << jdoc.toJson();
+
         if (err.error != QJsonParseError::NoError)
         {
             qDebug() << "JSON parse error " << err.errorString();
@@ -373,17 +362,22 @@ void CalaosConnection::startJsonPolling()
 
         QVariantList events = jroot["events"].toList();
         foreach (QVariant v, events)
-            processEvents(v.toString());
+        {
+            if (isHttpApiV2())
+                processEventsV2(v.toString());
+            else
+                processEventsV3(v.toMap());
+        }
 
         QTimer::singleShot(200, this, SLOT(startJsonPolling()));
     });
 }
 
-void CalaosConnection::processEvents(QString msg)
+void CalaosConnection::processEventsV2(QString msg)
 {
     if (msg == "") return;
 
-    qDebug() << "Received: " << msg;
+    qDebug().noquote() << "Received: " << msg;
 
     QStringList spl = msg.split(' ');
 
@@ -416,6 +410,36 @@ void CalaosConnection::processEvents(QString msg)
         if (spl.count() > 2 &&
             spl.at(2) == "songchanged")
             emit eventAudioChange(spl.at(1));
+    }
+
+    //TODO all other event types
+}
+
+void CalaosConnection::processEventsV3(QVariantMap msg)
+{
+    qDebug().noquote() << "Received: " << msg["event_raw"];
+
+    QVariantMap data = msg["data"].toMap();
+    if (msg["type_str"].toString() == "io_changed")
+    {
+        for (auto it = data.begin();it != data.end();it++)
+        {
+            if (it.key() == "id") continue;
+            emit eventInputChange(data["id"].toString(), it.key(), it.value().toString());
+            emit eventOutputChange(data["id"].toString(), it.key(), it.value().toString());
+        }
+    }
+    else if (msg["type_str"].toString() == "audio_volume_changed")
+    {
+        emit eventAudioVolumeChange(data["player_id"].toString(), data["volume"].toString().toDouble());
+    }
+    else if (msg["type_str"].toString() == "audio_volume_changed")
+    {
+        emit eventAudioStatusChange(data["player_id"].toString(), data["state"].toString());
+    }
+    else if (msg["type_str"].toString() == "audio_song_changed")
+    {
+        emit eventAudioChange(data["player_id"].toString());
     }
 
     //TODO all other event types

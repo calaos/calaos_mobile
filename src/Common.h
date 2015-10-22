@@ -9,6 +9,9 @@ class Common : public QObject
 {
     Q_OBJECT
 public:
+
+    static void installMessageOutputHandler();
+
     enum AppStatus {
         NotConnected,
         Loading,

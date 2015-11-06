@@ -44,6 +44,11 @@ HardwareUtils *hwobj;
     hwobj->emitApplicationActiveChanged(true);
 }
 
+-(void)applicationDidFinishLaunching:(NSNotification*)notif
+{
+    hwobj->handleApplicationDidFinishLaunching(notif);
+}
+
 - (void)alertView:(UIAlertView *)alertView willDismissWithButtonIndex:(NSInteger)buttonIndex
 {
     if (buttonIndex != [alertView cancelButtonIndex])
@@ -88,6 +93,11 @@ HardwareUtils_iOS::HardwareUtils_iOS(QObject *parent):
     [[NSNotificationCenter defaultCenter] addObserver:hwclass
                                              selector:@selector(applicationDidBecomeActive:)
                                                  name:UIApplicationDidBecomeActiveNotification
+                                               object:nil];
+
+    [[NSNotificationCenter defaultCenter] addObserver:hwclass
+                                             selector:@selector(applicationDidFinishLaunching:)
+                                                 name:UIApplicationDidFinishLaunchingNotification
                                                object:nil];
 
     [reach startNotifier];
@@ -144,4 +154,29 @@ void HardwareUtils_iOS::inputTextDialog(const QString &title, const QString &mes
     prompt = [prompt initWithTitle:title.toNSString() message:message.toNSString() delegate:hwclass cancelButtonTitle:cancel.toNSString() okButtonTitle:valid.toNSString()];
     [prompt show];
     [prompt release];
+}
+
+void HardwareUtils_iOS::handleApplicationDidFinishLaunching(void *n)
+{
+#if __IPHONE_OS_VERSION_MIN_REQUIRED > __IPHONE_9_0
+    NSNotification *notif = (NSNotification*)n;
+    NSDictionary *launchOptions = [notification userInfo];
+
+    //This gets if our app has been launched with options by clicking on a quick action
+    UIApplicationShortcutItem *shortcutItem = [launchOptions objectForKey:UIApplicationLaunchOptionsShortcutItemKey];
+    if(shortcutItem)
+    {
+        startedWithOpt = true;
+        ioStartShortcut = QString::fromNSString(shortcutItem.type);
+    }
+#else
+    Q_UNUSED(n);
+#endif
+}
+
+void HardwareUtils_iOS::getStartOption(const QString &key)
+{
+    if (key == "scenario")
+        return ioStartShortcut;
+    return QString();
 }

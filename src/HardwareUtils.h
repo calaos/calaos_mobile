@@ -10,6 +10,8 @@ class HardwareUtils: public QObject
 protected:
     HardwareUtils(QObject *parent = 0);
 
+    bool startedWithOpt = false;
+
 public:
     static HardwareUtils *Instance(QObject *parent = NULL);
 
@@ -31,6 +33,11 @@ public:
     virtual void loadAuthKeychain(QString &email, QString &pass);
 
     virtual void inputTextDialog(const QString &title, const QString &message);
+
+    //This is set by platform code if app was started with options
+    //It is used by iOS when started with a QuickAction
+    bool hasStartedWithOption() { return startedWithOpt; }
+    virtual QString getStartOption(const QString &key) { Q_UNUSED(key); return QString(); }
 
     //This is used by private classes
     void emitNetworkStatusChanged();

@@ -9,6 +9,10 @@ protected:
     friend class HardwareUtils;
     HardwareUtils_iOS(QObject *parent = 0);
 
+    void handleApplicationDidFinishLaunching(void *notif);
+
+    QString ioStartShortcut;
+
 public:
     virtual ~HardwareUtils_iOS();
 
@@ -28,6 +32,8 @@ public:
     virtual void loadAuthKeychain(QString &email, QString &pass);
 
     virtual void inputTextDialog(const QString &title, const QString &message);
+
+    virtual QString getStartOption(const QString &key);
 };
 
 #endif // HARDWAREUTILS_IOS_H

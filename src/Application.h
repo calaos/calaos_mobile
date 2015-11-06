@@ -72,6 +72,8 @@ private:
 
     QVariantList favoritesList;
 
+    bool startedWithOptHandled = false;
+
     void loadSettings();
     void saveSettings();
 

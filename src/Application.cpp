@@ -98,6 +98,12 @@ Application::Application(int & argc, char ** argv) :
 
     engine.rootContext()->setContextProperty("calaosApp", this);
     engine.load(QUrl(QStringLiteral("qrc:///qml/main.qml")));
+
+    //Start autologin
+    QTimer::singleShot(0, [=]()
+    {
+        login(get_username(), get_password(), get_hostname());
+    });
 }
 
 void Application::login(QString user, QString pass, QString host)
@@ -152,6 +158,21 @@ void Application::homeLoaded(const QVariantMap &homeData)
     favModel->load(favoritesList);
 
     saveSettings();
+
+    if (!startedWithOptHandled)
+    {
+        startedWithOptHandled = true;
+        if (HardwareUtils::Instance()->hasStartedWithOption())
+        {
+            //If app has been started with option, it should be a scenario (only supported action for now)
+            QString io = HardwareUtils::Instance()->getStartOption("scenario");
+            IOBase *iosc = IOCache::Instance().searchInput(io);
+            if (!iosc)
+                qDebug() << "Unable to start scenario " << io << " reason: not found";
+            else
+                iosc->sendTrue(); //Start scenario
+        }
+    }
 }
 
 void Application::loginFailed()

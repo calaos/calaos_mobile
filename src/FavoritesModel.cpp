@@ -136,14 +136,23 @@ void HomeFavModel::load(const QVariantMap &homeData)
         lst.append(it);
     }
 
-    QVariantMap items;
-    items["outputs"] = lst;
-
     QVariantMap r;
+
+    if (connection->isHttpApiV2())
+    {
+        QVariantMap items;
+        items["inputs"] = QVariantList();
+        items["outputs"] = lst;
+        r["items"] = items;
+    }
+    else
+    {
+        r["items"] = lst;
+    }
+
     r["name"] = tr("Special");
     r["type"] = "fav";
     r["hits"] = 9999999;
-    r["items"] = items;
 
     room->update_roomName(r["name"].toString());
     room->update_roomType(r["type"].toString());

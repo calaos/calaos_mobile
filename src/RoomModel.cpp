@@ -169,7 +169,9 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
         {
             if (r["gui_type"] == "audio_output" ||
                 r["gui_type"] == "camera_output" ||
-                r["gui_type"] == "fav_all_lights")
+                r["gui_type"] == "fav_all_lights" ||
+                r["gui_type"] == "audio_player" ||
+                r["gui_type"] == "camera")
             {
                 IOBase *io = IOCache::Instance().searchOutput(r["id"].toString())->cloneIO();
                 appendRow(io);

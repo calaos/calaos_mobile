@@ -149,6 +149,8 @@ void CalaosConnection::logout()
 {
     HardwareUtils::Instance()->showNetworkActivity(false);
 
+    constate = ConStateUnknown;
+
     closeWebsocket();
 
     if (pollReply)

@@ -65,6 +65,7 @@ private:
     HomeModel *homeModel;
     AudioModel *audioModel;
     ScenarioModel *scenarioModel;
+    ScenarioSortModel *scenarioSortModel;
     FavoritesModel *favModel;
     HomeFavModel *favHomeModel;
     LightOnModel *lightOnModel;

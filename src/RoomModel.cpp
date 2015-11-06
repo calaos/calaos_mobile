@@ -546,3 +546,27 @@ void IOBase::textDialogValid(const QString &text)
                this, SLOT(textDialogValid(QString)));
     sendStringValue(text);
 }
+
+bool ScenarioSortModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
+{
+    ScenarioModel *scModel = qobject_cast<ScenarioModel *>(sourceModel());
+
+    IOBase *itemLeft = dynamic_cast<IOBase *>(scModel->itemFromIndex(left));
+    IOBase *itemRight = dynamic_cast<IOBase *>(scModel->itemFromIndex(right));
+
+    int l = itemLeft->get_ioHits();
+    int r = itemRight->get_ioHits();
+
+    if (l == r)
+        return itemLeft->get_ioName() < itemRight->get_ioName();
+
+    return l < r;
+}
+
+QObject *ScenarioSortModel::getItemModel(int idx)
+{
+    ScenarioModel *scModel = qobject_cast<ScenarioModel *>(sourceModel());
+    IOBase *obj = dynamic_cast<IOBase *>(scModel->item(indexToSource(idx)));
+    if (obj) engine->setObjectOwnership(obj, QQmlEngine::CppOwnership);
+    return obj;
+}

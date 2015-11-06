@@ -36,6 +36,29 @@ private:
     QHash<QString, IOBase *> outputCache;
 };
 
+class ScenarioSortModel: public QSortFilterProxyModel
+{
+    Q_OBJECT
+public:
+    ScenarioSortModel(QQmlApplicationEngine *eng, QObject *parent = 0):
+        QSortFilterProxyModel(parent),
+        engine(eng)
+    {
+        setDynamicSortFilter(true);
+    }
+
+    Q_INVOKABLE int indexToSource(int idx) { return mapToSource(index(idx, 0)).row(); }
+    Q_INVOKABLE int indexFromSource(int idx) { return mapFromSource(index(idx, 0)).row(); }
+
+    Q_INVOKABLE QObject *getItemModel(int idx);
+
+protected:
+    virtual bool lessThan(const QModelIndex &left, const QModelIndex &right) const;
+
+private:
+    QQmlApplicationEngine *engine;
+};
+
 class ScenarioModel: public QStandardItemModel
 {
     Q_OBJECT

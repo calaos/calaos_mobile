@@ -82,7 +82,9 @@ Application::Application(int & argc, char ** argv) :
     });
 
     scenarioModel = new ScenarioModel(&engine, calaosConnect, this);
-    engine.rootContext()->setContextProperty("scenarioModel", scenarioModel);
+    scenarioSortModel = new ScenarioSortModel(&engine, this);
+    scenarioSortModel->setSourceModel(scenarioModel);
+    engine.rootContext()->setContextProperty("scenarioModel", scenarioSortModel);
     lightOnModel = new LightOnModel(&engine, calaosConnect, this);
     engine.rootContext()->setContextProperty("lightOnModel", lightOnModel);
     homeModel = new HomeModel(&engine, calaosConnect, scenarioModel, lightOnModel, this);

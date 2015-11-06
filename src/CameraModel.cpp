@@ -29,7 +29,7 @@ CameraModel::CameraModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObj
     });
 }
 
-void CameraModel::load(QVariantMap &homeData)
+void CameraModel::load(const QVariantMap &homeData)
 {
     clear();
 

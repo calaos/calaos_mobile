@@ -3,6 +3,7 @@
 
 #include <QtCore>
 #include <QtNetwork>
+#include <QWebSocket>
 
 class CalaosConnection : public QObject
 {
@@ -10,8 +11,18 @@ class CalaosConnection : public QObject
 public:
     explicit CalaosConnection(QObject *parent = 0);
 
+    enum
+    {
+        ConStateUnknown,
+        ConStateTryWebsocket,
+        ConStateHttp,
+        ConStateWebsocket,
+    };
+
     void updateHttpApiV2(bool en) { isV2HttpApi = en; }
     bool isHttpApiV2() { return isV2HttpApi; }
+    bool isWebsocket() { return wsocket && constate == ConStateWebsocket; }
+    bool isHttp() { return constate == ConStateHttp; }
 
 private:
     QNetworkAccessManager *accessManager;
@@ -21,19 +32,29 @@ private:
     QNetworkAccessManager *accessManagerCam;
 
     QString username, password;
-    QString host;
+    QString wshost, httphost;
     QString uuidPolling;
+
+    int constate = ConStateUnknown;
 
     QList<QNetworkReply *> reqReplies;
     QNetworkReply *pollReply;
 
+    QWebSocket *wsocket = nullptr;
+
     bool isV2HttpApi = true;
+
+    void connectWebsocket(QString h);
+    void closeWebsocket();
+    void connectHttp(QString h);
+    void sendWebsocket(const QString &msg, const QJsonObject &data = QJsonObject(), const QString &client_id = QString());
+    void sendHttp(const QString &msg, QJsonObject &data);
 
     void processEventsV2(QString msg);
     void processEventsV3(QVariantMap msg);
 
 signals:
-    void homeLoaded(QVariantMap &home);
+    void homeLoaded(const QVariantMap &home);
     void disconnected();
     void loginFailed();
 
@@ -69,6 +90,7 @@ public slots:
 
 private slots:
     void sslErrors(QNetworkReply *reply, const QList<QSslError> &);
+    void sslErrorsWebsocket(const QList<QSslError> &errors);
     void loginFinished(QNetworkReply *reply);
 
     void requestFinished();
@@ -76,6 +98,12 @@ private slots:
     void requestError(QNetworkReply::NetworkError code);
 
     void startJsonPolling();
+
+    //Websocket slots
+    void onWsConnected();
+    void onWsDisconnected();
+    void onWsError();
+    void onWsTextMessageReceived(const QString &message);
 };
 
 #endif // CALAOSCONNECTION_H

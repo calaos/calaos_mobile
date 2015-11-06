@@ -72,8 +72,8 @@ Application::Application(int & argc, char ** argv) :
     update_applicationStatus(Common::NotConnected);
 
     calaosConnect = new CalaosConnection(this);
-    connect(calaosConnect, SIGNAL(homeLoaded(QVariantMap&)),
-            this, SLOT(homeLoaded(QVariantMap&)));
+    connect(calaosConnect, SIGNAL(homeLoaded(QVariantMap)),
+            this, SLOT(homeLoaded(QVariantMap)));
     connect(calaosConnect, SIGNAL(loginFailed()),
             this, SLOT(loginFailed()));
     connect(calaosConnect, &CalaosConnection::disconnected, [=]()
@@ -141,7 +141,7 @@ void Application::resetAllData()
     logout();
 }
 
-void Application::homeLoaded(QVariantMap &homeData)
+void Application::homeLoaded(const QVariantMap &homeData)
 {
     homeModel->load(homeData);
     audioModel->load(homeData);

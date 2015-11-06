@@ -20,14 +20,48 @@ void CalaosConnection::sslErrors(QNetworkReply *reply, const QList<QSslError> &)
     reply->ignoreSslErrors();
 }
 
+void CalaosConnection::sslErrorsWebsocket(const QList<QSslError> &)
+{
+    wsocket->ignoreSslErrors();
+}
+
 void CalaosConnection::login(QString user, QString pass, QString h)
 {
+    if (constate != ConStateUnknown)
+        return;
+
+    constate = ConStateUnknown;
+
     HardwareUtils::Instance()->showNetworkActivity(true);
 
     username = user;
     password = pass;
     uuidPolling.clear();
 
+    if (h.startsWith("http://") || h.startsWith("https://"))
+    {
+        httphost = h;
+        wshost = h.replace("http", "ws");
+        connectHttp(httphost);
+    }
+    else if (h.startsWith("ws://") || h.startsWith("wss://"))
+    {
+        wshost = h;
+        httphost = h.replace("ws", "http");
+        connectWebsocket(wshost);
+    }
+    else
+    {
+        //First try with websocket
+        wshost = QString("wss://%1/api").arg(h);
+        httphost = QString("https://%1/api.php").arg(h);
+        constate = ConStateTryWebsocket;
+        connectWebsocket(wshost);
+    }
+}
+
+void CalaosConnection::connectHttp(QString h)
+{
     QJsonObject jroot;
     jroot["cn_user"] = username;
     jroot["cn_pass"] = password;
@@ -37,20 +71,85 @@ void CalaosConnection::login(QString user, QString pass, QString h)
     connect(accessManager, SIGNAL(finished(QNetworkReply*)),
             this, SLOT(loginFinished(QNetworkReply*)));
 
-    if (h.startsWith("http://") || h.startsWith("https://"))
-        host = h;
-    else
-        host = QString("https://%1/api.php").arg(h);
-
-    QUrl url(host);
+    QUrl url(h);
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     accessManager->post(request, jdoc.toJson());
 }
 
+void CalaosConnection::connectWebsocket(QString h)
+{
+    qDebug() << "Trying to connect with websocket to: " << h;
+
+    if (!wsocket)
+    {
+        wsocket = new QWebSocket();
+        connect(wsocket, &QWebSocket::connected, this, &CalaosConnection::onWsConnected);
+        connect(wsocket, &QWebSocket::disconnected, this, &CalaosConnection::onWsDisconnected);
+        connect(wsocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(onWsError()));
+    }
+
+    wsocket->open(h);
+}
+
+void CalaosConnection::closeWebsocket()
+{
+    if (wsocket)
+    {
+        wsocket->deleteLater();
+        wsocket = nullptr;
+    }
+}
+
+void CalaosConnection::onWsConnected()
+{
+    qDebug() << "Websocket connected";
+    connect(wsocket, &QWebSocket::textMessageReceived, this, &CalaosConnection::onWsTextMessageReceived);
+    connect(wsocket, SIGNAL(sslErrors(QList<QSslError>)),
+            this, SLOT(sslErrorsWebsocket(QList<QSslError>)));
+
+    QJsonObject jroot, jdata;
+    jroot["msg"] = QStringLiteral("login");
+    jdata["cn_user"] = username;
+    jdata["cn_pass"] = password;
+    jroot["data"] = jdata;
+    QJsonDocument jdoc(jroot);
+
+    //Do login procedure
+    wsocket->sendTextMessage(jdoc.toJson());
+}
+
+void CalaosConnection::onWsDisconnected()
+{
+    qDebug() << "Websocket disconnected";
+
+    closeWebsocket();
+
+    if (constate == ConStateTryWebsocket)
+        connectHttp(httphost);
+    else
+        emit loginFailed();
+}
+
+void CalaosConnection::onWsError()
+{
+    if (!wsocket) return;
+
+    qDebug() << "Websocket error: " << wsocket->errorString();
+
+    closeWebsocket();
+
+    if (constate == ConStateTryWebsocket)
+        connectHttp(httphost);
+    else
+        emit loginFailed();
+}
+
 void CalaosConnection::logout()
 {
     HardwareUtils::Instance()->showNetworkActivity(false);
+
+    closeWebsocket();
 
     if (pollReply)
     {
@@ -97,6 +196,9 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
         emit loginFailed();
         return;
     }
+
+    //Connection success
+    constate = ConStateHttp;
     QVariantMap jroot = jdoc.object().toVariantMap();
 
     //start polling
@@ -167,12 +269,19 @@ void CalaosConnection::requestFinished()
     }
     else
     {
-        if (jroot.contains("items") &&
-            !jroot["items"].toList().isEmpty())
+        for (auto it = jroot.constBegin();it != jroot.constEnd();it++)
         {
-            //emit event for specific input/output change
-            emit eventInputStateChange(jroot);
-            emit eventOutputStateChange(jroot);
+            if (it.value().canConvert<QString>())
+            {
+                QVariantMap m = { { "id", it.key() },
+                                  { "state", it.value().toString() }};
+                emit eventInputStateChange(m);
+                emit eventOutputStateChange(m);
+            }
+            else
+            {
+                emit eventAudioStateChange(it.value().toMap());
+            }
         }
     }
 }
@@ -209,28 +318,35 @@ void CalaosConnection::requestError(QNetworkReply::NetworkError code)
     return;
 }
 
-void CalaosConnection::sendCommand(QString id, QString value, QString type, QString action)
+void CalaosConnection::sendWebsocket(const QString &msg, const QJsonObject &data, const QString &client_id)
 {
-    HardwareUtils::Instance()->showNetworkActivity(true);
+    if (!isWebsocket()) return;
 
-    QJsonObject jroot;
-    jroot["cn_user"] = username;
-    jroot["cn_pass"] = password;
-    jroot["action"] = action;
-    jroot["type"] = type;
-    if (type == "audio")
-        jroot["player_id"] = id;
-    else
-        jroot["id"] = id;
-    jroot["value"] = value;
-    QJsonDocument jdoc(jroot);
+    QJsonObject o = {{ "msg", msg },
+                     { "data", data }};
+    if (!client_id.isEmpty())
+        o["msg_id"] = client_id;
 
-    qDebug().noquote() << "SEND: " << jdoc.toJson();
+    QJsonDocument doc(o);
+    qDebug().noquote() << "SEND: " << doc.toJson();
 
-    QUrl url(host);
+    wsocket->sendTextMessage(doc.toJson());
+}
+
+void CalaosConnection::sendHttp(const QString &msg, QJsonObject &data)
+{
+    if (!isHttp()) return;
+
+    if (!msg.isEmpty())
+        data["action"] = msg;
+
+    QJsonDocument doc(data);
+    qDebug().noquote() << "SEND: " << doc.toJson();
+
+    QUrl url(httphost);
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    QNetworkReply *reqReply = accessManager->post(request, jdoc.toJson());
+    QNetworkReply *reqReply = accessManager->post(request, doc.toJson());
 
     connect(reqReply, SIGNAL(finished()), this, SLOT(requestFinished()));
     connect(reqReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestError(QNetworkReply::NetworkError)));
@@ -238,39 +354,58 @@ void CalaosConnection::sendCommand(QString id, QString value, QString type, QStr
     reqReplies.append(reqReply);
 }
 
+void CalaosConnection::sendCommand(QString id, QString value, QString type, QString action)
+{
+    HardwareUtils::Instance()->showNetworkActivity(true);
+
+    QJsonObject jroot;
+    if (isHttp())
+    {
+        jroot["cn_user"] = username;
+        jroot["cn_pass"] = password;
+        jroot["type"] = type;
+    }
+    if (type == "audio")
+        jroot["player_id"] = id;
+    else
+        jroot["id"] = id;
+    jroot["value"] = value;
+
+    if (isWebsocket())
+        sendWebsocket(action, jroot, "user_cmd");
+    else
+        sendHttp(action, jroot);
+}
+
 void CalaosConnection::queryState(QStringList inputs, QStringList outputs, QStringList audio_players)
 {
     HardwareUtils::Instance()->showNetworkActivity(true);
 
     QJsonObject jroot;
-    jroot["cn_user"] = username;
-    jroot["cn_pass"] = password;
-    jroot["action"] = QString("get_state");
+    if (isHttp())
+    {
+        jroot["cn_user"] = username;
+        jroot["cn_pass"] = password;
+    }
+
     if (isHttpApiV2())
     {
         jroot["inputs"] = QJsonValue::fromVariant(inputs);
         jroot["outputs"] = QJsonValue::fromVariant(outputs);
+        jroot["audio_players"] = QJsonValue::fromVariant(audio_players);
     }
     else
     {
         QStringList io = inputs;
         io.append(outputs);
+        io.append(audio_players);
         jroot["items"] = QJsonValue::fromVariant(io);
     }
-    jroot["audio_players"] = QJsonValue::fromVariant(audio_players);
-    QJsonDocument jdoc(jroot);
 
-    qDebug().noquote() << "SEND: " << jdoc.toJson();
-
-    QUrl url(host);
-    QNetworkRequest request(url);
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    QNetworkReply *reqReply = accessManager->post(request, jdoc.toJson());
-
-    connect(reqReply, SIGNAL(finished()), this, SLOT(requestFinished()));
-    connect(reqReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestError(QNetworkReply::NetworkError)));
-
-    reqReplies.append(reqReply);
+    if (isWebsocket())
+        sendWebsocket("get_state", jroot, "user_cmd");
+    else
+        sendHttp("get_state", jroot);
 }
 
 void CalaosConnection::getCameraPicture(const QString &camid)
@@ -285,7 +420,7 @@ void CalaosConnection::getCameraPicture(const QString &camid)
 
     qDebug().noquote() << "SEND: " << jdoc.toJson();
 
-    QUrl url(host);
+    QUrl url(httphost);
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     QNetworkReply *reqReply = accessManagerCam->post(request, jdoc.toJson());
@@ -314,7 +449,7 @@ void CalaosConnection::startJsonPolling()
     }
     QJsonDocument jdoc(jroot);
 
-    QUrl url(host);
+    QUrl url(httphost);
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     pollReply = accessManager->post(request, jdoc.toJson());
@@ -443,4 +578,67 @@ void CalaosConnection::processEventsV3(QVariantMap msg)
     }
 
     //TODO all other event types
+}
+
+void CalaosConnection::onWsTextMessageReceived(const QString &message)
+{
+    QJsonParseError err;
+    QJsonDocument jdoc = QJsonDocument::fromJson(message.toUtf8(), &err);
+
+    if (err.error != QJsonParseError::NoError)
+    {
+        qWarning() << "JSON parse error " << err.errorString();
+
+        if (constate == ConStateUnknown)
+            emit loginFailed();
+
+        return;
+    }
+
+    QJsonObject jroot = jdoc.object();
+    QJsonObject jdata = jroot["data"].toObject();
+
+    if (jroot["msg"] == "login")
+    {
+        if (jdata["success"] == "true" && constate != ConStateWebsocket)
+        {
+            constate = ConStateWebsocket;
+
+            //ask for home
+            sendWebsocket("get_home");
+        }
+    }
+    else if (jroot["msg"] == "get_home")
+    {
+        emit homeLoaded(jroot["data"].toObject().toVariantMap());
+        HardwareUtils::Instance()->showNetworkActivity(false);
+    }
+    else if (jroot["msg"] == "event")
+    {
+        processEventsV3(jroot["data"].toObject().toVariantMap());
+    }
+    else if (jroot["msg"] == "get_state")
+    {
+        //emit event for specific input/output change
+        for (auto it = jdata.constBegin();it != jdata.constEnd();it++)
+        {
+            if (it.value().isString())
+            {
+                QVariantMap m = { { "id", it.key() },
+                                  { "state", it.value().toString() }};
+                emit eventInputStateChange(m);
+                emit eventOutputStateChange(m);
+            }
+            else
+            {
+                emit eventAudioStateChange(it.value().toObject().toVariantMap());
+            }
+        }
+    }
+
+    //We get this marker when calling sendCommand(...) it helps disabling the net indicator
+    if (jroot["msg_id"] == "user_cmd")
+    {
+        HardwareUtils::Instance()->showNetworkActivity(false);
+    }
 }

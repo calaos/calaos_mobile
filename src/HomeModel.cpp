@@ -19,7 +19,7 @@ HomeModel::HomeModel(QQmlApplicationEngine *eng, CalaosConnection *con, Scenario
     update_lights_on_count(0);
 }
 
-void HomeModel::load(QVariantMap &homeData)
+void HomeModel::load(const QVariantMap &homeData)
 {
     clear();
     scenarioModel->clear();

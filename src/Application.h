@@ -55,7 +55,7 @@ public:
     Q_INVOKABLE QString getPictureSizedPrefix(QString pic, QString prefix);
 
 private slots:
-    void homeLoaded(QVariantMap &homeData);
+    void homeLoaded(const QVariantMap &homeData);
     void loginFailed();
     void networkStatusChanged();
 

@@ -2,7 +2,7 @@ TEMPLATE = app
 
 TARGET=CalaosMobile
 
-QT += qml quick network gui
+QT += qml quick network gui websockets
 
 android {
     QT += androidextras

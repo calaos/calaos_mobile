@@ -26,7 +26,7 @@ public:
         RoleStatus
     };
 
-    void load(QVariantMap &homeData);
+    void load(const QVariantMap &homeData);
 
     Q_INVOKABLE QObject *getItemModel(int idx);
 

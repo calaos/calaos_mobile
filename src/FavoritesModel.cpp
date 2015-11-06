@@ -112,7 +112,7 @@ HomeFavModel::HomeFavModel(QQmlApplicationEngine *eng, CalaosConnection *con, QO
     setItemRoleNames(roles);
 }
 
-void HomeFavModel::load(QVariantMap &homeData)
+void HomeFavModel::load(const QVariantMap &homeData)
 {
     clear();
 

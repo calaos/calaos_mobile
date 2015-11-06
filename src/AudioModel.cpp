@@ -17,7 +17,7 @@ AudioModel::AudioModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObjec
     setItemRoleNames(roles);
 }
 
-void AudioModel::load(QVariantMap &homeData)
+void AudioModel::load(const QVariantMap &homeData)
 {
     clear();
 

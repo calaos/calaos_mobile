@@ -24,7 +24,7 @@ public:
         RoleName
     };
 
-    void load(QVariantMap &homeData);
+    void load(const QVariantMap &homeData);
 
     Q_INVOKABLE QObject *getRoomModel(int idx) const;
 

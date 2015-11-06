@@ -175,6 +175,18 @@ void Application::homeLoaded(const QVariantMap &homeData)
                 iosc->sendTrue(); //Start scenario
         }
     }
+
+    //Export 4 first scenarios to hardware (for QuickLinks on iOS)
+    //This allows iOS with 3D touch to quick start a scenario on home screen
+    QVariantList scenariosLinks;
+    for (int i = 0;i < scenarioSortModel->rowCount() && i < 4;i++)
+    {
+        IOBase *io = dynamic_cast<IOBase *>(scenarioSortModel->getItemModel(i));
+        QVariantMap sc = {{ "id", io->get_ioId() },
+                          { "name", io->get_ioName() }};
+        scenariosLinks.append(sc);
+    }
+    HardwareUtils::Instance()->setQuickLinks(scenariosLinks);
 }
 
 void Application::loginFailed()

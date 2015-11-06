@@ -34,6 +34,7 @@ public:
     virtual void inputTextDialog(const QString &title, const QString &message);
 
     virtual QString getStartOption(const QString &key);
+    virtual void setQuickLinks(QVariantList quicklinks);
 };
 
 #endif // HARDWAREUTILS_IOS_H

@@ -180,3 +180,25 @@ void HardwareUtils_iOS::getStartOption(const QString &key)
         return ioStartShortcut;
     return QString();
 }
+
+void HardwareUtils_iOS::setQuickLinks(QVariantList quicklinks)
+{
+    NSArray <UIApplicationShortcutItem *> *existingShortcutItems = [[UIApplication sharedApplication] shortcutItems];
+    NSMutableArray <UIApplicationShortcutItem *> *updatedShortcutItems = [existingShortcutItems mutableCopy];
+    [updatedShortcutItems removeAllObjects];
+
+    for (int i = 0;i < quicklinks.count() && i < 4;i++)
+    {
+        QVariantMap link = quicklinks.at(i).toMap();
+
+        UIApplicationShortcutIcon *icon = [UIApplicationShortcutIcon iconWithTemplateImageName: @"scenario.png"];
+        UIApplicationShortcutItem *item = [[UIApplicationShortcutItem alloc]initWithType: link["id"].toNSString()
+                                                                          localizedTitle: link["name"].toNSString()
+                                                                       localizedSubtitle: nil
+                                                                                    icon: icon
+                                                                                userInfo: nil];
+        [updatedShortcutItems addObject: item];
+    }
+
+    [[UIApplication sharedApplication] setShortcutItems: updatedShortcutItems];
+}

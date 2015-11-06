@@ -39,6 +39,8 @@ public:
     bool hasStartedWithOption() { return startedWithOpt; }
     virtual QString getStartOption(const QString &key) { Q_UNUSED(key); return QString(); }
 
+    virtual void setQuickLinks(QVariantList quicklinks) { Q_UNUSED(quicklinks); }
+
     //This is used by private classes
     void emitNetworkStatusChanged();
     void emitApplicationActiveChanged(bool active);

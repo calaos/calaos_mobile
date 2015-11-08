@@ -4,10 +4,39 @@
 #import "KeychainItemWrapper.h"
 #import "AlertPrompt.h"
 
+// override QIOSApplicationDelegate to get
+// launch options via didFinishLaunchingWithOptions.
+// and performActionForShortcutItem
+@interface QIOSApplicationDelegate
+@end
+
+@interface QIOSApplicationDelegate(AppDelegate)
+@end
+
+//@implementation QIOSApplicationDelegate (AppDelegate)
+//- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
+//{
+//    Q_UNUSED(application);
+
+//    HardwareUtils_iOS *o = (HardwareUtils_iOS *)HardwareUtils::Instance();
+//    o->handleApplicationDidFinishLaunching(launchOptions);
+
+//    return YES;
+//}
+
+- (void)application:(UIApplication *)application performActionForShortcutItem:(UIApplicationShortcutItem *)shortcutItem completionHandler:(void (^)(BOOL))completionHandler
+{
+    Q_UNUSED(application);
+
+    HardwareUtils_iOS *o = (HardwareUtils_iOS *)HardwareUtils::Instance();
+    o->handlePerformActionForShortcutItem(shortcutItem);
+}
+@end
+
 @interface HWClass : NSObject
 {
 @private
-HardwareUtils *hwobj;
+HardwareUtils_iOS *hwobj;
 }
 
 -(id)initWithHwObject:(HardwareUtils_iOS *)obj;
@@ -42,11 +71,6 @@ HardwareUtils *hwobj;
 {
     Q_UNUSED(notif)
     hwobj->emitApplicationActiveChanged(true);
-}
-
--(void)applicationDidFinishLaunching:(NSNotification*)notif
-{
-    hwobj->handleApplicationDidFinishLaunching(notif);
 }
 
 - (void)alertView:(UIAlertView *)alertView willDismissWithButtonIndex:(NSInteger)buttonIndex
@@ -93,11 +117,6 @@ HardwareUtils_iOS::HardwareUtils_iOS(QObject *parent):
     [[NSNotificationCenter defaultCenter] addObserver:hwclass
                                              selector:@selector(applicationDidBecomeActive:)
                                                  name:UIApplicationDidBecomeActiveNotification
-                                               object:nil];
-
-    [[NSNotificationCenter defaultCenter] addObserver:hwclass
-                                             selector:@selector(applicationDidFinishLaunching:)
-                                                 name:UIApplicationDidFinishLaunchingNotification
                                                object:nil];
 
     [reach startNotifier];
@@ -158,9 +177,8 @@ void HardwareUtils_iOS::inputTextDialog(const QString &title, const QString &mes
 
 void HardwareUtils_iOS::handleApplicationDidFinishLaunching(void *n)
 {
-#if __IPHONE_OS_VERSION_MIN_REQUIRED > __IPHONE_9_0
-    NSNotification *notif = (NSNotification*)n;
-    NSDictionary *launchOptions = [notification userInfo];
+    NSDictionary *launchOptions = (NSDictionary *)n;
+    qDebug() << "handleApplicationDidFinishLaunching: " << launchOptions;
 
     //This gets if our app has been launched with options by clicking on a quick action
     UIApplicationShortcutItem *shortcutItem = [launchOptions objectForKey:UIApplicationLaunchOptionsShortcutItemKey];
@@ -169,12 +187,20 @@ void HardwareUtils_iOS::handleApplicationDidFinishLaunching(void *n)
         startedWithOpt = true;
         ioStartShortcut = QString::fromNSString(shortcutItem.type);
     }
-#else
-    Q_UNUSED(n);
-#endif
 }
 
-void HardwareUtils_iOS::getStartOption(const QString &key)
+void HardwareUtils_iOS::handlePerformActionForShortcutItem(void *shortcut)
+{
+    qDebug() << "handlePerformActionForShortcutItem: " << shortcut;
+    UIApplicationShortcutItem *shortcutItem = (UIApplicationShortcutItem *)shortcut;
+    if(shortcutItem)
+    {
+        startedWithOpt = true;
+        ioStartShortcut = QString::fromNSString(shortcutItem.type);
+    }
+}
+
+QString HardwareUtils_iOS::getStartOption(const QString &key)
 {
     if (key == "scenario")
         return ioStartShortcut;
@@ -192,8 +218,8 @@ void HardwareUtils_iOS::setQuickLinks(QVariantList quicklinks)
         QVariantMap link = quicklinks.at(i).toMap();
 
         UIApplicationShortcutIcon *icon = [UIApplicationShortcutIcon iconWithTemplateImageName: @"scenario.png"];
-        UIApplicationShortcutItem *item = [[UIApplicationShortcutItem alloc]initWithType: link["id"].toNSString()
-                                                                          localizedTitle: link["name"].toNSString()
+        UIApplicationShortcutItem *item = [[UIApplicationShortcutItem alloc]initWithType: link["id"].toString().toNSString()
+                                                                          localizedTitle: link["name"].toString().toNSString()
                                                                        localizedSubtitle: nil
                                                                                     icon: icon
                                                                                 userInfo: nil];

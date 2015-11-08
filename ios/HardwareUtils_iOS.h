@@ -9,8 +9,6 @@ protected:
     friend class HardwareUtils;
     HardwareUtils_iOS(QObject *parent = 0);
 
-    void handleApplicationDidFinishLaunching(void *notif);
-
     QString ioStartShortcut;
 
 public:
@@ -35,6 +33,9 @@ public:
 
     virtual QString getStartOption(const QString &key);
     virtual void setQuickLinks(QVariantList quicklinks);
+
+    void handleApplicationDidFinishLaunching(void *notif);
+    void handlePerformActionForShortcutItem(void *shortcut);
 };
 
 #endif // HARDWAREUTILS_IOS_H

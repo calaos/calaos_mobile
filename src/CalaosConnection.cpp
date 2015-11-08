@@ -182,6 +182,7 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
     if (reply->error() != QNetworkReply::NoError)
     {
         qDebug() << "Error in " << reply->url() << ":" << reply->errorString();
+        constate = ConStateUnknown;
         emit loginFailed();
         return;
     }
@@ -195,6 +196,7 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
     if (err.error != QJsonParseError::NoError)
     {
         qDebug() << "JSON parse error " << err.errorString();
+        constate = ConStateUnknown;
         emit loginFailed();
         return;
     }
@@ -435,6 +437,9 @@ void CalaosConnection::getCameraPicture(const QString &camid)
 
 void CalaosConnection::startJsonPolling()
 {
+    if (constate != ConStateHttp)
+        return;
+
     if (uuidPolling.isEmpty())
         qDebug() << "Start polling...";
 
@@ -478,6 +483,8 @@ void CalaosConnection::startJsonPolling()
         if (err.error != QJsonParseError::NoError)
         {
             qDebug() << "JSON parse error " << err.errorString();
+            qDebug() << "Failing data: " << bytes;
+            logout();
             emit disconnected();
             return;
         }
@@ -493,6 +500,7 @@ void CalaosConnection::startJsonPolling()
         if (jroot["success"].toString() != "true")
         {
             qDebug() << "Failed to get events";
+            logout();
             emit disconnected();
             return;
         }

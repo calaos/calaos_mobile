@@ -11,7 +11,7 @@
 Application::Application(int & argc, char ** argv) :
     QAPP(argc, argv)
 {
-    HardwareUtils::Instance(this);
+    HardwareUtils::Instance()->setParent(this);
 
     connect(HardwareUtils::Instance(), SIGNAL(networkStatusChanged()),
             this, SLOT(networkStatusChanged()));
@@ -19,14 +19,17 @@ Application::Application(int & argc, char ** argv) :
     connect(HardwareUtils::Instance(), &HardwareUtils::applicationWillResignActive, [=]()
     {
         qDebug() << "Application is in background, logout";
+        startedWithOptHandled = false;
         logout();
     });
 
     connect(HardwareUtils::Instance(), &HardwareUtils::applicationBecomeActive, [=]()
     {
-        //TOFIX: does not work...
-        //qDebug() << "Application is in foreground, login again";
-        //login(get_username(), get_password(), get_hostname());
+        qDebug() << "Application is in foreground, login again";
+        QTimer::singleShot(0, [=]()
+        {
+            login(get_username(), get_password(), get_hostname());
+        });
     });
 
     QCoreApplication::setOrganizationName("Calaos");
@@ -102,7 +105,7 @@ Application::Application(int & argc, char ** argv) :
     engine.load(QUrl(QStringLiteral("qrc:///qml/main.qml")));
 
     //Start autologin
-    QTimer::singleShot(0, [=]()
+    QTimer::singleShot(100, [=]()
     {
         login(get_username(), get_password(), get_hostname());
     });
@@ -163,11 +166,13 @@ void Application::homeLoaded(const QVariantMap &homeData)
 
     if (!startedWithOptHandled)
     {
+        qDebug() << "handling start options if any";
         startedWithOptHandled = true;
         if (HardwareUtils::Instance()->hasStartedWithOption())
         {
             //If app has been started with option, it should be a scenario (only supported action for now)
             QString io = HardwareUtils::Instance()->getStartOption("scenario");
+            qDebug() << "Start option: activate scenario: " << io;
             IOBase *iosc = IOCache::Instance().searchInput(io);
             if (!iosc)
                 qDebug() << "Unable to start scenario " << io << " reason: not found";

@@ -162,15 +162,36 @@ QObject *LightOnModel::getQmlCloneModel()
 {
     LightOnModel *m = new LightOnModel(engine, connection);
 
+    //The model needs to be sorted by section (room name) again.
+    //This has to be done because when a light is added to the model,
+    //it's juste appended to the end of the list and qml does not automatically
+    //re-order items based on sections. Thus multiple sections are then created.
+    //This fixes bug #1
+    QHash<QString, QList<IOBase *>> resortedModel;
+
     for (int i = 0;i < rowCount();i++)
     {
         IOBase *obj = dynamic_cast<IOBase *>(item(i));
         IOBase *newIO = obj->cloneIO();
 
-        //m->addLight(obj);
+        if (!resortedModel.contains(newIO->get_room_name()))
+        {
+            QList<IOBase *> lst;
+            lst.append(newIO);
+            resortedModel[newIO->get_room_name()] = lst;
+        }
+        else
+        {
+            QList<IOBase *> &lst = resortedModel[newIO->get_room_name()];
+            lst.append(newIO);
+        }
+    }
 
-        m->appendRow(newIO);
-        m->onCache[newIO->get_ioId()] = newIO;
+    foreach (QString k, resortedModel.keys())
+    {
+        const QList<IOBase *> &lst = resortedModel[k];
+        foreach (IOBase *newIO, lst)
+            m->addLight(newIO);
     }
 
     engine->setObjectOwnership(m, QQmlEngine::JavaScriptOwnership);

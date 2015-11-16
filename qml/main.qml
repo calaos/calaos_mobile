@@ -129,17 +129,20 @@ Window {
 
     function openLightsOnView() {
         menuBar.menuType = Common.MenuBack
+        lightOnClonedModel = lightOnModel.getQmlCloneModel()
         stackView.push(lightsOnDetailView)
     }
 
+    property QtObject lightOnClonedModel
     Component {
         id: lightsOnDetailView
 
         RoomDetailView {
+            id: lightsOnRoomDetailView
             height: parent.height
             width: parent.width
 
-            roomItemModel: lightOnModel
+            roomItemModel: lightOnClonedModel
         }
     }
 

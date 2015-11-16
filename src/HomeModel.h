@@ -14,6 +14,9 @@ class IOBase;
 class LightOnModel: public QStandardItemModel
 {
     Q_OBJECT
+
+    Q_PROPERTY(int lights_count READ getLightCount NOTIFY lightCountChanged)
+
 public:
     explicit LightOnModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent = 0);
 
@@ -30,15 +33,31 @@ public:
 
     Q_INVOKABLE QObject *getItemModel(int idx);
 
+    //this is to get a clone model from qml that would not be updated
+    //when any lights are changing. This fixes a bug where items are removed from
+    //the listview because you click on the OFF button in lightsOnDetailView
+    //To prevent that when opening this view getQmlCloneModel() returns a deep copy
+    //of the current model so that the listview does not get any update. User need
+    //to close view and reopen it for updated content.
+    //Warning: JavaScriptOwnership is set to the returned object (QML is freeing the memory)
+    Q_INVOKABLE QObject *getQmlCloneModel();
+
+    int getLightCount();
+
 public slots:
     void addLight(IOBase *io);
     void removeLight(IOBase *io);
+
+signals:
+    void lightCountChanged();
 
 private:
     QString name, type, hits;
 
     QQmlApplicationEngine *engine;
     CalaosConnection *connection;
+
+    QHash<QString, IOBase *> onCache; //cache to allow only unique lights in model
 };
 
 class HomeModel: public QStandardItemModel

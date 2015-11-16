@@ -26,7 +26,11 @@ BorderImage {
     Text {
         color: icon.iconState?"#ffda5a":"#3ab4d7"
         font { bold: false; pointSize: 12 }
-        text: homeModel.lights_on_count > 0?qsTr("%1 lights are on").arg(homeModel.lights_on_count):qsTr("All lights are off")
+        text: lightOnModel.lights_count === 1?
+                  qsTr("1 light is on"):
+              lightOnModel.lights_count > 1?
+                  qsTr("%1 lights are on").arg(lightOnModel.lights_count):
+                  qsTr("All lights are off")
         clip: true
         elide: Text.ElideMiddle
         anchors {

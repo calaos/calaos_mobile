@@ -256,6 +256,9 @@ IOBase *IOBase::cloneIO() const
     IOBase *newIO = new IOBase(connection, ioType);
     newIO->load(ioData);
     newIO->update_room_name(get_room_name());
+    newIO->update_stateShutterBool(get_stateShutterBool());
+    newIO->update_stateShutterTxt(get_stateShutterTxt());
+    newIO->update_stateShutterTxtAction(get_stateShutterTxtAction());
 
     return newIO;
 }
@@ -490,6 +493,7 @@ void IOBase::inputChanged(QString id, QString key, QString value)
     }
     else if (key == "name")
     {
+        ioData["name"] = value;
         update_ioName(value);
     }
 }
@@ -529,6 +533,7 @@ void IOBase::outputChanged(QString id, QString key, QString value)
     }
     else if (key == "name")
     {
+        ioData["name"] = value;
         update_ioName(value);
     }
 }

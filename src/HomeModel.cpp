@@ -130,7 +130,12 @@ QObject *LightOnModel::getItemModel(int idx)
 
 void LightOnModel::addLight(IOBase *io)
 {
+    if (onCache.contains(io->get_ioId())) return;
+
     appendRow(io->cloneIO());
+    onCache[io->get_ioId()] = io;
+
+    emit lightCountChanged();
 }
 
 void LightOnModel::removeLight(IOBase *io)
@@ -141,7 +146,33 @@ void LightOnModel::removeLight(IOBase *io)
         if (cur->get_ioId() == io->get_ioId())
         {
             removeRow(i);
+            onCache.remove(io->get_ioId());
+            emit lightCountChanged();
             break;
         }
     }
+}
+
+int LightOnModel::getLightCount()
+{
+    return rowCount();
+}
+
+QObject *LightOnModel::getQmlCloneModel()
+{
+    LightOnModel *m = new LightOnModel(engine, connection);
+
+    for (int i = 0;i < rowCount();i++)
+    {
+        IOBase *obj = dynamic_cast<IOBase *>(item(i));
+        IOBase *newIO = obj->cloneIO();
+
+        //m->addLight(obj);
+
+        m->appendRow(newIO);
+        m->onCache[newIO->get_ioId()] = newIO;
+    }
+
+    engine->setObjectOwnership(m, QQmlEngine::JavaScriptOwnership);
+    return m;
 }

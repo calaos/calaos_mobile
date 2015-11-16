@@ -41,5 +41,6 @@
         <file>qml/IOFavAllLights.qml</file>
         <file>qml/CameraListView.qml</file>
         <file>qml/CameraSingleView.qml</file>
+        <file>qml/Fonts.qml</file>
     </qresource>
 </RCC>

@@ -80,7 +80,7 @@ Item {
                 Text {
                     id: tname
                     color: "#3ab4d7"
-                    font { bold: false; pointSize: 13 }
+                    font { family: calaosFont.fontFamily; bold: false; pointSize: 13 }
                     text: modelData.name
                     clip: true
                     elide: Text.ElideRight

@@ -20,7 +20,7 @@ Item {
 
     Text {
         color: "#3ab4d7"
-        font { bold: false; pointSize: 12 }
+        font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
         anchors.centerIn: listViewFav
         text: qsTr("No favorites yet.<br>Go to <b>Config</b> to add some.")
         verticalAlignment: Text.AlignVCenter

@@ -25,7 +25,7 @@ BorderImage {
 
     Text {
         color: icon.iconState?"#ffda5a":"#3ab4d7"
-        font { bold: false; pointSize: 12 }
+        font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
         text: lightOnModel.lights_count === 1?
                   qsTr("1 light is on"):
               lightOnModel.lights_count > 1?

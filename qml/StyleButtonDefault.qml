@@ -32,7 +32,7 @@ ButtonStyle {
         text: control.text
         verticalAlignment: Text.AlignVCenter
         horizontalAlignment: Text.AlignHCenter
-        font { pointSize: 12 }
+        font { family: calaosFont.fontFamily; pointSize: 12 }
         color: "#e7e7e7"
         anchors.fill: parent
     }

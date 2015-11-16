@@ -25,7 +25,7 @@ Item {
 
     Text {
         color: "#3ab4d7"
-        font { bold: false; pointSize: 12 }
+        font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
         anchors.centerIn: listViewFav
         text: qsTr("No favorites yet.<br>Go to <b>Config</b> to add some.")
         verticalAlignment: Text.AlignVCenter
@@ -82,7 +82,7 @@ Item {
 
             Text {
                 color: "#3ab4d7"
-                font { bold: false; pointSize: 12 }
+                font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
                 text: favName
                 clip: true
                 elide: Text.ElideMiddle
@@ -196,7 +196,7 @@ Item {
         Text {
             id: txt
             color: "#e7e7e7"
-            font { bold: false; pointSize: 12 }
+            font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
             text: "Item removed from favorites"
             clip: true
             elide: Text.ElideMiddle

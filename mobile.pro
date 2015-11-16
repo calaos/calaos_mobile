@@ -52,7 +52,8 @@ SOURCES += src/main.cpp \
     src/CameraModel.cpp
 
 RESOURCES += qml.qrc \
-    img.qrc
+    img.qrc \
+    fonts.qrc
 
 OTHER_FILES += \
     qml/main.qml \
@@ -133,4 +134,5 @@ HEADERS += \
 
 DISTFILES += \
     qml/CameraListView.qml \
-    qml/CameraSingleView.qml
+    qml/CameraSingleView.qml \
+    qml/Fonts.qml

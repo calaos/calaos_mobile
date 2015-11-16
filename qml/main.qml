@@ -21,6 +21,9 @@ Window {
 
     property bool isSingleCameraView: false
 
+    //Load fonts
+    Fonts { id: calaosFont }
+
     Image {
         source: calaosApp.getPictureSized(isLandscape?
                                               "background_landscape":

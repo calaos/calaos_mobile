@@ -24,7 +24,7 @@ BorderImage {
     Text {
         id: name
         color: "#3ab4d7"
-        font { bold: false; pointSize: 12 }
+        font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
         text: modelData.ioName
         clip: true
         elide: Text.ElideMiddle
@@ -38,7 +38,7 @@ BorderImage {
     Text {
         id: temp
         color: "#ffda5a"
-        font { bold: false; pointSize: 12 }
+        font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
         clip: true
         text: modelData.stateInt + " °C"
         elide: Text.ElideNone

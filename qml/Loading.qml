@@ -56,7 +56,7 @@ Item {
                 top: img.bottom; topMargin: 15 * calaosApp.density
             }
             text: qsTr("Loading")
-            font { bold: true; pointSize: 12 }
+            font { family: calaosFont.fontFamily; bold: true; pointSize: 12 }
             color: "#E7E7E7"
         }
 

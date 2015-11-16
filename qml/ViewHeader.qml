@@ -21,7 +21,7 @@ Rectangle {
     Text {
         id: txt
         color: "#e7e7e7"
-        font { bold: false; pointSize: 12 }
+        font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
         anchors {
             left: iconSource === ""?parent.left:ic.right
             leftMargin: 5 * calaosApp.density

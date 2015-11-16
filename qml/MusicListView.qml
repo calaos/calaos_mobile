@@ -63,7 +63,7 @@ Item {
                 Text {
                     id: tname
                     color: "#3ab4d7"
-                    font { bold: false; pointSize: 13 }
+                    font { family: calaosFont.fontFamily; bold: false; pointSize: 13 }
                     text: modelData.name
                     clip: true
                     elide: Text.ElideRight
@@ -77,7 +77,7 @@ Item {
                 Text {
                     id: ttitle
                     color: "#e7e7e7"
-                    font { bold: false; pointSize: 11 }
+                    font { family: calaosFont.fontFamily; bold: false; pointSize: 11 }
                     text: modelData.title
                     horizontalAlignment: Text.AlignRight
                     clip: true
@@ -92,7 +92,7 @@ Item {
                 Text {
                     id: tartist
                     color: "#e7e7e7"
-                    font { bold: false; pointSize: 11 }
+                    font { family: calaosFont.fontFamily; bold: false; pointSize: 11 }
                     text: modelData.artist
                     horizontalAlignment: Text.AlignRight
                     clip: true
@@ -107,7 +107,7 @@ Item {
                 Text {
                     id: talbum
                     color: "#e7e7e7"
-                    font { bold: false; pointSize: 11 }
+                    font { family: calaosFont.fontFamily; bold: false; pointSize: 11 }
                     text: modelData.album
                     horizontalAlignment: Text.AlignRight
                     clip: true
@@ -122,7 +122,7 @@ Item {
                 Text {
                     id: tvol
                     color: "#3ab4d7"
-                    font { bold: false; pointSize: 11 }
+                    font { family: calaosFont.fontFamily; bold: false; pointSize: 11 }
                     text: qsTr("Volume:")
                     horizontalAlignment: Text.AlignLeft
                     clip: true

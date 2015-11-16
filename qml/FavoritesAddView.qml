@@ -54,7 +54,7 @@ Item {
 
             Text {
                 color: "#3ab4d7"
-                font { bold: false; pointSize: 10 }
+                font { family: calaosFont.fontFamily; bold: false; pointSize: 10 }
                 text: roomName
                 horizontalAlignment: Text.AlignHCenter
                 clip: true
@@ -117,7 +117,7 @@ Item {
 
             Text {
                 color: "#3ab4d7"
-                font { bold: false; pointSize: 12 }
+                font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
                 text: ioName
                 clip: true
                 elide: Text.ElideMiddle
@@ -171,7 +171,7 @@ Item {
         Text {
             id: txt
             color: "#e7e7e7"
-            font { bold: false; pointSize: 12 }
+            font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
             text: "Item added to favorites"
             clip: true
             elide: Text.ElideMiddle

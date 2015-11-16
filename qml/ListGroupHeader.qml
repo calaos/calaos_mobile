@@ -9,7 +9,7 @@ Item {
     Text {
         id: titl
         color: "#3ab4d7"
-        font { bold: true; pointSize: 12 }
+        font { family: calaosFont.fontFamily; bold: true; pointSize: 12 }
         text: title
         elide: Text.ElideRight
         anchors {

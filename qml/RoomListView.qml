@@ -82,7 +82,7 @@ Item {
                     left: lighticon.right; leftMargin: 5 * calaosApp.density
                     right: parent.right; rightMargin: 2 * calaosApp.density
                 }
-                font { bold: false; pointSize: 8 }
+                font { family: calaosFont.fontFamily; bold: false; pointSize: 8 }
             }
 
             MouseArea {
@@ -97,7 +97,7 @@ Item {
 
             Text {
                 color: "#3ab4d7"
-                font { bold: false; pointSize: 13 }
+                font { family: calaosFont.fontFamily; bold: false; pointSize: 13 }
                 text: roomName
                 horizontalAlignment: Text.AlignHCenter
                 clip: true

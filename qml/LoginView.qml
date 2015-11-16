@@ -48,7 +48,7 @@ Item {
             id: ftitle
             text: qsTr("Login to your home")
             color: "#dddddd"
-            font { bold: true; pointSize: 14 }
+            font { family: calaosFont.fontFamily; bold: true; pointSize: 14 }
             anchors {
                 horizontalCenter: parent.horizontalCenter
                 top: parent.top; topMargin: 10 * calaosApp.density
@@ -70,7 +70,7 @@ Item {
             Text {
                 text: qsTr("Login:")
                 color: "#dddddd"
-                font { bold: false; pointSize: 12 }
+                font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
             }
 
             TextField {
@@ -99,7 +99,7 @@ Item {
             Text {
                 text: qsTr("Password:")
                 color: "#dddddd"
-                font { bold: false; pointSize: 12 }
+                font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
             }
 
             TextField {
@@ -129,7 +129,7 @@ Item {
             Text {
                 text: qsTr("Host:")
                 color: "#dddddd"
-                font { bold: false; pointSize: 12 }
+                font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
             }
 
             TextField {

@@ -135,4 +135,5 @@ HEADERS += \
 DISTFILES += \
     qml/CameraListView.qml \
     qml/CameraSingleView.qml \
-    qml/Fonts.qml
+    qml/Fonts.qml \
+    qml/ItemBase.qml

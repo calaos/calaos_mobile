@@ -42,5 +42,6 @@
         <file>qml/CameraListView.qml</file>
         <file>qml/CameraSingleView.qml</file>
         <file>qml/Fonts.qml</file>
+        <file>qml/ItemBase.qml</file>
     </qresource>
 </RCC>

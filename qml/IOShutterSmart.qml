@@ -1,13 +1,8 @@
 import QtQuick 2.0
 
-BorderImage {
+ItemBase {
     property variant modelData
 
-    source: calaosApp.getPictureSized("back_items_home")
-    border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
-    border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
-
-    width: parent.width
     height: 130 * calaosApp.density
 
     Text {
@@ -36,7 +31,10 @@ BorderImage {
         }
         imageSource: "button_down2"
 
-        onButtonClicked: modelData.sendDown()
+        onButtonClicked: {
+            feedbackAnim()
+            modelData.sendDown()
+        }
     }
 
     ItemButtonAction {
@@ -48,7 +46,10 @@ BorderImage {
         }
         imageSource: "button_stop"
 
-        onButtonClicked: modelData.sendStop()
+        onButtonClicked: {
+            feedbackAnim()
+            modelData.sendStop()
+        }
     }
 
     ItemButtonAction {
@@ -60,7 +61,10 @@ BorderImage {
         }
         imageSource: "button_up2"
 
-        onButtonClicked: modelData.sendUp()
+        onButtonClicked: {
+            feedbackAnim()
+            modelData.sendUp()
+        }
     }
 
     Text {

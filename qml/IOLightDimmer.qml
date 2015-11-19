@@ -1,14 +1,9 @@
 import QtQuick 2.0
 import QtQuick.Controls 1.2
 
-BorderImage {
+ItemBase {
     property variant modelData
 
-    source: calaosApp.getPictureSized("back_items_home")
-    border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
-    border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
-
-    width: parent.width
     height: 80 * calaosApp.density
 
     AnimatedIcon {
@@ -52,7 +47,10 @@ BorderImage {
         }
         imageSource: "button_light_on"
 
-        onButtonClicked: modelData.sendTrue()
+        onButtonClicked: {
+            feedbackAnim()
+            modelData.sendTrue()
+        }
     }
 
     ItemButtonAction {
@@ -64,7 +62,10 @@ BorderImage {
         }
         imageSource: "button_light_off"
 
-        onButtonClicked: modelData.sendFalse()
+        onButtonClicked: {
+            feedbackAnim()
+            modelData.sendFalse()
+        }
     }
 
     Slider {
@@ -81,8 +82,10 @@ BorderImage {
         value: modelData.stateInt
         onValueChanged: {
             console.log("slider value changed")
-            if (value !== modelData.stateInt)
+            if (value !== modelData.stateInt) {
+                feedbackAnim()
                 modelData.sendIntValue(Math.round(value))
+            }
         }
     }
 }

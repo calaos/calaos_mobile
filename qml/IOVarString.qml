@@ -1,15 +1,8 @@
 import QtQuick 2.2
 import Calaos 1.0
 
-BorderImage {
+ItemBase {
     property variant modelData
-
-    source: calaosApp.getPictureSized("back_items_home")
-    border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
-    border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
-
-    width: parent.width
-    height: 40 * calaosApp.density
 
     Text {
         id: name
@@ -34,7 +27,10 @@ BorderImage {
         }
         imageSource: "button_keyboard"
 
-        onButtonClicked: modelData.askStateText()
+        onButtonClicked: {
+            feedbackAnim()
+            modelData.askStateText()
+        }
 
         visible: (modelData.rw || modelData.ioType === Common.StringOut) &&
                  modelData.ioType !== Common.StringIn

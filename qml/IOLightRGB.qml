@@ -1,14 +1,9 @@
 import QtQuick 2.0
 import QtQuick.Controls 1.2
 
-BorderImage {
+ItemBase {
     property variant modelData
 
-    source: calaosApp.getPictureSized("back_items_home")
-    border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
-    border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
-
-    width: parent.width
     height: slider_blue.height * 3 + 5 * 8 * calaosApp.density + btoff.height
 
     AnimatedIcon {
@@ -50,7 +45,10 @@ BorderImage {
         }
         imageSource: "button_light_on"
 
-        onButtonClicked: modelData.sendTrue()
+        onButtonClicked: {
+            feedbackAnim()
+            modelData.sendTrue()
+        }
     }
 
     ItemButtonAction {
@@ -61,7 +59,10 @@ BorderImage {
         }
         imageSource: "button_light_off"
 
-        onButtonClicked: modelData.sendFalse()
+        onButtonClicked: {
+            feedbackAnim()
+            modelData.sendFalse()
+        }
     }
 
     Rectangle {
@@ -86,8 +87,10 @@ BorderImage {
         value: modelData.stateRed
         onValueChanged: {
             console.log("red slider value changed")
-            if (value !== modelData.stateRed)
+            if (value !== modelData.stateRed) {
+                feedbackAnim()
                 modelData.sendValueRed(Math.round(value))
+            }
         }
     }
 
@@ -112,8 +115,10 @@ BorderImage {
         value: modelData.stateGreen
         onValueChanged: {
             console.log("green slider value changed")
-            if (value !== modelData.stateGreen)
+            if (value !== modelData.stateGreen) {
+                feedbackAnim()
                 modelData.sendValueGreen(Math.round(value))
+            }
         }
     }
 
@@ -138,8 +143,10 @@ BorderImage {
         value: modelData.stateBlue
         onValueChanged: {
             console.log("blue slider value changed")
-            if (value !== modelData.stateBlue)
+            if (value !== modelData.stateBlue) {
+                feedbackAnim()
                 modelData.sendValueBlue(Math.round(value))
+            }
         }
     }
 }

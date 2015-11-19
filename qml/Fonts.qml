@@ -1,7 +1,7 @@
 import QtQuick 2.0
 
 Item {
-    property string fontFamily: "Roboto"
+    property string fontFamily: "Roboto Light"
 
     FontLoader { id: local_B; source: "qrc:/fonts/Roboto-Black.ttf" }
     FontLoader { id: local_BI; source: "qrc:/fonts/Roboto-BlackItalic.ttf" }
@@ -16,4 +16,3 @@ Item {
     FontLoader { id: local_T; source: "qrc:/fonts/Roboto-Thin.ttf" }
     FontLoader { id: local_TI; source: "qrc:/fonts/Roboto-ThinItalic.ttf" }
 }
-

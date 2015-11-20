@@ -59,7 +59,6 @@ OTHER_FILES += \
     qml/main.qml \
     qml/LoginView.qml \
     qml/StyleButtonDefault.qml \
-    qml/Loading.qml \
     qml/calaos.js \
     qml/RoomListView.qml \
     qml/ScrollBar.qml \
@@ -136,4 +135,5 @@ DISTFILES += \
     qml/CameraListView.qml \
     qml/CameraSingleView.qml \
     qml/Fonts.qml \
-    qml/ItemBase.qml
+    qml/ItemBase.qml \
+    qml/ButtonLogin.qml

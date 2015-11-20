@@ -232,11 +232,6 @@ Window {
         }
     }
 
-    Loading {
-        z: 9999 //on top of everything
-        opacity: calaosApp.applicationStatus === Common.Loading?1:0
-    }
-
     MainMenuBar {
         id: menuBar
 

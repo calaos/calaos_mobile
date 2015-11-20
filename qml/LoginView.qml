@@ -1,5 +1,6 @@
 import QtQuick 2.2
 import QtQuick.Controls 1.2
+import Calaos 1.0
 
 Item {
 
@@ -78,6 +79,7 @@ Item {
                 width: 200 * calaosApp.density
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 textColor: textEditColor
+                enabled: !loginButton.loadingEnabled
 
                 Image {
                     fillMode: Image.PreserveAspectFit
@@ -108,6 +110,7 @@ Item {
                 echoMode: TextInput.Password
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 textColor: textEditColor
+                enabled: !loginButton.loadingEnabled
 
                 Image {
                     fillMode: Image.PreserveAspectFit
@@ -137,6 +140,7 @@ Item {
                 width: 200 * calaosApp.density
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 textColor: textEditColor
+                enabled: !loginButton.loadingEnabled
 
                 Image {
                     fillMode: Image.PreserveAspectFit
@@ -157,12 +161,13 @@ Item {
 
             Item { /* spacer */ height: 20 * calaosApp.density; width: 200 * calaosApp.density }
 
-            Button {
+            ButtonLogin {
+                id: loginButton
                 text: qsTr("Login")
                 width: 200 * calaosApp.density
-                style: StyleButtonDefault { }
 
-                onClicked: loginClicked(userField.text, passField.text, hostField.text)
+                onButtonClicked: loginClicked(userField.text, passField.text, hostField.text)
+                loadingEnabled: calaosApp.applicationStatus === Common.Loading
             }
         }
     }

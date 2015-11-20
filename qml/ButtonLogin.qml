@@ -1,69 +1,15 @@
 import QtQuick 2.4
 
-MouseArea {
+CalaosItemBase {
     id: thisButton
 
-    property alias text: label.text
     property bool loadingEnabled: false
-
-    signal buttonClicked();
-
-    height: 50 * calaosApp.density
-
-    Rectangle {
-        id: rectBorder
-        radius: 8 * calaosApp.density
-        border.color: "#3AB4D7"
-        border.width: 2 * calaosApp.density
-        color: "transparent"
-
-        anchors {
-            top: parent.top
-            bottom: parent.bottom
-            horizontalCenter: parent.horizontalCenter
-        }
-        width: parent.width
-
-        opacity: 0.5
-    }
-
-    Rectangle {
-        id: inBorder
-        radius: 4 * calaosApp.density
-        color: "#3AB4D7"
-
-        anchors {
-            fill: rectBorder
-            margins: 4 * calaosApp.density
-        }
-
-        opacity: 0
-
-        state: "released"
-
-        states: [
-            State { name: "released"; PropertyChanges { target: inBorder; opacity: 0.0 } },
-            State { name: "pressed"; PropertyChanges { target: inBorder; opacity: 0.1 } }
-        ]
-        transitions: [
-            Transition {
-                from: "released"
-                to: "pressed"
-                PropertyAnimation { duration: 50; properties: "opacity"; easing.type: Easing.OutCubic }
-            },
-            Transition {
-                from: "pressed"
-                to: "released"
-                PropertyAnimation { duration: 150; properties: "opacity"; easing.type: Easing.InCubic }
-            }
-        ]
-    }
 
     Canvas {
         id: canvas
 
         anchors {
-            fill: rectBorder
+            fill: thisButton
             margins: 4 * calaosApp.density
         }
 
@@ -162,13 +108,6 @@ MouseArea {
         }
     }
 
-    Text {
-        id: label
-        font { family: calaosFont.fontFamilyThin; pointSize: 12 }
-        anchors.centerIn: parent
-        color: "#3AB4D7"
-    }
-
     onLoadingEnabledChanged: {
         if (loadingEnabled)
             startAnim()
@@ -186,20 +125,13 @@ MouseArea {
         animReset.start()
     }
 
-    hoverEnabled: enabled
-    onEntered: state = "hovered"
-    onExited: state = "normal"
-    onClicked: buttonClicked()
-    onPressed: inBorder.state = "pressed"
-    onReleased: inBorder.state = "released"
-
     SequentialAnimation {
         id: animStart
         ScriptAction { script: thisButton.state = "normal" }
-        PropertyAnimation { target: rectBorder; duration: 250; property: "radius"; to: height / 2; easing.type: Easing.OutCubic }
+        PropertyAnimation { target: __rectBorder; duration: 250; property: "radius"; to: height / 2; easing.type: Easing.OutCubic }
         ParallelAnimation {
-            PropertyAnimation { target: label; duration: 250; properties: "opacity"; to: 0; easing.type: Easing.OutCubic }
-            PropertyAnimation { target: rectBorder; duration: 250; properties: "width"; to: height; easing.type: Easing.OutCubic }
+            PropertyAnimation { target: __label; duration: 250; properties: "opacity"; to: 0; easing.type: Easing.OutCubic }
+            PropertyAnimation { target: __rectBorder; duration: 250; properties: "width"; to: height; easing.type: Easing.OutCubic }
             PropertyAnimation { target: canvas; duration: 250; properties: "opacity"; to: 1; easing.type: Easing.OutCubic }
         }
     }
@@ -208,34 +140,11 @@ MouseArea {
         id: animReset
         PropertyAnimation { target: canvas; duration: 100; properties: "opacity"; to: 0; easing.type: Easing.InCubic }
         ParallelAnimation {
-            PropertyAnimation { target: rectBorder; duration: 250; property: "radius"; to: 8 * calaosApp.density; easing.type: Easing.InCubic }
-            PropertyAnimation { target: label; duration: 250; properties: "opacity"; to: 1; easing.type: Easing.InCubic }
-            PropertyAnimation { target: rectBorder; duration: 250; properties: "width"; to: parent.width; easing.type: Easing.InCubic }
+            PropertyAnimation { target: __rectBorder; duration: 250; property: "radius"; to: 8 * calaosApp.density; easing.type: Easing.InCubic }
+            PropertyAnimation { target: __label; duration: 250; properties: "opacity"; to: 1; easing.type: Easing.InCubic }
+            PropertyAnimation { target: __rectBorder; duration: 250; properties: "width"; to: parent.width; easing.type: Easing.InCubic }
         }
         //enable mouse area again after anim finishes
         ScriptAction { script: thisButton.enabled = true }
     }
-
-    state: "normal"
-    states: [
-        State {
-            name: "normal"; PropertyChanges { target: rectBorder; opacity: 0.4 }
-        },
-        State {
-            name: "hovered"; PropertyChanges { target: rectBorder; opacity: 0.85 }
-        }
-    ]
-
-    transitions: [
-        Transition {
-            from: "normal"
-            to: "hovered"
-            PropertyAnimation { duration: 150; properties: "opacity"; easing.type: Easing.InCubic }
-        },
-        Transition {
-            from: "hovered"
-            to: "normal"
-            PropertyAnimation { duration: 150; properties: "opacity"; easing.type: Easing.OutCubic }
-        }
-    ]
 }

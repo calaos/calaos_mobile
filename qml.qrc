@@ -43,5 +43,7 @@
         <file>qml/Fonts.qml</file>
         <file>qml/ItemBase.qml</file>
         <file>qml/ButtonLogin.qml</file>
+        <file>qml/TextFieldStyle.qml</file>
+        <file>qml/CalaosItemBase.qml</file>
     </qresource>
 </RCC>

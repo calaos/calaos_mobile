@@ -136,4 +136,6 @@ DISTFILES += \
     qml/CameraSingleView.qml \
     qml/Fonts.qml \
     qml/ItemBase.qml \
-    qml/ButtonLogin.qml
+    qml/ButtonLogin.qml \
+    qml/TextFieldStyle.qml \
+    qml/CalaosItemBase.qml

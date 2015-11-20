@@ -141,4 +141,5 @@ DISTFILES += \
     qml/CalaosItemBase.qml \
     qml/CalaosTextField.qml \
     qml/CalaosSlider.qml \
-    qml/CalaosSliderStyle.qml
+    qml/CalaosSliderStyle.qml \
+    qml/ColorPickerView.qml

@@ -147,6 +147,8 @@ class IOBase: public QObject, public QStandardItem
     QML_READONLY_PROPERTY(QString, stateShutterTxt)
     QML_READONLY_PROPERTY(QString, stateShutterTxtAction)
 
+    QML_READONLY_PROPERTY(QColor, rgbColor)
+
 public:
     IOBase(CalaosConnection *con, int t);
 
@@ -180,9 +182,7 @@ public:
 
     Q_INVOKABLE int getStateShutterPos();
 
-    Q_INVOKABLE void sendValueRed(int value);
-    Q_INVOKABLE void sendValueGreen(int value);
-    Q_INVOKABLE void sendValueBlue(int value);
+    Q_INVOKABLE void sendColor(QColor c);
 
     Q_INVOKABLE void askStateText();
 

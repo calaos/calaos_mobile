@@ -7,20 +7,33 @@ SliderStyle {
     property color color: control.hasOwnProperty("color")
             ? control.color : "#3AB4D7"
 
-    groove: Rectangle {
+    property Component customBackground: null
+
+    groove: Item {
         implicitWidth: 200 * calaosApp.density
         implicitHeight: 2 * calaosApp.density
 
-        anchors.verticalCenter: parent.verticalCenter
-
-        color: Qt.rgba(255, 255, 255, 0.3)
-
         Rectangle {
-            height: parent.height
-            width: styleData.handlePosition
-            implicitHeight: 2 * calaosApp.density
-            implicitWidth: 200 * calaosApp.density
-            color: style.color
+            visible: customBackground === null
+
+            anchors.fill: parent
+            anchors.verticalCenter: parent.verticalCenter
+
+            color: Qt.rgba(255, 255, 255, 0.3)
+
+            Rectangle {
+                height: parent.height
+                width: styleData.handlePosition
+                implicitHeight: 2 * calaosApp.density
+                implicitWidth: 200 * calaosApp.density
+                color: style.color
+            }
+        }
+
+        Loader {
+            visible: customBackground !== null
+            anchors.fill: parent
+            sourceComponent: customBackground
         }
     }
 
@@ -55,7 +68,7 @@ SliderStyle {
                                                     colorAlpha("#000000", 0.26):
                                                     style.color
 
-                border.width: Units.dp(2)
+                border.width: 2 * calaosApp.density
 
                 implicitHeight: control.pressed && !control.focus ?
                                     diameter + 8 * calaosApp.density :

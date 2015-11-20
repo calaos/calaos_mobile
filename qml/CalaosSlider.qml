@@ -9,6 +9,9 @@ Controls.Slider {
     implicitHeight: 40 * calaosApp.density
     implicitWidth: 200 * calaosApp.density
 
-    style: CalaosSliderStyle {}
-}
+    property Component customBackground: null
 
+    style: CalaosSliderStyle {
+        customBackground: slider.customBackground
+    }
+}

@@ -232,6 +232,29 @@ Window {
         }
     }
 
+    function openColorPicker(item, cb) {
+        menuBar.menuType = Common.MenuBack
+        itemColorCallback = function(c) {
+            handleBack()
+            cb(c)
+        }
+        itemRgbColor = item
+        stackView.push(colorPickerView)
+    }
+
+    property QtObject itemRgbColor
+    property var itemColorCallback
+    Component {
+        id: colorPickerView
+
+        ColorPickerView {
+            width: parent.width
+            height: parent.height - menuBar.height
+            itemColor: itemRgbColor
+            itemCallback: itemColorCallback
+        }
+    }
+
     MainMenuBar {
         id: menuBar
 

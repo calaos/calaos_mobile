@@ -48,5 +48,6 @@
         <file>qml/CalaosTextField.qml</file>
         <file>qml/CalaosSlider.qml</file>
         <file>qml/CalaosSliderStyle.qml</file>
+        <file>qml/ColorPickerView.qml</file>
     </qresource>
 </RCC>

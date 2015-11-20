@@ -224,6 +224,14 @@ void IOBase::load(const QVariantMap &io)
     update_unit(ioData["unit"].toString());
     update_rw(ioData["rw"].toString() == "true");
 
+    if (ioData["gui_type"].toString() == "light_rgb")
+    {
+        if (connection->isHttpApiV2())
+            update_rgbColor(QColor(getStateRed(), getStateGreen(), getStateBlue()));
+        else
+            update_rgbColor(QColor(ioData["state"].toString()));
+    }
+
     //force rw for analog_out to let us use the same qml than var_int
     if (m_ioType == Common::AnalogOut)
         update_rw(true);
@@ -431,19 +439,9 @@ void IOBase::sendRGB(int r, int g, int b)
     }
 }
 
-void IOBase::sendValueRed(int value)
+void IOBase::sendColor(QColor c)
 {
-    sendRGB(value, getStateGreen(), getStateBlue());
-}
-
-void IOBase::sendValueGreen(int value)
-{
-    sendRGB(getStateRed(), value, getStateBlue());
-}
-
-void IOBase::sendValueBlue(int value)
-{
-    sendRGB(getStateRed(), getStateGreen(), value);
+    sendRGB(c.red(), c.green(), c.blue());
 }
 
 int IOBase::getStateShutterPos()
@@ -529,6 +527,15 @@ void IOBase::outputChanged(QString id, QString key, QString value)
         }
 
         ioData["state"] = value;
+
+        if (ioData["gui_type"].toString() == "light_rgb")
+        {
+            if (connection->isHttpApiV2())
+                update_rgbColor(QColor(getStateRed(), getStateGreen(), getStateBlue()));
+            else
+                update_rgbColor(QColor(ioData["state"].toString()));
+        }
+
         emit stateChange();
     }
     else if (key == "name")

@@ -73,7 +73,7 @@ Item {
 
         }
 
-        contentHeight: content.height
+        contentHeight: content.implicitHeight
         contentWidth: parent.width
         width: parent.width
         height: parent.height - header.height

@@ -31,10 +31,10 @@ Item {
             horizontalCenter: formbg.horizontalCenter
         }
     }
-    Rectangle {
+    Item {
         id: formbg
-        color: "#080808"
-        radius: 2 * calaosApp.density
+        //color: Qt.rgba(0.1, 0.1, 0.1, 1)
+        //radius: 4 * calaosApp.density
         smooth: true
 
         width: isLandscape?300 * calaosApp.density:parent.width - 20 * calaosApp.density

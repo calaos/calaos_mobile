@@ -54,6 +54,11 @@ public:
     Q_INVOKABLE QString getPictureSized(QString pic);
     Q_INVOKABLE QString getPictureSizedPrefix(QString pic, QString prefix);
 
+    //Utility functions
+    Q_INVOKABLE int getColorHue(QColor c) { return c.hue(); }
+    Q_INVOKABLE int getColorSaturation(QColor c) { return c.saturation(); }
+    Q_INVOKABLE int getColorLightness(QColor c) { return c.lightness(); }
+
 private slots:
     void homeLoaded(const QVariantMap &homeData);
     void loginFailed();

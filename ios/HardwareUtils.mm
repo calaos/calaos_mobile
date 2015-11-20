@@ -13,7 +13,8 @@
 @interface QIOSApplicationDelegate(AppDelegate)
 @end
 
-//@implementation QIOSApplicationDelegate (AppDelegate)
+@implementation QIOSApplicationDelegate (AppDelegate)
+
 //- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 //{
 //    Q_UNUSED(application);

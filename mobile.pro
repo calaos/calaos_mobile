@@ -138,4 +138,5 @@ DISTFILES += \
     qml/ItemBase.qml \
     qml/ButtonLogin.qml \
     qml/TextFieldStyle.qml \
-    qml/CalaosItemBase.qml
+    qml/CalaosItemBase.qml \
+    qml/CalaosTextField.qml

@@ -45,5 +45,6 @@
         <file>qml/ButtonLogin.qml</file>
         <file>qml/TextFieldStyle.qml</file>
         <file>qml/CalaosItemBase.qml</file>
+        <file>qml/CalaosTextField.qml</file>
     </qresource>
 </RCC>

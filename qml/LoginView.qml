@@ -59,107 +59,45 @@ Item {
         Column {
             id: form
             anchors {
-                top: parent.top; topMargin: 50 * calaosApp.density
+                top: parent.top; topMargin: 80 * calaosApp.density
                 bottom: parent.bottom; bottomMargin: 10 * calaosApp.density
                 //left: parent.left; leftMargin: 10
                 //right: parent.right; rightMargin: 10
                 horizontalCenter: parent.horizontalCenter
             }
 
-            spacing: 5
+            spacing: 32 * calaosApp.density
 
-            Text {
-                text: qsTr("Login:")
-                color: "#dddddd"
-                font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
-            }
-
-            TextField {
+            CalaosTextField {
                 id: userField
                 width: 200 * calaosApp.density
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
-                textColor: textEditColor
+                placeholderText: qsTr("Username")
+                floatingLabel: true
                 enabled: !loginButton.loadingEnabled
-
-                Image {
-                    fillMode: Image.PreserveAspectFit
-                    source: calaosApp.getPictureSized("icon_cancel")
-                    opacity: parent.text != ""?1:0
-                    Behavior on opacity { NumberAnimation { duration: 100 } }
-                    anchors {
-                        right: parent.right
-                        top: parent.top
-                        bottom: parent.bottom
-                    }
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: { userField.selectAll(); userField.cut() }
-                    }
-                }
+                onClearButtonClicked: { userField.selectAll(); userField.cut() }
             }
 
-            Text {
-                text: qsTr("Password:")
-                color: "#dddddd"
-                font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
-            }
-
-            TextField {
+            CalaosTextField {
                 id: passField
                 width: 200 * calaosApp.density
                 echoMode: TextInput.Password
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
-                textColor: textEditColor
+                placeholderText: qsTr("Password")
+                floatingLabel: true
                 enabled: !loginButton.loadingEnabled
-
-                Image {
-                    fillMode: Image.PreserveAspectFit
-                    source: calaosApp.getPictureSized("icon_cancel")
-                    opacity: parent.text != ""?1:0
-                    Behavior on opacity { NumberAnimation { duration: 100 } }
-                    anchors {
-                        right: parent.right
-                        top: parent.top
-                        bottom: parent.bottom
-                    }
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: { passField.selectAll(); passField.cut() }
-                    }
-                }
+                onClearButtonClicked: { passField.selectAll(); passField.cut() }
             }
 
-            Text {
-                text: qsTr("Host:")
-                color: "#dddddd"
-                font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
-            }
-
-            TextField {
+            CalaosTextField {
                 id: hostField
                 width: 200 * calaosApp.density
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
-                textColor: textEditColor
+                placeholderText: qsTr("Hostname")
+                floatingLabel: true
                 enabled: !loginButton.loadingEnabled
-
-                Image {
-                    fillMode: Image.PreserveAspectFit
-                    source: calaosApp.getPictureSized("icon_cancel")
-                    opacity: parent.text != ""?1:0
-                    Behavior on opacity { NumberAnimation { duration: 100 } }
-                    anchors {
-                        right: parent.right
-                        top: parent.top
-                        bottom: parent.bottom
-                    }
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: { hostField.selectAll(); hostField.cut() }
-                    }
-                }
+                onClearButtonClicked: { hostField.selectAll(); hostField.cut() }
             }
-
-            Item { /* spacer */ height: 20 * calaosApp.density; width: 200 * calaosApp.density }
 
             ButtonLogin {
                 id: loginButton

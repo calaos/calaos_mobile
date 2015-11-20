@@ -25,24 +25,22 @@ Item {
             Item {
                 width: listFlick.width;
                 height: 40 * calaosApp.density
-                Button {
+                CalaosItemBase {
                     text: qsTr("Logout")
                     width: 200 * calaosApp.density
                     height: parent.height
-                    style: StyleButtonDefault { }
-                    onClicked: calaosApp.logout()
+                    onButtonClicked: calaosApp.logout()
                     anchors.horizontalCenter: parent.horizontalCenter
                 }
             }
             Item {
                 width: listFlick.width;
                 height: 40 * calaosApp.density
-                Button {
+                CalaosItemBase {
                     text: qsTr("Reset all data")
                     width: 200 * calaosApp.density
                     height: parent.height
-                    style: StyleButtonDefault { }
-                    onClicked: calaosApp.resetAllData()
+                    onButtonClicked: calaosApp.resetAllData()
                     anchors.horizontalCenter: parent.horizontalCenter
                 }
             }
@@ -52,12 +50,11 @@ Item {
             Item {
                 width: listFlick.width;
                 height: 40 * calaosApp.density
-                Button {
+                CalaosItemBase {
                     text: qsTr("Add a favorite")
                     width: 200 * calaosApp.density
                     height: parent.height
-                    style: StyleButtonDefault { }
-                    onClicked: favoriteAddClicked()
+                    onButtonClicked: favoriteAddClicked()
                     anchors.horizontalCenter: parent.horizontalCenter
                 }
             }
@@ -65,13 +62,12 @@ Item {
             Item {
                 width: listFlick.width;
                 height: 40 * calaosApp.density
-                Button {
+                CalaosItemBase {
                     text: qsTr("Edit favorites list")
                     width: 200 * calaosApp.density
                     height: parent.height
-                    style: StyleButtonDefault { }
-                    onClicked: favoriteEditClicked()
                     anchors.horizontalCenter: parent.horizontalCenter
+                    onButtonClicked: favoriteEditClicked()
                 }
             }
 

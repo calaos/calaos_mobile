@@ -68,7 +68,7 @@ ItemBase {
         }
     }
 
-    Slider {
+    CalaosSlider {
         id: slider
         anchors {
             left: parent.left; leftMargin: 8 * calaosApp.density

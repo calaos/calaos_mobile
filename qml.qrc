@@ -46,5 +46,7 @@
         <file>qml/TextFieldStyle.qml</file>
         <file>qml/CalaosItemBase.qml</file>
         <file>qml/CalaosTextField.qml</file>
+        <file>qml/CalaosSlider.qml</file>
+        <file>qml/CalaosSliderStyle.qml</file>
     </qresource>
 </RCC>

@@ -75,7 +75,7 @@ ItemBase {
         }
     }
 
-    Slider {
+    CalaosSlider {
         id: slider_red
         anchors {
             left: parent.left; leftMargin: height + 16 * calaosApp.density
@@ -103,7 +103,7 @@ ItemBase {
             verticalCenter: slider_green.verticalCenter
         }
     }
-    Slider {
+    CalaosSlider {
         id: slider_green
         anchors {
             left: parent.left; leftMargin: height + 16 * calaosApp.density
@@ -131,7 +131,7 @@ ItemBase {
             verticalCenter: slider_blue.verticalCenter
         }
     }
-    Slider {
+    CalaosSlider {
         id: slider_blue
         anchors {
             left: parent.left; leftMargin: height + 16 * calaosApp.density

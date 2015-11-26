@@ -142,4 +142,5 @@ DISTFILES += \
     qml/CalaosTextField.qml \
     qml/CalaosSlider.qml \
     qml/CalaosSliderStyle.qml \
-    qml/ColorPickerView.qml
+    qml/ColorPickerView.qml \
+    qml/ColorPickerRGBView.qml

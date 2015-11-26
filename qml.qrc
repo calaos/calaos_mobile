@@ -49,5 +49,6 @@
         <file>qml/CalaosSlider.qml</file>
         <file>qml/CalaosSliderStyle.qml</file>
         <file>qml/ColorPickerView.qml</file>
+        <file>qml/ColorPickerRGBView.qml</file>
     </qresource>
 </RCC>

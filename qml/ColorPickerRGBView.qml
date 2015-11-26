@@ -17,19 +17,18 @@ Item {
 
     onItemColorChanged: {
         colorPreview = itemColor.rgbColor
-        slider_hue.value = calaosApp.getColorHue(itemColor.rgbColor)
-        slider_saturation.value = calaosApp.getColorSaturation(itemColor.rgbColor)
-        slider_lumi.value = calaosApp.getColorLightness(itemColor.rgbColor)
+        slider_red.value = itemColor.rgbColor.r * 255
+        slider_green.value = itemColor.rgbColor.g * 255
+        slider_blue.value = itemColor.rgbColor.b * 255
+        console.log("update sliders: r:" + slider_red.value + " g:" + slider_green.value + " b:" + slider_blue.value)
     }
 
     property alias colorPreview: colorPrev.color
 
     function updatePreview() {
-        console.log("hue:" + slider_hue.value/ 255.0 + " s:" + slider_saturation.value/ 100.0 + " l:" + slider_lumi.value/ 100.0)
 
-        colorPreview = Qt.hsla(slider_hue.value / 255.0,
-                               slider_saturation.value / 100.0,
-                               slider_lumi.value / 100.0, 1)
+        console.log("r:" + slider_red.value + " g:" + slider_green.value + " b:" + slider_blue.value)
+        colorPreview = Qt.rgba(slider_red.value / 255.0, slider_green.value / 255.0, slider_blue.value / 255.0, 1)
     }
 
     Flickable {
@@ -44,14 +43,14 @@ Item {
             }
 
             CalaosSlider {
-                id: slider_hue
+                id: slider_red
                 Layout.fillWidth: true
 
                 updateValueWhileDragging: true
                 maximumValue: 255
                 onValueChanged: updatePreview()
 
-                property color currentColor: Qt.hsla(slider_hue.value / 255.0, 1, 0.5, 1)
+                property color currentColor: Qt.hsla(slider_red.value / 255.0, 1, 0.5, 1)
 
                 customBackground: Item {
                     Rectangle {
@@ -60,58 +59,52 @@ Item {
                         width: parent.height
                         height: parent.width
                         gradient: Gradient {
-                            GradientStop { position: 0/6; color: "red" }
-                            GradientStop { position: 1/6; color: "magenta" }
-                            GradientStop { position: 2/6; color: "blue" }
-                            GradientStop { position: 3/6; color: "cyan" }
-                            GradientStop { position: 4/6; color: "lime" }
-                            GradientStop { position: 5/6; color: "yellow" }
-                            GradientStop { position: 6/6; color: "red" }
-                        }
-                    }
-                }
-            }
-
-            CalaosSlider {
-                id: slider_saturation
-                Layout.fillWidth: true
-
-                updateValueWhileDragging: true
-                maximumValue: 100
-                onValueChanged: updatePreview()
-
-                customBackground: Item {
-                    Rectangle {
-                        anchors.centerIn: parent
-                        rotation: 90
-                        width: parent.height
-                        height: parent.width
-                        gradient: Gradient {
-                            GradientStop { position: 1; color: "#6d6d6d" }
-                            GradientStop { position: 0; color: slider_hue.currentColor }
-                        }
-                    }
-                }
-            }
-
-            CalaosSlider {
-                id: slider_lumi
-                Layout.fillWidth: true
-
-                updateValueWhileDragging: true
-                maximumValue: 100
-                onValueChanged: updatePreview()
-
-                customBackground: Item {
-                    Rectangle {
-                        anchors.centerIn: parent
-                        rotation: 90
-                        width: parent.height
-                        height: parent.width
-                        gradient: Gradient {
-                            GradientStop { position: 0; color: "white" }
-                            GradientStop { position: 0.5; color: slider_hue.currentColor }
+                            GradientStop { position: 0; color: "red" }
                             GradientStop { position: 1; color: "black" }
+                        }
+                    }
+                }
+            }
+
+            CalaosSlider {
+                id: slider_green
+                Layout.fillWidth: true
+
+                updateValueWhileDragging: true
+                maximumValue: 255
+                onValueChanged: updatePreview()
+
+                customBackground: Item {
+                    Rectangle {
+                        anchors.centerIn: parent
+                        rotation: 90
+                        width: parent.height
+                        height: parent.width
+                        gradient: Gradient {
+                            GradientStop { position: 0; color: "green" }
+                            GradientStop { position: 1; color: "#6d6d6d" }
+                        }
+                    }
+                }
+            }
+
+            CalaosSlider {
+                id: slider_blue
+                Layout.fillWidth: true
+
+                updateValueWhileDragging: true
+                maximumValue: 255
+                onValueChanged: updatePreview()
+
+                customBackground: Item {
+                    Rectangle {
+                        anchors.centerIn: parent
+                        rotation: 90
+                        width: parent.height
+                        height: parent.width
+                        gradient: Gradient {
+                            GradientStop { position: 0; color: "blue" }
+                            GradientStop { position: 1; color: "#6d6d6d" }
                         }
                     }
                 }

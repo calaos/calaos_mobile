@@ -368,7 +368,7 @@ int IOBase::getStateRed()
         int state = ioData["state"].toInt();
 
         int r;
-        r = ((state >> 16) * 100) / 255;
+        r = state >> 16;
 
         return r;
     }
@@ -386,7 +386,7 @@ int IOBase::getStateGreen()
         int state = ioData["state"].toInt();
 
         int g;
-        g = (((state >> 8) & 0x0000FF) * 100) / 255;
+        g = (state >> 8) & 0x0000FF;
 
         return g;
     }
@@ -404,7 +404,7 @@ int IOBase::getStateBlue()
         int state = ioData["state"].toInt();
 
         int b;
-        b = ((state & 0x0000FF) * 100) / 255;
+        b = state & 0x0000FF;
 
         return b;
     }
@@ -420,9 +420,9 @@ void IOBase::sendRGB(int r, int g, int b)
     if (connection->isHttpApiV2())
     {
         qDebug() << "Send rgb value: " << r << "," << g << "," << b;
-        quint32 val = (((quint32)(r * 255 / 100)) << 16) +
-                  (((quint32)(g * 255 / 100)) << 8) +
-                  ((quint32)(b * 255 / 100));
+        quint32 val = (((quint32)(r)) << 16) +
+                  (((quint32)(g)) << 8) +
+                  ((quint32)(b));
 
         connection->sendCommand(ioData["id"].toString(),
                 QString("set %1").arg(val),

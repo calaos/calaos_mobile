@@ -247,7 +247,7 @@ Window {
     Component {
         id: colorPickerView
 
-        ColorPickerView {
+        ColorPickerRGBView {
             width: parent.width
             height: parent.height - menuBar.height
             itemColor: itemRgbColor

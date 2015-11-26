@@ -59,7 +59,13 @@ void HardwareUtils::emitApplicationActiveChanged(bool active)
     if (active)
         emit applicationBecomeActive();
     else
+    {
+        //reset started with options, so we do not
+        //restart last option next time we "wake up" the app (not being killed)
+        startedWithOpt = false;
+
         emit applicationWillResignActive();
+    }
 }
 
 void HardwareUtils::emitDialogTextValid(const QString &s)

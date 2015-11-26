@@ -24,6 +24,7 @@ void HomeModel::load(const QVariantMap &homeData)
     clear();
     scenarioModel->clear();
     IOCache::Instance().clearCache();
+    lightOnModel->clear();
 
     if (!homeData.contains("home"))
     {

@@ -34,7 +34,7 @@ Application::Application(int & argc, char ** argv) :
 
     QCoreApplication::setOrganizationName("Calaos");
     QCoreApplication::setOrganizationDomain("calaos.fr");
-    QCoreApplication::setApplicationName("CalaosMobile");
+    QCoreApplication::setApplicationName("CalaosHome");
 
     Common::registerQml();
 

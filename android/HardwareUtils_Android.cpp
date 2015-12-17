@@ -18,7 +18,7 @@ void HardwareUtilsAndroid::showAlertMessage(QString title, QString message, QStr
     QAndroidJniObject jTitle = QAndroidJniObject::fromString(title);
     QAndroidJniObject jMessage = QAndroidJniObject::fromString(message);
     QAndroidJniObject jButtontext = QAndroidJniObject::fromString(buttontext);
-    QAndroidJniObject::callStaticMethod<void>("fr/calaos/calaosmobile/HardwareUtils",
+    QAndroidJniObject::callStaticMethod<void>("fr/calaos/calaoshome/HardwareUtils",
                                        "showAlertMessage",
                                        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
                                        jTitle.object<jstring>(),
@@ -37,7 +37,7 @@ void HardwareUtilsAndroid::showAlertMessage(QString title, QString message, QStr
 
 int HardwareUtilsAndroid::getNetworkStatus()
 {
-    jint status = QAndroidJniObject::callStaticMethod<jint>("fr/calaos/calaosmobile/HardwareUtils",
+    jint status = QAndroidJniObject::callStaticMethod<jint>("fr/calaos/calaoshome/HardwareUtils",
                                                             "getNetworkStatus");
 
     qDebug() << "Android: HardwareUtilsAndroid::getNetworkStatus(): " << status;
@@ -58,7 +58,7 @@ void HardwareUtilsAndroid::inputTextDialog(const QString &title, const QString &
     QAndroidJniObject jTitle = QAndroidJniObject::fromString(title);
     QAndroidJniObject jMessage = QAndroidJniObject::fromString(message);
 
-    QAndroidJniObject::callStaticMethod<void>("fr/calaos/calaosmobile/HardwareUtils",
+    QAndroidJniObject::callStaticMethod<void>("fr/calaos/calaoshome/HardwareUtils",
                                        "inputtextDialog",
                                        "(Ljava/lang/String;Ljava/lang/String;)V",
                                        jTitle.object<jstring>(),
@@ -100,7 +100,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void */*reserved*/)
         return JNI_ERR;
 
     // search for Java class which declares the native methods
-    jclass javaClass = env->FindClass("fr/calaos/calaosmobile/HardwareUtilsNatives");
+    jclass javaClass = env->FindClass("fr/calaos/calaoshome/HardwareUtilsNatives");
     if (!javaClass)
         return JNI_ERR;
 

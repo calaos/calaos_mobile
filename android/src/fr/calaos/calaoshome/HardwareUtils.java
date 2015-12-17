@@ -1,5 +1,5 @@
 
-package fr.calaos.calaosmobile;
+package fr.calaos.calaoshome;
 
 import android.content.Context;
 import android.app.AlertDialog;

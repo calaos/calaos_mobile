@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
-<manifest android:versionCode="8" android:installLocation="auto" xmlns:android="http://schemas.android.com/apk/res/android" package="fr.calaos.calaosmobile" android:versionName="2.0rc1">
+<manifest android:versionCode="9" android:installLocation="auto" xmlns:android="http://schemas.android.com/apk/res/android" package="fr.calaos.calaoshome" android:versionName="3.0.0">
     <application android:name="org.qtproject.qt5.android.bindings.QtApplication" android:label="@string/app_name" android:icon="@drawable/icon">
-        <activity android:screenOrientation="unspecified" android:name="fr.calaos.calaosmobile.HardwareUtils" android:label="@string/app_name" android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|locale|fontScale|keyboard|keyboardHidden|navigation">
+        <activity android:screenOrientation="unspecified" android:name="fr.calaos.calaoshome.HardwareUtils" android:label="@string/app_name" android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|locale|fontScale|keyboard|keyboardHidden|navigation">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <meta-data android:value="CalaosMobile" android:name="android.app.lib_name"/>
+            <meta-data android:value="CalaosHome" android:name="android.app.lib_name"/>
             <meta-data android:resource="@array/qt_sources" android:name="android.app.qt_sources_resource_id"/>
             <meta-data android:value="default" android:name="android.app.repository"/>
             <meta-data android:resource="@array/qt_libs" android:name="android.app.qt_libs_resource_id"/>

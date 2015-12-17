@@ -1,12 +1,12 @@
 TEMPLATE = app
 
-TARGET=CalaosMobile
+TARGET=CalaosHome
 
 QT += qml quick network gui websockets
 
 android {
     QT += androidextras
-    OTHER_FILES += android/src/fr/calaos/calaosmobile/HardwareUtils.java
+    OTHER_FILES += android/src/fr/calaos/calaoshome/HardwareUtils.java
     ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
     SOURCES += android/HardwareUtils_Android.cpp
     HEADERS += android/HardwareUtils_Android.h

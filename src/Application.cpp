@@ -148,7 +148,7 @@ void Application::resetAllData()
     settings.sync();
     update_username("demo@calaos.fr");
     update_password("demo");
-    update_hostname("calaos.fr");
+    update_hostname("demo.calaos.fr");
     logout();
 }
 

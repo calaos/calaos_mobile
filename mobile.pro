@@ -1,6 +1,10 @@
 TEMPLATE = app
 
 TARGET=CalaosHome
+isEmpty(PREFIX) {
+ PREFIX = /usr/local
+}
+TARGET.path = $$PREFIX/
 
 QT += qml quick network gui websockets
 

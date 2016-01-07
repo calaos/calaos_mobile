@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qml/main_desktop.qml</file>
+        <file>qml/Fonts.qml</file>
+        <file>qml/calaos.js</file>
+        <file>qml/BackgroundDesktop.qml</file>
+        <file>qml/Units.qml</file>
+        <file>qml/MainMenu.qml</file>
+    </qresource>
+</RCC>

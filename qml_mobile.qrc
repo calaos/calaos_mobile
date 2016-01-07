@@ -1,6 +1,6 @@
 <RCC>
     <qresource prefix="/">
-        <file>qml/main.qml</file>
+        <file>qml/main_mobile.qml</file>
         <file>qml/LoginView.qml</file>
         <file>qml/StyleButtonDefault.qml</file>
         <file>qml/calaos.js</file>
@@ -50,5 +50,6 @@
         <file>qml/CalaosSliderStyle.qml</file>
         <file>qml/ColorPickerView.qml</file>
         <file>qml/ColorPickerRGBView.qml</file>
+        <file>qml/Units.qml</file>
     </qresource>
 </RCC>

@@ -1,0 +1,19 @@
+<RCC>
+    <qresource prefix="/">
+        <file>img/background_center.png</file>
+        <file>img/background_bottom.png</file>
+        <file>img/background_top.png</file>
+        <file>img/background_quad.png</file>
+        <file>img/menu_header_shadow.png</file>
+        <file>img/menu_header_background.png</file>
+        <file>img/menu_header_background_version.png</file>
+        <file>img/menu_logo.png</file>
+        <file>img/menu_footer_background_left.png</file>
+        <file>img/menu_footer_background_right.png</file>
+        <file>img/menu_footer_background.png</file>
+        <file>img/menu_footer_shadow.png</file>
+        <file>img/menu_buttons_shadow_left.png</file>
+        <file>img/menu_buttons_shadow_right.png</file>
+        <file>img/menu_glowed_neon.png</file>
+    </qresource>
+</RCC>

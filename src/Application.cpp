@@ -102,7 +102,17 @@ Application::Application(int & argc, char ** argv) :
     engine.rootContext()->setContextProperty("cameraModel", cameraModel);
 
     engine.rootContext()->setContextProperty("calaosApp", this);
-    engine.load(QUrl(QStringLiteral("qrc:///qml/main.qml")));
+
+    //Register Units singleton
+    qmlRegisterSingletonType(QUrl("qrc:/qml/Units.qml"), "Units", 1, 0, "Units");
+
+#if defined(CALAOS_MOBILE)
+    engine.load(QUrl(QStringLiteral("qrc:///qml/main_mobile.qml")));
+#elif defined(CALAOS_DESKTOP)
+    engine.load(QUrl(QStringLiteral("qrc:///qml/main_desktop.qml")));
+#else
+#error "Unknown UI type!"
+#endif
 
     //Start autologin
     QTimer::singleShot(100, [=]()

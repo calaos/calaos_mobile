@@ -15,5 +15,20 @@
         <file>img/menu_buttons_shadow_left.png</file>
         <file>img/menu_buttons_shadow_right.png</file>
         <file>img/menu_glowed_neon.png</file>
+        <file>img/button_configuration_bloom.png</file>
+        <file>img/button_configuration_glow.png</file>
+        <file>img/button_configuration.png</file>
+        <file>img/button_home_bloom.png</file>
+        <file>img/button_home_glow.png</file>
+        <file>img/button_home.png</file>
+        <file>img/button_media_bloom.png</file>
+        <file>img/button_media_glow.png</file>
+        <file>img/button_media.png</file>
+        <file>img/button_menu_stop_on.png</file>
+        <file>img/button_menu_stop.png</file>
+        <file>img/button_scenarios_bloom.png</file>
+        <file>img/button_scenarios_glow.png</file>
+        <file>img/button_scenarios.png</file>
+        <file>img/button_selected_neon.png</file>
     </qresource>
 </RCC>

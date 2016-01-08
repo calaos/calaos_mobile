@@ -6,5 +6,6 @@
         <file>qml/BackgroundDesktop.qml</file>
         <file>qml/Units.qml</file>
         <file>qml/MainMenu.qml</file>
+        <file>qml/MainMenuButton.qml</file>
     </qresource>
 </RCC>

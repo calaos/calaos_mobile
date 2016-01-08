@@ -1,5 +1,6 @@
 import QtQuick 2.2
 import Units 1.0
+import QtQuick.Layouts 1.1
 
 Item {
     id: menu
@@ -110,8 +111,7 @@ Item {
     Image {
         source: "qrc:/img/menu_buttons_shadow_left.png"
         anchors {
-            horizontalCenter: parent.horizontalCenter
-            horizontalCenterOffset: Units.dp(-289)
+            right: menuLayout.left
             top: footerBg.top; bottom: parent.bottom
         }
         opacity: 0.588
@@ -119,8 +119,7 @@ Item {
     Image {
         source: "qrc:/img/menu_buttons_shadow_right.png"
         anchors {
-            horizontalCenter: parent.horizontalCenter
-            horizontalCenterOffset: Units.dp(289)
+            left: menuLayout.right
             top: footerBg.top; bottom: parent.bottom
         }
         opacity: 0.588
@@ -129,12 +128,58 @@ Item {
     Image {
         id: glow
         source: "qrc:/img/menu_glowed_neon.png"
-        opacity: 0.8
+        opacity: currentButton == 0?0.8:0
 
         anchors {
             verticalCenter: footerBg.top; verticalCenterOffset: Units.dp(1)
             left: parent.left
             right: parent.right
+        }
+
+        Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.OutQuad } }
+    }
+
+    property int currentButton: 0
+
+    RowLayout {
+        id: menuLayout
+
+        spacing: 0
+        anchors {
+            horizontalCenter: parent.horizontalCenter
+            bottom: parent.bottom
+        }
+
+        MainMenuButton {
+            iconName: "home"
+            buttonLabel: qsTr("My Home")
+
+            selected: currentButton == 1
+            onClicked: currentButton = 1
+        }
+
+        MainMenuButton {
+            iconName: "media"
+            buttonLabel: qsTr("Media")
+
+            selected: currentButton == 2
+            onClicked: currentButton = 2
+        }
+
+        MainMenuButton {
+            iconName: "scenarios"
+            buttonLabel: qsTr("Scenarios")
+
+            selected: currentButton == 3
+            onClicked: currentButton = 3
+        }
+
+        MainMenuButton {
+            iconName: "configuration"
+            buttonLabel: qsTr("Configuration")
+
+            selected: currentButton == 4
+            onClicked: currentButton = 4
         }
     }
 }

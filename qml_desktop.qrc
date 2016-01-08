@@ -7,5 +7,7 @@
         <file>qml/Units.qml</file>
         <file>qml/MainMenu.qml</file>
         <file>qml/MainMenuButton.qml</file>
+        <file>qml/DesktopView.qml</file>
+        <file>qml/DesktopHomeView.qml</file>
     </qresource>
 </RCC>

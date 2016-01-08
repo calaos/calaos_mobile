@@ -67,5 +67,4 @@ OTHER_FILES += \
     qml/IOFavAllLights.qml \
     qml/BackgroundDesktop.qml \
     qml/MainMenu.qml \
-    qml/MainMenuButton.qml \
-    qml/HomeBoardMenu.qml
+    qml/MainMenuButton.qml

@@ -5,6 +5,11 @@ import QtQuick.Layouts 1.1
 Item {
     id: menu
 
+    signal buttonHomeClicked()
+    signal buttonMediaClicked()
+    signal buttonScenariosClicked()
+    signal buttonConfigClicked()
+
     anchors.fill: parent
 
     Image {
@@ -69,6 +74,10 @@ Item {
             bottom: footerBg.top; bottomMargin: Units.dp(10)
             horizontalCenter: parent.horizontalCenter
         }
+
+        opacity: currentButton == 0?1:0
+
+        Behavior on opacity { NumberAnimation {} }
     }
 
     Image {
@@ -164,7 +173,10 @@ Item {
             buttonLabel: qsTr("My Home")
 
             selected: currentButton == 1
-            onClicked: currentButton = 1
+            onClicked: {
+                buttonHomeClicked()
+                currentButton = 1
+            }
         }
 
         MainMenuButton {
@@ -172,7 +184,10 @@ Item {
             buttonLabel: qsTr("Media")
 
             selected: currentButton == 2
-            onClicked: currentButton = 2
+            onClicked: {
+                buttonMediaClicked()
+                currentButton = 2
+            }
         }
 
         MainMenuButton {
@@ -180,7 +195,10 @@ Item {
             buttonLabel: qsTr("Scenarios")
 
             selected: currentButton == 3
-            onClicked: currentButton = 3
+            onClicked: {
+                buttonScenariosClicked()
+                currentButton = 3
+            }
         }
 
         MainMenuButton {
@@ -188,7 +206,10 @@ Item {
             buttonLabel: qsTr("Configuration")
 
             selected: currentButton == 4
-            onClicked: currentButton = 4
+            onClicked: {
+                buttonConfigClicked()
+                currentButton = 4
+            }
         }
     }
 }

@@ -34,5 +34,55 @@
         <file>img/button_glow_down.png</file>
         <file>img/button_glow_up.png</file>
         <file>img/glowed_556_line_final.png</file>
+        <file>img/module_footer_shadow.png</file>
+        <file>img/module_footer.png</file>
+        <file>img/module_header_shadow.png</file>
+        <file>img/module_header.png</file>
+        <file>img/rooms/bathroom/bathroom_big.png</file>
+        <file>img/rooms/bathroom/bathroom_medium_bloom.png</file>
+        <file>img/rooms/bathroom/bathroom_medium.png</file>
+        <file>img/rooms/bathroom/bathroom_small.png</file>
+        <file>img/rooms/bedroom/bedroom_big.png</file>
+        <file>img/rooms/bedroom/bedroom_medium_bloom.png</file>
+        <file>img/rooms/bedroom/bedroom_medium.png</file>
+        <file>img/rooms/bedroom/bedroom_small.png</file>
+        <file>img/rooms/cellar/cellar_big.png</file>
+        <file>img/rooms/cellar/cellar_medium_bloom.png</file>
+        <file>img/rooms/cellar/cellar_medium.png</file>
+        <file>img/rooms/cellar/cellar_small.png</file>
+        <file>img/rooms/corridor/corridor_big.png</file>
+        <file>img/rooms/corridor/corridor_medium_bloom.png</file>
+        <file>img/rooms/corridor/corridor_medium.png</file>
+        <file>img/rooms/corridor/corridor_small.png</file>
+        <file>img/rooms/diningroom/diningroom_big.png</file>
+        <file>img/rooms/diningroom/diningroom_medium_bloom.png</file>
+        <file>img/rooms/diningroom/diningroom_medium.png</file>
+        <file>img/rooms/diningroom/diningroom_small.png</file>
+        <file>img/rooms/garage/garage_big.png</file>
+        <file>img/rooms/garage/garage_medium_bloom.png</file>
+        <file>img/rooms/garage/garage_medium.png</file>
+        <file>img/rooms/garage/garage_small.png</file>
+        <file>img/rooms/kitchen/kitchen_big.png</file>
+        <file>img/rooms/kitchen/kitchen_medium_bloom.png</file>
+        <file>img/rooms/kitchen/kitchen_medium.png</file>
+        <file>img/rooms/kitchen/kitchen_small.png</file>
+        <file>img/rooms/lounge/lounge_big.png</file>
+        <file>img/rooms/lounge/lounge_medium_bloom.png</file>
+        <file>img/rooms/lounge/lounge_medium.png</file>
+        <file>img/rooms/lounge/lounge_small.png</file>
+        <file>img/rooms/office/office_big.png</file>
+        <file>img/rooms/office/office_medium_bloom.png</file>
+        <file>img/rooms/office/office_medium.png</file>
+        <file>img/rooms/office/office_small.png</file>
+        <file>img/rooms/outside/outside_big.png</file>
+        <file>img/rooms/outside/outside_medium_bloom.png</file>
+        <file>img/rooms/outside/outside_medium.png</file>
+        <file>img/rooms/outside/outside_small.png</file>
+        <file>img/rooms/various/various_big.png</file>
+        <file>img/rooms/various/various_medium_bloom.png</file>
+        <file>img/rooms/various/various_medium.png</file>
+        <file>img/rooms/various/various_small.png</file>
+        <file>img/icon_light_on.png</file>
+        <file>img/icon_light_on@2x.png</file>
     </qresource>
 </RCC>

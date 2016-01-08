@@ -12,5 +12,9 @@
         <file>fonts/Roboto-Regular.ttf</file>
         <file>fonts/Roboto-Thin.ttf</file>
         <file>fonts/Roboto-ThinItalic.ttf</file>
+        <file>fonts/calaos_logo.ttf</file>
+        <file>fonts/calaos_text_bold.ttf</file>
+        <file>fonts/calaos_text.ttf</file>
+        <file>fonts/RepetitionScrolling.ttf</file>
     </qresource>
 </RCC>

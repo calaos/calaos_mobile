@@ -1,108 +1,80 @@
-import QtQuick 2.2
-import Units 1.0
+import QtQuick 2.0
 
-Rectangle {
+Item {
 
-    id: bt
-
-    property string iconName: "home"
+    property string iconBase
+    property string iconGlow
+    property string iconBloom
     property bool selected: false
-    property bool disabled: false
-    property alias buttonLabel: buttonTxt.text
+    property alias label: txt.text
+    signal buttonClicked()
 
-    signal clicked()
-
-    width: Units.dp(142)
-    height: Units.dp(94)
-
-    color: "#303030"
+    width: 142 / 2 * calaosApp.density
+    height: 94 / 2 * calaosApp.density
 
     Image {
-        source: qsTr("qrc:/img/button_%1.png").arg(iconName)
+        id: bg
+        source: iconBase
         anchors.fill: parent
-        opacity: disabled?0:1.0
     }
 
     Image {
-        source: "qrc:/img/button_menu_stop.png"
+        id: glow
+        source: iconGlow
         anchors.fill: parent
-        opacity: disabled?0.4:0.0
+
+        opacity: selected?1:0
+        visible: opacity > 0
+        Behavior on opacity { NumberAnimation { easing.type: Easing.OutQuad; duration: 100 } }
     }
 
     Image {
-        source: "qrc:/img/button_menu_stop_on.png"
+        id: bloom
+        source: iconBloom
         anchors.fill: parent
+
         opacity: 0
-
-        SequentialAnimation on opacity {
-            id: stopAnim
-            running: false
-            NumberAnimation { from: 0; to: 1; duration: 22; easing.type: Easing.InCubic }
-            NumberAnimation { from: 1; to: 0; duration: 3000; easing.type: Easing.OutQuad }
-        }
-
-        MouseArea {
-            enabled: disabled
-            anchors.fill: parent
-            onPressed: stopAnim.restart()
-        }
-    }
-
-    Image {
-        source: qsTr("qrc:/img/button_%1_glow.png").arg(iconName)
-        anchors.fill: parent
-        opacity: selected && !disabled?1.0:0.0
-
-        Behavior on opacity { NumberAnimation { duration: 500; easing.type: Easing.OutQuad } }
-    }
-
-    Image {
-        source: qsTr("qrc:/img/button_%1_bloom.png").arg(iconName)
-        anchors.fill: parent
-        opacity: 0
-
-        SequentialAnimation on opacity {
-            id: bloomAnim
-            running: false
-            NumberAnimation { from: 0; to: 0.4; duration: 22; easing.type: Easing.InCubic }
-            NumberAnimation { from: 0.4; to: 0; duration: 800; easing.type: Easing.OutQuad }
-        }
-
-        MouseArea {
-            enabled: !disabled
-            anchors.fill: parent
-            onPressed: {
-                bloomAnim.restart()
-                bt.clicked()
-            }
-        }
     }
 
     Text {
-        id: buttonTxt
-        horizontalAlignment: Text.AlignHCenter
-        anchors {
-            left: parent.left
-            right: parent.right
-            verticalCenter: parent.verticalCenter
-            verticalCenterOffset: Units.dp(28)
-        }
-        elide: Text.ElideMiddle
-        font.pixelSize: Units.dp(15)
-        font.family: calaosFont.fontFamilyLight
-        font.weight: Font.ExtraLight
+        id: txt
         color: "#e7e7e7"
-        opacity: selected || disabled?0.4:1
-    }
-
-    Image {
-        source: "qrc:/img/button_selected_neon.png"
+        font { family: calaosFont.fontFamily; bold: false; pointSize: 10 }
         anchors {
-            top: parent.top; topMargin: Units.dp(-5)
-            horizontalCenter: parent.horizontalCenter
+            centerIn: parent
+            verticalCenterOffset: 12 * calaosApp.density
         }
-        opacity: selected?1.0:0.0
-
-        Behavior on opacity { NumberAnimation { duration: 500; easing.type: Easing.OutQuad } }
     }
+
+    SequentialAnimation {
+        id: animBloom
+        running: false
+        NumberAnimation {
+            target: bloom
+            property: "opacity"
+            easing.type: Easing.OutQuad;
+            duration: 100
+            from: 0
+            to: 1
+        }
+        PauseAnimation { duration: 80 }
+        NumberAnimation {
+            target: bloom
+            property: "opacity"
+            easing.type: Easing.InQuad;
+            duration: 30
+            from: 1
+            to: 0
+        }
+    }
+
+    MouseArea {
+        anchors.fill: parent
+        onClicked: {
+            selected = true
+            animBloom.start()
+            buttonClicked()
+        }
+    }
+
 }

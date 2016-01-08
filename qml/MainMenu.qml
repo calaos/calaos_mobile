@@ -168,7 +168,7 @@ Item {
             bottom: parent.bottom
         }
 
-        MainMenuButton {
+        MainMenuButtonDesktop {
             iconName: "home"
             buttonLabel: qsTr("My Home")
 
@@ -179,7 +179,7 @@ Item {
             }
         }
 
-        MainMenuButton {
+        MainMenuButtonDesktop {
             iconName: "media"
             buttonLabel: qsTr("Media")
 
@@ -190,7 +190,7 @@ Item {
             }
         }
 
-        MainMenuButton {
+        MainMenuButtonDesktop {
             iconName: "scenarios"
             buttonLabel: qsTr("Scenarios")
 
@@ -201,7 +201,7 @@ Item {
             }
         }
 
-        MainMenuButton {
+        MainMenuButtonDesktop {
             iconName: "configuration"
             buttonLabel: qsTr("Configuration")
 

@@ -84,6 +84,8 @@ void CalaosConnection::connectWebsocket(QString h)
     if (!wsocket)
     {
         wsocket = new QWebSocket();
+        connect(wsocket, SIGNAL(sslErrors(QList<QSslError>)),
+                this, SLOT(sslErrorsWebsocket(QList<QSslError>)));
         connect(wsocket, &QWebSocket::connected, this, &CalaosConnection::onWsConnected);
         connect(wsocket, &QWebSocket::disconnected, this, &CalaosConnection::onWsDisconnected);
         connect(wsocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(onWsError()));
@@ -105,8 +107,6 @@ void CalaosConnection::onWsConnected()
 {
     qDebug() << "Websocket connected";
     connect(wsocket, &QWebSocket::textMessageReceived, this, &CalaosConnection::onWsTextMessageReceived);
-    connect(wsocket, SIGNAL(sslErrors(QList<QSslError>)),
-            this, SLOT(sslErrorsWebsocket(QList<QSslError>)));
 
     QJsonObject jroot, jdata;
     jroot["msg"] = QStringLiteral("login");

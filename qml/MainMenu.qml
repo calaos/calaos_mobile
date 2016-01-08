@@ -63,6 +63,15 @@ Item {
     }
 
     Image {
+        source: "qrc:/img/glowed_556_line_final.png"
+
+        anchors {
+            bottom: footerBg.top; bottomMargin: Units.dp(10)
+            horizontalCenter: parent.horizontalCenter
+        }
+    }
+
+    Image {
         source: "qrc:/img/menu_footer_shadow.png"
         opacity: 0.588
 

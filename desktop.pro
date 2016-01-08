@@ -66,4 +66,6 @@ OTHER_FILES += \
     qml/ColorPickerRGBView.qml \
     qml/IOFavAllLights.qml \
     qml/BackgroundDesktop.qml \
-    qml/MainMenu.qml
+    qml/MainMenu.qml \
+    qml/MainMenuButton.qml \
+    qml/HomeBoardMenu.qml

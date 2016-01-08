@@ -30,5 +30,9 @@
         <file>img/button_scenarios_glow.png</file>
         <file>img/button_scenarios.png</file>
         <file>img/button_selected_neon.png</file>
+        <file>img/menu_back.png</file>
+        <file>img/button_glow_down.png</file>
+        <file>img/button_glow_up.png</file>
+        <file>img/glowed_556_line_final.png</file>
     </qresource>
 </RCC>

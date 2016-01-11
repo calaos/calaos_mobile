@@ -273,7 +273,7 @@ void Application::loadSettings()
 
     update_username(cnuser);
     update_password(cnpass);
-    update_hostname(settings.value("calaos/host", "calaos.fr").toString());
+    update_hostname(settings.value("calaos/host", "demo.calaos.fr").toString());
 
     favoritesList = settings.value("app/favorites").toList();
 }

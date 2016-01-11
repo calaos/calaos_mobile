@@ -1,6 +1,6 @@
 import QtQuick 2.2
 import "calaos.js" as Calaos;
-
+import Units 1.0
 
 Item {
 
@@ -82,7 +82,33 @@ Item {
                     left: lighticon.right; leftMargin: 5 * calaosApp.density
                     right: parent.right; rightMargin: 2 * calaosApp.density
                 }
-                font { family: calaosFont.fontFamily; bold: false; pointSize: 8 }
+                font { family: calaosFont.fontFamily; bold: false; pointSize: 10 }
+            }
+
+            Image {
+                id: tempicon
+                source: calaosApp.getPictureSized("icon_temp")
+
+                visible: has_temperature
+
+                anchors {
+                    horizontalCenter: parent.horizontalCenter
+                    horizontalCenterOffset: Units.dp(-55)
+                    bottom: parent.bottom
+                    bottomMargin: Units.dp(8)
+                }
+            }
+
+            Text {
+                text: "%1°".arg(current_temperature)
+                visible: has_temperature
+                color: "#3AB4D7"
+                elide: Text.ElideRight
+                anchors {
+                    verticalCenter: tempicon.verticalCenter
+                    left: tempicon.right
+                }
+                font { family: calaosFont.fontFamily; bold: false; pointSize: 10 }
             }
 
             MouseArea {

@@ -110,9 +110,13 @@ public:
 signals:
     void sig_light_on(IOBase *io);
     void sig_light_off(IOBase *io);
+    void has_temp_sig(bool h);
+    void temp_changed_sig(double tmp);
 
 private:
     QString name, type, hits;
+
+    IOBase *temperatureIo = nullptr;
 
     QQmlApplicationEngine *engine;
     CalaosConnection *connection;

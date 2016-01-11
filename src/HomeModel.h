@@ -74,7 +74,9 @@ public:
         RoleType = Qt::UserRole + 1,
         RoleHits,
         RoleName,
-        RoleLightsCount
+        RoleLightsCount,
+        RoleHasTemp,
+        RoleCurrentTemp,
     };
 
     void load(const QVariantMap &homeData);
@@ -102,6 +104,8 @@ class RoomItem: public QObject, public QStandardItem
     QML_READONLY_PROPERTY_MODEL(QString, roomName, HomeModel::RoleName)
 
     QML_READONLY_PROPERTY_MODEL(int, lights_on_count, HomeModel::RoleLightsCount)
+    QML_READONLY_PROPERTY_MODEL(bool, has_temperature, HomeModel::RoleHasTemp)
+    QML_READONLY_PROPERTY_MODEL(double, current_temperature, HomeModel::RoleCurrentTemp)
 public:
 
     RoomItem(QQmlApplicationEngine *engine, CalaosConnection *con);
@@ -113,6 +117,8 @@ public:
 public slots:
     void newlight_on(IOBase *io);
     void newlight_off(IOBase *io);
+    void has_temperature_slot(bool has);
+    void temperature_slot(double tmp);
 
 signals:
     void sig_light_on(IOBase *io);

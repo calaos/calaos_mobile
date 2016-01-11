@@ -89,7 +89,33 @@ Item {
                     left: lighticon.right; leftMargin: Units.dp(5)
                     right: parent.right; rightMargin: Units.dp(2)
                 }
-                font { family: calaosFont.fontFamily; bold: false; pointSize: 8 }
+                font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
+            }
+
+            Image {
+                id: tempicon
+                source: calaosApp.getPictureSized("icon_temp")
+
+                visible: has_temperature
+
+                anchors {
+                    horizontalCenter: parent.horizontalCenter
+                    horizontalCenterOffset: Units.dp(-100)
+                    bottom: parent.bottom
+                    bottomMargin: Units.dp(15)
+                }
+            }
+
+            Text {
+                text: "%1°".arg(current_temperature)
+                visible: has_temperature
+                color: "#3AB4D7"
+                elide: Text.ElideRight
+                anchors {
+                    verticalCenter: tempicon.verticalCenter
+                    left: tempicon.right
+                }
+                font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
             }
 
             MouseArea {

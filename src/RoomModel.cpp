@@ -149,6 +149,25 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
             IOBase *io = IOCache::Instance().searchInput(r["id"].toString())->cloneIO();
             appendRow(io);
         }
+
+        if (r["gui_type"] == "temp" &&
+            !temperatureIo)
+        {
+            temperatureIo = io;
+            emit temp_changed_sig(io->getStateInt());
+            emit has_temp_sig(true);
+
+            connect(io, &IOBase::destroyed, [=]()
+            {
+                temperatureIo = nullptr;
+                emit has_temp_sig(false);
+            });
+
+            connect(io, &IOBase::stateChange, [=]()
+            {
+                emit has_temp_sig(temperatureIo->getStateInt());
+            });
+        }
     }
 
     //outputs

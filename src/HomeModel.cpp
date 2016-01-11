@@ -14,6 +14,8 @@ HomeModel::HomeModel(QQmlApplicationEngine *eng, CalaosConnection *con, Scenario
     roles[RoleHits] = "roomHits";
     roles[RoleName] = "roomName";
     roles[RoleLightsCount] = "lights_on_count";
+    roles[RoleHasTemp] = "has_temperature";
+    roles[RoleCurrentTemp] = "current_temperature";
     setItemRoleNames(roles);
 
     update_lights_on_count(0);
@@ -78,9 +80,14 @@ RoomItem::RoomItem(QQmlApplicationEngine *eng, CalaosConnection *con):
     connection(con)
 {
     update_lights_on_count(0);
+    update_has_temperature(false);
+    update_current_temperature(0);
+
     room = new RoomModel(engine, connection, this);
     connect(room, SIGNAL(sig_light_on(IOBase*)), this, SLOT(newlight_on(IOBase*)));
     connect(room, SIGNAL(sig_light_off(IOBase*)), this, SLOT(newlight_off(IOBase*)));
+    connect(room, SIGNAL(has_temp_sig(bool)), this, SLOT(has_temperature_slot(bool)));
+    connect(room, SIGNAL(temp_changed_sig(double)), this, SLOT(temperature_slot(double)));
     engine->setObjectOwnership(room, QQmlEngine::CppOwnership);
 }
 
@@ -106,6 +113,16 @@ void RoomItem::newlight_off(IOBase *io)
     if (l < 0) l = 0;
     update_lights_on_count(l);
     emit sig_light_off(io);
+}
+
+void RoomItem::has_temperature_slot(bool has)
+{
+    update_has_temperature(has);
+}
+
+void RoomItem::temperature_slot(double tmp)
+{
+    update_current_temperature(tmp);
 }
 
 LightOnModel::LightOnModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent):

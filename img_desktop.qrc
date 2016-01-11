@@ -84,5 +84,7 @@
         <file>img/rooms/various/various_small.png</file>
         <file>img/icon_light_on.png</file>
         <file>img/icon_light_on@2x.png</file>
+        <file>img/icon_temp.png</file>
+        <file>img/icon_temp@2x.png</file>
     </qresource>
 </RCC>

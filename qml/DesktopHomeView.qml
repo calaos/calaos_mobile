@@ -33,19 +33,20 @@ Item {
     GridView {
         id: lst
 
-        cellHeight: Units.dp(160)
-        cellWidth: Units.dp(250)
+        cellHeight: (parent.height / 3 ) - header.height
+        cellWidth:  (parent.width / 3 )
 
         clip: true
         snapMode: GridView.SnapToRow
 
         anchors.verticalCenter: parent.verticalCenter
         anchors.horizontalCenter: parent.horizontalCenter
+
         height: 3 * cellHeight
         width: 3 * cellWidth
         y: header.height
 
-        flow: GridView.FlowTopToBottom
+        flow: GridView.FlowLeftToRight
         boundsBehavior: Flickable.StopAtBounds
 
         delegate: Item {

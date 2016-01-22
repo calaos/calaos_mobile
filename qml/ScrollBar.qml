@@ -69,6 +69,6 @@ Item {
         height: orientation == Qt.Vertical ? (scrollBar.pageSize * (scrollBar.height-2 * calaosApp.density)) : (parent.height-2 * calaosApp.density)
         radius: orientation == Qt.Vertical ? (width/2 * calaosApp.density - 1 * calaosApp.density) : (height/2 * calaosApp.density - 1 * calaosApp.density)
         color: "#3ab4d7"
-        opacity: 0.27
+        opacity: listObject.visibleArea.heightRatio == 1?0:0.27
     }
 }

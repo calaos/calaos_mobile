@@ -9,5 +9,26 @@
         <file>qml/MainMenuButtonDesktop.qml</file>
         <file>qml/DesktopView.qml</file>
         <file>qml/DesktopHomeView.qml</file>
+        <file>qml/DesktopRoomDetailView.qml</file>
+        <file>qml/ScrollBar.qml</file>
+        <file>qml/ItemListView.qml</file>
+        <file>qml/IOFavAllLights.qml</file>
+        <file>qml/IOLight.qml</file>
+        <file>qml/IOLightDimmer.qml</file>
+        <file>qml/IOLightRGB.qml</file>
+        <file>qml/IOScenario.qml</file>
+        <file>qml/IOShutter.qml</file>
+        <file>qml/IOShutterSmart.qml</file>
+        <file>qml/IOTemp.qml</file>
+        <file>qml/IOVarBool.qml</file>
+        <file>qml/IOVarInt.qml</file>
+        <file>qml/IOVarString.qml</file>
+        <file>qml/ItemButtonAction.qml</file>
+        <file>qml/IconItem.qml</file>
+        <file>qml/CalaosSlider.qml</file>
+        <file>qml/CalaosSliderStyle.qml</file>
+        <file>qml/ItemBase.qml</file>
+        <file>qml/AnimatedIcon.qml</file>
+        <file>qml/CalaosItemBase.qml</file>
     </qresource>
 </RCC>

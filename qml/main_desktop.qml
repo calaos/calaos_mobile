@@ -77,6 +77,25 @@ Window {
 
         DesktopHomeView {
             model: homeModel
+
+            onRoomClicked: {
+                //get room model
+                console.debug("model: " + homeModel)
+                roomModel = homeModel.getRoomModel(idx)
+                currentRoomName = room_name
+                stackView.push(roomDetailView)
+            }
+        }
+    }
+
+    Component {
+        id: roomDetailView
+
+        DesktopRoomDetailView {
+            height: parent.height
+            width: parent.width
+
+            roomItemModel: roomModel
         }
     }
 }

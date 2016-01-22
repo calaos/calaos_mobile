@@ -4,6 +4,8 @@ import Calaos 1.0
 ListView {
     id: lst
 
+    property bool showHeader: true
+
     Component {
         id: sectionHeading
         Rectangle {
@@ -41,9 +43,9 @@ ListView {
         }
     }
 
-    section.property: "roomName"
+    section.property: showHeader?"roomName":""
     section.criteria: ViewSection.FullString
-    section.delegate: sectionHeading
+    section.delegate: showHeader?sectionHeading:undefined
     section.labelPositioning: ViewSection.InlineLabels | ViewSection.CurrentLabelAtStart
 
     width: parent.width

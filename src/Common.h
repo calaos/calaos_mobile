@@ -74,6 +74,14 @@ public:
     };
     Q_ENUMS(AudioStatusType)
 
+    enum FilterModelType {
+        FilterAll = 0,
+        FilterLeft,
+        FilterRight,
+        FilterScenario,
+    };
+    Q_ENUMS(FilterModelType)
+
     static QString IOTypeToString(IOType t);
     static IOType IOTypeFromString(QString t);
     static QString audioStatusToString(AudioStatusType t);

@@ -45,7 +45,7 @@ ListView {
 
     section.property: showHeader?"roomName":""
     section.criteria: ViewSection.FullString
-    section.delegate: showHeader?sectionHeading:undefined
+    section.delegate: showHeader?sectionHeading:null
     section.labelPositioning: ViewSection.InlineLabels | ViewSection.CurrentLabelAtStart
 
     width: parent.width

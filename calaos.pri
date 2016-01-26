@@ -18,7 +18,8 @@ SOURCES += src/main.cpp \
     src/AudioModel.cpp \
     src/FavoritesModel.cpp \
     src/HardwareUtils.cpp \
-    src/CameraModel.cpp
+    src/CameraModel.cpp \
+    $$PWD/src/RoomFilterModel.cpp
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH = qml
@@ -33,4 +34,5 @@ HEADERS += \
     src/AudioModel.h \
     src/FavoritesModel.h \
     src/HardwareUtils.h \
-    src/CameraModel.h
+    src/CameraModel.h \
+    $$PWD/src/RoomFilterModel.h

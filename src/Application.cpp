@@ -4,6 +4,7 @@
 #include <QQmlEngine>
 #include <QSettings>
 #include <QStandardPaths>
+#include "RoomFilterModel.h"
 #ifdef Q_OS_ANDROID
 #include <QtAndroidExtras/QAndroidJniObject>
 #endif
@@ -105,6 +106,8 @@ Application::Application(int & argc, char ** argv) :
 
     //Register Units singleton
     qmlRegisterSingletonType(QUrl("qrc:/qml/Units.qml"), "Units", 1, 0, "Units");
+
+    qmlRegisterType<RoomFilterModel>("Calaos", 1, 0, "RoomFilterModel");
 
 #if defined(CALAOS_MOBILE)
     engine.load(QUrl(QStringLiteral("qrc:///qml/main_mobile.qml")));

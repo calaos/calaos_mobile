@@ -1,4 +1,4 @@
-import QtQuick 2.2
+import QtQuick 2.5
 import "calaos.js" as Calaos;
 import Units 1.0
 import QtQuick.Layouts 1.1

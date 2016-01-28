@@ -32,5 +32,8 @@
         <file>qml/CalaosItemBase.qml</file>
         <file>qml/DesktopFooterButton.qml</file>
         <file>qml/DesktopStackViewAnim.qml</file>
+        <file>qml/DesktopMediaView.qml</file>
+        <file>qml/DesktopScenarioView.qml</file>
+        <file>qml/DesktopConfigView.qml</file>
     </qresource>
 </RCC>

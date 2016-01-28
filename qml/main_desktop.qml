@@ -48,9 +48,29 @@ Window {
         menuContent: MainMenu {
             id: mainMenu
 
-            onButtonHomeClicked: {
-                if (currentButton != 1)
+            onButtonHomeClicked: {                
+                if (currentButton == 0)
                     stackView.push(homeView)
+                else
+                    stackView.replace(homeView)
+            }
+            onButtonMediaClicked: {
+                if (currentButton == 0)
+                    stackView.push(mediaMenuView)
+                else
+                    stackView.replace(mediaMenuView)
+            }
+            onButtonScenariosClicked: {
+                if (currentButton == 0)
+                    stackView.push(scenariosView)
+                else
+                    stackView.replace(scenariosView)
+            }
+            onButtonConfigClicked: {
+                if (currentButton == 0)
+                    stackView.push(configPanelView)
+                else
+                    stackView.replace(configPanelView)
             }
         }
 
@@ -110,5 +130,20 @@ Window {
 
             roomItemModel: roomModel
         }
+    }
+
+    Component {
+        id: mediaMenuView
+        DesktopMediaView {}
+    }
+
+    Component {
+        id: scenariosView
+        DesktopScenarioView {}
+    }
+
+    Component {
+        id: configPanelView
+        DesktopConfigView {}
     }
 }

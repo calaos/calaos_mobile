@@ -109,6 +109,7 @@ class RoomItem: public QObject, public QStandardItem
 public:
 
     RoomItem(QQmlApplicationEngine *engine, CalaosConnection *con);
+    virtual ~RoomItem();
 
     Q_INVOKABLE QObject *getRoomModel() const;
 

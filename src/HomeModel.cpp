@@ -91,6 +91,14 @@ RoomItem::RoomItem(QQmlApplicationEngine *eng, CalaosConnection *con):
     engine->setObjectOwnership(room, QQmlEngine::CppOwnership);
 }
 
+RoomItem::~RoomItem()
+{
+    disconnect(room, SIGNAL(sig_light_on(IOBase*)), this, SLOT(newlight_on(IOBase*)));
+    disconnect(room, SIGNAL(sig_light_off(IOBase*)), this, SLOT(newlight_off(IOBase*)));
+    disconnect(room, SIGNAL(has_temp_sig(bool)), this, SLOT(has_temperature_slot(bool)));
+    disconnect(room, SIGNAL(temp_changed_sig(double)), this, SLOT(temperature_slot(double)));
+}
+
 QObject *RoomItem::getRoomModel() const
 {
     return room;

@@ -14,6 +14,7 @@ Window {
 
     property variant roomModel
     property string currentRoomName
+    property string currentRoomType
 
     property bool isSingleCameraView: false
 
@@ -83,6 +84,7 @@ Window {
                 console.debug("model: " + homeModel)
                 roomModel = homeModel.getRoomModel(idx)
                 currentRoomName = room_name
+                currentRoomType = room_type
                 stackView.push(roomDetailView)
             }
         }

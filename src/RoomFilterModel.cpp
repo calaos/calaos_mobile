@@ -19,18 +19,21 @@ RoomFilterModel::RoomFilterModel(QObject *parent):
         connect(rmodel, SIGNAL(modelReset()), this, SLOT(resetCache()));
 
         resetCache();
+        invalidate();
     });
     connect(this, &RoomFilterModel::filterChanged, [=](Common::FilterModelType)
     {
-        invalidate();
         resetCache();
+        invalidate();
     });
     connect(this, &RoomFilterModel::scenarioVisibleChanged, [=](bool)
     {
-        invalidate();
         resetCache();
+        invalidate();
     });
+
     setDynamicSortFilter(true);
+    sort(0);
 }
 
 int RoomFilterModel::indexToSource(int idx)
@@ -205,19 +208,23 @@ bool RoomFilterModel::lessThan(const QModelIndex &left, const QModelIndex &right
     IOBase *lobj = dynamic_cast<IOBase *>(rmodel->itemFromIndex(left));
     IOBase *robj = dynamic_cast<IOBase *>(rmodel->itemFromIndex(right));
 
+    qDebug() << "sort '" << lobj->get_ioName() << "' < '" << robj->get_ioName() << "'";
+
     //* first sort by io type if they are different
-    // shutter < temps < light < other
+    // scenarios < shutter < temps < light < other
     if (lobj->get_ioType() != robj->get_ioType())
     {
-        int l = 3, r = 3;
+        int l = 4, r = 4;
 
-        if (shutters.contains(lobj)) l = 0;
-        else if (temps.contains(lobj)) l = 1;
-        else if (lights.contains(lobj)) l = 2;
+        if (lobj->get_ioType() == Common::Scenario) l = 0;
+        else if (shutters.contains(lobj)) l = 1;
+        else if (temps.contains(lobj)) l = 2;
+        else if (lights.contains(lobj)) l = 3;
 
-        if (shutters.contains(robj)) r = 0;
-        else if (temps.contains(robj)) r = 1;
-        else if (lights.contains(robj)) r = 2;
+        if (robj->get_ioType() == Common::Scenario) r = 0;
+        else if (shutters.contains(robj)) r = 1;
+        else if (temps.contains(robj)) r = 2;
+        else if (lights.contains(robj)) r = 3;
 
         return l < r;
     }

@@ -175,7 +175,7 @@ Item {
 
     Image {
         id: roomIcon
-        source: "qrc:/img/rooms/kitchen/kitchen_big.png"
+        source: "qrc:/img/rooms/%1/%1_big.png".arg(Calaos.getRoomTypeIcon(currentRoomType))
 
         anchors {
             horizontalCenter: parent.horizontalCenter
@@ -210,6 +210,34 @@ Item {
             bottom: parent.bottom
             left: parent.left
             right: parent.right
+        }
+
+        RowLayout {
+            anchors {
+                left: parent.left; leftMargin: Units.dp(20)
+                right: parent.right; rightMargin: Units.dp(20)
+                verticalCenter: parent.verticalCenter
+            }
+
+            spacing: Units.dp(5)
+
+            Item { //spacer
+                height: 1; Layout.fillWidth: true
+            }
+
+            DesktopFooterButton {
+                label: qsTr("Back to home")
+                icon: "qrc:/img/button_action_back.png"
+                Layout.minimumWidth: width
+                onBtClicked: rootWindow.handleBack()
+            }
+
+            DesktopFooterButton {
+                label: qsTr("Quit")
+                icon: "qrc:/img/button_action_quit.png"
+                Layout.minimumWidth: width
+                onBtClicked: rootWindow.handleBack()
+            }
         }
     }
 }

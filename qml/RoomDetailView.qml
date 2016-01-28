@@ -1,8 +1,9 @@
 import QtQuick 2.0
+import Calaos 1.0
 
 Item {
 
-    property alias roomItemModel: listView.model
+    property alias roomItemModel: filterModel.source
 
     Image {
         source: calaosApp.getPictureSized(isLandscape?
@@ -17,6 +18,12 @@ Item {
 
         width: parent.width
         height: parent.height
+
+        model: RoomFilterModel {
+            id: filterModel
+            filter: Common.FilterAll
+            scenarioVisible: true
+        }
     }
 
     ScrollBar { listObject: listView }

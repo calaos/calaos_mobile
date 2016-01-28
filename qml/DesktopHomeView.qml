@@ -8,7 +8,7 @@ Item {
     property alias model: lst.model
     property alias visibleArea: lst.visibleArea
 
-    signal roomClicked(int idx, string room_name)
+    signal roomClicked(int idx, string room_name, string room_type)
 
     Image {
         source: "qrc:/img/module_header_shadow.png"
@@ -124,7 +124,7 @@ Item {
                 onPressed: roomIcon.opacity = 0.5
                 onReleased: roomIcon.opacity = 1
                 onExited: roomIcon.opacity = 1
-                onClicked: roomClicked(index, roomName)
+                onClicked: roomClicked(index, roomName, roomType)
             }
 
             Text {
@@ -171,5 +171,27 @@ Item {
             left: parent.left
             right: parent.right
         }
+
+        RowLayout {
+            anchors {
+                left: parent.left; leftMargin: Units.dp(20)
+                right: parent.right; rightMargin: Units.dp(20)
+                verticalCenter: parent.verticalCenter
+            }
+
+            spacing: Units.dp(5)
+
+            Item { //spacer
+                height: 1; Layout.fillWidth: true
+            }
+
+            DesktopFooterButton {
+                label: qsTr("Quit")
+                icon: "qrc:/img/button_action_quit.png"
+                Layout.minimumWidth: width
+                onBtClicked: rootWindow.handleBack()
+            }
+        }
+
     }
 }

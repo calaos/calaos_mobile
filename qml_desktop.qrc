@@ -31,5 +31,6 @@
         <file>qml/AnimatedIcon.qml</file>
         <file>qml/CalaosItemBase.qml</file>
         <file>qml/DesktopFooterButton.qml</file>
+        <file>qml/DesktopStackViewAnim.qml</file>
     </qresource>
 </RCC>

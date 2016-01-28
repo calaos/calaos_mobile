@@ -12,6 +12,10 @@ Item {
 
     anchors.fill: parent
 
+    function unselectAll() {
+        currentButton = 0
+    }
+
     Image {
         source: "qrc:/img/menu_header_shadow.png"
         opacity: 0.588

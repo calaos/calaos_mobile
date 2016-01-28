@@ -189,7 +189,7 @@ Item {
                 label: qsTr("Quit")
                 icon: "qrc:/img/button_action_quit.png"
                 Layout.minimumWidth: width
-                onBtClicked: rootWindow.handleBack()
+                onBtClicked: rootWindow.goToDesktop()
             }
         }
 

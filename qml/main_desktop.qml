@@ -18,6 +18,11 @@ Window {
 
     property bool isSingleCameraView: false
 
+    function goToDesktop() {
+        mainMenu.unselectAll()
+        stackView.pop({ item: desktopView })
+    }
+
     function handleBack() {
         //enable all cameras if going back to CameraListView
         if (isSingleCameraView) {
@@ -29,6 +34,8 @@ Window {
 
         if (stackView.depth > 1) {
             stackView.pop()
+            if (stackView.depth == 1)
+                mainMenu.unselectAll()
         }
     }
 
@@ -39,6 +46,8 @@ Window {
         anchors.fill: parent
 
         menuContent: MainMenu {
+            id: mainMenu
+
             onButtonHomeClicked: {
                 if (currentButton != 1)
                     stackView.push(homeView)

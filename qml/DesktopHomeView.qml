@@ -33,6 +33,13 @@ Item {
     GridView {
         id: lst
 
+        add: Transition {
+            NumberAnimation { property: "opacity"; easing.type: Easing.InQuart; from: 0; to: 1; duration: 150 }
+        }
+        remove: Transition {
+            NumberAnimation { property: "opacity"; easing.type: Easing.OutQuart; from: 1; to: 0; duration: 150 }
+        }
+
         cellHeight: (parent.height / 3 ) - header.height
         cellWidth:  (parent.width / 3 )
 

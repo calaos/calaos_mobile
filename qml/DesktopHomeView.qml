@@ -56,6 +56,26 @@ Item {
         flow: GridView.FlowLeftToRight
         boundsBehavior: Flickable.StopAtBounds
 
+        property int page: 0
+        onPageChanged: currentIndex = page * 9
+        onCurrentIndexChanged: console.log(currentIndex)
+
+        function movePageDown(){
+            var p = lst.page
+            p++
+            if (p > lst.count / 9)
+                p = lst.count / 9
+            lst.page = p
+        }
+
+        function movePageUp() {
+            var p = lst.page
+            p--
+            if (p < 0)
+                p = 0
+            lst.page = p
+        }
+
         delegate: Item {
             height: lst.cellHeight
             width: lst.cellWidth;
@@ -147,6 +167,42 @@ Item {
                     top: parent.top; topMargin: Units.dp(5)
                 }
             }
+        }
+    }
+
+    Image {
+        source: "qrc:/img/button_glow_down.png"
+
+        anchors {
+            left: parent.left; leftMargin: Units.dp(5)
+            bottom: footer.top; bottomMargin: Units.dp(5)
+        }
+
+        opacity: lst.atYEnd?0:1
+        Behavior on opacity { PropertyAnimation {} }
+
+        MouseArea {
+            anchors.fill: parent
+            anchors.margins: Units.dp(-5)
+            onClicked: lst.movePageDown()
+        }
+    }
+
+    Image {
+        source: "qrc:/img/button_glow_up.png"
+
+        anchors {
+            left: parent.left; leftMargin: Units.dp(5)
+            top: header.bottom; bottomMargin: Units.dp(5)
+        }
+
+        opacity: lst.atYBeginning?0:1
+        Behavior on opacity { PropertyAnimation {} }
+
+        MouseArea {
+            anchors.fill: parent
+            anchors.margins: Units.dp(-5)
+            onClicked: lst.movePageUp()
         }
     }
 

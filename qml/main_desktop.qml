@@ -39,6 +39,20 @@ Window {
         }
     }
 
+    function handleMediaClick(itemId) {
+        var item;
+        if (itemId == "music") {
+            item = musicListView
+        }
+        else if (itemId == "camera") {
+            item = cameraListView
+        } else if (itemId == "web") {
+            item = webView
+        }
+
+        stackView.push(item)
+    }
+
     //Load fonts
     Fonts { id: calaosFont }
 
@@ -145,5 +159,20 @@ Window {
     Component {
         id: configPanelView
         DesktopConfigView {}
+    }
+
+    Component {
+        id: musicListView
+        DesktopMusicListView {}
+    }
+
+    Component {
+        id: cameraListView
+        DesktopCameraListView {}
+    }
+
+    Component {
+        id: webView
+        DesktopWebView {}
     }
 }

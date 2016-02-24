@@ -35,5 +35,12 @@
         <file>qml/DesktopMediaView.qml</file>
         <file>qml/DesktopScenarioView.qml</file>
         <file>qml/DesktopConfigView.qml</file>
+        <file>qml/DesktopMediaMenuItem.qml</file>
+        <file>qml/DesktopMediaIconInternet.qml</file>
+        <file>qml/DesktopMediaIconCamera.qml</file>
+        <file>qml/DesktopMediaIconMusic.qml</file>
+        <file>qml/DesktopMusicListView.qml</file>
+        <file>qml/DesktopCameraListView.qml</file>
+        <file>qml/DesktopWebView.qml</file>
     </qresource>
 </RCC>

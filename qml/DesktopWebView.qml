@@ -25,63 +25,12 @@ Item {
         opacity: 0.6
     }
 
-    GridView {
-        id: lst
 
-        add: Transition {
-            NumberAnimation { property: "opacity"; easing.type: Easing.InQuart; from: 0; to: 1; duration: 150 }
-        }
-        remove: Transition {
-            NumberAnimation { property: "opacity"; easing.type: Easing.OutQuart; from: 1; to: 0; duration: 150 }
-        }
 
-        cellHeight: Units.dp(197)
-        cellWidth: Units.dp(232)
 
-        snapMode: GridView.SnapToRow
 
-        anchors.centerIn: parent
 
-        height: 2 * cellHeight
-        width: 3 * cellWidth
 
-        boundsBehavior: Flickable.StopAtBounds
-
-        delegate: DesktopMediaMenuItem {
-            labelTitle: title
-            labelDesc: subtitle
-            disabled: itemDisabled
-            icon: Loader {
-                source: iconSource
-            }
-
-            onButtonClicked: rootWindow.handleMediaClick(clickId)
-        }
-
-        model: ListModel {
-            ListElement {
-                title: qsTr("Your Music")
-                subtitle: qsTr("Access you media library")
-                itemDisabled: false
-                iconSource: "DesktopMediaIconMusic.qml"
-                clickId: "music"
-            }
-            ListElement {
-                title: qsTr("CCTV")
-                subtitle: qsTr("Drive all you cctv cameras")
-                itemDisabled: false
-                iconSource: "DesktopMediaIconCamera.qml"
-                clickId: "camera"
-            }
-            ListElement {
-                title: qsTr("Internet")
-                subtitle: qsTr("Go and surf the web")
-                itemDisabled: true
-                iconSource: "DesktopMediaIconInternet.qml"
-                clickId: "web"
-            }
-        }
-    }
 
     Image {
         id: header
@@ -99,7 +48,7 @@ Item {
             font.family: calaosFont.fontFamilyLight
             font.weight: Font.ExtraLight
             color: "#e7e7e7"
-            text: qsTr("Media")
+            text: qsTr("Web")
         }
     }
 
@@ -123,6 +72,13 @@ Item {
 
             Item { //spacer
                 height: 1; Layout.fillWidth: true
+            }
+
+            DesktopFooterButton {
+                label: qsTr("Back to media")
+                icon: "qrc:/img/button_action_back.png"
+                Layout.minimumWidth: width
+                onBtClicked: rootWindow.handleBack()
             }
 
             DesktopFooterButton {

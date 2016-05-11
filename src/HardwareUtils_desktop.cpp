@@ -5,6 +5,7 @@
 #include <QDir>
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
+#include <QApplication>
 
 #define PREFIX_CONFIG_PATH      ETC_DIR"/calaos"
 #define LOCAL_CONFIG            "local_config.xml"
@@ -38,6 +39,19 @@ void HardwareUtilsDesktop::platformInit()
     parser.process(*qApp);
 
     initConfigOptions(parser.value(confpath), parser.value(cachepath));
+
+    if (getConfigOption("show_cursor") == "true")
+    {
+        QPixmap pix(":/img/cursor.png");
+        QApplication::setOverrideCursor(QCursor(pix, pix.width() / 2, pix.height() / 2));
+    }
+    else
+    {
+        //Create a transparent cursor
+        QPixmap pix(1, 1);
+        pix.fill(Qt::transparent);
+        QApplication::setOverrideCursor(QCursor(pix));
+    }
 }
 
 void HardwareUtilsDesktop::showAlertMessage(QString title, QString message, QString buttontext)

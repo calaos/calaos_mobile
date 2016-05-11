@@ -17,6 +17,8 @@ public:
 
     virtual ~HardwareUtils();
 
+    virtual void platformInit();
+
     virtual void showAlertMessage(QString title, QString message, QString buttontext);
 
     enum NetworkStatus
@@ -31,6 +33,9 @@ public:
 
     virtual void saveAuthKeychain(const QString &email, const QString &pass);
     virtual void loadAuthKeychain(QString &email, QString &pass);
+
+    virtual void setConfigOption(QString key, QString value);
+    virtual QString getConfigOption(QString key);
 
     virtual void inputTextDialog(const QString &title, const QString &message);
 

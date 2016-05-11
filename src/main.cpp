@@ -13,5 +13,9 @@ int main(int argc, char *argv[])
     HardwareUtils::Instance();
 
     Application app(argc, argv);
+
+    //init platform code after QApp is created and initialized
+    HardwareUtils::Instance()->platformInit();
+
     return app.exec();
 }

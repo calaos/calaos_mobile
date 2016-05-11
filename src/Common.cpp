@@ -1,4 +1,5 @@
 #include "Common.h"
+#include <QStandardPaths>
 
 QString Common::IOTypeToString(Common::IOType t)
 {
@@ -90,7 +91,6 @@ Common::AudioStatusType Common::audioStatusFromString(QString t)
     return StatusUnknown;
 }
 
-static QFile debugLogFile;
 static void _messageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
     QString fname = context.file;
@@ -102,56 +102,32 @@ static void _messageOutput(QtMsgType type, const QMessageLogContext &context, co
     {
         QString s = QString("DEBUG: %1:%2 - %3\n").arg(fname).arg(context.line).arg(msg);
         printf("%s", qPrintable(s));
-        if (debugLogFile.isOpen()) debugLogFile.write(s.toLocal8Bit());
         break;
     }
     case QtWarningMsg:
     {
         QString s = QString("WARNING: %1:%2 - %3\n").arg(fname).arg(context.line).arg(msg);
         printf("%s", qPrintable(s));
-        if (debugLogFile.isOpen()) debugLogFile.write(s.toLocal8Bit());
         break;
     }
     case QtCriticalMsg:
     {
         QString s = QString("CRITICAL: %1:%2 - %3\n").arg(fname).arg(context.line).arg(msg);
         printf("%s", qPrintable(s));
-        if (debugLogFile.isOpen()) debugLogFile.write(s.toLocal8Bit());
         break;
     }
     case QtFatalMsg:
     {
         QString s = QString("FATAL: %1:%2 - %3\n").arg(fname).arg(context.line).arg(msg);
         printf("%s", qPrintable(s));
-        if (debugLogFile.isOpen()) debugLogFile.write(s.toLocal8Bit());
         break;
     }
     }
 
-    if (debugLogFile.isOpen())
-        debugLogFile.flush();
     fflush(stdout);
 }
 
 void Common::installMessageOutputHandler()
 {
-    if (!debugLogFile.isOpen())
-    {
-        //simple logrotate
-        QString f = QCoreApplication::applicationDirPath() + "/app.log";
-        QFileInfo fi(f);
-        if (fi.size() > 10 * 1024 * 1024) //10Mb max
-        {
-            QFile::remove(f + ".5"); //remove really old
-            QFile::rename(f + ".4", f + ".5");
-            QFile::rename(f + ".3", f + ".4");
-            QFile::rename(f + ".2", f + ".3");
-            QFile::rename(f, f + ".2");
-        }
-
-        debugLogFile.setFileName(f);
-        //debugLogFile.open(QFile::ReadWrite | QFile::Append);
-        //debugLogFile.write(QString(DEBUG_START_LINE).arg(QDateTime::currentDateTime().toString()).toLocal8Bit());
-    }
     qInstallMessageHandler(_messageOutput);
 }

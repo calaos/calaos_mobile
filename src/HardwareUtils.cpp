@@ -9,6 +9,10 @@
 #include <QInputDialog>
 #endif
 
+#ifdef CALAOS_DESKTOP
+#include "HardwareUtils_desktop.h"
+#endif
+
 HardwareUtils *HardwareUtils::Instance(QObject *parent)
 {
     static HardwareUtils *hu = NULL;
@@ -17,6 +21,8 @@ HardwareUtils *HardwareUtils::Instance(QObject *parent)
     hu = new HardwareUtils_iOS(parent);
 #elif defined(Q_OS_ANDROID)
     hu = new HardwareUtilsAndroid(parent);
+#elif defined(CALAOS_DESKTOP)
+    hu = new HardwareUtilsDesktop(parent);
 #else
     hu = new HardwareUtils(parent);
 #endif
@@ -29,6 +35,10 @@ HardwareUtils::HardwareUtils(QObject *parent):
 }
 
 HardwareUtils::~HardwareUtils()
+{
+}
+
+void HardwareUtils::platformInit()
 {
 }
 
@@ -94,6 +104,19 @@ void HardwareUtils::saveAuthKeychain(const QString &email, const QString &pass)
     settings.setValue("calaos/cn_pass", pass);
 
     settings.sync();
+}
+
+void HardwareUtils::setConfigOption(QString key, QString value)
+{
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    settings.setValue(QStringLiteral("config/%1").arg(key), value);
+    settings.sync();
+}
+
+QString HardwareUtils::getConfigOption(QString key)
+{
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    return settings.value(QStringLiteral("config/%1").arg(key)).toString();
 }
 
 void HardwareUtils::inputTextDialog(const QString &title, const QString &message)

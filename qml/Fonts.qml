@@ -1,18 +1,18 @@
 import QtQuick 2.0
 
 Item {
-    property string fontFamily: "Roboto Light"
+    property string fontFamily: local_L.name
 
-    property string fontFamilyThin: "Roboto Thin"
-    property string fontFamilyLight: "Roboto Light"
-    property string fontFamilyRegular: "Roboto"
-    property string fontFamilyMedium: "Roboto Medium"
-    property string fontFamilyBold: "Roboto Black"
+    property string fontFamilyThin: local_T.name
+    property string fontFamilyLight: local_L.name
+    property string fontFamilyRegular: local_R.name
+    property string fontFamilyMedium: local_M.name
+    property string fontFamilyBold: local_B.name
 
-    property string fontFamilyCalaosLogo: "depthcore public"
-    property string fontFamilyCalaosText: "GAU_font_cube_R"
-    property string fontFamilyCalaosTextBold: "GAU_font_cube_B"
-    property string fontFamilyRepetitionScrolling: "Repetition Scrolling"
+    property string fontFamilyCalaosLogo: local_CalaosLogo.name
+    property string fontFamilyCalaosText: local_CalaosText.name
+    property string fontFamilyCalaosTextBold: local_CalaosTextBold.name
+    property string fontFamilyRepetitionScrolling: local_RepetitionScrolling.name
 
     FontLoader { id: local_B; source: "qrc:/fonts/Roboto-Black.ttf" }
     FontLoader { id: local_BI; source: "qrc:/fonts/Roboto-BlackItalic.ttf" }

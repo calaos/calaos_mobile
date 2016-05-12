@@ -2,10 +2,30 @@
 #define HARDWAREUTILSDESK_H
 
 #include "HardwareUtils.h"
+#include <QTimer>
+#include <QUdpSocket>
 
 class HardwareUtilsDesktop: public HardwareUtils
 {
     Q_OBJECT
+
+public:
+    virtual ~HardwareUtilsDesktop();
+
+    void platformInit();
+
+    virtual void showAlertMessage(QString title, QString message, QString buttontext);
+
+    virtual void saveAuthKeychain(const QString &email, const QString &pass);
+    virtual void loadAuthKeychain(QString &email, QString &pass);
+    virtual QString getServerHost();
+
+    virtual void setConfigOption(QString key, QString value);
+    virtual QString getConfigOption(QString key);
+
+private slots:
+    void readPendingDatagrams(void);
+    void calaosDiscover();
 
 protected:
     friend class HardwareUtils;
@@ -17,18 +37,10 @@ protected:
     void initConfigOptions(QString configdir, QString cachedir);
     QHash<QString, QString> getAllOptions();
 
-public:
-    virtual ~HardwareUtilsDesktop();
-
-    void platformInit();
-
-    virtual void showAlertMessage(QString title, QString message, QString buttontext);
-
-    virtual void saveAuthKeychain(const QString &email, const QString &pass);
-    virtual void loadAuthKeychain(QString &email, QString &pass);
-
-    virtual void setConfigOption(QString key, QString value);
-    virtual QString getConfigOption(QString key);
+    //for calaos_server detection
+    QUdpSocket *udpSocket = nullptr;
+    QTimer *timer = nullptr;
+    QString calaosServerHost;
 };
 
 #endif // HARDWAREUTILSDESK_H

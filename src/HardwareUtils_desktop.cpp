@@ -12,6 +12,7 @@
 #define ETC_CONFIG_PATH         "/etc/calaos"
 #define HOME_CONFIG_PATH        ".config/calaos"
 #define HOME_CACHE_PATH         ".cache/calaos"
+#define BCAST_UDP_PORT          4545
 
 HardwareUtilsDesktop::HardwareUtilsDesktop(QObject *parent):
     HardwareUtils(parent)
@@ -52,6 +53,15 @@ void HardwareUtilsDesktop::platformInit()
         pix.fill(Qt::transparent);
         QApplication::setOverrideCursor(QCursor(pix));
     }
+
+    qInfo() << "Trying to detect calaos_server on LAN...";
+    udpSocket = new QUdpSocket(this);
+    timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &HardwareUtilsDesktop::calaosDiscover);
+    calaosDiscover();
+    timer->start(1000);
+    connect(udpSocket, SIGNAL(readyRead()),
+            this, SLOT(readPendingDatagrams()));
 }
 
 void HardwareUtilsDesktop::showAlertMessage(QString title, QString message, QString buttontext)
@@ -234,4 +244,44 @@ QHash<QString, QString> HardwareUtilsDesktop::getAllOptions()
     }
 
     return values;
+}
+
+void HardwareUtilsDesktop::readPendingDatagrams()
+{
+    while (udpSocket->hasPendingDatagrams())
+    {
+        QByteArray datagram;
+        QHostAddress sender;
+        quint16 senderPort;
+
+        datagram.resize(udpSocket->pendingDatagramSize());
+        udpSocket->readDatagram(datagram.data(), datagram.size(),
+                                &sender, &senderPort);
+
+        QString msg(datagram.left(9));
+        QString ip(datagram.mid(9));
+
+        if (msg != QString("CALAOS_IP"))
+            return;
+
+        if (calaosServerHost != ip)
+        {
+            calaosServerHost = ip;
+            qInfo() << "Found calaos_server on " << ip;
+        }
+
+        emitCalaosServerDetected();
+    }
+}
+
+void HardwareUtilsDesktop::calaosDiscover()
+{
+    QByteArray datagram = "CALAOS_DISCOVER";
+    QHostAddress broadcastAddress = QHostAddress("255.255.255.255");
+    udpSocket->writeDatagram(datagram.data(), datagram.size(), broadcastAddress , BCAST_UDP_PORT);
+}
+
+QString HardwareUtilsDesktop::getServerHost()
+{
+    return calaosServerHost;
 }

@@ -33,6 +33,7 @@ public:
 
     virtual void saveAuthKeychain(const QString &email, const QString &pass);
     virtual void loadAuthKeychain(QString &email, QString &pass);
+    virtual QString getServerHost();
 
     virtual void setConfigOption(QString key, QString value);
     virtual QString getConfigOption(QString key);
@@ -51,6 +52,7 @@ public:
     void emitApplicationActiveChanged(bool active);
     void emitDialogTextValid(const QString &s);
     void emitDialogCancel();
+    void emitCalaosServerDetected();
 
 signals:
     void networkStatusChanged();
@@ -59,6 +61,9 @@ signals:
 
     void dialogCanceled();
     void dialogTextValid(const QString &text);
+
+    //emited when a calaos_server has been detected on the LAN
+    void calaosServerDetected();
 };
 
 #endif // HARDWAREUTILS_H

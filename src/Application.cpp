@@ -16,6 +16,8 @@ Application::Application(int & argc, char ** argv) :
 
     connect(HardwareUtils::Instance(), SIGNAL(networkStatusChanged()),
             this, SLOT(networkStatusChanged()));
+    connect(HardwareUtils::Instance(), SIGNAL(calaosServerDetected()),
+            this, SLOT(calaosServerDetected()));
 
     connect(HardwareUtils::Instance(), &HardwareUtils::applicationWillResignActive, [=]()
     {
@@ -117,11 +119,13 @@ Application::Application(int & argc, char ** argv) :
 #error "Unknown UI type!"
 #endif
 
-    //Start autologin
+#ifndef CALAOS_DESKTOP
+    //Start autologin, only on mobile. On desktop we wait for calaos_server detection
     QTimer::singleShot(100, [=]()
     {
         login(get_username(), get_password(), get_hostname());
     });
+#endif
 }
 
 void Application::login(QString user, QString pass, QString host)
@@ -286,7 +290,7 @@ void Application::loadSettings()
 
     update_username(cnuser);
     update_password(cnpass);
-    update_hostname(settings.value("calaos/host", "demo.calaos.fr").toString());
+    update_hostname(HardwareUtils::Instance()->getServerHost());
 
     favoritesList = settings.value("app/favorites").toList();
 }
@@ -319,4 +323,13 @@ void Application::networkStatusChanged()
     {
         logout();
     }
+}
+
+void Application::calaosServerDetected()
+{
+    if (get_applicationStatus() != Common::NotConnected)
+        return;
+
+    loadSettings();
+    login(get_username(), get_password(), get_hostname());
 }

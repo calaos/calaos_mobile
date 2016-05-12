@@ -63,6 +63,7 @@ private slots:
     void homeLoaded(const QVariantMap &homeData);
     void loginFailed();
     void networkStatusChanged();
+    void calaosServerDetected();
 
 private:
     QQmlApplicationEngine engine;

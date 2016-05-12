@@ -88,6 +88,11 @@ void HardwareUtils::emitDialogCancel()
     emit dialogCanceled();
 }
 
+void HardwareUtils::emitCalaosServerDetected()
+{
+    emit calaosServerDetected();
+}
+
 void HardwareUtils::loadAuthKeychain(QString &email, QString &pass)
 {
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
@@ -104,6 +109,13 @@ void HardwareUtils::saveAuthKeychain(const QString &email, const QString &pass)
     settings.setValue("calaos/cn_pass", pass);
 
     settings.sync();
+}
+
+QString HardwareUtils::getServerHost()
+{
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+
+    return settings.value("calaos/host", "calaos.fr").toString();
 }
 
 void HardwareUtils::setConfigOption(QString key, QString value)

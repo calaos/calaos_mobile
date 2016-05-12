@@ -18,7 +18,6 @@ public:
         static IOCache cache;
         return cache;
     }
-    ~IOCache() { clearCache(); }
 
     IOBase *searchInput(QString id);
     IOBase *searchOutput(QString id);

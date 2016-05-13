@@ -62,6 +62,18 @@ void HardwareUtilsDesktop::platformInit()
     timer->start(1000);
     connect(udpSocket, SIGNAL(readyRead()),
             this, SLOT(readPendingDatagrams()));
+
+    QString h = getConfigOption("calaos_server_host");
+    if (h != "")
+    {
+        QTimer::singleShot(10, [=]
+        {
+            calaosServerHost = h;
+            qInfo() << "Force calaos_server on " << h << " from config file";
+
+            emitCalaosServerDetected();
+        });
+    }
 }
 
 void HardwareUtilsDesktop::showAlertMessage(QString title, QString message, QString buttontext)

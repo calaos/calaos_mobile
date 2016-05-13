@@ -1,7 +1,8 @@
-import QtQuick 2.5
+import QtQuick 2.2
 import "calaos.js" as Calaos;
 import Units 1.0
 import QtQuick.Layouts 1.1
+import Calaos 1.0
 
 Item {
 
@@ -25,12 +26,48 @@ Item {
         opacity: 0.6
     }
 
+    BorderImage {
 
+        source: "qrc:/img/standard_list_decoration.png"
 
+        border {
+            left: Units.dp(27); right: Units.dp(27)
+            top: Units.dp(50); bottom: Units.dp(50)
+        }
 
+        anchors {
+            left: parent.left; leftMargin: Units.dp(20)
+            right: parent.horizontalCenter
+            rightMargin: Units.dp(160)
+            top: header.bottom; topMargin: Units.dp(20)
+            bottom: footer.top; bottomMargin: Units.dp(20)
+        }
 
+        Item {
+            anchors {
+                fill: parent
+                topMargin: Units.dp(2)
+                bottomMargin: Units.dp(2)
+            }
+            clip: true
 
+            ItemListView {
+                id: listViewLeft
+                model: scenarioModel
 
+                anchors {
+                    fill: parent
+                    topMargin: Units.dp(3)
+                    bottomMargin: Units.dp(3)
+                    leftMargin: Units.dp(5)
+                    rightMargin: Units.dp(5)
+                }
+
+                showHeader: false
+            }
+            ScrollBar { listObject: listViewLeft }
+        }
+    }
 
     Image {
         id: header

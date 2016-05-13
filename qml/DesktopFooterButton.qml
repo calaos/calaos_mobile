@@ -40,7 +40,7 @@ Image {
         id: txt
         color: "#e7e7e7"
         horizontalAlignment: Text.AlignLeft
-        font { family: calaosFont.fontFamilyLight; bold: true; pointSize: 11; weight: Font.ExtraLight }
+        font { family: calaosFont.fontFamily; bold: true; pointSize: 11; weight: Font.ExtraLight }
 
         anchors {
             left: ic.right; rightMargin: Units.dp(5)

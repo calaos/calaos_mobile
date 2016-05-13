@@ -1,0 +1,25 @@
+module SharedComponents
+
+CalaosItemBase 1.0 CalaosItemBase.qml
+CalaosSlider 1.0 CalaosSlider.qml
+CalaosSliderStyle 1.0 CalaosSliderStyle.qml
+Fonts 1.0 Fonts.qml
+IOFavAllLights 1.0 IOFavAllLights.qml
+IOLight 1.0 IOLight.qml
+IOLightDimmer 1.0 IOLightDimmer.qml
+IOLightRGB 1.0 IOLightRGB.qml
+IOScenario 1.0 IOScenario.qml
+IOShutter 1.0 IOShutter.qml
+IOShutterSmart 1.0 IOShutterSmart.qml
+IOTemp 1.0 IOTemp.qml
+IOVarBool 1.0 IOVarBool.qml
+IOVarInt 1.0 IOVarInt.qml
+IOVarString 1.0 IOVarString.qml
+ItemBase 1.0 ItemBase.qml
+ItemButtonAction 1.0 ItemButtonAction.qml
+IconItem 1.0 IconItem.qml
+AnimatedIcon 1.0 AnimatedIcon.qml
+Calaos 1.0 calaos.js
+singleton Units 1.0 Units.qml
+ScrollBar 1.0 ScrollBar.qml
+ItemListView 1.0 ItemListView.qml

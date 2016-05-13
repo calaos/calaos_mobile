@@ -14,6 +14,8 @@ Application::Application(int & argc, char ** argv) :
 {
     HardwareUtils::Instance()->setParent(this);
 
+    engine.addImportPath("qrc:/qml/");
+
     connect(HardwareUtils::Instance(), SIGNAL(networkStatusChanged()),
             this, SLOT(networkStatusChanged()));
     connect(HardwareUtils::Instance(), SIGNAL(calaosServerDetected()),
@@ -107,14 +109,14 @@ Application::Application(int & argc, char ** argv) :
     engine.rootContext()->setContextProperty("calaosApp", this);
 
     //Register Units singleton
-    qmlRegisterSingletonType(QUrl("qrc:/qml/Units.qml"), "Units", 1, 0, "Units");
+    //qmlRegisterSingletonType(QUrl("qrc:/qml/Units.qml"), "Units", 1, 0, "Units");
 
     qmlRegisterType<RoomFilterModel>("Calaos", 1, 0, "RoomFilterModel");
 
 #if defined(CALAOS_MOBILE)
-    engine.load(QUrl(QStringLiteral("qrc:///qml/main_mobile.qml")));
+    engine.load(QUrl(QStringLiteral("qrc:///qml/mobile/main.qml")));
 #elif defined(CALAOS_DESKTOP)
-    engine.load(QUrl(QStringLiteral("qrc:///qml/main_desktop.qml")));
+    engine.load(QUrl(QStringLiteral("qrc:///qml/desktop/main.qml")));
 #else
 #error "Unknown UI type!"
 #endif

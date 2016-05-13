@@ -1,0 +1,28 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qml/SharedComponents/calaos.js</file>
+        <file>qml/SharedComponents/CalaosItemBase.qml</file>
+        <file>qml/SharedComponents/CalaosSlider.qml</file>
+        <file>qml/SharedComponents/CalaosSliderStyle.qml</file>
+        <file>qml/SharedComponents/Fonts.qml</file>
+        <file>qml/SharedComponents/IOFavAllLights.qml</file>
+        <file>qml/SharedComponents/IOLight.qml</file>
+        <file>qml/SharedComponents/IOLightDimmer.qml</file>
+        <file>qml/SharedComponents/IOLightRGB.qml</file>
+        <file>qml/SharedComponents/IOScenario.qml</file>
+        <file>qml/SharedComponents/IOShutter.qml</file>
+        <file>qml/SharedComponents/IOShutterSmart.qml</file>
+        <file>qml/SharedComponents/IOTemp.qml</file>
+        <file>qml/SharedComponents/IOVarBool.qml</file>
+        <file>qml/SharedComponents/IOVarInt.qml</file>
+        <file>qml/SharedComponents/IOVarString.qml</file>
+        <file>qml/SharedComponents/ItemBase.qml</file>
+        <file>qml/SharedComponents/ItemButtonAction.qml</file>
+        <file>qml/SharedComponents/qmldir</file>
+        <file>qml/SharedComponents/IconItem.qml</file>
+        <file>qml/SharedComponents/AnimatedIcon.qml</file>
+        <file>qml/SharedComponents/Units.qml</file>
+        <file>qml/SharedComponents/ScrollBar.qml</file>
+        <file>qml/SharedComponents/ItemListView.qml</file>
+    </qresource>
+</RCC>

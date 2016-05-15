@@ -8,7 +8,7 @@ ItemBase {
     Text {
         id: name
         color: !modelData.stateShutterBool?"#ffda5a":"#3ab4d7"
-        font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 12 }
+        font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pixelSize: Units.dp(12) }
         text: modelData.ioName
         clip: true
         elide: Text.ElideMiddle
@@ -70,7 +70,7 @@ ItemBase {
     Text {
         id: stateTxt
         color: "#e7e7e7"
-        font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 11 }
+        font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pixelSize: Units.dp(11) }
         text: modelData.stateShutterTxt
         clip: true
         elide: Text.ElideMiddle
@@ -84,7 +84,7 @@ ItemBase {
     Text {
         id: stateTxtAct
         color: "#e7e7e7"
-        font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 11 }
+        font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pixelSize: Units.dp(11) }
         text: modelData.stateShutterTxtAction
         clip: true
         elide: Text.ElideMiddle

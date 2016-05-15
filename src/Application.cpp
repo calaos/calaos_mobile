@@ -12,7 +12,16 @@
 Application::Application(int & argc, char ** argv) :
     QAPP(argc, argv)
 {
+    QCoreApplication::setOrganizationName("Calaos");
+    QCoreApplication::setOrganizationDomain("calaos.fr");
+    QCoreApplication::setApplicationName("CalaosHome");
+
     HardwareUtils::Instance()->setParent(this);
+}
+
+void Application::createQmlApp()
+{
+    loadSettings();
 
     engine.addImportPath("qrc:/qml/");
 
@@ -36,10 +45,6 @@ Application::Application(int & argc, char ** argv) :
             login(get_username(), get_password(), get_hostname());
         });
     });
-
-    QCoreApplication::setOrganizationName("Calaos");
-    QCoreApplication::setOrganizationDomain("calaos.fr");
-    QCoreApplication::setApplicationName("CalaosHome");
 
     Common::registerQml();
 
@@ -74,8 +79,6 @@ Application::Application(int & argc, char ** argv) :
     update_isDesktop(true);
 #endif
 #endif
-
-    loadSettings();
 
     update_applicationStatus(Common::NotConnected);
 

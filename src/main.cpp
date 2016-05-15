@@ -17,5 +17,8 @@ int main(int argc, char *argv[])
     //init platform code after QApp is created and initialized
     HardwareUtils::Instance()->platformInit();
 
+    //QML app creation needs to be created after platform init is done
+    app.createQmlApp();
+
     return app.exec();
 }

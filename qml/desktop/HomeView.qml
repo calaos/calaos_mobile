@@ -115,7 +115,7 @@ Item {
                     left: lighticon.right; leftMargin: Units.dp(5)
                     right: parent.right; rightMargin: Units.dp(2)
                 }
-                font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
+                font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 15 }
             }
 
             Image {
@@ -141,7 +141,7 @@ Item {
                     verticalCenter: tempicon.verticalCenter
                     left: tempicon.right
                 }
-                font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
+                font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 12 }
             }
 
             MouseArea {
@@ -155,7 +155,7 @@ Item {
 
             Text {
                 color: "#e7e7e7"
-                font { family: calaosFont.fontFamily; bold: true; pointSize: 13 }
+                font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 15 }
                 text: roomName
                 horizontalAlignment: Text.AlignHCenter
                 clip: true

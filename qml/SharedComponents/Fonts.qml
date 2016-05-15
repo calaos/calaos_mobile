@@ -1,7 +1,7 @@
 import QtQuick 2.0
 
 Item {
-    property string fontFamily: local_T.name
+    property string fontFamily: local_R.name
 
     property string fontFamilyThin: local_T.name
     property string fontFamilyLight: local_L.name

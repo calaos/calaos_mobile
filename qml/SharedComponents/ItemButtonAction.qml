@@ -20,7 +20,28 @@ Item {
 
         MouseArea {
             anchors.fill: parent
-            onClicked: buttonClicked()
+            onClicked: {
+                glowAnim.restart()
+                buttonClicked()
+            }
         }
+    }
+
+    Image {
+        id: imgGlow
+
+        source: calaosApp.getPictureSized("button_action_glow")
+
+        anchors.fill: img
+
+        fillMode: Image.PreserveAspectFit
+
+        opacity: 0
+    }
+
+    SequentialAnimation {
+        id: glowAnim
+        PropertyAnimation { target: imgGlow; properties: "opacity"; to: 1.0; duration: 100 }
+        PropertyAnimation { target: imgGlow; properties: "opacity"; to: 0.0; duration: 800 }
     }
 }

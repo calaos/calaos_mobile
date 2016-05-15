@@ -236,5 +236,7 @@
         <file>img/menu_media_item_reflect.png</file>
         <file>img/menu_media_item_shadow.png</file>
         <file>img/cursor.png</file>
+        <file>img/button_action_glow.png</file>
+        <file>img/button_action_glow@2x.png</file>
     </qresource>
 </RCC>

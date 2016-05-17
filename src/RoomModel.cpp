@@ -165,7 +165,7 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
 
             connect(io, &IOBase::stateChange, [=]()
             {
-                emit has_temp_sig(temperatureIo->getStateInt());
+                emit temp_changed_sig(temperatureIo->getStateInt());
             });
         }
     }

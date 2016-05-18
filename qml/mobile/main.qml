@@ -126,7 +126,7 @@ Window {
             height: parent.height
             width: parent.width
 
-            roomItemModel: roomModel
+            filteredRoomItemModel: roomModel
         }
     }
 

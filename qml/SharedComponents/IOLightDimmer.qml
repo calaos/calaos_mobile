@@ -1,5 +1,6 @@
 import QtQuick 2.0
 import QtQuick.Controls 1.2
+import "."
 
 ItemBase {
     property variant modelData

@@ -4,7 +4,8 @@ import SharedComponents 1.0
 
 Item {
 
-    property alias roomItemModel: filterModel.source
+    property alias roomItemModel: listView.model
+    property alias filteredRoomItemModel: filterModel.source
 
     Image {
         source: calaosApp.getPictureSized(isLandscape?

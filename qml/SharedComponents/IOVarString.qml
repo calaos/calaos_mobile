@@ -1,5 +1,6 @@
 import QtQuick 2.2
 import Calaos 1.0
+import "."
 
 ItemBase {
     property variant modelData

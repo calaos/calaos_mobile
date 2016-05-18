@@ -1,4 +1,5 @@
 import QtQuick 2.0
+import "."
 
 Item {
     property string fontFamily: local_R.name

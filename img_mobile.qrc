@@ -168,5 +168,7 @@
         <file>img/camera_back_big@2x.png</file>
         <file>img/camera_nocam.png</file>
         <file>img/close.svg</file>
+        <file>img/button_action_glow.png</file>
+        <file>img/button_action_glow@2x.png</file>
     </qresource>
 </RCC>

@@ -1,4 +1,5 @@
 import QtQuick 2.3
+import "."
 
 CalaosItemBase {
     id: baseItem

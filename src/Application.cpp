@@ -90,6 +90,22 @@ void Application::createQmlApp()
     connect(calaosConnect, &CalaosConnection::disconnected, [=]()
     {
         update_applicationStatus(Common::NotConnected);
+
+#ifdef CALAOS_DESKTOP
+        HardwareUtils::Instance()->showAlertMessage(tr("Network error"),
+                                                    tr("The connection to calaos_server was lost."
+                                                       "It will reconnect automatically when calaos_server"
+                                                       "is available again."),
+                                                    tr("Close"));
+
+        //restart autologin, only on desktop to continually try to connect
+        QTimer::singleShot(1000, [=]()
+        {
+            //reload settings in case it was changed
+            loadSettings();
+            login(get_username(), get_password(), get_hostname());
+        });
+#endif
     });
 
     scenarioModel = new ScenarioModel(&engine, calaosConnect, this);
@@ -228,6 +244,16 @@ void Application::loginFailed()
     HardwareUtils::Instance()->showAlertMessage(tr("Login failed"),
                                                 tr("Connection failed, please check your credentials."),
                                                 tr("Close"));
+
+#ifdef CALAOS_DESKTOP
+    //restart autologin, only on desktop to continually try to connect
+    QTimer::singleShot(1000, [=]()
+    {
+        //reload settings in case it was changed
+        loadSettings();
+        login(get_username(), get_password(), get_hostname());
+    });
+#endif
 }
 
 bool Application::needPictureHDPI()

@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/">
+        <file>widgets/Clock/Clock.qml</file>
+        <file>widgets/Clock/widget_clock_back.png</file>
+        <file>widgets/Clock/clock_hour.png</file>
+        <file>widgets/Clock/clock_min.png</file>
+        <file>widgets/Clock/clock_sec.png</file>
+    </qresource>
+</RCC>

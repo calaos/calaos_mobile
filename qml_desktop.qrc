@@ -20,5 +20,6 @@
         <file>qml/desktop/CameraListView.qml</file>
         <file>qml/desktop/MediaWebView.qml</file>
         <file>qml/desktop/Notification.qml</file>
+        <file>qml/desktop/Widget.qml</file>
     </qresource>
 </RCC>

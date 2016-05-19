@@ -15,10 +15,15 @@ TARGET=calaos_home
 
 QT += widgets
 
-SOURCES += src/HardwareUtils_desktop.cpp
-HEADERS += src/HardwareUtils_desktop.h
+SOURCES += src/HardwareUtils_desktop.cpp \
+    src/CalaosWidget.cpp \
+    src/CalaosWidgetModel.cpp
+HEADERS += src/HardwareUtils_desktop.h \
+    src/CalaosWidget.h \
+    src/CalaosWidgetModel.h
 
 RESOURCES += qml_desktop.qrc \
     img_desktop.qrc \
     fonts_desktop.qrc \
-    qml_shared.qrc
+    qml_shared.qrc \
+    widgets.qrc

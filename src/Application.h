@@ -41,6 +41,8 @@ public:
 public:
     Application(int &argc, char **argv);
 
+    virtual ~Application();
+
     void createQmlApp();
 
     Q_INVOKABLE void login(QString user, QString pass, QString host);

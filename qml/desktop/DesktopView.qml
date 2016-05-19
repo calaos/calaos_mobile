@@ -1,8 +1,13 @@
-import QtQuick 2.0
+import QtQuick 2.5
 import SharedComponents 1.0
 
 Item {
 
-    //TODO, widgets and al
+    Repeater {
+        model: widgetsModel
+        Widget {
+            widgetModel: widgetsModel.getWidget(index)
+        }
+    }
 
 }

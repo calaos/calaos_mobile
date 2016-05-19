@@ -25,6 +25,9 @@ public:
     virtual void setConfigOption(QString key, QString value);
     virtual QString getConfigOption(QString key);
 
+    QString getConfigFile(QString configType);
+    QString getCacheFile(QString cacheFile);
+
 private slots:
     void readPendingDatagrams(void);
     void calaosDiscover();
@@ -34,8 +37,6 @@ protected:
     HardwareUtilsDesktop(QObject *parent = 0);
 
     QString configDir, cacheDir, configBase, cacheBase;
-    QString getConfigFile(QString configType);
-    QString getCacheFile(QString cacheFile);
     void initConfigOptions(QString configdir, QString cachedir);
     QHash<QString, QString> getAllOptions();
 

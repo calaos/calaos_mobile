@@ -9,6 +9,10 @@
 #include <QtAndroidExtras/QAndroidJniObject>
 #endif
 
+#ifdef CALAOS_DESKTOP
+#include "CalaosWidgetModel.h"
+#endif
+
 Application::Application(int & argc, char ** argv) :
     QAPP(argc, argv)
 {
@@ -17,6 +21,13 @@ Application::Application(int & argc, char ** argv) :
     QCoreApplication::setApplicationName("CalaosHome");
 
     HardwareUtils::Instance()->setParent(this);
+}
+
+Application::~Application()
+{
+#ifdef CALAOS_DESKTOP
+    CalaosWidgetModel::Instance()->saveToDisk();
+#endif
 }
 
 void Application::createQmlApp()
@@ -124,6 +135,11 @@ void Application::createQmlApp()
     engine.rootContext()->setContextProperty("favoritesHomeModel", favHomeModel);
     cameraModel = new CameraModel(&engine, calaosConnect);
     engine.rootContext()->setContextProperty("cameraModel", cameraModel);
+
+#ifdef CALAOS_DESKTOP
+    CalaosWidgetModel::Instance()->loadFromDisk();
+    engine.rootContext()->setContextProperty("widgetsModel", CalaosWidgetModel::Instance());
+#endif
 
     engine.rootContext()->setContextProperty("calaosApp", this);
 

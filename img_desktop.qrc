@@ -238,5 +238,6 @@
         <file>img/cursor.png</file>
         <file>img/button_action_glow.png</file>
         <file>img/button_action_glow@2x.png</file>
+        <file>img/info_outline.svg</file>
     </qresource>
 </RCC>

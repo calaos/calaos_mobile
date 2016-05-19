@@ -17,6 +17,16 @@ Window {
 
     property bool isSingleCameraView: false
 
+    //this is called by HardwareUtils
+    function showAlertMessage(title, message, buttonText) {
+        notif.showMessage(title, message)
+    }
+
+    //this is called by HardwareUtils
+    function showNetworkActivity(en) {
+        //TODO
+    }
+
     function goToDesktop() {
         mainMenu.unselectAll()
         stackView.pop({ item: desktopView })
@@ -173,5 +183,13 @@ Window {
     Component {
         id: webView
         MediaWebView {}
+    }
+
+    Notification {
+        id: notif
+        anchors {
+            top: parent.top
+            horizontalCenter: parent.horizontalCenter
+        }
     }
 }

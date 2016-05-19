@@ -19,5 +19,6 @@
         <file>qml/desktop/MusicListView.qml</file>
         <file>qml/desktop/CameraListView.qml</file>
         <file>qml/desktop/MediaWebView.qml</file>
+        <file>qml/desktop/Notification.qml</file>
     </qresource>
 </RCC>

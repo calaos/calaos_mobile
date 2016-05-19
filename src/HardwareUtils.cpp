@@ -38,8 +38,9 @@ HardwareUtils::~HardwareUtils()
 {
 }
 
-void HardwareUtils::platformInit()
+void HardwareUtils::platformInit(QQmlApplicationEngine *e)
 {
+    qmlEngine = e;
 }
 
 void HardwareUtils::showAlertMessage(QString title, QString message, QString buttontext)

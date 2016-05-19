@@ -6,6 +6,7 @@
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
 #include <QApplication>
+#include <QQmlApplicationEngine>
 
 #define PREFIX_CONFIG_PATH      ETC_DIR"/calaos"
 #define LOCAL_CONFIG            "local_config.xml"
@@ -23,8 +24,9 @@ HardwareUtilsDesktop::~HardwareUtilsDesktop()
 {
 }
 
-void HardwareUtilsDesktop::platformInit()
+void HardwareUtilsDesktop::platformInit(QQmlApplicationEngine *e)
 {
+    qmlEngine = e;
     QCommandLineParser parser;
     parser.setApplicationDescription("Calaos Home");
     parser.addHelpOption();
@@ -78,11 +80,30 @@ void HardwareUtilsDesktop::platformInit()
 
 void HardwareUtilsDesktop::showAlertMessage(QString title, QString message, QString buttontext)
 {
-    QMessageBox box;
-    box.setInformativeText(message);
-    box.setText(title);
-    box.addButton(buttontext, QMessageBox::AcceptRole);
-    box.exec();
+    if (qmlEngine->rootObjects().isEmpty()) return;
+
+    qInfo() << "showAlertMessage(" << title << ", " << message << ", " << buttontext << ")";
+
+    QVariant ret;
+    QObject *root = qmlEngine->rootObjects().at(0);
+    QMetaObject::invokeMethod(root, "showAlertMessage",
+                              Q_RETURN_ARG(QVariant, ret),
+                              Q_ARG(QVariant, title),
+                              Q_ARG(QVariant, message),
+                              Q_ARG(QVariant, buttontext));
+}
+
+void HardwareUtilsDesktop::showNetworkActivity(bool en)
+{
+    if (qmlEngine->rootObjects().isEmpty()) return;
+
+    qInfo() << "showNetworkActivity(" << en << ")";
+
+    QVariant ret;
+    QObject *root = qmlEngine->rootObjects().at(0);
+    QMetaObject::invokeMethod(root, "showNetworkActivity",
+                              Q_RETURN_ARG(QVariant, ret),
+                              Q_ARG(QVariant, en));
 }
 
 void HardwareUtilsDesktop::loadAuthKeychain(QString &email, QString &pass)

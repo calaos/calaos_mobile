@@ -3,6 +3,8 @@
 
 #include <QtCore>
 
+class QQmlApplicationEngine;
+
 class HardwareUtils: public QObject
 {
     Q_OBJECT
@@ -11,13 +13,14 @@ protected:
     HardwareUtils(QObject *parent = 0);
 
     bool startedWithOpt = false;
+    QQmlApplicationEngine *qmlEngine = nullptr;
 
 public:
     static HardwareUtils *Instance(QObject *parent = NULL);
 
     virtual ~HardwareUtils();
 
-    virtual void platformInit();
+    virtual void platformInit(QQmlApplicationEngine *e);
 
     virtual void showAlertMessage(QString title, QString message, QString buttontext);
 

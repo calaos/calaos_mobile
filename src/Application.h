@@ -61,6 +61,8 @@ public:
     Q_INVOKABLE int getColorSaturation(QColor c) { return c.saturation(); }
     Q_INVOKABLE int getColorLightness(QColor c) { return c.lightness(); }
 
+    QQmlApplicationEngine *getEngine() { return &engine; }
+
 private slots:
     void homeLoaded(const QVariantMap &homeData);
     void loginFailed();

@@ -23,3 +23,4 @@ Calaos 1.0 calaos.js
 singleton Units 1.0 Units.qml
 ScrollBar 1.0 ScrollBar.qml
 ItemListView 1.0 ItemListView.qml
+CalaosButton 1.0 CalaosButton.qml

@@ -26,5 +26,11 @@
         <file>qml/desktop/IconScreensaver.qml</file>
         <file>qml/desktop/IconWidget.qml</file>
         <file>qml/desktop/IconLockScreen.qml</file>
+        <file>qml/desktop/OverlayLayer.qml</file>
+        <file>qml/desktop/OverlayView.qml</file>
+        <file>qml/desktop/Utils.js</file>
+        <file>qml/desktop/PopupBase.qml</file>
+        <file>qml/desktop/BasePopupView.qml</file>
+        <file>qml/desktop/Dialog.qml</file>
     </qresource>
 </RCC>

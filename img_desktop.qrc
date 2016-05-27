@@ -246,5 +246,7 @@
         <file>img/icon_item_reboot.png</file>
         <file>img/icon_item_screensaver.png</file>
         <file>img/menu_item_select.png</file>
+        <file>img/neon.png</file>
+        <file>img/background_dialog.png</file>
     </qresource>
 </RCC>

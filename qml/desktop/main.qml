@@ -192,4 +192,10 @@ Window {
             horizontalCenter: parent.horizontalCenter
         }
     }
+
+    //This overlay is for displaying dialogs on top of everything
+    OverlayLayer {
+        id: dialogOverlayLayer
+        objectName: "dialogOverlayLayer"
+    }
 }

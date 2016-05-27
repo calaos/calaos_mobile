@@ -3,6 +3,8 @@ import QtQuick.Window 2.1
 import QtQuick.Controls 1.2
 import Calaos 1.0
 import SharedComponents 1.0
+import QuickFlux 1.0
+import "../quickflux"
 
 Window {
     id: rootWindow
@@ -197,5 +199,20 @@ Window {
     OverlayLayer {
         id: dialogOverlayLayer
         objectName: "dialogOverlayLayer"
+    }
+
+    DialogReboot { id: dialogReboot }
+
+    //Dispatch actions
+    AppListener {
+        Filter {
+            type: ActionTypes.clickHomeboardItem
+            onDispatched: {
+                if (message.text == "reboot") {
+                    dialogReboot.show()
+                }
+
+            }
+        }
     }
 }

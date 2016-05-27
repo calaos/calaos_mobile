@@ -1,6 +1,8 @@
 import QtQuick 2.2
 import SharedComponents 1.0
 import QtQuick.Layouts 1.1
+import QuickFlux 1.0
+import "../quickflux"
 
 Item {
     id: menu
@@ -143,18 +145,21 @@ Item {
                     title: qsTr("Widgets configuration")
                     description: qsTr("Add, move and setup your widgets on the desktop")
                     moreText: ""
+                    action: "widgets"
                 }
                 ListElement {
                     iconSource: "IconScreensaver.qml"
                     title: qsTr("Shut the screen off")
                     description: qsTr("Touch the screen once to wake up the machine")
                     moreText: qsTr("Auto: off")
+                    action: "screensaver"
                 }
                 ListElement {
                     iconSource: "IconReboot.qml"
                     title: qsTr("Reboot the machine")
                     description: qsTr("Please wait during the reboot")
                     moreText: ""
+                    action: "reboot"
                 }
             }
         }
@@ -319,6 +324,14 @@ Item {
                 buttonConfigClicked()
                 currentButton = 4
             }
+        }
+    }
+
+    //Dispatch actions
+    AppListener {
+        Filter {
+            type: ActionTypes.clickHomeboardItem
+            onDispatched: homeboardOpened = false
         }
     }
 }

@@ -1,15 +1,8 @@
 import QtQuick 2.5
 import SharedComponents 1.0
+import "../quickflux"
 
 ListView {
-
-    Dialog {
-        id: testDialog
-
-        title: "Do you want to do this?"
-        text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin sodales nulla lectus, et maximus purus ornare ut. Pellentesque dignissim pharetra odio ut porta. Duis pulvinar dui eget justo lobortis laoreet."
-        hasActions: true
-    }
 
     delegate: BorderImage {
 
@@ -114,7 +107,7 @@ ListView {
             anchors.fill: parent
             onPressed: selectImg.state = "pressed"
             onReleased: selectImg.state = "released"
-            onClicked: testDialog.show() //console.log("clicked... TODO!")
+            onClicked: AppActions.clickHomeboardItem(action)
         }
     }
 }

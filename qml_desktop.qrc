@@ -21,5 +21,10 @@
         <file>qml/desktop/MediaWebView.qml</file>
         <file>qml/desktop/Notification.qml</file>
         <file>qml/desktop/Widget.qml</file>
+        <file>qml/desktop/HomeboardListView.qml</file>
+        <file>qml/desktop/IconReboot.qml</file>
+        <file>qml/desktop/IconScreensaver.qml</file>
+        <file>qml/desktop/IconWidget.qml</file>
+        <file>qml/desktop/IconLockScreen.qml</file>
     </qresource>
 </RCC>

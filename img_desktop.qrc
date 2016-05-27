@@ -240,5 +240,11 @@
         <file>img/button_action_glow@2x.png</file>
         <file>img/info_outline.svg</file>
         <file>img/widget_back_edit.png</file>
+        <file>img/menu_item.png</file>
+        <file>img/icon_config_widget.png</file>
+        <file>img/icon_item_lock.png</file>
+        <file>img/icon_item_reboot.png</file>
+        <file>img/icon_item_screensaver.png</file>
+        <file>img/menu_item_select.png</file>
     </qresource>
 </RCC>

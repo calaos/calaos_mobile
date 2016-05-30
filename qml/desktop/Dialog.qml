@@ -317,5 +317,15 @@ PopupBase {
                 }
             }
         }
+
+        Rectangle {
+            radius: Units.dp(4)
+            border.color: "#3AB4D7"
+            border.width: Units.dp(1)
+            color: "transparent"
+            opacity: 0.25
+
+            anchors.fill: parent
+        }
     }
 }

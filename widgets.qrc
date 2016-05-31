@@ -5,5 +5,26 @@
         <file>widgets/Clock/clock_hour.png</file>
         <file>widgets/Clock/clock_min.png</file>
         <file>widgets/Clock/clock_sec.png</file>
+        <file>widgets/Weather/cloud01.png</file>
+        <file>widgets/Weather/cloud02.png</file>
+        <file>widgets/Weather/cloud03.png</file>
+        <file>widgets/Weather/earth.png</file>
+        <file>widgets/Weather/moon.png</file>
+        <file>widgets/Weather/rain01.png</file>
+        <file>widgets/Weather/rain02.png</file>
+        <file>widgets/Weather/rain03.png</file>
+        <file>widgets/Weather/snow.png</file>
+        <file>widgets/Weather/sun01.png</file>
+        <file>widgets/Weather/sun02.png</file>
+        <file>widgets/Weather/sun03.png</file>
+        <file>widgets/Weather/thunderstorm01.png</file>
+        <file>widgets/Weather/thunderstorm02.png</file>
+        <file>widgets/Weather/Weather.qml</file>
+        <file>widgets/Weather/widget_base_back.png</file>
+        <file>widgets/Weather/IconSun.qml</file>
+        <file>widgets/Weather/IconCloud.qml</file>
+        <file>widgets/Weather/IconThunder.qml</file>
+        <file>widgets/Weather/IconSnow.qml</file>
+        <file>widgets/Weather/IconRain.qml</file>
     </qresource>
 </RCC>

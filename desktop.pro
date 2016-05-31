@@ -18,10 +18,12 @@ QT += widgets
 
 SOURCES += src/HardwareUtils_desktop.cpp \
     src/CalaosWidget.cpp \
-    src/CalaosWidgetModel.cpp
+    src/CalaosWidgetModel.cpp \
+    src/WeatherInfo.cpp
 HEADERS += src/HardwareUtils_desktop.h \
     src/CalaosWidget.h \
-    src/CalaosWidgetModel.h
+    src/CalaosWidgetModel.h \
+    src/WeatherInfo.h
 
 RESOURCES += qml_desktop.qrc \
     img_desktop.qrc \

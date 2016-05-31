@@ -11,6 +11,7 @@
 
 #ifdef CALAOS_DESKTOP
 #include "CalaosWidgetModel.h"
+#include "WeatherInfo.h"
 #endif
 
 Application::Application(int & argc, char ** argv) :
@@ -21,6 +22,10 @@ Application::Application(int & argc, char ** argv) :
     QCoreApplication::setApplicationName("CalaosHome");
 
     HardwareUtils::Instance()->setParent(this);
+
+#ifdef CALAOS_DESKTOP
+    WeatherModel::registerQmlClasses();
+#endif
 }
 
 Application::~Application()

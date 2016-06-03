@@ -214,4 +214,9 @@ Window {
             }
         }
     }
+
+    //This should stay at the top of all object layer
+    ScreenSuspend {
+        id: screenSuspend
+    }
 }

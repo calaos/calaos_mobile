@@ -13,6 +13,7 @@
 #ifdef CALAOS_DESKTOP
 #include "CalaosWidgetModel.h"
 #include "WeatherInfo.h"
+#include "ScreenManager.h"
 #endif
 
 Application::Application(int & argc, char ** argv) :
@@ -145,6 +146,7 @@ void Application::createQmlApp()
 #ifdef CALAOS_DESKTOP
     CalaosWidgetModel::Instance()->loadFromDisk();
     engine.rootContext()->setContextProperty("widgetsModel", CalaosWidgetModel::Instance());
+    engine.rootContext()->setContextProperty("screenManager", &ScreenManager::Instance());
 #endif
 
     engine.rootContext()->setContextProperty("calaosApp", this);

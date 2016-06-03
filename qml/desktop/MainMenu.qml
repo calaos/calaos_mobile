@@ -83,7 +83,7 @@ Item {
             horizontalCenter: parent.horizontalCenter
         }
 
-        opacity: currentButton == 0 && !homeboardOpened?1:0
+        opacity: homeboardLinkVisible && !homeboardOpened?1:0
 
         Behavior on opacity { NumberAnimation {} }
     }
@@ -142,10 +142,17 @@ Item {
             model: ListModel {
                 ListElement {
                     iconSource: "IconWidget.qml"
-                    title: qsTr("Widgets configuration")
-                    description: qsTr("Add, move and setup your widgets on the desktop")
+                    title: qsTr("Add new Widgets")
+                    description: qsTr("Add new widgets on the desktop")
                     moreText: ""
-                    action: "widgets"
+                    action: "widgets_add"
+                }
+                ListElement {
+                    iconSource: "IconWidget.qml"
+                    title: qsTr("Widgets configuration")
+                    description: qsTr("Move and setup your widgets on the desktop")
+                    moreText: ""
+                    action: "widgets_edit"
                 }
                 ListElement {
                     iconSource: "IconScreensaver.qml"
@@ -165,13 +172,27 @@ Item {
         }
     }
 
+    AppListener {
+        id: actHomeboard
+        property bool forceHide: false
+        Filter {
+            type: ActionTypes.hideHomeboardMenu
+            onDispatched: actHomeboard.forceHide = true
+        }
+        Filter {
+            type: ActionTypes.showHomeboardMenu
+            onDispatched: actHomeboard.forceHide = false
+        }
+    }
+
+    property bool homeboardLinkVisible: currentButton == 0 && !actHomeboard.forceHide
     Item {
         id: homeboardArrow
         width: upArrow.width
         height: upArrow.height
 
         visible: opacity > 0
-        opacity: currentButton == 0?1:0
+        opacity: homeboardLinkVisible?1:0
         Behavior on opacity { PropertyAnimation {} }
 
         anchors {

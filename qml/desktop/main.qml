@@ -211,7 +211,6 @@ Window {
                 if (message.text == "reboot") {
                     dialogReboot.show()
                 }
-
             }
         }
     }

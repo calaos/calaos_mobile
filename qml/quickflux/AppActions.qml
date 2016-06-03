@@ -10,4 +10,23 @@ QtObject {
         AppDispatcher.dispatch(ActionTypes.clickHomeboardItem, { text: txt });
     }
 
+    // Homeboard menu needs to be hidden (for example when editing widgets)
+    function hideHomeboardMenu() {
+        AppDispatcher.dispatch(ActionTypes.hideHomeboardMenu);
+    }
+
+    // Homeboard menu can be shown again
+    function showHomeboardMenu() {
+        AppDispatcher.dispatch(ActionTypes.showHomeboardMenu);
+    }
+
+    // Widgets save position
+    function saveWidgetsPosition() {
+        AppDispatcher.dispatch(ActionTypes.saveWidgetsPosition);
+    }
+
+    // Widgets reset position (cancel)
+    function resetWidgetsPosition() {
+        AppDispatcher.dispatch(ActionTypes.resetWidgetsPosition);
+    }
 }

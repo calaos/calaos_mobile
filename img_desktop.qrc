@@ -248,5 +248,15 @@
         <file>img/menu_item_select.png</file>
         <file>img/neon.png</file>
         <file>img/background_dialog.png</file>
+        <file>img/widget_container_back.png</file>
+        <file>img/widget_container_back_buttons.png</file>
+        <file>img/button_widget_move_down.png</file>
+        <file>img/button_widget_move_down_big.png</file>
+        <file>img/button_widget_move_left.png</file>
+        <file>img/button_widget_move_left_big.png</file>
+        <file>img/button_widget_move_right.png</file>
+        <file>img/button_widget_move_right_big.png</file>
+        <file>img/button_widget_move_up.png</file>
+        <file>img/button_widget_move_up_big.png</file>
     </qresource>
 </RCC>

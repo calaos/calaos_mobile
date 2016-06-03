@@ -36,5 +36,6 @@
         <file>qml/quickflux/AppActions.qml</file>
         <file>qml/quickflux/qmldir</file>
         <file>qml/desktop/DialogReboot.qml</file>
+        <file>qml/desktop/DialogAddWidget.qml</file>
     </qresource>
 </RCC>

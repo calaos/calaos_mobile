@@ -7,5 +7,11 @@ KeyTable {
     // KeyTable is an object with properties equal to its key name
 
     property string clickHomeboardItem;
+
+    property string hideHomeboardMenu;
+    property string showHomeboardMenu;
+
+    property string saveWidgetsPosition
+    property string resetWidgetsPosition
 }
 

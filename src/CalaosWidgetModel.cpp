@@ -54,6 +54,8 @@ void CalaosWidgetModel::saveToDisk()
     HardwareUtilsDesktop *hw = dynamic_cast<HardwareUtilsDesktop *>(HardwareUtils::Instance());
     if (!hw) return;
 
+    qInfo() << "Writing calaos_widgets.json to disk";
+
     QString conf = hw->getConfigFile("calaos_widgets.json");
     QFile fconf(conf);
     if (fconf.open(QFile::WriteOnly | QFile::Truncate))
@@ -106,4 +108,37 @@ void CalaosWidgetModel::loadWidgetSources()
         qInfo() << "Found widget module: " << moduleName;
         widgetSources.append(moduleName);
     }
+}
+
+void CalaosWidgetModel::addWidget(QString widgetSource)
+{
+    if (!widgetSources.contains(widgetSource))
+    {
+        HardwareUtils::Instance()->showAlertMessage(tr("Error"),
+                                                    tr("Widget '%1' does not exist").arg(widgetSource),
+                                                    tr("Ok"));
+        return;
+    }
+
+    CalaosWidget *w = CalaosWidget::fromVariantMap({{ "module", widgetSource },
+                                                    { "x", "100" },
+                                                    { "y", "100" } });
+    if (w)
+        appendRow(w);
+
+    saveToDisk();
+}
+
+void CalaosWidgetModel::scheduleSave()
+{
+    if (timerSave) return;
+
+    timerSave = new QTimer(this);
+    timerSave->start(1000);
+    connect(timerSave, &QTimer::timeout, [this]()
+    {
+        saveToDisk();
+        delete timerSave;
+        timerSave = nullptr;
+    });
 }

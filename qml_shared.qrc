@@ -25,5 +25,7 @@
         <file>qml/SharedComponents/ScrollBar.qml</file>
         <file>qml/SharedComponents/ItemListView.qml</file>
         <file>qml/SharedComponents/CalaosButton.qml</file>
+        <file>qml/SharedComponents/CalaosRadio.qml</file>
+        <file>qml/SharedComponents/CalaosRadioStyle.qml</file>
     </qresource>
 </RCC>

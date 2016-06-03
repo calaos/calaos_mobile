@@ -12,6 +12,8 @@
 #endif
 #endif
 
+#define EXIT_RESTART_CODE        0x4E5E6E7E
+
 #include <QQmlApplicationEngine>
 #include "CalaosConnection.h"
 #include "HomeModel.h"
@@ -62,6 +64,9 @@ public:
     Q_INVOKABLE int getColorHue(QColor c) { return c.hue(); }
     Q_INVOKABLE int getColorSaturation(QColor c) { return c.saturation(); }
     Q_INVOKABLE int getColorLightness(QColor c) { return c.lightness(); }
+
+    Q_INVOKABLE void rebootMachine();
+    Q_INVOKABLE void restartApp();
 
     QQmlApplicationEngine *getEngine() { return &engine; }
 

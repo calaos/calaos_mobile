@@ -8,6 +8,7 @@
 #ifdef Q_OS_ANDROID
 #include <QtAndroidExtras/QAndroidJniObject>
 #endif
+#include <QProcess>
 
 #ifdef CALAOS_DESKTOP
 #include "CalaosWidgetModel.h"
@@ -384,4 +385,19 @@ void Application::calaosServerDetected()
 
     loadSettings();
     login(get_username(), get_password(), get_hostname());
+}
+
+void Application::rebootMachine()
+{
+    qInfo() << "Full reboot requested";
+    QProcess::startDetached("/bin/sh", QStringList() <<
+                            "-c" <<
+                            "sync; reboot");
+}
+
+void Application::restartApp()
+{
+    qInfo() << "Restart of calaos_home requested";
+    this->quit();
+    QProcess::startDetached(arguments()[0], arguments());
 }

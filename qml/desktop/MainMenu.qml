@@ -3,6 +3,7 @@ import SharedComponents 1.0
 import QtQuick.Layouts 1.1
 import QuickFlux 1.0
 import "../quickflux"
+import "Utils.js" as Utils
 
 Item {
     id: menu
@@ -158,7 +159,7 @@ Item {
                     iconSource: "IconScreensaver.qml"
                     title: qsTr("Shut the screen off")
                     description: qsTr("Touch the screen once to wake up the machine")
-                    moreText: qsTr("Auto: off")
+                    moreText: ""
                     action: "screensaver"
                 }
                 ListElement {
@@ -168,6 +169,11 @@ Item {
                     moreText: ""
                     action: "reboot"
                 }
+
+                property string dpmsText: screenManager.dpmsEnabled?
+                                              "Auto: %1".arg(Utils.timeToString(screenManager.dpmsTime / 1000)):
+                                              qsTr("Auto: off")
+                onDpmsTextChanged: setProperty(2, "moreText", dpmsText)
             }
         }
     }

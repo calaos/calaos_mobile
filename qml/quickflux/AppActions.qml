@@ -29,4 +29,12 @@ QtObject {
     function resetWidgetsPosition() {
         AppDispatcher.dispatch(ActionTypes.resetWidgetsPosition);
     }
+
+    function wakeupScreen() {
+        AppDispatcher.dispatch(ActionTypes.wakeupScreen);
+    }
+
+    function suspendScreen() {
+        AppDispatcher.dispatch(ActionTypes.suspendScreen);
+    }
 }

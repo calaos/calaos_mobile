@@ -13,5 +13,8 @@ KeyTable {
 
     property string saveWidgetsPosition
     property string resetWidgetsPosition
+
+    property string wakeupScreen
+    property string suspendScreen
 }
 

@@ -5,11 +5,21 @@
 
 #ifdef Q_OS_LINUX
 #define HAVE_X_DMPS
+#elif defined(Q_OS_WIN)
+#define HAVE_WIN_DMPS
 #endif
 
 #ifdef HAVE_X_DMPS
 #include <X11/Xlib.h>
 #include <X11/extensions/dpms.h>
+#endif
+
+#ifdef HAVE_WIN_DMPS
+#include <qt_windows.h>
+
+const int MONITOR_ON = -1;
+const int MONITOR_OFF = 2;
+const int MONITOR_STANBY = 1;
 #endif
 
 void XUtils::UpdateDPMS(bool enable, int seconds)
@@ -103,6 +113,13 @@ void XUtils::WakeUpScreen(bool enable)
     //Close the X11 connection
     if (x_display)
         XCloseDisplay(x_display);
+#elif defined(HAVE_WIN_DMPS)
+    //Windows API
+
+    if (enable)
+        PostMessage(HWND_BROADCAST, WM_SYSCOMMAND, SC_MONITORPOWER, MONITOR_ON);
+    else
+        PostMessage(HWND_BROADCAST, WM_SYSCOMMAND, SC_MONITORPOWER, MONITOR_OFF);
 #else
     Q_UNUSED(enable)
 #endif

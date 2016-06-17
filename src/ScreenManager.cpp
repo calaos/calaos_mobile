@@ -6,98 +6,36 @@ ScreenManager::ScreenManager(QObject *parent) : QObject(parent)
 {
     //disable the DPMS
     XUtils::UpdateDPMS(false, 0);
-    startTimer();
-}
 
-ScreenManager::~ScreenManager()
-{
-    stopTimer();
-}
-
-int ScreenManager::getTime()
-{
-    QString time = HardwareUtils::Instance()->getConfigOption("dpms_standby");
-    return time.toInt() * 60;
-}
-
-void ScreenManager::updateTimer()
-{
-    if (is_suspended)
+    set_dpmsEnabled(HardwareUtils::Instance()->getConfigOption("dpms_enable") == "true");
+    connect(this, &ScreenManager::dpmsEnabledChanged, [](bool v)
     {
-        wakeUp();
-    }
-    if (timer)
-        timer->start(getTime() * 1000);
-}
-
-void ScreenManager::startTimer()
-{
-    if (timer)
-        return;
-
-    timer = new QTimer();
-    connect(timer, &QTimer::timeout, [this]()
-    {
-        if(HardwareUtils::Instance()->getConfigOption("dpms_enable") == "true")
-            suspend();
-
-        stopTimer();
+        HardwareUtils::Instance()->setConfigOption("dpms_enable", v?"true":"false");
     });
-    timer->start(getTime() * 1000);
+
+    QString time = HardwareUtils::Instance()->getConfigOption("dpms_standby");
+    set_dpmsTime(time.toInt() * 60 * 1000);
+    connect(this, &ScreenManager::dpmsTimeChanged, [](int v)
+    {
+        HardwareUtils::Instance()->setConfigOption("dpms_standby", QString::number(v / 1000.0 / 60.0));
+    });
 }
 
-void ScreenManager::stopTimer()
+void ScreenManager::wakeupScreen()
 {
-    delete timer;
-    timer = nullptr;
-}
-
-void ScreenManager::wakeUp()
-{
-    if(!is_suspended) return;
-    emit wakeUpScreenStart();
-}
-
-void ScreenManager::wakeUpNow()
-{
-    if (!is_suspended) return;
-    is_suspended = false;
-
+#ifdef Q_OS_LINUX
     //Sometimes the screen wakes up but it remain black
     //doing ON->OFF->ON prevents this
     XUtils::WakeUpScreen(true);
     XUtils::WakeUpScreen(false);
+#endif
     XUtils::WakeUpScreen(true);
-
-    startTimer();
-    emit wakeUpScreen();
 
     XUtils::UpdateDPMS(false, 0);
 }
 
-void ScreenManager::wakeUpNowWhenScreenOn()
+void ScreenManager::suspendScreen()
 {
-    if (!is_suspended) return;
-    is_suspended = false;
-
-    startTimer();
-    emit wakeUpScreen();
-}
-
-void ScreenManager::suspendNow()
-{
-    if (is_suspended) return;
-    is_suspended = true;
-
     XUtils::UpdateDPMS(true, 0);
     XUtils::WakeUpScreen(false);
-
-    stopTimer();
-    emit suspendScreen();
-}
-
-void ScreenManager::suspend()
-{
-    if (is_suspended) return;
-    emit suspendScreenStart();
 }

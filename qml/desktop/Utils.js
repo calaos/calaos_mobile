@@ -74,3 +74,32 @@ function findRootChild(obj, objectName) {
     }
     return null;
 }
+
+function timeToString(s) {
+    var hours = Math.floor((s %= 86400) / 3600);
+    var min = Math.floor((s %= 3600) / 60);
+    var sec = s % 60;
+    var res = "";
+
+    if (hours == 1) {
+        res += hours + " " + qsTr("hour") + " ";
+    }
+    if (hours > 1) {
+        res += hours + " " + qsTr("hours") + " ";
+    }
+    if (min == 1) {
+        res += min + " " + qsTr("minute") + " ";
+    }
+    if (min > 1) {
+        res += min + " " + qsTr("minutes") + " ";
+    }
+    if (sec == 1) {
+        res += sec + " " + qsTr("second") + " ";
+    }
+    if (sec > 1) {
+        res += sec + " " + qsTr("seconds") + " ";
+    }
+
+    //trimmed
+    return res.replace(/\s*$/, '').replace(/^\s*/, '');
+}

@@ -210,6 +210,8 @@ Window {
             onDispatched: {
                 if (message.text == "reboot") {
                     dialogReboot.show()
+                } else if (message.text == "screensaver") {
+                    AppActions.suspendScreen()
                 }
             }
         }

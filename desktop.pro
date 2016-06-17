@@ -16,6 +16,12 @@ TARGET=calaos_home
 
 QT += widgets
 
+linux {
+QT_CONFIG -= no-pkg-config
+CONFIG += link_pkgconfig
+PKGCONFIG += x11 xext
+}
+
 SOURCES += src/HardwareUtils_desktop.cpp \
     src/CalaosWidget.cpp \
     src/CalaosWidgetModel.cpp \

@@ -258,5 +258,8 @@
         <file>img/button_widget_move_right_big.png</file>
         <file>img/button_widget_move_up.png</file>
         <file>img/button_widget_move_up_big.png</file>
+        <file>img/controls_bg.png</file>
+        <file>img/controls_sep.png</file>
+        <file>img/calaos_about_logo.png</file>
     </qresource>
 </RCC>

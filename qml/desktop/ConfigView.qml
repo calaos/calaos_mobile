@@ -25,9 +25,15 @@ Item {
     }
 
 
+    ConfigTabs {
+        width: Units.dp(300)
 
-
-
+        anchors {
+            right: parent.right; rightMargin: Units.dp(20)
+            top: header.bottom; topMargin: Units.dp(20)
+            bottom: footer.top; bottomMargin: Units.dp(20)
+        }
+    }
 
 
 

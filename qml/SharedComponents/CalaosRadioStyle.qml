@@ -17,12 +17,6 @@ RadioButtonStyle {
         color: "#E7E7E7"
     }
 
-    function colorAlpha(c, alpha) {
-        var realColor = Qt.darker(color, 1)
-        realColor.a = alpha
-        return realColor
-    }
-
     indicator: Item {
         implicitWidth: Units.dp(48)
         implicitHeight: Units.dp(48)
@@ -32,7 +26,7 @@ RadioButtonStyle {
             implicitWidth: Units.dp(30)
             implicitHeight: Units.dp(30)
             radius: implicitHeight / 2
-            color: control.activeFocus ? colorAlpha("#E7E7E7", 0.34) : "transparent"
+            color: control.activeFocus ? Theme.colorAlpha(Theme.whiteColor, 0.34) : "transparent"
         }
 
         Rectangle {
@@ -45,8 +39,8 @@ RadioButtonStyle {
 
             border.color: control.enabled
                 ? control.checked ? "#3AB4D7"
-                                  : colorAlpha("#E7E7E7", 0.54)
-                : colorAlpha("#E7E7E7", 0.26)
+                                  : Theme.colorAlpha(Theme.whiteColor, 0.54)
+                : Theme.colorAlpha(Theme.whiteColor, 0.26)
 
             border.width: Units.dp(2)
             antialiasing: true
@@ -63,7 +57,7 @@ RadioButtonStyle {
                 implicitWidth: control.checked ? Units.dp(10) : 0
                 implicitHeight: control.checked ? Units.dp(10) : 0
                 color: control.enabled ? "#3AB4D7"
-                                       : colorAlpha("#E7E7E7", 0.26)
+                                       : Theme.colorAlpha(Theme.whiteColor, 0.26)
                 radius: implicitHeight / 2
                 antialiasing: true
 

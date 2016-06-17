@@ -38,12 +38,6 @@ SliderStyle {
         }
     }
 
-    function colorAlpha(c, alpha) {
-        var realColor = Qt.darker(color, 1)
-        realColor.a = alpha
-        return realColor
-    }
-
     handle: Item {
         anchors.centerIn: parent
         implicitHeight: 8 * calaosApp.density
@@ -54,7 +48,7 @@ SliderStyle {
             implicitHeight: 32 * calaosApp.density
             implicitWidth: 32 * calaosApp.density
             color: control.focus ?
-                       colorAlpha(style.color, 0.20) : "transparent"
+                       Theme.colorAlpha(style.color, 0.20) : "transparent"
             radius: implicitHeight / 2
 
             Rectangle {
@@ -65,8 +59,8 @@ SliderStyle {
                            "#e7e7e7" : style.color
 
                 border.color: control.value === control.minimumValue?
-                              style.darkBackground? colorAlpha("#FFFFFF", 0.3):
-                                                    colorAlpha("#000000", 0.26):
+                              style.darkBackground? Theme.colorAlpha("#FFFFFF", 0.3):
+                                                    Theme.colorAlpha("#000000", 0.26):
                                                     style.color
 
                 border.width: 2 * calaosApp.density

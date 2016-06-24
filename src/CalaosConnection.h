@@ -44,6 +44,9 @@ private:
 
     bool isV2HttpApi = true;
 
+    QTimer *wsPingTimeout = nullptr;
+    QTimer *wsPing = nullptr;
+
     void connectWebsocket(QString h);
     void closeWebsocket();
     void connectHttp(QString h);

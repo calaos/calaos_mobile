@@ -101,6 +101,18 @@ void CalaosConnection::closeWebsocket()
         wsocket->deleteLater();
         wsocket = nullptr;
     }
+
+    if (wsPingTimeout)
+    {
+        delete wsPingTimeout;
+        wsPingTimeout = nullptr;
+    }
+
+    if (wsPing)
+    {
+        delete wsPing;
+        wsPing = nullptr;
+    }
 }
 
 void CalaosConnection::onWsConnected()
@@ -117,6 +129,34 @@ void CalaosConnection::onWsConnected()
 
     //Do login procedure
     wsocket->sendTextMessage(jdoc.toJson());
+
+    connect(wsocket, &QWebSocket::pong, [=](quint64 elapsedTime, const QByteArray &payload)
+    {
+        qDebug() << "recv PONG";
+        if (elapsedTime > 1000)
+            qWarning() << "Websocket PING/PONG took " << elapsedTime << "ms. Is your network slow?";
+        if (payload != "calaos_ping")
+            qWarning() << "Websocket PONG received wrong payload: " << payload;
+
+        //reset timeout timer
+        wsPingTimeout->start();
+    });
+
+    wsPing = new QTimer(this);
+    connect(wsPing, &QTimer::timeout, [=]()
+    {
+        qDebug() << "Sending PING";
+        wsocket->ping("calaos_ping");
+    });
+    wsPing->start(5 * 1000); //every 5s send a ping to calaos_server
+
+    wsPingTimeout = new QTimer(this);
+    connect(wsPingTimeout, &QTimer::timeout, [=]()
+    {
+        qWarning() << "Websocket connection timeout, disconnect!";
+        logout();
+    });
+    wsPingTimeout->start(20 * 1000); //20s timeout
 }
 
 void CalaosConnection::onWsDisconnected()

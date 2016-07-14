@@ -73,12 +73,12 @@ Item {
             timerSuspend.restart()
             mouse.accepted = false
         }
-        onClicked: mouse.accepted = false;
-        onDoubleClicked: mouse.accepted = false;
-        onPressAndHold: mouse.accepted = false;
-        onPressed: mouse.accepted = false;
-        onReleased: mouse.accepted = false;
-        onWheel: mouse.accepted = false;
+        onClicked: mouse.accepted = false
+        onDoubleClicked: mouse.accepted = false
+        onPressAndHold: mouse.accepted = false
+        onPressed: mouse.accepted = false
+        onReleased: mouse.accepted = false
+        onWheel: wheel.accepted = false
     }
 
     //Dispatch actions

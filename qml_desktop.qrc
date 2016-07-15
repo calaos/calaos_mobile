@@ -42,5 +42,6 @@
         <file>qml/desktop/ConfigTabLabelValue.qml</file>
         <file>qml/desktop/ConfigTabProgress.qml</file>
         <file>qml/desktop/CameraItem.qml</file>
+        <file>qml/desktop/RoundButton.qml</file>
     </qresource>
 </RCC>

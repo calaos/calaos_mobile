@@ -266,5 +266,12 @@
         <file>img/camera_medium_border.png</file>
         <file>img/camera_reflect.png</file>
         <file>img/icon_camera_title.png</file>
+        <file>img/button_round_next.png</file>
+        <file>img/button_round_next_glow.png</file>
+        <file>img/button_round_next_off.png</file>
+        <file>img/button_round_previous.png</file>
+        <file>img/button_round_previous_glow.png</file>
+        <file>img/button_round_previous_off.png</file>
+        <file>img/button_round_stop.png</file>
     </qresource>
 </RCC>

@@ -34,6 +34,7 @@ Item {
     }
 
     Item {
+        id: listview
         anchors {
             verticalCenter: parent.verticalCenter
             horizontalCenter: parent.horizontalCenter
@@ -49,22 +50,44 @@ Item {
             spacing: Units.dp(10)
             snapMode: ListView.SnapOneItem
 
-            model: cameraModel.cameraCount() / 4
+            model: Math.ceil(cameraModel.cameraCount() / 4)
             delegate: Row {
+                property int page: index + 1
                 height: Units.dp(300)
                 spacing: Units.dp(10)
                 Repeater {
                     model: 4
                     CameraItem {
                         Component.onCompleted: {
-                            modelData = Qt.binding(function() {
-                                return cameraModel.getItemModel(model.index)
-                            })
-                            camConnected = true
+                            var idx = page * modelData
+                            if (idx < cameraModel.cameraCount()) {
+                                camModel = Qt.binding(function() {
+                                    return cameraModel.getItemModel(idx)
+                                })
+                                camConnected = true
+                            } else {
+                                camConnected = false
+                            }
                         }
                     }
                 }
             }
+        }
+    }
+
+    RoundButton {
+        next: false
+        anchors {
+            verticalCenter: parent.verticalCenter
+            right: listview.left; rightMargin: Units.dp(-8)
+        }
+    }
+
+    RoundButton {
+        next: true
+        anchors {
+            verticalCenter: parent.verticalCenter
+            left: listview.right; leftMargin: Units.dp(-8)
         }
     }
 

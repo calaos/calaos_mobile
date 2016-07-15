@@ -3,7 +3,7 @@ import SharedComponents 1.0
 import QtQuick.Layouts 1.1
 
 Item {
-    property variant modelData
+    property variant camModel
     property bool camConnected: false
 
     width: Units.dp(218)
@@ -31,7 +31,7 @@ Item {
             verticalCenter: ico.verticalCenter
             right: parent.right; rightMargin: Units.dp(5)
         }
-        text: modelData.name
+        text: camModel.name
     }
 
     Image {
@@ -49,7 +49,7 @@ Item {
 
         Image {
             id: cameraPic
-            source: modelData.url_single
+            source: camModel.url_single
             anchors {
                 fill: parent
                 leftMargin: Units.dp(19); rightMargin: Units.dp(19)

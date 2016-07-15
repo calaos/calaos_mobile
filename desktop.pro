@@ -10,7 +10,6 @@ DEFINES += CALAOS_DESKTOP
 DEFINES += ETC_DIR=\\\"$$PREFIX/etc\\\"
 
 include(calaos.pri)
-include(3rd_party/quickflux-1.0.5/quickflux.pri)
 
 TARGET=calaos_home
 

@@ -24,6 +24,9 @@
 #include "FavoritesModel.h"
 #include "HardwareUtils.h"
 #include "CameraModel.h"
+#include "Machine.h"
+#include "QQmlObjectListModel.h"
+#include "QQmlVariantListModel.h"
 
 class Application : public QAPP
 {
@@ -39,6 +42,10 @@ public:
     QML_READONLY_PROPERTY(bool, isAndroid)
     QML_READONLY_PROPERTY(bool, isIOS)
     QML_READONLY_PROPERTY(bool, isDesktop)
+    QML_READONLY_PROPERTY(QString, machineName)
+    QML_OBJMODEL_PROPERTY(NetworkInfo, netAddresses)
+    QML_READONLY_PROPERTY(int, cpuUsage)
+    QML_READONLY_PROPERTY(int, memoryUsage)
 
 public:
     Application(int &argc, char **argv);
@@ -68,6 +75,8 @@ public:
     Q_INVOKABLE void rebootMachine();
     Q_INVOKABLE void restartApp();
 
+    Q_INVOKABLE quint32 getUptimeDays();
+
     QQmlApplicationEngine *getEngine() { return &engine; }
 
 private slots:
@@ -75,6 +84,7 @@ private slots:
     void loginFailed();
     void networkStatusChanged();
     void calaosServerDetected();
+    void sysInfoTimerSlot();
 
 private:
     QQmlApplicationEngine engine;
@@ -89,6 +99,8 @@ private:
     CameraModel *cameraModel;
 
     QVariantList favoritesList;
+
+    QTimer *sysInfoTimer = nullptr;
 
     bool startedWithOptHandled = false;
 

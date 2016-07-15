@@ -9,6 +9,9 @@ QT += qml quick network gui websockets
 
 CONFIG += c++11
 
+include(3rd_party/quickflux-1.0.5/quickflux.pri)
+include(3rd_party/qt-qml-models/QtQmlModels.pri)
+
 SOURCES += src/main.cpp \
     src/HomeModel.cpp \
     src/Application.cpp \
@@ -19,14 +22,14 @@ SOURCES += src/main.cpp \
     src/FavoritesModel.cpp \
     src/HardwareUtils.cpp \
     src/CameraModel.cpp \
-    $$PWD/src/RoomFilterModel.cpp
+    $$PWD/src/RoomFilterModel.cpp \
+    $$PWD/src/Machine.cpp
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH = qml
 
 HEADERS += \
     src/HomeModel.h \
-    src/qqmlhelpers.h \
     src/Application.h \
     src/CalaosConnection.h \
     src/Common.h \
@@ -35,4 +38,10 @@ HEADERS += \
     src/FavoritesModel.h \
     src/HardwareUtils.h \
     src/CameraModel.h \
-    $$PWD/src/RoomFilterModel.h
+    $$PWD/src/RoomFilterModel.h \
+    $$PWD/src/Machine.h \
+    $$PWD/src/qqmlhelpers.h
+
+win32 {
+LIBS += -liphlpapi
+}

@@ -143,10 +143,26 @@ void Application::createQmlApp()
     cameraModel = new CameraModel(&engine, calaosConnect);
     engine.rootContext()->setContextProperty("cameraModel", cameraModel);
 
+    m_netAddresses = new QQmlObjectListModel<NetworkInfo>(this);
+
 #ifdef CALAOS_DESKTOP
     CalaosWidgetModel::Instance()->loadFromDisk();
     engine.rootContext()->setContextProperty("widgetsModel", CalaosWidgetModel::Instance());
     engine.rootContext()->setContextProperty("screenManager", &ScreenManager::Instance());
+
+    update_machineName(Machine::getHostname());
+    QList<NetworkInfo *> nets = Machine::getNetworkInfo();
+    for (int i = 0;i < nets.count();i++)
+    {
+        if (nets.at(i)->get_isLoopback())
+            continue;
+        m_netAddresses->append(nets.at(i));
+    }
+
+    sysInfoTimer = new QTimer();
+    connect(sysInfoTimer, SIGNAL(timeout()), this, SLOT(sysInfoTimerSlot()));
+    sysInfoTimer->start(5000);
+    sysInfoTimerSlot();
 #endif
 
     engine.rootContext()->setContextProperty("calaosApp", this);
@@ -155,6 +171,8 @@ void Application::createQmlApp()
     //qmlRegisterSingletonType(QUrl("qrc:/qml/Units.qml"), "Units", 1, 0, "Units");
 
     qmlRegisterType<RoomFilterModel>("Calaos", 1, 0, "RoomFilterModel");
+    qmlRegisterUncreatableType<QQmlObjectListModelBase> ("Calaos", 1, 0, "ObjectListModel",  "QQmlObjectListModel not creatable");
+    qmlRegisterUncreatableType<QQmlVariantListModel> ("Calaos", 1, 0, "VariantListModel",  "QQmlVariantListModel not creatable");
 
 #if defined(CALAOS_MOBILE)
     engine.load(QUrl(QStringLiteral("qrc:///qml/mobile/main.qml")));
@@ -402,4 +420,16 @@ void Application::restartApp()
     qInfo() << "Restart of calaos_home requested";
     this->quit();
     QProcess::startDetached(arguments()[0], arguments());
+}
+
+quint32 Application::getUptimeDays()
+{
+    return Machine::getMachineUptime() / 60 / 60 / 24;
+}
+
+void Application::sysInfoTimerSlot()
+{
+    update_cpuUsage(Machine::getCpuUsage());
+    update_memoryUsage(Machine::getMemoryUsage());
+    qDebug() << "CPU: " << get_cpuUsage() << " Mem: " << get_memoryUsage();
 }

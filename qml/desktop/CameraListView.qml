@@ -24,12 +24,28 @@ Item {
         opacity: 0.6
     }
 
+    Item {
+        anchors {
+            verticalCenter: parent.verticalCenter
+            left: parent.left; leftMargin: Units.dp(20)
+            right: parent.right; rightMargin: Units.dp(20)
+        }
+        clip: true
+        height: Units.dp(300)
 
+        ListView {
+            anchors.fill: parent
+            orientation: ListView.Horizontal
+            spacing: Units.dp(10)
 
-
-
-
-
+            model: cameraModel
+            delegate: CameraItem {
+                Component.onCompleted: {
+                    modelData = Qt.binding(function() { return cameraModel.getItemModel(model.index) })
+                }
+            }
+        }
+    }
 
     Image {
         id: header

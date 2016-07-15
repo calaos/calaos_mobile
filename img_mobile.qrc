@@ -170,5 +170,12 @@
         <file>img/close.svg</file>
         <file>img/button_action_glow.png</file>
         <file>img/button_action_glow@2x.png</file>
+        <file>img/player_line_decoration_left.png</file>
+        <file>img/player_line_decoration_right.png</file>
+        <file>img/button_next_glow.png</file>
+        <file>img/button_next_off.png</file>
+        <file>img/button_previous_glow.png</file>
+        <file>img/button_previous_off.png</file>
+        <file>img/button_round_stop.png</file>
     </qresource>
 </RCC>

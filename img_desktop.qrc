@@ -261,5 +261,10 @@
         <file>img/controls_bg.png</file>
         <file>img/controls_sep.png</file>
         <file>img/calaos_about_logo.png</file>
+        <file>img/camera_big_border.png</file>
+        <file>img/camera_border.png</file>
+        <file>img/camera_medium_border.png</file>
+        <file>img/camera_reflect.png</file>
+        <file>img/icon_camera_title.png</file>
     </qresource>
 </RCC>

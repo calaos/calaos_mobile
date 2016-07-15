@@ -28,6 +28,7 @@ public:
     void load(const QVariantMap &homeData);
 
     Q_INVOKABLE QObject *getItemModel(int idx);
+    Q_INVOKABLE int cameraCount() { return rowCount(); }
 
     virtual QImage requestImage(const QString &id, QSize *size, const QSize &requestedSize);
     virtual QPixmap requestPixmap(const QString &id, QSize *size, const QSize &requestedSize);

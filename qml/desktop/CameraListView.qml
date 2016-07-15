@@ -24,24 +24,45 @@ Item {
         opacity: 0.6
     }
 
+    Image {
+        source: "qrc:/img/neon.png"
+        anchors {
+            verticalCenter: parent.verticalCenter
+            left: parent.left
+            right: parent.right
+        }
+    }
+
     Item {
         anchors {
             verticalCenter: parent.verticalCenter
-            left: parent.left; leftMargin: Units.dp(20)
-            right: parent.right; rightMargin: Units.dp(20)
+            horizontalCenter: parent.horizontalCenter
+            verticalCenterOffset: Units.dp(-80)
         }
         clip: true
         height: Units.dp(300)
+        width: Units.dp(218) * 4 + 3 * Units.dp(10)
 
         ListView {
             anchors.fill: parent
             orientation: ListView.Horizontal
             spacing: Units.dp(10)
+            snapMode: ListView.SnapOneItem
 
-            model: cameraModel
-            delegate: CameraItem {
-                Component.onCompleted: {
-                    modelData = Qt.binding(function() { return cameraModel.getItemModel(model.index) })
+            model: cameraModel.cameraCount() / 4
+            delegate: Row {
+                height: Units.dp(300)
+                spacing: Units.dp(10)
+                Repeater {
+                    model: 4
+                    CameraItem {
+                        Component.onCompleted: {
+                            modelData = Qt.binding(function() {
+                                return cameraModel.getItemModel(model.index)
+                            })
+                            camConnected = true
+                        }
+                    }
                 }
             }
         }

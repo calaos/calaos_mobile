@@ -4,6 +4,7 @@ import QtQuick.Layouts 1.1
 
 Item {
     property variant modelData
+    property bool camConnected: false
 
     width: Units.dp(218)
     height: Units.dp(300)
@@ -51,8 +52,8 @@ Item {
             source: modelData.url_single
             anchors {
                 fill: parent
-                leftMargin: Units.dp(14); rightMargin: Units.dp(14)
-                topMargin: Units.dp(14); bottomMargin: Units.dp(14)
+                leftMargin: Units.dp(19); rightMargin: Units.dp(19)
+                topMargin: Units.dp(18); bottomMargin: Units.dp(18)
             }
         }
     }
@@ -61,7 +62,7 @@ Item {
         source: "qrc:/img/camera_reflect.png"
         anchors {
             horizontalCenter: parent.horizontalCenter
-            bottom: parent.bottom
+            bottom: parent.bottom; bottomMargin: Units.dp(-11)
         }
     }
 

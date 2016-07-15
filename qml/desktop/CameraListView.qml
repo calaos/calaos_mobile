@@ -45,6 +45,9 @@ Item {
         width: Units.dp(218) * 4 + 3 * Units.dp(10)
 
         ListView {
+            Component.onCompleted: cameraModel.cameraVisible = true
+            Component.onDestruction: cameraModel.cameraVisible = false
+
             anchors.fill: parent
             orientation: ListView.Horizontal
             spacing: Units.dp(10)

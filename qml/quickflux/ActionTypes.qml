@@ -16,5 +16,7 @@ KeyTable {
 
     property string wakeupScreen
     property string suspendScreen
+
+    property string openCameraSingleView
 }
 

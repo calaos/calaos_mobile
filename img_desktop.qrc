@@ -273,5 +273,7 @@
         <file>img/button_round_previous_glow.png</file>
         <file>img/button_round_previous_off.png</file>
         <file>img/button_round_stop.png</file>
+        <file>img/player_line_decoration_left.png</file>
+        <file>img/player_line_decoration_right.png</file>
     </qresource>
 </RCC>

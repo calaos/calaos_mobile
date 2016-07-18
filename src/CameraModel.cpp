@@ -48,6 +48,10 @@ void CameraModel::load(const QVariantMap &homeData)
         p->load(r);
         appendRow(p);
     }
+    QVariantMap r = cameras.begin()->toMap();
+    CameraItem *p = new CameraItem(connection);
+    p->load(r);
+    appendRow(p);
 }
 
 QObject *CameraModel::getItemModel(int idx)

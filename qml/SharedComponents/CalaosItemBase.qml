@@ -6,7 +6,7 @@ MouseArea {
 
     property alias text: label.text
 
-    signal buttonClicked();
+    signal buttonClicked()
 
     height: 50 * calaosApp.density
 

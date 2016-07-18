@@ -13,9 +13,10 @@ Window {
     width: Units.dp(1024) * calaosApp.density
     height: Units.dp(768) * calaosApp.density
 
-    property variant roomModel
+    property QtObject roomModel
     property string currentRoomName
     property string currentRoomType
+    property QtObject cameraSingleModel
 
     property bool isSingleCameraView: false
 
@@ -158,6 +159,17 @@ Window {
     }
 
     Component {
+        id: cameraSingleView
+
+        CameraSingleView {
+            height: parent.height
+            width: parent.width
+
+            camModel: cameraSingleModel
+        }
+    }
+
+    Component {
         id: mediaMenuView
         MediaView {}
     }
@@ -213,6 +225,13 @@ Window {
                 } else if (message.text == "screensaver") {
                     AppActions.suspendScreen()
                 }
+            }
+        }
+        Filter {
+            type: ActionTypes.openCameraSingleView
+            onDispatched: {
+                cameraSingleModel = message.camModel
+                stackView.push(cameraSingleView)
             }
         }
     }

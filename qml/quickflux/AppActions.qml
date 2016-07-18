@@ -37,4 +37,8 @@ QtObject {
     function suspendScreen() {
         AppDispatcher.dispatch(ActionTypes.suspendScreen);
     }
+
+    function openCameraSingleView(model) {
+        AppDispatcher.dispatch(ActionTypes.openCameraSingleView, { camModel: model });
+    }
 }

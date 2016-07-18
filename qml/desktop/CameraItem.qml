@@ -1,13 +1,19 @@
 import QtQuick 2.5
 import SharedComponents 1.0
 import QtQuick.Layouts 1.1
+import QuickFlux 1.0
+import "../quickflux"
 
-Item {
+MouseArea {
     property variant camModel
     property bool camConnected: false
 
     width: Units.dp(218)
     height: Units.dp(300)
+
+    opacity: camConnected?1:0.5
+
+    onClicked: if (camConnected) AppActions.openCameraSingleView(camModel)
 
     Image {
         id: ico
@@ -31,7 +37,7 @@ Item {
             verticalCenter: ico.verticalCenter
             right: parent.right; rightMargin: Units.dp(5)
         }
-        text: camModel.name
+        text: camConnected?camModel.name:"No camera"
     }
 
     Image {
@@ -49,7 +55,7 @@ Item {
 
         Image {
             id: cameraPic
-            source: camModel.url_single
+            source: camConnected?camModel.url_single:""
             anchors {
                 fill: parent
                 leftMargin: Units.dp(19); rightMargin: Units.dp(19)
@@ -65,6 +71,5 @@ Item {
             bottom: parent.bottom; bottomMargin: Units.dp(-11)
         }
     }
-
 
 }

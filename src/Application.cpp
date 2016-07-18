@@ -431,5 +431,4 @@ void Application::sysInfoTimerSlot()
 {
     update_cpuUsage(Machine::getCpuUsage());
     update_memoryUsage(Machine::getMemoryUsage());
-    qDebug() << "CPU: " << get_cpuUsage() << " Mem: " << get_memoryUsage();
 }

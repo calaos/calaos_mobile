@@ -34,7 +34,7 @@ Item {
     }
 
     Item {
-        id: listview
+        id: listviewContainer
         anchors {
             verticalCenter: parent.verticalCenter
             horizontalCenter: parent.horizontalCenter
@@ -45,6 +45,8 @@ Item {
         width: Units.dp(218) * 4 + 3 * Units.dp(10)
 
         ListView {
+            id: listview
+
             Component.onCompleted: cameraModel.cameraVisible = true
             Component.onDestruction: cameraModel.cameraVisible = false
 
@@ -55,14 +57,14 @@ Item {
 
             model: Math.ceil(cameraModel.cameraCount() / 4)
             delegate: Row {
-                property int page: index + 1
+                property int page: index
                 height: Units.dp(300)
                 spacing: Units.dp(10)
                 Repeater {
                     model: 4
                     CameraItem {
                         Component.onCompleted: {
-                            var idx = page * modelData
+                            var idx = page * 4 + modelData
                             if (idx < cameraModel.cameraCount()) {
                                 camModel = Qt.binding(function() {
                                     return cameraModel.getItemModel(idx)
@@ -75,6 +77,56 @@ Item {
                     }
                 }
             }
+
+            SequentialAnimation {
+                id: animList
+                NumberAnimation { id: animreal; target: listview; property: "contentX"; easing.type: Easing.OutBack; duration: 400 }
+                ScriptAction { script: {
+                        listview.animMoving = false
+                        listview.currentIndex = listview._gotoIndex
+                    }
+                }
+            }
+            property int _gotoIndex
+            property bool animMoving: false
+
+            function gotoIndexAnimated(idx) {
+                _gotoIndex = idx
+                var pos = listview.contentX;
+                var destPos;
+                listview.positionViewAtIndex(idx, ListView.SnapPosition);
+                destPos = listview.contentX;
+                animreal.from = pos;
+                animreal.to = destPos;
+                animList.running = true;
+                listview.animMoving = true;
+            }
+        }
+    }
+
+    Image {
+        source: "qrc:/img/player_line_decoration_right.png"
+
+        opacity: (listview.animMoving || listview.moving) && !listview.atXBeginning?1:0
+        Behavior on opacity { PropertyAnimation { duration: 100 } }
+        visible: opacity > 0
+
+        anchors {
+            top: listviewContainer.top; bottom: listviewContainer.bottom
+            right: listviewContainer.left; rightMargin: Units.dp(-14)
+        }
+    }
+
+    Image {
+        source: "qrc:/img/player_line_decoration_left.png"
+
+        opacity: (listview.animMoving || listview.moving) && !listview.atXEnd?1:0
+        Behavior on opacity { PropertyAnimation { duration: 100 } }
+        visible: opacity > 0
+
+        anchors {
+            top: listviewContainer.top; bottom: listviewContainer.bottom
+            left: listviewContainer.right; leftMargin: Units.dp(-14)
         }
     }
 
@@ -82,16 +134,20 @@ Item {
         next: false
         anchors {
             verticalCenter: parent.verticalCenter
-            right: listview.left; rightMargin: Units.dp(-8)
+            right: listviewContainer.left; rightMargin: Units.dp(-8)
         }
+        disabled: listview.atXBeginning
+        onButtonClicked: listview.gotoIndexAnimated(listview.currentIndex - 1)
     }
 
     RoundButton {
         next: true
         anchors {
             verticalCenter: parent.verticalCenter
-            left: listview.right; leftMargin: Units.dp(-8)
+            left: listviewContainer.right; leftMargin: Units.dp(-8)
         }
+        disabled: listview.atXEnd
+        onButtonClicked: listview.gotoIndexAnimated(listview.currentIndex + 1)
     }
 
     Image {

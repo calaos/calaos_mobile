@@ -124,6 +124,9 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
     {
         QVariantMap r = it->toMap();
 
+        if (r["gui_type"].toString() == "")
+            r["gui_type"] = detectOldGuiType(r["type"].toString());
+
         IOBase *io = new IOBase(connection, IOBase::IOInput);
         io->load(r);
         io->update_room_name(name);
@@ -175,6 +178,9 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
     for (;it != outputs.end();it++)
     {
         QVariantMap r = it->toMap();
+
+        if (r["gui_type"].toString() == "")
+            r["gui_type"] = detectOldGuiType(r["type"].toString());
 
         IOBase *io = new IOBase(connection, IOBase::IOOutput);
         connect(io, SIGNAL(light_on(IOBase*)), this, SIGNAL(sig_light_on(IOBase*)));
@@ -600,4 +606,98 @@ QObject *ScenarioSortModel::getItemModel(int idx)
     IOBase *obj = dynamic_cast<IOBase *>(scModel->item(indexToSource(idx)));
     if (obj) engine->setObjectOwnership(obj, QQmlEngine::CppOwnership);
     return obj;
+}
+
+QString RoomModel::detectOldGuiType(QString type)
+{
+    if (type == "InputTime") return "time";
+    else if (type == "InPlageHoraire") return "time_range";
+    else if (type == "TimeRange") return "time_range";
+    else if (type == "GpioInputSwitch") return "switch";
+    else if (type == "GpioInputSwitchLongPress") return "switch_long";
+    else if (type == "GpioInputSwitchTriple") return "switch3";
+    else if (type == "OWTemp") return "temp";
+    else if (type == "WIAnalog") return "analog_in";
+    else if (type == "WagoInputAnalog") return "analog_in";
+    else if (type == "WIDigitalBP") return "switch";
+    else if (type == "WIDigital") return "switch";
+    else if (type == "WagoInputSwitch") return "switch";
+    else if (type == "WIDigitalLong") return "switch_long";
+    else if (type == "WagoInputSwitchLongPress") return "switch_long";
+    else if (type == "WIDigitalTriple") return "switch3";
+    else if (type == "WagoInputSwitchTriple") return "switch3";
+    else if (type == "WITemp") return "temp";
+    else if (type == "WagoInputTemp") return "temp";
+    else if (type == "WebInputSwitch") return "switch";
+    else if (type == "WebInputAnalog") return "analog_in";
+    else if (type == "WebInputTemp") return "temp";
+    else if (type == "WebInputString") return "string_in";
+    else if (type == "ZibaseTemp") return "temp";
+    else if (type == "ZibaseAnalogIn") return "analog_in";
+    else if (type == "ZibaseDigitalIn") return "switch";
+    else if (type == "MySensorsInputAnalog") return "analog_in";
+    else if (type == "MySensorsInputString") return "string_in";
+    else if (type == "MySensorsInputSwitch") return "switch";
+    else if (type == "MySensorsInputSwitchLongPress") return "switch_long";
+    else if (type == "MySensorsInputSwitchTriple") return "switch3";
+    else if (type == "MySensorsInputTemp") return "temp";
+    else if (type == "PingInputSwitch") return "switch";
+    else if (type == "KNXInputSwitch") return "switch";
+    else if (type == "KNXInputAnalog") return "analog_in";
+    else if (type == "KNXInputSwitchLongPress") return "switch_long";
+    else if (type == "KNXInputSwitchTriple") return "switch3";
+    else if (type == "KNXInputTemp") return "temp";
+    else if (type == "OutputFake") return "light";
+    else if (type == "GpioOutputSwitch") return "light";
+    else if (type == "GpioOutputShutter") return "shutter";
+    else if (type == "GpioOutputShutterSmart") return "shutter_smart";
+    else if (type == "WOAnalog") return "analog_out";
+    else if (type == "WagoOutputAnalog") return "analog_out";
+    else if (type == "WODali") return "light_dimmer";
+    else if (type == "WagoOutputDimmer") return "light_dimmer";
+    else if (type == "WODaliRVB") return "light_rgb";
+    else if (type == "WagoOutputDimmerRGB") return "light_rgb";
+    else if (type == "WODigital") return "light";
+    else if (type == "WagoOutputLight") return "light";
+    else if (type == "WOVolet") return "shutter";
+    else if (type == "WagoOutputShutter") return "shutter";
+    else if (type == "WOVoletSmart") return "shutter_smart";
+    else if (type == "WagoOutputShutterSmart") return "shutter_smart";
+    else if (type == "X10Output") return "light";
+    else if (type == "WebOutputString") return "string_out";
+    else if (type == "WebOutputLight") return "light";
+    else if (type == "WebOutputLightRGB") return "light_rgb";
+    else if (type == "ZibaseDigitalOut") return "light";
+    else if (type == "MySensorsOutputAnalog") return "analog_out";
+    else if (type == "MySensorsOutputDimmer") return "light_dimmer";
+    else if (type == "MySensorsOutputLight") return "light";
+    else if (type == "MySensorsOutputLightRGB") return "light_rgb";
+    else if (type == "MySensorsOutputShutter") return "shutter";
+    else if (type == "MySensorsOutputShutterSmart") return "shutter_smart";
+    else if (type == "MySensorsOutputString") return "string_out";
+    else if (type == "OLAOutputLightDimmer") return "light_dimmer";
+    else if (type == "OLAOutputLightRGB") return "light_rgb";
+    else if (type == "WOLOutputBool") return "var_bool";
+    else if (type == "KNXOutputLight") return "light";
+    else if (type == "KNXOutputAnalog") return "analog_out";
+    else if (type == "KNXOutputLightDimmer") return "light_dimmer";
+    else if (type == "KNXOutputLightRGB") return "light_rgb";
+    else if (type == "KNXOutputShutter") return "shutter";
+    else if (type == "KNXOutputShutterSmart") return "shutter_smart";
+    else if (type == "HueOutputLightRGB") return "light_rgb";
+    else if (type == "InputTimer") return "timer";
+    else if (type == "Scenario") return "scenario";
+    else if (type == "InternalInt") return "var_int";
+    else if (type == "InternalBool") return "var_bool";
+    else if (type == "InternalString") return "var_string";
+    else if (type == "AVReceiver") return "avreceiver";
+    else if (type == "slim") return "audio";
+    else if (type == "Squeezebox") return "audio";
+    else if (type == "Axis") return "camera";
+    else if (type == "Gadspot") return "camera";
+    else if (type == "Planet") return "camera";
+    else if (type == "StandardMjpeg") return "camera";
+    else if (type == "standard_mjpeg") return "camera";
+
+    return QString();
 }

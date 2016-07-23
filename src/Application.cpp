@@ -186,7 +186,7 @@ void Application::createQmlApp()
     //Start autologin, only on mobile. On desktop we wait for calaos_server detection
     QTimer::singleShot(100, [=]()
     {
-        //login(get_username(), get_password(), get_hostname());
+        login(get_username(), get_password(), get_hostname());
     });
 #endif
 }

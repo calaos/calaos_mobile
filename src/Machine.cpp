@@ -281,13 +281,24 @@ quint32 Machine::getMachineUptime()
     size_t len = sizeof(boottime);
     int mib[2] = { CTL_KERN, KERN_BOOTTIME };
     if (sysctl(mib, 2, &boottime, &len, NULL, 0) < 0)
-        return -1;
+        return 0;
     return time(NULL) - boottime.tv_sec;
 }
 
-QList<NetworkInfo> Machine::getNetworkInfo()
+QList<NetworkInfo *> Machine::getNetworkInfo()
 {
+    QList<NetworkInfo *> l;
+    return l;
+}
 
+int Machine::getMemoryUsage()
+{
+    return 0;
+}
+
+int Machine::getCpuUsage()
+{
+    return 0;
 }
 
 #endif /* Q_OS_OSX */
@@ -302,10 +313,10 @@ QString Machine::getHostname()
 #elif defined HOSTNAME_MAX
     char hostname[HOST_NAME_MAX];
     gethostname(hostname, HOST_NAME_MAX);
-#else
+#elif defined(Q_OS_LINUX)
     char hostname[128];
     gethostname(hostname, 128);
 #endif
-    return hostname;
+    return QString("calaos");
 }
 #endif

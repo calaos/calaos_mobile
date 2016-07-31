@@ -304,6 +304,30 @@ int Machine::getCpuUsage()
 #endif /* Q_OS_OSX */
 
 
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+quint32 Machine::getMachineUptime()
+{
+    return 0;
+}
+
+QList<NetworkInfo *> Machine::getNetworkInfo()
+{
+    QList<NetworkInfo *> l;
+    return l;
+}
+
+int Machine::getMemoryUsage()
+{
+    return 0;
+}
+
+int Machine::getCpuUsage()
+{
+    return 0;
+}
+#endif
+
+
 #ifndef Q_OS_WIN32
 QString Machine::getHostname()
 {

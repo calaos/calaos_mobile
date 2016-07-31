@@ -410,16 +410,20 @@ void Application::calaosServerDetected()
 void Application::rebootMachine()
 {
     qInfo() << "Full reboot requested";
+#ifdef CALAOS_DESKTOP
     QProcess::startDetached("/bin/sh", QStringList() <<
                             "-c" <<
                             "sync; reboot");
+#endif
 }
 
 void Application::restartApp()
 {
     qInfo() << "Restart of calaos_home requested";
+#ifdef CALAOS_DESKTOP
     this->quit();
     QProcess::startDetached(arguments()[0], arguments());
+#endif
 }
 
 quint32 Application::getUptimeDays()

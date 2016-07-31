@@ -130,7 +130,7 @@ int Machine::getMemoryUsage()
 #endif /* Q_OS_WIN32 */
 
 
-#if defined(Q_OS_LINUX)
+#if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
 #include <sys/sysinfo.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
@@ -337,7 +337,7 @@ QString Machine::getHostname()
 #elif defined HOSTNAME_MAX
     char hostname[HOST_NAME_MAX];
     gethostname(hostname, HOST_NAME_MAX);
-#elif defined(Q_OS_LINUX)
+#elif defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
     char hostname[128];
     gethostname(hostname, 128);
 #endif

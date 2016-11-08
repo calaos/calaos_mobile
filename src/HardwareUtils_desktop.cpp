@@ -61,7 +61,7 @@ void HardwareUtilsDesktop::platformInit(QQmlApplicationEngine *e)
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &HardwareUtilsDesktop::calaosDiscover);
     calaosDiscover();
-    timer->start(1000);
+    timer->start(5000);
     connect(udpSocket, SIGNAL(readyRead()),
             this, SLOT(readPendingDatagrams()));
 
@@ -173,9 +173,9 @@ QString HardwareUtilsDesktop::getCacheFile(QString cacheFile)
 void HardwareUtilsDesktop::initConfigOptions(QString configdir, QString cachedir)
 {
     if (!configdir.isEmpty())
-        configDir = configdir;
+        configBase = configdir;
     if (!cachedir.isEmpty())
-        cacheDir = configdir;
+        cacheBase = cachedir;
 
     QString file = getConfigFile(LOCAL_CONFIG);
 
@@ -299,7 +299,7 @@ void HardwareUtilsDesktop::readPendingDatagrams()
 
         if (calaosServerHost != ip)
         {
-            calaosServerHost = ip;
+            calaosServerHost = ip.trimmed();
             qInfo() << "Found calaos_server on " << ip;
         }
 
@@ -309,6 +309,10 @@ void HardwareUtilsDesktop::readPendingDatagrams()
 
 void HardwareUtilsDesktop::calaosDiscover()
 {
+    QString h = getConfigOption("calaos_server_host");
+    if (h != "")
+        return; //server has been forced
+
     QByteArray datagram = "CALAOS_DISCOVER";
     QHostAddress broadcastAddress = QHostAddress("255.255.255.255");
     udpSocket->writeDatagram(datagram.data(), datagram.size(), broadcastAddress , BCAST_UDP_PORT);

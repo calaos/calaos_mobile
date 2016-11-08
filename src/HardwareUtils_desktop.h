@@ -36,7 +36,7 @@ protected:
     friend class HardwareUtils;
     HardwareUtilsDesktop(QObject *parent = 0);
 
-    QString configDir, cacheDir, configBase, cacheBase;
+    QString configBase, cacheBase;
     void initConfigOptions(QString configdir, QString cachedir);
     QHash<QString, QString> getAllOptions();
 

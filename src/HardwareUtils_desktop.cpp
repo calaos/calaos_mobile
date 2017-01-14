@@ -304,6 +304,13 @@ void HardwareUtilsDesktop::readPendingDatagrams()
         }
 
         emitCalaosServerDetected();
+
+        //TODO: quickfix here.
+        //delete the timer after the first answer we got.
+        //if we don't do that, it makes somehow the websocket to fail later
+        //and calaos_server leaks then some fd inside ecore main loop
+        //Try to see if this bug can be fixed by using libuv later in calaos_server
+        delete timer;
     }
 }
 

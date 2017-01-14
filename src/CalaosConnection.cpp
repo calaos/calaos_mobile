@@ -53,8 +53,13 @@ void CalaosConnection::login(QString user, QString pass, QString h)
     else
     {
         //First try with websocket
+#ifdef CALAOS_DESKTOP
+        wshost = QString("ws://%1:5454/api").arg(h);
+        httphost = QString("http://%1:5454/api.php").arg(h);
+#else
         wshost = QString("wss://%1/api").arg(h);
         httphost = QString("https://%1/api.php").arg(h);
+#endif
         constate = ConStateTryWebsocket;
         connectWebsocket(wshost);
     }
@@ -647,6 +652,8 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
 
     QJsonObject jroot = jdoc.object();
     QJsonObject jdata = jroot["data"].toObject();
+
+    qDebug() << "RECV:" << message;
 
     if (jroot["msg"] == "login")
     {

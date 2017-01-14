@@ -206,6 +206,8 @@ void Application::login(QString user, QString pass, QString host)
     if (get_applicationStatus() != Common::NotConnected)
         return;
 
+    qDebug() << "Try to login to host: " << host;
+
     update_username(user);
     update_password(pass);
     update_hostname(host);

@@ -76,7 +76,7 @@ void WeatherModel::handleWeatherNetworkData()
     {
         QJsonDocument jdoc = QJsonDocument::fromJson(reply->readAll());
 
-        qDebug().noquote() << "RECV: " << jdoc.toJson();
+        //qDebug().noquote() << "RECV: " << jdoc.toJson();
 
         if (jdoc.isObject())
         {
@@ -114,7 +114,7 @@ void WeatherModel::handleForecastNetworkData()
     {
         QJsonDocument jdoc = QJsonDocument::fromJson(reply->readAll());
 
-        qDebug().noquote() << "RECV: " << jdoc.toJson();
+        //qDebug().noquote() << "RECV: " << jdoc.toJson();
 
         for (int i = 0;i < dataForecast.count();i++)
             delete dataForecast.at(i);

@@ -118,6 +118,8 @@ void CalaosConnection::closeWebsocket()
         delete wsPing;
         wsPing = nullptr;
     }
+
+    constate = ConStateUnknown;
 }
 
 void CalaosConnection::onWsConnected()

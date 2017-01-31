@@ -206,6 +206,8 @@ void Application::login(QString user, QString pass, QString host)
     if (get_applicationStatus() != Common::NotConnected)
         return;
 
+    host = host.trimmed();
+    user = user.trimmed();
     qDebug() << "Try to login to host: " << host;
 
     update_username(user);
@@ -278,6 +280,15 @@ void Application::homeLoaded(const QVariantMap &homeData)
 
 void Application::loginFailed()
 {
+    homeModel->clear();
+    audioModel->clear();
+    scenarioModel->clear();
+    scenarioSortModel->clear();
+    favModel->clear();
+    favHomeModel->clear();
+    lightOnModel->clear();
+    cameraModel->clear();
+
     if (m_applicationStatus == Common::NotConnected)
         return;
 

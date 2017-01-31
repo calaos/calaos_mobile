@@ -160,16 +160,8 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
             emit temp_changed_sig(io->getStateInt());
             emit has_temp_sig(true);
 
-            connect(io, &IOBase::destroyed, [=]()
-            {
-                temperatureIo = nullptr;
-                emit has_temp_sig(false);
-            });
-
-            connect(io, &IOBase::stateChange, [=]()
-            {
-                emit temp_changed_sig(temperatureIo->getStateInt());
-            });
+            connect(temperatureIo, SIGNAL(destroyed()), this, SLOT(temperatureIoDestroyed()));
+            connect(temperatureIo, SIGNAL(stateChange()), this, SLOT(temperatureIoChanged()));
         }
     }
 
@@ -229,6 +221,20 @@ QObject *RoomModel::getItemModel(int idx)
     IOBase *obj = dynamic_cast<IOBase *>(item(idx));
     if (obj) engine->setObjectOwnership(obj, QQmlEngine::CppOwnership);
     return obj;
+}
+
+void RoomModel::temperatureIoDestroyed()
+{
+    disconnect(temperatureIo, SIGNAL(destroyed()), this, SLOT(temperatureIoDestroyed()));
+    disconnect(temperatureIo, SIGNAL(stateChange()), this, SLOT(temperatureIoChanged()));
+
+    temperatureIo = nullptr;
+    emit has_temp_sig(false);
+}
+
+void RoomModel::temperatureIoChanged()
+{
+    emit temp_changed_sig(temperatureIo->getStateInt());
 }
 
 IOBase::IOBase(CalaosConnection *con, int t):

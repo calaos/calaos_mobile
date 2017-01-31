@@ -112,6 +112,10 @@ signals:
     void has_temp_sig(bool h);
     void temp_changed_sig(double tmp);
 
+private slots:
+    void temperatureIoDestroyed();
+    void temperatureIoChanged();
+
 private:
     QString name, type, hits;
 

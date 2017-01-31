@@ -6,7 +6,7 @@ DEFINES += CALAOS_MOBILE
 
 TARGET=CalaosHome
 
-QT += qml quick network gui websockets
+QT += qml quick network gui websockets svg
 
 include(calaos.pri)
 

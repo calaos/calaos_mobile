@@ -3,6 +3,7 @@
 #import "Reachability.h"
 #import "KeychainItemWrapper.h"
 #import "AlertPrompt.h"
+#import "../src/Common.h"
 
 // override QIOSApplicationDelegate to get
 // launch options via didFinishLaunchingWithOptions.
@@ -163,6 +164,12 @@ void HardwareUtils_iOS::saveAuthKeychain(const QString &email, const QString &pa
 {
     [authItem setObject:email.toNSString() forKey:(id)kSecAttrAccount];
     [authItem setObject:pass.toNSString() forKey:(id)kSecValueData];
+}
+
+void HardwareUtils_iOS::resetAuthKeychain()
+{
+    [authItem setObject:Common::getDemoUser().toNSString() forKey:(id)kSecAttrAccount];
+    [authItem setObject:Common::getDemoPass().toNSString() forKey:(id)kSecValueData];
 }
 
 void HardwareUtils_iOS::inputTextDialog(const QString &title, const QString &message)

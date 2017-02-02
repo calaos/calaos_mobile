@@ -91,6 +91,11 @@ public:
     {
         qmlRegisterType<Common>("Calaos", 1, 0, "Common");
     }
+
+    //Used for our demo
+    static QString getDemoUser();
+    static QString getDemoPass();
+    static QString getDemoHost();
 };
 
 #endif // COMMON_H

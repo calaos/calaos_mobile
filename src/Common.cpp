@@ -131,3 +131,18 @@ void Common::installMessageOutputHandler()
 {
     qInstallMessageHandler(_messageOutput);
 }
+
+QString Common::getDemoUser()
+{
+    return QStringLiteral("demo@calaos.fr");
+}
+
+QString Common::getDemoPass()
+{
+    return QStringLiteral("demo");
+}
+
+QString Common::getDemoHost()
+{
+    return QStringLiteral("demo.calaos.fr");
+}

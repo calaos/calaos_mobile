@@ -226,13 +226,11 @@ void Application::logout()
 
 void Application::resetAllData()
 {
-    QString file = QString("%1/calaos.conf").arg(QStandardPaths::writableLocation(QStandardPaths::DataLocation));
-    QSettings settings(file, QSettings::IniFormat);
-    settings.clear();
+    HardwareUtils::Instance()->resetAuthKeychain();
+    //Also reset hostname
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    settings.setValue("calaos/host", Common::getDemoHost());
     settings.sync();
-    update_username("demo@calaos.fr");
-    update_password("demo");
-    update_hostname("demo.calaos.fr");
     logout();
 }
 
@@ -371,8 +369,8 @@ void Application::loadSettings()
 
     QString cnuser, cnpass;
     HardwareUtils::Instance()->loadAuthKeychain(cnuser, cnpass);
-    if (cnuser.isEmpty()) cnuser = "demo@calaos.fr";
-    if (cnpass.isEmpty()) cnpass = "demo";
+    if (cnuser.isEmpty()) cnuser = Common::getDemoUser();
+    if (cnpass.isEmpty()) cnpass = Common::getDemoPass();
 
     update_username(cnuser);
     update_password(cnpass);

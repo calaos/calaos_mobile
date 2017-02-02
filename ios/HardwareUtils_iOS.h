@@ -28,6 +28,7 @@ public:
 
     virtual void saveAuthKeychain(const QString &email, const QString &pass);
     virtual void loadAuthKeychain(QString &email, QString &pass);
+    virtual void resetAuthKeychain();
 
     virtual void inputTextDialog(const QString &title, const QString &message);
 

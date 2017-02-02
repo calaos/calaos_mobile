@@ -37,6 +37,7 @@ public:
     virtual void saveAuthKeychain(const QString &email, const QString &pass);
     virtual void loadAuthKeychain(QString &email, QString &pass);
     virtual QString getServerHost();
+    virtual void resetAuthKeychain();
 
     virtual void setConfigOption(QString key, QString value);
     virtual QString getConfigOption(QString key);

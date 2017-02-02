@@ -1,5 +1,6 @@
 #include "HardwareUtils.h"
 #include <QSettings>
+#include "Common.h"
 
 #ifdef Q_OS_IOS
 #include "../ios/HardwareUtils_iOS.h"
@@ -116,7 +117,17 @@ QString HardwareUtils::getServerHost()
 {
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
 
-    return settings.value("calaos/host", "calaos.fr").toString();
+    return settings.value("calaos/host", Common::getDemoHost()).toString();
+}
+
+void HardwareUtils::resetAuthKeychain()
+{
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+
+    settings.setValue("calaos/cn_user", Common::getDemoUser());
+    settings.setValue("calaos/cn_pass", Common::getDemoPass());
+
+    settings.sync();
 }
 
 void HardwareUtils::setConfigOption(QString key, QString value)

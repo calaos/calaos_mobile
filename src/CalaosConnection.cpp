@@ -119,7 +119,8 @@ void CalaosConnection::closeWebsocket()
         wsPing = nullptr;
     }
 
-    constate = ConStateUnknown;
+    if (constate != ConStateTryWebsocket)
+        constate = ConStateUnknown;
 }
 
 void CalaosConnection::onWsConnected()

@@ -94,6 +94,7 @@ RoomModel::RoomModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject 
 void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int load_flag)
 {
     clear();
+    temperatureIo = nullptr;
 
     type = roomData["type"].toString();
     name = roomData["name"].toString();
@@ -513,6 +514,7 @@ int IOBase::getStateShutterPos()
 
 void IOBase::inputChanged(QString id, QString key, QString value)
 {
+    qDebug() << "***** inputChanged: " << this << " " << get_ioName();
     if (id != ioData["id"].toString()) return; //not for us
 
     if (key == "state")

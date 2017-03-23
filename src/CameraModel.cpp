@@ -1,4 +1,5 @@
 #include "CameraModel.h"
+#include "ScreenManager.h"
 
 CameraModel::CameraModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent):
     QStandardItemModel(parent),
@@ -27,6 +28,9 @@ CameraModel::CameraModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObj
                 obj->startCamera();
         }
     });
+
+    connect(connection, &CalaosConnection::eventTouchscreenCamera,
+            this, &CameraModel::eventTouchscreenCamera);
 }
 
 void CameraModel::load(const QVariantMap &homeData)
@@ -47,6 +51,23 @@ void CameraModel::load(const QVariantMap &homeData)
         CameraItem *p = new CameraItem(connection);
         p->load(r);
         appendRow(p);
+    }
+}
+
+void CameraModel::eventTouchscreenCamera(QString cameraId)
+{
+    //lookup for camera in our model
+    for (int i = 0;i < rowCount();i++)
+    {
+        CameraItem *cam = dynamic_cast<CameraItem *>(item(i));
+        if (cam && cam->get_cameraId() == cameraId)
+        {
+            //Wake up screen
+#ifdef CALAOS_DESKTOP
+            ScreenManager::Instance().wakeupScreen();
+#endif
+            emit actionViewCamera(getItemModel(i));
+        }
     }
 }
 

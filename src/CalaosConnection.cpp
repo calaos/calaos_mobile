@@ -634,6 +634,10 @@ void CalaosConnection::processEventsV3(QVariantMap msg)
     {
         emit eventAudioChange(data["player_id"].toString());
     }
+    else if (msg["type_str"].toString() == "touchscreen_camera_request")
+    {
+        emit eventTouchscreenCamera(data["id"].toString());
+    }
 
     //TODO all other event types
 }

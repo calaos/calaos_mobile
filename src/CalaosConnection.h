@@ -83,6 +83,7 @@ signals:
     void eventScenarioChange();
     void cameraPictureDownloaded(const QString &camid, const QByteArray data);
     void cameraPictureFailed(const QString &camid);
+    void eventTouchscreenCamera(QString camid);
 
 public slots:
     void login(QString user, QString pass, QString host);

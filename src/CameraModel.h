@@ -33,6 +33,12 @@ public:
     virtual QImage requestImage(const QString &id, QSize *size, const QSize &requestedSize);
     virtual QPixmap requestPixmap(const QString &id, QSize *size, const QSize &requestedSize);
 
+signals:
+    void actionViewCamera(QObject *camModel);
+
+private slots:
+    void eventTouchscreenCamera(QString cameraId);
+
 private:
 
     QQmlApplicationEngine *engine;

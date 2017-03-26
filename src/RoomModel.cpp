@@ -514,7 +514,6 @@ int IOBase::getStateShutterPos()
 
 void IOBase::inputChanged(QString id, QString key, QString value)
 {
-    qDebug() << "***** inputChanged: " << this << " " << get_ioName();
     if (id != ioData["id"].toString()) return; //not for us
 
     if (key == "state")

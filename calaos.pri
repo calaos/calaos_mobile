@@ -9,7 +9,7 @@ QT += qml quick network gui websockets
 
 CONFIG += c++11
 
-include(3rd_party/quickflux-1.0.5/quickflux.pri)
+include(3rd_party/quickflux-1.0.6/quickflux.pri)
 include(3rd_party/qt-qml-models/QtQmlModels.pri)
 
 SOURCES += src/main.cpp \

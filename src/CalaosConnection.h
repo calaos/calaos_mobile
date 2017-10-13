@@ -90,7 +90,7 @@ public slots:
     void logout();
     void sendCommand(QString id, QString value, QString type = QString(), QString action = QString());
     void queryState(QStringList inputs, QStringList outputs, QStringList audio_players);
-    void getCameraPicture(const QString &camid);
+    void getCameraPicture(const QString &camid, QString urlSuffix = QString());
 
 private slots:
     void sslErrors(QNetworkReply *reply, const QList<QSslError> &);

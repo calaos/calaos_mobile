@@ -94,6 +94,7 @@ RoomModel::RoomModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject 
 void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int load_flag)
 {
     clear();
+    temperatureIo = nullptr;
 
     type = roomData["type"].toString();
     name = roomData["name"].toString();

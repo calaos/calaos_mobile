@@ -74,3 +74,9 @@ QML_IMPORT_PATH =
 
 # Default rules for deployment.
 include(deployment.pri)
+
+contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
+    ANDROID_EXTRA_LIBS = \
+        $$PWD/../openssl-1.0.2k/libcrypto.so \
+        $$PWD/../openssl-1.0.2k/libssl.so
+}

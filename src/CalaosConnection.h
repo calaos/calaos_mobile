@@ -83,13 +83,14 @@ signals:
     void eventScenarioChange();
     void cameraPictureDownloaded(const QString &camid, const QByteArray data);
     void cameraPictureFailed(const QString &camid);
+    void eventTouchscreenCamera(QString camid);
 
 public slots:
     void login(QString user, QString pass, QString host);
     void logout();
     void sendCommand(QString id, QString value, QString type = QString(), QString action = QString());
     void queryState(QStringList inputs, QStringList outputs, QStringList audio_players);
-    void getCameraPicture(const QString &camid);
+    void getCameraPicture(const QString &camid, QString urlSuffix = QString());
 
 private slots:
     void sslErrors(QNetworkReply *reply, const QList<QSslError> &);

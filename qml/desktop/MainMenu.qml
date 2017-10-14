@@ -189,6 +189,14 @@ Item {
             type: ActionTypes.showHomeboardMenu
             onDispatched: actHomeboard.forceHide = false
         }
+
+        Filter {
+            type: ActionTypes.openCameraSingleView
+            onDispatched: {
+                homeboardOpened = false
+                currentButton = 2
+            }
+        }
     }
 
     property bool homeboardLinkVisible: currentButton == 0 && !actHomeboard.forceHide

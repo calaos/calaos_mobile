@@ -240,4 +240,9 @@ Window {
     ScreenSuspend {
         id: screenSuspend
     }
+
+    Connections {
+        target: cameraModel
+        onActionViewCamera: AppActions.openCameraSingleView(camModel)
+    }
 }

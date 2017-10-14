@@ -1,4 +1,5 @@
 #include "CameraModel.h"
+#include "ScreenManager.h"
 
 CameraModel::CameraModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent):
     QStandardItemModel(parent),
@@ -27,6 +28,9 @@ CameraModel::CameraModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObj
                 obj->startCamera();
         }
     });
+
+    connect(connection, &CalaosConnection::eventTouchscreenCamera,
+            this, &CameraModel::eventTouchscreenCamera);
 }
 
 void CameraModel::load(const QVariantMap &homeData)
@@ -41,12 +45,29 @@ void CameraModel::load(const QVariantMap &homeData)
 
     QVariantList cameras = homeData["cameras"].toList();
     QVariantList::iterator it = cameras.begin();
-    for (;it != cameras.end();it++)
+    for (int i = 0;it != cameras.end();it++, i++)
     {
         QVariantMap r = it->toMap();
         CameraItem *p = new CameraItem(connection);
-        p->load(r);
+        p->load(r, i);
         appendRow(p);
+    }
+}
+
+void CameraModel::eventTouchscreenCamera(QString cameraId)
+{
+    //lookup for camera in our model
+    for (int i = 0;i < rowCount();i++)
+    {
+        CameraItem *cam = dynamic_cast<CameraItem *>(item(i));
+        if (cam && cam->get_cameraId() == cameraId)
+        {
+            //Wake up screen
+#ifdef CALAOS_DESKTOP
+            ScreenManager::Instance().wakeupScreen();
+#endif
+            emit actionViewCamera(getItemModel(i));
+        }
     }
 }
 
@@ -74,7 +95,7 @@ CameraItem::CameraItem(CalaosConnection *con):
     });
 }
 
-void CameraItem::load(QVariantMap &d)
+void CameraItem::load(QVariantMap &d, int countId)
 {
     QMap<QString, QVariant>::const_iterator i = d.constBegin();
     while (i != d.constEnd())
@@ -84,6 +105,12 @@ void CameraItem::load(QVariantMap &d)
     }
 
     update_cameraId(cameraData["id"].toString());
+    if (cameraData.contains("url_lowres"))
+    {
+        update_cameraId(QString::number(countId));
+        isV1 = true; //when url_lowres is present, assume we are talking to a V1 calaos-os
+        update_v1Url(cameraData["url_lowres"].toString());
+    }
     update_name(cameraData["name"].toString());
     update_url_single(QString("image://camera/%1/%2").arg(get_cameraId()).arg(qrand()));
     currentImage = QImage(":/img/camera_nocam.png");
@@ -92,7 +119,7 @@ void CameraItem::load(QVariantMap &d)
 
     QTimer::singleShot(100, [=]()
     {
-        connection->getCameraPicture(get_cameraId());
+        connection->getCameraPicture(get_cameraId(), get_v1Url());
     });
 }
 
@@ -153,7 +180,7 @@ void CameraItem::cameraPictureDownloaded(const QString &camid, const QByteArray 
     {
         QTimer::singleShot(200, [=]()
         {
-            connection->getCameraPicture(get_cameraId());
+            connection->getCameraPicture(get_cameraId(), get_v1Url());
         });
     }
 }
@@ -169,7 +196,7 @@ void CameraItem::cameraPictureFailed(const QString &camid)
     {
         QTimer::singleShot(200, [=]()
         {
-            connection->getCameraPicture(get_cameraId());
+            connection->getCameraPicture(get_cameraId(), get_v1Url());
         });
     }
 }
@@ -179,6 +206,6 @@ void CameraItem::startCamera()
     QTimer::singleShot(0, [=]()
     {
         qDebug() << "Start camera " << get_cameraId();
-        connection->getCameraPicture(get_cameraId());
+        connection->getCameraPicture(get_cameraId(), get_v1Url());
     });
 }

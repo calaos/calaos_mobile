@@ -23,19 +23,7 @@ android {
         android/res/drawable-mdpi/icon.png
 } else:ios {
     QMAKE_INFO_PLIST = ios/AppInfo.plist
-    ICON.files = $$PWD/ios/Default.png \
-    $$PWD/ios/Default@2x.png \
-    $$PWD/ios/Default-568h@2x.png \
-    $$PWD/ios/Icon-72.png \
-    $$PWD/ios/Icon-Small-50.png \
-    $$PWD/ios/Icon-Small.png \
-    $$PWD/ios/Icon-Small@2x.png \
-    $$PWD/ios/Icon.png \
-    $$PWD/ios/Icon@2x.png \
-    $$PWD/ios/Icon-76.png \
-    $$PWD/ios/Icon-120.png \
-    $$PWD/ios/Icon-152.png
-    QMAKE_BUNDLE_DATA += ICON
+    QMAKE_ASSET_CATALOGS = $$PWD/ios/ressources.xcassets
 
     HEADERS += ios/HardwareUtils_iOS.h
     OBJECTIVE_SOURCES += ios/HardwareUtils.mm \

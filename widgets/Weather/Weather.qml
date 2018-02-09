@@ -50,6 +50,7 @@ Item {
                 return "IconSun.qml"
             }
 
+            console.log("Unknown weather icon code: " + c)
             return ""
         }
 

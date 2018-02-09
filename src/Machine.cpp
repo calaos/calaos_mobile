@@ -264,7 +264,7 @@ int Machine::getMemoryUsage()
     struct sysinfo info;
     if (sysinfo(&info) != 0)
         return -1;
-    return info.freeram * 100.0 / info.totalram;
+    return (info.totalram - info.freeram) * 100.0 / info.totalram;
 }
 
 #endif /* Q_OS_LINUX */

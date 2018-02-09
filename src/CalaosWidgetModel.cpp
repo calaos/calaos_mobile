@@ -142,3 +142,16 @@ void CalaosWidgetModel::scheduleSave()
         timerSave = nullptr;
     });
 }
+
+void CalaosWidgetModel::deleteWidget(QString uuid)
+{
+    for (int i = 0;i < rowCount();i++)
+    {
+        CalaosWidget *w = dynamic_cast<CalaosWidget *>(item(i));
+        if (w->get_uuid() == uuid)
+        {
+            removeRow(i);
+            return;
+        }
+    }
+}

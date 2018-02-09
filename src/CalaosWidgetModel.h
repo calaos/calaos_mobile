@@ -20,6 +20,8 @@ public:
     Q_INVOKABLE QObject *getWidget(int idx) const;
     Q_INVOKABLE void addWidget(QString widgetSource);
 
+    Q_INVOKABLE void deleteWidget(QString uuid);
+
     Q_INVOKABLE void loadFromDisk();
     Q_INVOKABLE void saveToDisk();
 

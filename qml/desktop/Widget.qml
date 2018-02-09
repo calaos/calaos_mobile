@@ -158,6 +158,19 @@ Item {
                 }
             }
         }
+
+        Image {
+            source: "qrc:/img/button_action_del.png"
+            anchors {
+                top: parent.top
+                right: parent.right
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: dlg.open()
+            }
+        }
     }
 
     Loader {
@@ -180,6 +193,19 @@ Item {
         anchors.fill: parent
         drag.target: parent
         enabled: editMode
+        propagateComposedEvents: true
+    }
+
+    Dialog {
+        id: dlg
+
+        title: qsTr("Remove widget")
+        text: qsTr("Remove this widget from the desktop?")
+        hasActions: true
+        positiveButtonText: qsTr("Yes, remove")
+        negativeButtonText: qsTr("No")
+
+        onAccepted: widgetsModel.deleteWidget(widgetModel.uuid)
     }
 
     //Dispatch actions

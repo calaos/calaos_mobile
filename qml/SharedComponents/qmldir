@@ -26,4 +26,6 @@ ItemListView 1.0 ItemListView.qml
 CalaosButton 1.0 CalaosButton.qml
 CalaosRadio 1.0 CalaosRadio.qml
 CalaosRadioStyle 1.0 CalaosRadioStyle.qml
+CalaosCheck 1.0 CalaosCheck.qml
+CalaosCheckStyle 1.0 CalaosCheckStyle.qml
 singleton Theme 1.0 Theme.qml

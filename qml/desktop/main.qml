@@ -51,15 +51,17 @@ Window {
         }
     }
 
-    function handleMediaClick(itemId) {
+    function handleSubitemClick(itemId) {
         var item;
-        if (itemId == "music") {
+        if (itemId == "media/music") {
             item = musicListView
         }
-        else if (itemId == "camera") {
+        else if (itemId == "media/camera") {
             item = cameraListView
-        } else if (itemId == "web") {
+        } else if (itemId == "media/web") {
             item = webView
+        } else if (itemId == "config/screen") {
+            item = configScreen
         }
 
         stackView.push(item)
@@ -197,6 +199,11 @@ Window {
     Component {
         id: webView
         MediaWebView {}
+    }
+
+    Component {
+        id: configScreen
+        ConfigScreenView {}
     }
 
     Notification {

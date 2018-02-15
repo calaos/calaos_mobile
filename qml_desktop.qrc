@@ -44,5 +44,7 @@
         <file>qml/desktop/CameraItem.qml</file>
         <file>qml/desktop/RoundButton.qml</file>
         <file>qml/desktop/CameraSingleView.qml</file>
+        <file>qml/desktop/ConfigItem.qml</file>
+        <file>qml/desktop/ConfigScreenView.qml</file>
     </qresource>
 </RCC>

@@ -8,17 +8,11 @@ ScreenManager::ScreenManager(QObject *parent) : QObject(parent)
     XUtils::UpdateDPMS(false, 0);
 
     set_dpmsEnabled(HardwareUtils::Instance()->getConfigOption("dpms_enable") == "true");
-    connect(this, &ScreenManager::dpmsEnabledChanged, [](bool v)
-    {
-        HardwareUtils::Instance()->setConfigOption("dpms_enable", v?"true":"false");
-    });
-
     QString time = HardwareUtils::Instance()->getConfigOption("dpms_standby");
     set_dpmsTime(time.toInt() * 60 * 1000);
-    connect(this, &ScreenManager::dpmsTimeChanged, [](int v)
-    {
-        HardwareUtils::Instance()->setConfigOption("dpms_standby", QString::number(v / 1000.0 / 60.0));
-    });
+
+    if (get_dpmsTime() <= 0)
+        set_dpmsTime(1 * 60 * 1000);
 }
 
 void ScreenManager::wakeupScreen()
@@ -38,4 +32,32 @@ void ScreenManager::suspendScreen()
 {
     XUtils::UpdateDPMS(true, 0);
     XUtils::WakeUpScreen(false);
+}
+
+void ScreenManager::updateDpmsEnabled(bool en)
+{
+    set_dpmsEnabled(en);
+    scheduleWriteConf();
+}
+
+void ScreenManager::updateDpmsTime(int timeMin)
+{
+    if (timeMin <= 0)
+        timeMin = 1;
+    set_dpmsTime(timeMin * 60 * 1000);
+    scheduleWriteConf();
+}
+
+void ScreenManager::scheduleWriteConf()
+{
+    delete writeConfTimer;
+    writeConfTimer = new QTimer(this);
+
+    connect(writeConfTimer, &QTimer::timeout, [=]()
+    {
+        HardwareUtils::Instance()->setConfigOption("dpms_enable", get_dpmsEnabled()?"true":"false");
+        HardwareUtils::Instance()->setConfigOption("dpms_standby", QString::number(get_dpmsTime() / 1000.0 / 60.0));
+    });
+
+    writeConfTimer->start(5000);
 }

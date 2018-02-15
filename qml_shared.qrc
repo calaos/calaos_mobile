@@ -28,5 +28,7 @@
         <file>qml/SharedComponents/CalaosRadio.qml</file>
         <file>qml/SharedComponents/CalaosRadioStyle.qml</file>
         <file>qml/SharedComponents/Theme.qml</file>
+        <file>qml/SharedComponents/CalaosCheckStyle.qml</file>
+        <file>qml/SharedComponents/CalaosCheck.qml</file>
     </qresource>
 </RCC>

@@ -54,7 +54,7 @@ Item {
                 source: iconSource
             }
 
-            onButtonClicked: rootWindow.handleMediaClick(clickId)
+            onButtonClicked: rootWindow.handleSubitemClick(clickId)
         }
 
         model: ListModel {
@@ -63,21 +63,21 @@ Item {
                 subtitle: qsTr("Access you media library")
                 itemDisabled: false
                 iconSource: "MediaIconMusic.qml"
-                clickId: "music"
+                clickId: "media/music"
             }
             ListElement {
                 title: qsTr("CCTV")
                 subtitle: qsTr("Drive all you cctv cameras")
                 itemDisabled: false
                 iconSource: "MediaIconCamera.qml"
-                clickId: "camera"
+                clickId: "media/camera"
             }
             ListElement {
                 title: qsTr("Internet")
                 subtitle: qsTr("Go and surf the web")
                 itemDisabled: true
                 iconSource: "MediaIconInternet.qml"
-                clickId: "web"
+                clickId: "media/web"
             }
         }
     }

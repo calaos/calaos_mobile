@@ -80,7 +80,7 @@ Item {
             width: lst.cellWidth;
 
             property string roomIconType: roomType
-            onRoomIconTypeChanged: roomIcon.source = qsTr("qrc:/img/rooms/%1/%1_medium.png").arg(Calaos.getRoomTypeIcon(roomIconType))
+            onRoomIconTypeChanged: roomIcon.source = "qrc:/img/rooms/%1/%1_medium.png".arg(Calaos.getRoomTypeIcon(roomIconType))
 
             Image {
                 id: roomIcon

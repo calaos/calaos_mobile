@@ -57,6 +57,12 @@ Item {
                         iconItem: "qrc:/img/icon_item_screensaver.png"
                         clickId: "config/screen"
                     }
+                    ListElement {
+                        titleItem: qsTr("Localization")
+                        subtitleItem: qsTr("Language settings")
+                        iconItem: "qrc:/img/icon_config_l18n.png"
+                        clickId: "config/l18n"
+                    }
                 }
 
                 anchors {
@@ -66,6 +72,9 @@ Item {
                     leftMargin: Units.dp(5)
                     rightMargin: Units.dp(5)
                 }
+
+                cellHeight: Units.dp(147)
+                cellWidth: Units.dp(190)
 
                 delegate: ConfigItem {
                     title: titleItem

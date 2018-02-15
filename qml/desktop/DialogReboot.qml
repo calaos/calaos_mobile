@@ -19,12 +19,12 @@ Dialog {
 
     CalaosRadio {
         id: rebootRadio
-        text: "Reboot machine"
+        text: qsTr("Reboot machine")
         checked: true
         exclusiveGroup: optionGroup
     }
     CalaosRadio {
-        text: "Restart application"
+        text: qsTr("Restart application")
         exclusiveGroup: optionGroup
     }
 }

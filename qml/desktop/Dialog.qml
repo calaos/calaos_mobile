@@ -40,8 +40,8 @@ PopupBase {
      */
     property alias positiveButton: positiveButton
 
-    property string negativeButtonText: "Cancel"
-    property string positiveButtonText: "Ok"
+    property string negativeButtonText: qsTr("Cancel")
+    property string positiveButtonText: qsTr("Ok")
     property alias positiveButtonEnabled: positiveButton.enabled
 
     property bool hasActions: true

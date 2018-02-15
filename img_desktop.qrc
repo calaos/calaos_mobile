@@ -277,5 +277,6 @@
         <file>img/player_line_decoration_right.png</file>
         <file>img/config_item.png</file>
         <file>img/config_item_select.png</file>
+        <file>img/icon_config_l18n.png</file>
     </qresource>
 </RCC>

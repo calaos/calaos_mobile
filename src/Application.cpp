@@ -41,6 +41,8 @@ void Application::createQmlApp()
 {
     loadSettings();
 
+    setupLanguage();
+
     engine.addImportPath("qrc:/qml/");
 
     connect(HardwareUtils::Instance(), SIGNAL(networkStatusChanged()),
@@ -142,6 +144,8 @@ void Application::createQmlApp()
     engine.rootContext()->setContextProperty("favoritesHomeModel", favHomeModel);
     cameraModel = new CameraModel(&engine, calaosConnect);
     engine.rootContext()->setContextProperty("cameraModel", cameraModel);
+    langModel = new LangModel(&engine, this);
+    engine.rootContext()->setContextProperty("langModel", langModel);
 
     m_netAddresses = new QQmlObjectListModel<NetworkInfo>(this);
 
@@ -446,4 +450,50 @@ void Application::sysInfoTimerSlot()
 {
     update_cpuUsage(Machine::getCpuUsage());
     update_memoryUsage(Machine::getMemoryUsage());
+}
+
+void Application::setupLanguage()
+{
+    QString locale;
+    {
+        QString lang = HardwareUtils::Instance()->getConfigOption("lang");
+        if (lang != "")
+        {
+            //set language from config
+            locale = lang;
+        }
+        else
+        {
+            //set default system language
+            locale = QLocale::system().name().section('_', 0, 0);
+            qDebug() << "System locale: " << QLocale::system();
+        }
+    }
+
+    delete translator;
+    translator = new QTranslator(this);
+
+    //Set language
+    QString langfile = QString(":/lang/calaos_%1.qm").arg(locale);
+    qInfo() << "Trying to set language: " << langfile;
+    if (QFile::exists(langfile))
+    {
+        if (!translator->load(langfile))
+            qCritical() << "Failed to load " << langfile;
+
+        if (!installTranslator(translator))
+            qCritical() << "Failed to install " << langfile;
+        else
+            qDebug() << "Translator installed";
+    }
+
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
+    engine.retranslate();
+#endif
+}
+
+void Application::setLanguage(QString code)
+{
+    HardwareUtils::Instance()->setConfigOption("lang", code);
+    setupLanguage();
 }

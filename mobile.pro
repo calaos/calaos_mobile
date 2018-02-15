@@ -9,6 +9,7 @@ TARGET=CalaosHome
 QT += qml quick network gui websockets svg
 
 include(calaos.pri)
+include(lang/lang.pri)
 
 android {
     QT += androidextras
@@ -55,7 +56,8 @@ android {
 RESOURCES += qml_mobile.qrc \
     img_mobile.qrc \
     fonts_mobile.qrc \
-    qml_shared.qrc
+    qml_shared.qrc \
+    lang.qrc
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =

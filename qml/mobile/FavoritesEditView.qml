@@ -198,7 +198,7 @@ Item {
             id: txt
             color: "#e7e7e7"
             font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
-            text: "Item removed from favorites"
+            text: qsTr("Item removed from favorites")
             clip: true
             elide: Text.ElideMiddle
             anchors.centerIn: parent

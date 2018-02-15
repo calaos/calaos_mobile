@@ -1,6 +1,7 @@
 import QtQuick 2.0
 import QtQuick.Controls 1.2
 import SharedComponents 1.0
+import QtQuick.Controls 1.3 as QuickControls
 
 Item {
 
@@ -69,6 +70,34 @@ Item {
                     height: parent.height
                     anchors.horizontalCenter: parent.horizontalCenter
                     onButtonClicked: favoriteEditClicked()
+                }
+            }
+
+            ListGroupHeader { width: listFlick.width; title: qsTr("Language:") }
+
+            QuickControls.ExclusiveGroup {
+                id: optionGroup
+            }
+
+            Repeater {
+                model: langModel
+
+                CalaosRadio {
+                    property variant langItemModel
+
+                    Component.onCompleted: {
+                        langItemModel = Qt.binding(function() { return langModel.getLangModel(model.index) })
+                        checked = langItemModel.langActive
+                    }
+
+                    text: langItemModel.langName
+                    exclusiveGroup: optionGroup
+                    onCheckedChanged: {
+                        langItemModel.langActive = checked
+                        if (checked) {
+                            calaosApp.setLanguage(langItemModel.langCode)
+                        }
+                    }
                 }
             }
 

@@ -27,6 +27,7 @@
 #include "Machine.h"
 #include "QQmlObjectListModel.h"
 #include "QQmlVariantListModel.h"
+#include "Lang.h"
 
 class Application : public QAPP
 {
@@ -79,6 +80,8 @@ public:
 
     QQmlApplicationEngine *getEngine() { return &engine; }
 
+    Q_INVOKABLE void setLanguage(QString code);
+
 private slots:
     void homeLoaded(const QVariantMap &homeData);
     void loginFailed();
@@ -97,6 +100,7 @@ private:
     HomeFavModel *favHomeModel;
     LightOnModel *lightOnModel;
     CameraModel *cameraModel;
+    LangModel *langModel;
 
     QVariantList favoritesList;
 
@@ -104,9 +108,12 @@ private:
 
     bool startedWithOptHandled = false;
 
+    QTranslator *translator = nullptr;
+
     void loadSettings();
     void saveSettings();
 
+    void setupLanguage();
 };
 
 #endif // APPLICATION_H

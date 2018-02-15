@@ -18,7 +18,7 @@ Rectangle {
     color: "#303030"
 
     Image {
-        source: qsTr("qrc:/img/button_%1.png").arg(iconName)
+        source: "qrc:/img/button_%1.png".arg(iconName)
         anchors.fill: parent
         opacity: disabled?0:1.0
     }
@@ -49,7 +49,7 @@ Rectangle {
     }
 
     Image {
-        source: qsTr("qrc:/img/button_%1_glow.png").arg(iconName)
+        source: "qrc:/img/button_%1_glow.png".arg(iconName)
         anchors.fill: parent
         opacity: selected && !disabled?1.0:0.0
 
@@ -57,7 +57,7 @@ Rectangle {
     }
 
     Image {
-        source: qsTr("qrc:/img/button_%1_bloom.png").arg(iconName)
+        source: "qrc:/img/button_%1_bloom.png".arg(iconName)
         anchors.fill: parent
         opacity: 0
 

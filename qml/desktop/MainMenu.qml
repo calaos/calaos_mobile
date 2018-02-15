@@ -171,7 +171,7 @@ Item {
                 }
 
                 property string dpmsText: screenManager.dpmsEnabled?
-                                              "Auto: %1".arg(Utils.timeToString(screenManager.dpmsTime / 1000)):
+                                              qsTr("Auto: %1").arg(Utils.timeToString(screenManager.dpmsTime / 1000)):
                                               qsTr("Auto: off")
                 onDpmsTextChanged: setProperty(2, "moreText", dpmsText)
             }

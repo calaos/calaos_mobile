@@ -37,7 +37,7 @@ MouseArea {
             verticalCenter: ico.verticalCenter
             right: parent.right; rightMargin: Units.dp(5)
         }
-        text: camConnected?camModel.name:"No camera"
+        text: camConnected?camModel.name:qsTr("No camera")
     }
 
     Image {

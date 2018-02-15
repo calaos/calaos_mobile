@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>lang/calaos_de.qm</file>
+        <file>lang/calaos_fr.qm</file>
+    </qresource>
+</RCC>

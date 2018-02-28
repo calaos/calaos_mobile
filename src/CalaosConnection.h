@@ -24,6 +24,10 @@ public:
     bool isWebsocket() { return wsocket && constate == ConStateWebsocket; }
     bool isHttp() { return constate == ConStateHttp; }
 
+    void sendJson(QString action, QJsonObject &jsonData);
+
+    QString getNotifPictureUrl(const QString &pic_uid);
+
 private:
     QNetworkAccessManager *accessManager;
 
@@ -84,6 +88,7 @@ signals:
     void cameraPictureDownloaded(const QString &camid, const QByteArray data);
     void cameraPictureFailed(const QString &camid);
     void eventTouchscreenCamera(QString camid);
+    void logEventLoaded(const QVariantMap &data);
 
 public slots:
     void login(QString user, QString pass, QString host);

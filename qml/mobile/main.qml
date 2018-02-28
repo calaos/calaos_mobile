@@ -3,6 +3,8 @@ import QtQuick.Window 2.1
 import QtQuick.Controls 1.2
 import Calaos 1.0
 import SharedComponents 1.0
+import "../quickflux"
+import QuickFlux 1.0
 
 Window {
     id: rootWindow
@@ -232,6 +234,28 @@ Window {
         }
     }
 
+    Component {
+        id: eventLogView
+
+        EventLogView {
+            width: parent.width
+            height: parent.height - menuBar.height
+        }
+    }
+
+    property string pushEventText
+    property string pushEventPicUrl
+    property string pushEventUuid
+    Component {
+        id: pushEventView
+
+        PushEventView {
+            event_message: pushEventText
+            event_picurl: pushEventPicUrl
+            event_uuid: pushEventUuid
+        }
+    }
+
     function openColorPicker(item, cb) {
         menuBar.menuType = Common.MenuBack
         itemColorCallback = function(c) {
@@ -311,5 +335,36 @@ Window {
                 NumberAnimation { properties: "opacity,anchors.bottomMargin"; easing.type: Easing.InExpo; duration: 500 }
             }
         ]
+    }
+
+    //Dispatch actions
+    AppListener {
+        Filter {
+            type: ActionTypes.openEventLog
+            onDispatched: {
+                stackView.push(eventLogView)
+            }
+        }
+
+        Filter {
+            type: ActionTypes.openEventPushViewer
+            onDispatched: {
+                pushEventText = message.notifText
+                pushEventPicUrl = message.notifUrl
+                pushEventUuid = ""
+                stackView.push(pushEventView)
+            }
+        }
+
+        Filter {
+            type: ActionTypes.openEventPushViewerUuid
+            onDispatched: {
+                pushEventText = ""
+                pushEventPicUrl = ""
+                pushEventUuid = message.notifUuid
+                stackView.push(pushEventView)
+                menuBar.menuType = Common.MenuBack
+            }
+        }
     }
 }

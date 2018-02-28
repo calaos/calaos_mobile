@@ -140,7 +140,6 @@ void CalaosConnection::onWsConnected()
 
     connect(wsocket, &QWebSocket::pong, [=](quint64 elapsedTime, const QByteArray &payload)
     {
-        qDebug() << "recv PONG";
         if (elapsedTime > 1000)
             qWarning() << "Websocket PING/PONG took " << elapsedTime << "ms. Is your network slow?";
         if (payload != "calaos_ping")
@@ -153,7 +152,6 @@ void CalaosConnection::onWsConnected()
     wsPing = new QTimer(this);
     connect(wsPing, &QTimer::timeout, [=]()
     {
-        qDebug() << "Sending PING";
         wsocket->ping("calaos_ping");
     });
     wsPing->start(5 * 1000); //every 5s send a ping to calaos_server
@@ -303,6 +301,12 @@ void CalaosConnection::requestFinished()
         emit eventAudioStateChange(jroot);
     }
 
+    if (jroot.contains("events") &&
+        jroot.contains("total_page"))
+    {
+        emit logEventLoaded(jroot["data"].toMap());
+    }
+
     if (isHttpApiV2())
     {
         if (jroot.contains("inputs") &&
@@ -427,6 +431,14 @@ void CalaosConnection::sendCommand(QString id, QString value, QString type, QStr
         sendWebsocket(action, jroot, "user_cmd");
     else
         sendHttp(action, jroot);
+}
+
+void CalaosConnection::sendJson(QString action, QJsonObject &jsonData)
+{
+    if (isWebsocket())
+        sendWebsocket(action, jsonData, "user_cmd_json");
+    else
+        sendHttp(action, jsonData);
 }
 
 void CalaosConnection::queryState(QStringList inputs, QStringList outputs, QStringList audio_players)
@@ -621,7 +633,7 @@ void CalaosConnection::processEventsV2(QString msg)
 
 void CalaosConnection::processEventsV3(QVariantMap msg)
 {
-    qDebug().noquote() << "Received: " << msg["event_raw"];
+//    qDebug().noquote() << "Received: " << msg["event_raw"];
 
     QVariantMap data = msg["data"].toMap();
     if (msg["type_str"].toString() == "io_changed")
@@ -671,7 +683,7 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
     QJsonObject jroot = jdoc.object();
     QJsonObject jdata = jroot["data"].toObject();
 
-    qDebug() << "RECV:" << message;
+//    qDebug() << "RECV:" << message;
 
     if (jroot["msg"] == "login")
     {
@@ -710,10 +722,23 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
             }
         }
     }
+    else if (jroot["msg"] == "eventlog")
+    {
+        emit logEventLoaded(jroot["data"].toObject().toVariantMap());
+    }
 
     //We get this marker when calling sendCommand(...) it helps disabling the net indicator
     if (jroot["msg_id"] == "user_cmd")
     {
         HardwareUtils::Instance()->showNetworkActivity(false);
     }
+}
+
+QString CalaosConnection::getNotifPictureUrl(const QString &pic_uid)
+{
+    return QStringLiteral("%1?cn_user=%2&cn_pass=%3&action=event_picture&pic_uid=%4")
+            .arg(httphost)
+            .arg(username)
+            .arg(password)
+            .arg(pic_uid);
 }

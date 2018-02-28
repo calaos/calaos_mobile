@@ -9,6 +9,7 @@
 #include <QtAndroidExtras/QAndroidJniObject>
 #endif
 #include <QProcess>
+#include <qfappdispatcher.h>
 
 #ifdef CALAOS_DESKTOP
 #include "CalaosWidgetModel.h"
@@ -146,6 +147,8 @@ void Application::createQmlApp()
     engine.rootContext()->setContextProperty("cameraModel", cameraModel);
     langModel = new LangModel(&engine, this);
     engine.rootContext()->setContextProperty("langModel", langModel);
+    eventLogModel = new EventLogModel(&engine, calaosConnect, this);
+    engine.rootContext()->setContextProperty("eventLogModel", eventLogModel);
 
     m_netAddresses = new QQmlObjectListModel<NetworkInfo>(this);
 
@@ -244,6 +247,7 @@ void Application::homeLoaded(const QVariantMap &homeData)
     audioModel->load(homeData);
     favHomeModel->load(homeData);
     cameraModel->load(homeData);
+    eventLogModel->load();
     update_applicationStatus(Common::LoggedIn);
 
     favModel->load(favoritesList);
@@ -264,6 +268,17 @@ void Application::homeLoaded(const QVariantMap &homeData)
                 qDebug() << "Unable to start scenario " << io << " reason: not found";
             else
                 iosc->sendTrue(); //Start scenario
+        }
+
+        if (HardwareUtils::Instance()->hasStartedWithNotif())
+        {
+            //If app has been started with notification option, it should open it
+            QTimer::singleShot(400, [=]()
+            {
+                QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(&engine);
+                QVariantMap m = {{ "notifUuid", HardwareUtils::Instance()->getNotifUuid() }};
+                appDispatcher->dispatch("openEventPushViewerUuid", m);
+            });
         }
     }
 
@@ -454,37 +469,42 @@ void Application::sysInfoTimerSlot()
 
 void Application::setupLanguage()
 {
-    QString locale;
+    QStringList uiLanguages;
+    uiLanguages = QLocale::system().uiLanguages();
+
+    QString lang = HardwareUtils::Instance()->getConfigOption("lang");
+    if (lang != "")
     {
-        QString lang = HardwareUtils::Instance()->getConfigOption("lang");
-        if (lang != "")
-        {
-            //set language from config
-            locale = lang;
-        }
-        else
-        {
-            //set default system language
-            locale = QLocale::system().name().section('_', 0, 0);
-            qDebug() << "System locale: " << QLocale::system();
-        }
+        //set language from config
+        uiLanguages.prepend(lang);
     }
 
-    delete translator;
-    translator = new QTranslator(this);
+    QTranslator translator;
 
-    //Set language
-    QString langfile = QString(":/lang/calaos_%1.qm").arg(locale);
-    qInfo() << "Trying to set language: " << langfile;
-    if (QFile::exists(langfile))
+    foreach (QString locale, uiLanguages)
     {
-        if (!translator->load(langfile))
-            qCritical() << "Failed to load " << langfile;
+        //Set language
+        QString langfile = QString(":/lang/calaos_%1.qm").arg(locale);
+        qInfo() << "Trying to set language: " << langfile;
 
-        if (!installTranslator(translator))
-            qCritical() << "Failed to install " << langfile;
-        else
-            qDebug() << "Translator installed";
+        if (translator.load(langfile))
+        {
+            if (!installTranslator(&translator))
+                qCritical() << "Failed to install " << langfile;
+            else
+            {
+                qDebug() << "Translator installed";
+                break;
+            }
+
+            translator.load(QString()); // unload()
+        }
+        else if (locale == QStringLiteral("C") ||
+                 locale == QStringLiteral("en"))
+        {
+            //use built-in
+            break;
+        }
     }
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))

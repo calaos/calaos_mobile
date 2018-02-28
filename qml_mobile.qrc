@@ -28,5 +28,10 @@
         <file>qml/mobile/CalaosTextField.qml</file>
         <file>qml/mobile/ColorPickerView.qml</file>
         <file>qml/mobile/ColorPickerRGBView.qml</file>
+        <file>qml/mobile/EventLogView.qml</file>
+        <file>qml/quickflux/ActionTypes.qml</file>
+        <file>qml/quickflux/AppActions.qml</file>
+        <file>qml/quickflux/qmldir</file>
+        <file>qml/mobile/PushEventView.qml</file>
     </qresource>
 </RCC>

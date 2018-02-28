@@ -15,6 +15,9 @@ protected:
     bool startedWithOpt = false;
     QQmlApplicationEngine *qmlEngine = nullptr;
 
+    //Device unique id used for push notifications
+    QString deviceToken;
+
 public:
     static HardwareUtils *Instance(QObject *parent = NULL);
 
@@ -50,6 +53,8 @@ public:
     virtual QString getStartOption(const QString &key) { Q_UNUSED(key); return QString(); }
 
     virtual void setQuickLinks(QVariantList quicklinks) { Q_UNUSED(quicklinks); }
+
+    QString getDeviceToken() { return deviceToken; }
 
     //This is used by private classes
     void emitNetworkStatusChanged();

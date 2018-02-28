@@ -165,6 +165,25 @@ void CalaosConnection::onWsConnected()
         logout();
     });
     wsPingTimeout->start(20 * 1000); //20s timeout
+    
+    QTimer::singleShot(100, [=]()
+    {
+        if (!wsocket) return;
+        if (HardwareUtils::Instance()->getDeviceToken().isEmpty()) return;
+        
+#if defined(Q_OS_ANDROID)
+        QString hw = QStringLiteral("android");
+#elif defined(Q_OS_IOS)
+        QString hw = QStringLiteral("ios");
+#else
+        QString hw;
+#endif
+
+        //Send the push device token to register the mobile device to calaos_server for push notif
+        sendWebsocket(QStringLiteral("register_push"),
+                      {{ "token", HardwareUtils::Instance()->getDeviceToken() },
+                       { "hardware", hw }});
+    });
 }
 
 void CalaosConnection::onWsDisconnected()
@@ -252,6 +271,24 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
     //Connection success
     constate = ConStateHttp;
     QVariantMap jroot = jdoc.object().toVariantMap();
+    
+    if (!HardwareUtils::Instance()->getDeviceToken().isEmpty())
+    {
+#if defined(Q_OS_ANDROID)
+        QString hw = QStringLiteral("android");
+#elif defined(Q_OS_IOS)
+        QString hw = QStringLiteral("ios");
+#else
+        QString hw;
+#endif
+
+        //Send the push device token to register the mobile device to calaos_server for push notif
+        QJsonObject o = {
+            { "token", HardwareUtils::Instance()->getDeviceToken() },
+            { "hardware", hw }
+        };
+        sendHttp(QStringLiteral("register_push"), o);
+    }
 
     //start polling
     startJsonPolling();

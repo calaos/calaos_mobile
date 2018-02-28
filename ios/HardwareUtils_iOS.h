@@ -25,6 +25,8 @@ public:
     virtual int getNetworkStatus();
 
     virtual void showNetworkActivity(bool en);
+    
+    virtual void setConfigOption(QString key, QString value);
 
     virtual void saveAuthKeychain(const QString &email, const QString &pass);
     virtual void loadAuthKeychain(QString &email, QString &pass);
@@ -37,6 +39,8 @@ public:
 
     void handleApplicationDidFinishLaunching(void *notif);
     void handlePerformActionForShortcutItem(void *shortcut);
+    void handleRegisterNotif(void *data);
+    void handleRegisterNotifFail(void *err);
 };
 
 #endif // HARDWAREUTILS_IOS_H

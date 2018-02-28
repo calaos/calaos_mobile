@@ -26,6 +26,22 @@ android {
     QMAKE_INFO_PLIST = ios/AppInfo.plist
     QMAKE_ASSET_CATALOGS = $$PWD/ios/ressources.xcassets
 
+    #Force bundleIdentifier (PRODUCT_BUNDLE_IDENTIFIER) to be fr.calaos.CalaosMobile
+    CALAOS_BUNDLE.value = fr.calaos.CalaosMobile
+    CALAOS_BUNDLE.name = PRODUCT_BUNDLE_IDENTIFIER
+    QMAKE_MAC_XCODE_SETTINGS += CALAOS_BUNDLE
+
+    CALAOSDEVELOPMENT_TEAM.value = 9WYC46992U
+    CALAOSDEVELOPMENT_TEAM.name = DEVELOPMENT_TEAM
+    QMAKE_MAC_XCODE_SETTINGS += CALAOSDEVELOPMENT_TEAM
+
+    PUSH_ENTITLEMENTS.name = CODE_SIGN_ENTITLEMENTS
+    PUSH_ENTITLEMENTS.value = $$PWD/ios/pushnotifications.entitlements
+    QMAKE_MAC_XCODE_SETTINGS += PUSH_ENTITLEMENTS
+
+    #Add framework for Reachability
+    LIBS += -framework SystemConfiguration
+
     HEADERS += ios/HardwareUtils_iOS.h
     OBJECTIVE_SOURCES += ios/HardwareUtils.mm \
         ios/Reachability.h \
@@ -48,7 +64,8 @@ android {
         ios/Icon-Small@2x.png \
         ios/Icon.png \
         ios/Icon@2x.png \
-        ios/AppInfo.plist
+        ios/AppInfo.plist \
+        ios/pushnotifications.entitlements
 } else {
     QT += widgets
 }

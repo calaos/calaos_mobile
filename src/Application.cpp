@@ -356,6 +356,7 @@ void Application::saveSettings()
 
     HardwareUtils::Instance()->saveAuthKeychain(get_username(), get_password());
     settings.setValue("calaos/host", get_hostname());
+    HardwareUtils::Instance()->setConfigOption("calaos/host", get_hostname());
 
     //Do not save a wrong or empty model
     if (favModel->isLoaded())

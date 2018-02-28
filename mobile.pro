@@ -46,8 +46,11 @@ android {
     OBJECTIVE_SOURCES += ios/HardwareUtils.mm \
         ios/Reachability.h \
         ios/Reachability.m \
-        ios/KeychainItemWrapper.h \
-        ios/KeychainItemWrapper.m \
+        ios/SimpleKeychain/A0SimpleKeychain+KeyPair.h \
+        ios/SimpleKeychain/A0SimpleKeychain+KeyPair.m \
+        ios/SimpleKeychain/A0SimpleKeychain.h \
+        ios/SimpleKeychain/A0SimpleKeychain.m \
+        ios/SimpleKeychain/SimpleKeychain.h \
         ios/AlertPrompt.h \
         ios/AlertPrompt.m
 

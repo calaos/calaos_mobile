@@ -3,7 +3,8 @@ import "."
 
 Item {
 
-    property string imageSource
+    property string imageSource: "button_empty"
+    property string iconSource: ""
 
     signal buttonClicked()
 
@@ -18,6 +19,15 @@ Item {
         anchors.fill: parent
 
         fillMode: Image.PreserveAspectFit
+
+        Image {
+            id: imgIcon
+
+            source: calaosApp.getPictureSized(iconSource)
+            anchors.centerIn: parent
+            fillMode: Image.PreserveAspectFit
+            visible: iconSource != ""
+        }
 
         MouseArea {
             anchors.fill: parent

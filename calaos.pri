@@ -24,7 +24,8 @@ SOURCES += src/main.cpp \
     src/CameraModel.cpp \
     $$PWD/src/RoomFilterModel.cpp \
     $$PWD/src/Machine.cpp \
-    $$PWD/src/Lang.cpp
+    $$PWD/src/Lang.cpp \
+    $$PWD/src/EventLogModel.cpp
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH = qml
@@ -42,7 +43,8 @@ HEADERS += \
     $$PWD/src/RoomFilterModel.h \
     $$PWD/src/Machine.h \
     $$PWD/src/qqmlhelpers.h \
-    $$PWD/src/Lang.h
+    $$PWD/src/Lang.h \
+    $$PWD/src/EventLogModel.h
 
 win32 {
 LIBS += -liphlpapi

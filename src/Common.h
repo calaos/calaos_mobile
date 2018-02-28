@@ -82,6 +82,13 @@ public:
     };
     Q_ENUMS(FilterModelType)
 
+    enum EventType {
+        EventUnknown = 0,
+        EventIoChanged = 3,
+        EventPush = 22,
+    };
+    Q_ENUMS(EventType)
+
     static QString IOTypeToString(IOType t);
     static IOType IOTypeFromString(QString t);
     static QString audioStatusToString(AudioStatusType t);

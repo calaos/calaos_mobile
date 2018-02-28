@@ -172,5 +172,14 @@
         <file>img/button_action_glow@2x.png</file>
         <file>img/player_line_decoration_left.png</file>
         <file>img/player_line_decoration_right.png</file>
+        <file>img/history.png</file>
+        <file>img/history@2x.png</file>
+        <file>img/icon_camera_title@2x.png</file>
+        <file>img/icon_date.png</file>
+        <file>img/icon_date@2x.png</file>
+        <file>img/icon_camera_title.png</file>
+        <file>img/icon_notif.png</file>
+        <file>img/icon_notif@2x.png</file>
+        <file>img/spinner.svg</file>
     </qresource>
 </RCC>

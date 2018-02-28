@@ -41,4 +41,19 @@ QtObject {
     function openCameraSingleView(model) {
         AppDispatcher.dispatch(ActionTypes.openCameraSingleView, { camModel: model });
     }
+	
+	function openEventLog() {
+		AppDispatcher.dispatch(ActionTypes.openEventLog);
+	}
+
+    function openEventPushViewer(text, picurl) {
+        AppDispatcher.dispatch(ActionTypes.openEventPushViewer,
+                               { notifText: text,
+                                 notifUrl: picurl });
+    }
+
+    function openEventPushViewerUuid(uuid) {
+        AppDispatcher.dispatch(ActionTypes.openEventPushViewer,
+                               { notifUuid: uuid });
+    }
 }

@@ -28,6 +28,7 @@
 #include "QQmlObjectListModel.h"
 #include "QQmlVariantListModel.h"
 #include "Lang.h"
+#include "EventLogModel.h"
 
 class Application : public QAPP
 {
@@ -101,14 +102,13 @@ private:
     LightOnModel *lightOnModel;
     CameraModel *cameraModel;
     LangModel *langModel;
+    EventLogModel *eventLogModel;
 
     QVariantList favoritesList;
 
     QTimer *sysInfoTimer = nullptr;
 
     bool startedWithOptHandled = false;
-
-    QTranslator *translator = nullptr;
 
     void loadSettings();
     void saveSettings();

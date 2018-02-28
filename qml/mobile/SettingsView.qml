@@ -2,6 +2,7 @@ import QtQuick 2.0
 import QtQuick.Controls 1.2
 import SharedComponents 1.0
 import QtQuick.Controls 1.3 as QuickControls
+import "../quickflux"
 
 Item {
 
@@ -22,6 +23,19 @@ Item {
         Column {
             id: content
             spacing: 6
+
+            ListGroupHeader { width: listFlick.width; title: qsTr("Event log:") }
+            Item {
+                width: listFlick.width;
+                height: 40 * calaosApp.density
+                CalaosItemBase {
+                    text: qsTr("Show log")
+                    width: 200 * calaosApp.density
+                    height: parent.height
+                    onButtonClicked: AppActions.openEventLog()
+                    anchors.horizontalCenter: parent.horizontalCenter
+                }
+            }
 
             ListGroupHeader { width: listFlick.width; title: qsTr("Connection:") }
             Item {

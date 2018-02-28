@@ -6,6 +6,7 @@ KeyTable {
 
     // KeyTable is an object with properties equal to its key name
 
+	// Desktop actions
     property string clickHomeboardItem;
 
     property string hideHomeboardMenu;
@@ -18,5 +19,10 @@ KeyTable {
     property string suspendScreen
 
     property string openCameraSingleView
+	
+	//Mobile actions
+	property string openEventLog
+    property string openEventPushViewer
+    property string openEventPushViewerUuid
 }
 

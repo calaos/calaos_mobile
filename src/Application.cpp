@@ -247,7 +247,7 @@ void Application::homeLoaded(const QVariantMap &homeData)
     audioModel->load(homeData);
     favHomeModel->load(homeData);
     cameraModel->load(homeData);
-    eventLogModel->load();
+    eventLogModel->refresh();
     update_applicationStatus(Common::LoggedIn);
 
     favModel->load(favoritesList);
@@ -305,6 +305,7 @@ void Application::loginFailed()
     favHomeModel->clear();
     lightOnModel->clear();
     cameraModel->clear();
+    eventLogModel->clear();
 
     if (m_applicationStatus == Common::NotConnected)
         return;

@@ -37,6 +37,7 @@ public:
     Q_INVOKABLE void load(int page = 0, int per_page = DEFAULT_PER_PAGE);
 
     Q_INVOKABLE void loadMore();
+    Q_INVOKABLE void refresh();
 
     Q_INVOKABLE QObject *loadEvent(QString uuid);
 
@@ -48,6 +49,7 @@ private:
     CalaosConnection *connection;
 
     bool loading = false;
+    bool needClear = false;
 };
 
 class EventLogItem: public QObject, public QStandardItem

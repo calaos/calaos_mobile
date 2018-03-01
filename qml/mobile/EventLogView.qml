@@ -35,6 +35,14 @@ Item {
             if (listViewLog.atYEnd)
                 eventLogModel.loadMore()
         }
+
+        onDragEnded: if (pullHeader.refresh) { eventLogModel.refresh() }
+
+        PullRefreshHeader {
+            id: pullHeader
+            listview: listViewLog
+            y: -listViewLog.contentY - height
+        }
     }
 
     Text {
@@ -55,6 +63,21 @@ Item {
         id: header
         headerLabel: qsTr("Event log")
         iconSource: calaosApp.getPictureSized("history")
+
+        ItemButtonAction {
+            iconSource: "icon_filter"
+
+            anchors {
+                verticalCenter: parent.verticalCenter
+                right: parent.right
+                rightMargin: Units.dp(10)
+            }
+
+            //onButtonClicked: AppActions.openEventPushViewer(evNotifText, evPictureUrl)
+
+//            visible: listViewLog.count > 0
+            visible: false
+        }
     }
 
     Component {

@@ -181,5 +181,8 @@
         <file>img/icon_notif.png</file>
         <file>img/icon_notif@2x.png</file>
         <file>img/spinner.svg</file>
+        <file>img/icon_filter.png</file>
+        <file>img/icon_filter@2x.png</file>
+        <file>img/down_arrow.svg</file>
     </qresource>
 </RCC>

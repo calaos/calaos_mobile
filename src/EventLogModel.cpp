@@ -53,6 +53,10 @@ void EventLogModel::logEventLoaded(const QVariantMap &data)
     if (!data.contains("events"))
         return;
 
+    if (needClear)
+        clear();
+    needClear = false;
+
     QVariantList events = data["events"].toList();
     for (int i = 0;i < events.count();i++)
     {
@@ -70,6 +74,15 @@ QObject *EventLogModel::loadEvent(QString uuid)
     EventLogItem *it = new EventLogItem(engine, connection);
     it->load(uuid);
     return it;
+}
+
+void EventLogModel::refresh()
+{
+    qDebug() << "refresh...";
+    if (loading) return;
+
+    needClear = true;
+    load();
 }
 
 EventLogItem::EventLogItem(QQmlApplicationEngine *eng, CalaosConnection *con):

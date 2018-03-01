@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="60"
+   height="60"
+   viewBox="0 0 15.875 15.875"
+   version="1.1"
+   id="svg2769"
+   inkscape:version="0.92.2 (5c3e80d, 2017-08-06)"
+   sodipodi:docname="down_arrow.svg">
+  <defs
+     id="defs2763" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="7.9195959"
+     inkscape:cx="7.9385475"
+     inkscape:cy="27.462155"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     units="px"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
+     inkscape:window-x="1272"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata2766">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-281.12499)">
+    <g
+       transform="matrix(0,0.26458333,-0.26458333,0,-26.909685,159.20161)"
+       inkscape:export-ydpi="101"
+       inkscape:export-xdpi="101"
+       inkscape:export-filename="/home/raoul/Domotique/calaos-svn/graphics/work/gui_mokups/elements/svg/mokups_utils/arrow_big_right.png"
+       id="g2749"
+       style="fill:#3ab4d7;fill-opacity:1;stroke:#3ab4d7;stroke-opacity:1">
+      <path
+         style="fill:#3ab4d7;fill-opacity:1;fill-rule:nonzero;stroke:#3ab4d7;stroke-opacity:1"
+         d="m 502.22258,-127.07429 -26.92034,-26.93994 c -0.45812,-0.45838 -0.41805,-1.23653 0.0898,-1.74469 l 3.64431,-3.64644 c 0.50789,-0.5082 1.28558,-0.54827 1.7437,-0.0898 l 26.92034,26.93998 c 0.45812,0.45838 0.41805,1.23649 -0.0898,1.74469 l -3.64431,3.64645 c -0.50789,0.50819 -1.28558,0.5483 -1.7437,0.0898 z"
+         id="path2743"
+         sodipodi:nodetypes="ccccccccc"
+         inkscape:connector-curvature="0" />
+      <path
+         sodipodi:nodetypes="ccccccccc"
+         id="path2745"
+         d="m 502.03121,-136.33755 -26.92035,26.93994 c -0.45812,0.45839 -0.41805,1.23654 0.0898,1.74473 l 3.64431,3.64645 c 0.50789,0.50819 1.28557,0.54827 1.74369,0.0898 l 26.92031,-26.93995 c 0.45812,-0.45838 0.41805,-1.23653 -0.0898,-1.74468 l -3.64431,-3.64649 c -0.50785,-0.50816 -1.28553,-0.54827 -1.74365,-0.0898 z"
+         style="fill:#3ab4d7;fill-opacity:1;fill-rule:nonzero;stroke:#3ab4d7;stroke-opacity:1"
+         inkscape:connector-curvature="0" />
+      <path
+         inkscape:export-ydpi="90"
+         inkscape:export-xdpi="90"
+         inkscape:export-filename="/home/fred/download/test_2.png"
+         style="fill:#3ab4d7;fill-opacity:1;fill-rule:nonzero;stroke:#3ab4d7;stroke-width:2.60315895;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         d="m 474.41076,-140.3564 v 17.301 l 9.10515,-8.65052 z"
+         id="path2747"
+         sodipodi:nodetypes="cccc"
+         inkscape:connector-curvature="0" />
+    </g>
+  </g>
+</svg>

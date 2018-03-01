@@ -89,6 +89,7 @@ private slots:
     void networkStatusChanged();
     void calaosServerDetected();
     void sysInfoTimerSlot();
+    void pushNotificationReceived(const QString &uuid);
 
 private:
     QQmlApplicationEngine engine;

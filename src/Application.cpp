@@ -227,6 +227,10 @@ void Application::login(QString user, QString pass, QString host)
 
 void Application::logout()
 {
+    disconnect(HardwareUtils::Instance(), &HardwareUtils::pushNotifReceived,
+               this, &Application::pushNotificationReceived);
+
+    HardwareUtils::Instance()->updateCalaosConnectState(false);
     calaosConnect->logout();
     update_applicationStatus(Common::NotConnected);
 }
@@ -293,6 +297,12 @@ void Application::homeLoaded(const QVariantMap &homeData)
         scenariosLinks.append(sc);
     }
     HardwareUtils::Instance()->setQuickLinks(scenariosLinks);
+
+    connect(HardwareUtils::Instance(), &HardwareUtils::pushNotifReceived,
+            this, &Application::pushNotificationReceived);
+
+    //We are now connected, tell HardwareUtils
+    HardwareUtils::Instance()->updateCalaosConnectState(true);
 }
 
 void Application::loginFailed()
@@ -518,4 +528,13 @@ void Application::setLanguage(QString code)
 {
     HardwareUtils::Instance()->setConfigOption("lang", code);
     setupLanguage();
+}
+
+void Application::pushNotificationReceived(const QString &uuid)
+{
+#ifndef CALAOS_DESKTOP
+    QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(&engine);
+    QVariantMap m = {{ "notifUuid", uuid }};
+    appDispatcher->dispatch("openEventPushViewerUuid", m);
+#endif
 }

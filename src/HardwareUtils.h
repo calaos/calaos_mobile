@@ -12,6 +12,8 @@ class HardwareUtils: public QObject
 protected:
     HardwareUtils(QObject *parent = 0);
 
+    bool appIsBackground = false;
+
     bool startedWithOpt = false;
     bool startedWithNotif = false;
     QString notifUuid;
@@ -19,6 +21,9 @@ protected:
 
     //Device unique id used for push notifications
     QString deviceToken;
+
+    //state of calaos connection (logged in/out)
+    bool calaosConnected = false;
 
 public:
     static HardwareUtils *Instance(QObject *parent = NULL);
@@ -63,12 +68,17 @@ public:
 
     QString getDeviceToken() { return deviceToken; }
 
+    //let the HardwareUtils class know about the connection state
+    void updateCalaosConnectState(bool connected) { calaosConnected = connected; }
+    bool isCalaosConnected() { return calaosConnected; }
+
     //This is used by private classes
     void emitNetworkStatusChanged();
     void emitApplicationActiveChanged(bool active);
     void emitDialogTextValid(const QString &s);
     void emitDialogCancel();
     void emitCalaosServerDetected();
+    void emitPushNotifReceived(const QString &uuid);
 
 signals:
     void networkStatusChanged();
@@ -80,6 +90,9 @@ signals:
 
     //emited when a calaos_server has been detected on the LAN
     void calaosServerDetected();
+
+    //emited when in foreground and a push notif has been received
+    void pushNotifReceived(const QString &uuid);
 };
 
 #endif // HARDWAREUTILS_H

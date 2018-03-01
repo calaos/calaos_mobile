@@ -1,15 +1,23 @@
 #import "HardwareUtils_iOS.h"
 #import <UIKit/UIKit.h>
+#import <UserNotifications/UserNotifications.h>
 #import "Reachability.h"
 #import "SimpleKeychain/A0SimpleKeychain.h"
 #import "SimpleKeychain/A0SimpleKeychain+KeyPair.h"
 #import "AlertPrompt.h"
 #import "../src/Common.h"
 
+#define SYSTEM_VERSION_GRATERTHAN_OR_EQUALTO(v)  ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] != NSOrderedAscending)
+
 // override QIOSApplicationDelegate to get
 // launch options via didFinishLaunchingWithOptions.
 // and performActionForShortcutItem
+
+// This is hidden, so we declare it here to hook into it
 @interface QIOSApplicationDelegate
+@end
+
+@interface QIOSApplicationDelegate: UIResponder <UIApplicationDelegate,UNUserNotificationCenterDelegate>
 @end
 
 @interface QIOSApplicationDelegate(AppDelegate)
@@ -22,14 +30,53 @@
     Q_UNUSED(application);
     Q_UNUSED(launchOptions);
 
-    // Register to receive notifications from the system
-    [application registerUserNotificationSettings:
-        [UIUserNotificationSettings settingsForTypes:(UIUserNotificationTypeSound |
-                                                      UIUserNotificationTypeAlert |
-                                                      UIUserNotificationTypeBadge)
-                                          categories:nil]];
+    // reset badge count
+    [UIApplication sharedApplication].applicationIconBadgeNumber = 0;
 
-    [application registerForRemoteNotifications];
+    // Register to receive notifications from the system
+    if (SYSTEM_VERSION_GRATERTHAN_OR_EQUALTO(@"10.0"))
+    {
+        UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+        center.delegate = self;
+        [center requestAuthorizationWithOptions:(UNAuthorizationOptionSound |
+                                                 UNAuthorizationOptionAlert |
+                                                 UNAuthorizationOptionBadge)
+                              completionHandler:^(BOOL granted, NSError * _Nullable error)
+        {
+            if (!error)
+            {
+                [[UIApplication sharedApplication] registerForRemoteNotifications];
+                NSLog(@"Push registration success.");
+            }
+            else
+            {
+                NSLog(@"Push registration FAILED" );
+                NSLog(@"ERROR: %@ - %@", error.localizedFailureReason, error.localizedDescription);
+                NSLog(@"SUGGESTIONS: %@ - %@", error.localizedRecoveryOptions, error.localizedRecoverySuggestion);
+            }
+        }];
+    }
+    else
+    {
+        if ([application respondsToSelector:@selector(isRegisteredForRemoteNotifications)])
+        {
+            //iOS 8
+            [application registerUserNotificationSettings:
+                [UIUserNotificationSettings settingsForTypes:(UIUserNotificationTypeSound |
+                                                              UIUserNotificationTypeAlert |
+                                                              UIUserNotificationTypeBadge)
+                                                  categories:nil]];
+            [application registerForRemoteNotifications];
+        }
+        else
+        {
+            //iOS 7
+            UIUserNotificationType nTypes = UIUserNotificationTypeBadge |
+                                            UIRemoteNotificationTypeAlert |
+                                            UIRemoteNotificationTypeSound;
+            [application registerForRemoteNotificationTypes:nTypes];
+        }
+    }
 
 //    HardwareUtils_iOS *o = (HardwareUtils_iOS *)HardwareUtils::Instance();
 //    o->handleApplicationDidFinishLaunching(launchOptions);
@@ -44,6 +91,13 @@
 
     HardwareUtils_iOS *o = dynamic_cast<HardwareUtils_iOS *>(HardwareUtils::Instance());
     o->handlePerformActionForShortcutItem(shortcutItem);
+}
+
+#pragma mark - Remote Notification Delegate // <= iOS 9.x
+
+- (void)application:(UIApplication*)application didRegisterUserNotificationSettings:(UIUserNotificationSettings *)notificationSettings
+{
+    [application registerForRemoteNotifications];
 }
 
 - (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken
@@ -65,6 +119,54 @@
 
     NSLog(@"Did Fail to Register for Remote Notifications");
     NSLog(@"%@, %@", error, error.localizedDescription);
+}
+
+- (void)application:(UIApplication *)application didReceiveRemoteNotification:(nonnull NSDictionary *)userInfo fetchCompletionHandler:(nonnull void (^)(UIBackgroundFetchResult))completionHandler
+{
+    NSLog(@"Push Notification Information : %@", userInfo);
+
+    NSString *uuid = userInfo[@"event_uuid"];
+    if (uuid != nil)
+    {
+        HardwareUtils_iOS *o = dynamic_cast<HardwareUtils_iOS *>(HardwareUtils::Instance());
+        if (o->isCalaosConnected())
+            o->emitPushNotifReceived(QString::fromNSString(uuid));
+        else
+            o->handleStartedWithPushNotif(QString::fromNSString(uuid));
+    }
+
+    completionHandler(UIBackgroundFetchResultNoData);
+}
+
+#pragma mark - UNUserNotificationCenter Delegate // >= iOS 10
+
+//Called when a notification is delivered to a foreground app.
+- (void)userNotificationCenter:(UNUserNotificationCenter *)center willPresentNotification:(UNNotification *)notification withCompletionHandler:(void (^)(UNNotificationPresentationOptions options))completionHandler
+{
+    NSLog(@"User Info = %@", notification.request.content.userInfo);
+
+    NSString *uuid = notification.request.content.userInfo[@"event_uuid"];
+    if (uuid != nil)
+    {
+        HardwareUtils_iOS *o = dynamic_cast<HardwareUtils_iOS *>(HardwareUtils::Instance());
+        o->emitPushNotifReceived(QString::fromNSString(uuid));
+    }
+
+    completionHandler(UNNotificationPresentationOptionNone);
+}
+
+//Called to let your app know which action was selected by the user for a given notification.
+- (void)userNotificationCenter:(UNUserNotificationCenter *)center didReceiveNotificationResponse:(UNNotificationResponse *)response withCompletionHandler:(void(^)())completionHandler
+{
+    NSLog(@"User Info = %@", response.notification.request.content.userInfo);
+
+    NSString *uuid = response.notification.request.content.userInfo[@"event_uuid"];
+    if (uuid != nil)
+    {
+        HardwareUtils_iOS *o = dynamic_cast<HardwareUtils_iOS *>(HardwareUtils::Instance());
+        o->handleStartedWithPushNotif(QString::fromNSString(uuid));
+    }
+    completionHandler();
 }
 
 @end
@@ -304,4 +406,11 @@ void HardwareUtils_iOS::handleRegisterNotifFail(void *err)
     NSLog(@"%@, %@", error, error.localizedDescription);
     
     deviceToken.clear();
+}
+
+void HardwareUtils_iOS::handleStartedWithPushNotif(const QString &uuid)
+{
+    if (!uuid.isEmpty())
+        startedWithNotif = true;
+    notifUuid = uuid;
 }

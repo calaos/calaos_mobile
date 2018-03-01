@@ -95,6 +95,11 @@ void HardwareUtils::emitCalaosServerDetected()
     emit calaosServerDetected();
 }
 
+void HardwareUtils::emitPushNotifReceived(const QString &uuid)
+{
+    emit pushNotifReceived(uuid);
+}
+
 void HardwareUtils::loadAuthKeychain(QString &email, QString &pass)
 {
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());

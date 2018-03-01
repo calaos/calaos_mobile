@@ -41,6 +41,7 @@ public:
     void handlePerformActionForShortcutItem(void *shortcut);
     void handleRegisterNotif(void *data);
     void handleRegisterNotifFail(void *err);
+    void handleStartedWithPushNotif(const QString &uuid);
 };
 
 #endif // HARDWAREUTILS_IOS_H

@@ -1,0 +1,80 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.2.3'
+		classpath 'com.google.gms:google-services:3.2.0'
+    }
+}
+
+allprojects {
+    repositories {
+        jcenter()
+    }
+}
+
+apply plugin: 'com.android.application'
+
+project.ext {
+  // Configure the Firebase C++ SDK location. This is the property that you set in gradle.properties
+  // This might need to be more complex. I got this from https://github.com/firebase/quickstart-cpp/blob/master/remote_config/testapp/build.gradle
+  firebase_cpp_sdk_dir = System.getenv('FIREBASE_CPP_SDK_DIR')
+  if (firebase_cpp_sdk_dir == null || firebase_cpp_sdk_dir.isEmpty()) {
+    throw new StopActionException(
+            'The FIREBASE_CPP_SDK_DIR ' +
+            'environment variable must be set to reference the Firebase C++ ' +
+            'SDK install directory.  This is used to configure static library ' +
+            'and C/C++ include paths for the SDK.')
+  }
+}
+
+repositories {
+    flatDir {
+    dirs project.ext.firebase_cpp_sdk_dir + "/libs/android"
+  }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+	compile 'com.google.firebase:firebase-core:11.8.0'
+}
+
+android {
+    /*******************************************************
+     * The following variables:
+     * - androidBuildToolsVersion,
+     * - androidCompileSdkVersion
+     * - qt5AndroidDir - holds the path to qt android files
+     *                   needed to build any Qt application
+     *                   on Android.
+     *
+     * are defined in gradle.properties file. This file is
+     * updated by QtCreator and androiddeployqt tools.
+     * Changing them manually might break the compilation!
+     *******************************************************/
+
+    compileSdkVersion androidCompileSdkVersion.toInteger()
+
+    buildToolsVersion androidBuildToolsVersion
+
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs = [qt5AndroidDir + '/src', 'src', 'java']
+            aidl.srcDirs = [qt5AndroidDir + '/src', 'src', 'aidl']
+            res.srcDirs = [qt5AndroidDir + '/res', 'res']
+            resources.srcDirs = ['src']
+            renderscript.srcDirs = ['src']
+            assets.srcDirs = ['assets']
+            jniLibs.srcDirs = ['libs']
+       }
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+}
+
+apply plugin: 'com.google.gms.google-services'

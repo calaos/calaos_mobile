@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "415793941276",
+    "firebase_url": "https://calaos-mobile.firebaseio.com",
+    "project_id": "calaos-mobile",
+    "storage_bucket": "calaos-mobile.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:415793941276:android:60e2e3571631b28c",
+        "android_client_info": {
+          "package_name": "fr.calaos.calaoshome"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "415793941276-q9tsvkgssvq9lffonijqeq620su17sgu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDl9y72JTj5B-kFD8yFcqi2NPJP9oR-tus"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

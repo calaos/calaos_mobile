@@ -12,7 +12,7 @@ isEmpty(FIREBASE_SDK) {
 }
 
 INCLUDEPATH += $$FIREBASE_SDK/include
-LIBS += -L$$FIREBASE_SDK/libs/android/$$ANDROID_TARGET_ARCH/c++ \
+LIBS += -L$$FIREBASE_SDK/libs/android/$$ANDROID_TARGET_ARCH/gnustl \
         -lmessaging \
         -lapp \
         -llog \

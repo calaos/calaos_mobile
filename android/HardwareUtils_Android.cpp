@@ -3,14 +3,85 @@
 #include <QtAndroidExtras/QAndroidJniObject>
 #include <QtAndroidExtras/QAndroidJniEnvironment>
 #include <jni.h>
+#include <QtAndroid>
+
+#include <firebase/messaging.h>
+#include <firebase/app.h>
+#include <firebase/util.h>
+
+static ::firebase::InitResult firebaseInitializeMessaging(::firebase::App *app, void *);
+
+class FbListener: public ::firebase::messaging::Listener
+{
+public:
+    FbListener()
+    {
+        QAndroidJniObject jniObject = QtAndroid::androidActivity();
+        ::firebase::App *instance = ::firebase::App::GetInstance();
+        if (instance)
+        {
+            fbApp = instance;
+        }
+        else
+        {
+            fbApp = ::firebase::App::Create(QAndroidJniEnvironment(), jniObject.object<jobject>());
+        }
+    }
+
+    void initMessaging()
+    {
+        qDebug() << "Initializing Firebase module";
+        fbInitializer.Initialize(fbApp, nullptr, firebaseInitializeMessaging);
+        qDebug() << "Module initialized. Waiting on messaging initialization";
+    }
+
+    virtual void OnTokenReceived(const char *token)
+    {
+        HardwareUtilsAndroid *o = reinterpret_cast<HardwareUtilsAndroid *>(HardwareUtils::Instance());
+        o->setDeviceToken(token);
+    }
+
+    virtual void OnMessage(const ::firebase::messaging::Message &message)
+    {
+        Q_UNUSED(message)
+        qDebug() << "Received FCM message";
+    }
+
+private:
+    QAndroidJniEnvironment jniEnv;
+    ::firebase::App* fbApp;
+    ::firebase::ModuleInitializer fbInitializer;
+};
+
+static ::firebase::InitResult firebaseInitializeMessaging(::firebase::App *app, void *)
+{
+    qDebug() << "Try to initialize Firebase Messaging";
+    HardwareUtilsAndroid *o = reinterpret_cast<HardwareUtilsAndroid *>(HardwareUtils::Instance());
+    return ::firebase::messaging::Initialize(*app, o->getFbListener());
+}
 
 HardwareUtilsAndroid::HardwareUtilsAndroid(QObject *parent):
-    HardwareUtils(parent)
+    HardwareUtils(parent),
+    fcmListener(new FbListener())
 {
 }
 
 HardwareUtilsAndroid::~HardwareUtilsAndroid()
 {
+}
+
+void HardwareUtilsAndroid::platformInit(QQmlApplicationEngine *e)
+{
+    HardwareUtils::platformInit(e);
+
+    //init FCM
+    fcmListener->initMessaging();
+}
+
+void HardwareUtilsAndroid::setDeviceToken(QString t)
+{
+    qDebug() << "Received device token: " << t;
+    deviceToken = t;
 }
 
 void HardwareUtilsAndroid::showAlertMessage(QString title, QString message, QString buttontext)

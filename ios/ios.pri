@@ -15,7 +15,7 @@ PUSH_ENTITLEMENTS.value = $$PWD/pushnotifications.entitlements
 QMAKE_MAC_XCODE_SETTINGS += PUSH_ENTITLEMENTS
 
 #Add framework for Reachability
-LIBS += -framework SystemConfiguration
+LIBS += -framework SystemConfiguration -framework UserNotifications
 
 HEADERS += $$PWD/HardwareUtils_iOS.h
 OBJECTIVE_SOURCES += $$PWD/HardwareUtils.mm \

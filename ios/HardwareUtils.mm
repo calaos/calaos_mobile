@@ -14,10 +14,7 @@
 // and performActionForShortcutItem
 
 // This is hidden, so we declare it here to hook into it
-@interface QIOSApplicationDelegate
-@end
-
-@interface QIOSApplicationDelegate: UIResponder <UIApplicationDelegate,UNUserNotificationCenterDelegate>
+@interface QIOSApplicationDelegate: UIResponder <UIApplicationDelegate, UNUserNotificationCenterDelegate>
 @end
 
 @interface QIOSApplicationDelegate(AppDelegate)

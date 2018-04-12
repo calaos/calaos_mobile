@@ -22,7 +22,9 @@ ItemBase {
             verticalCenterOffset: 22 * calaosApp.density
         }
 
-        iconState: modelData.stateInt > 0
+        iconState: modelData.rgbColor.r > 0 ||
+                   modelData.rgbColor.g > 0 ||
+                   modelData.rgbColor.b > 0
     }
 
     Text {

@@ -69,6 +69,10 @@ Window {
         stackView.push(item)
     }
 
+    function openColorPicker(item, cb) {
+        dialogRgbColorPicker.openWithIO(item, cb)
+    }
+
     //Load fonts
     Fonts { id: calaosFont }
 
@@ -228,6 +232,8 @@ Window {
     }
 
     DialogReboot { id: dialogReboot }
+
+    DialogRGBColorPicker { id: dialogRgbColorPicker }
 
     //Dispatch actions
     AppListener {

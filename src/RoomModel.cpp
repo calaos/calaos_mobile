@@ -548,24 +548,40 @@ void IOBase::outputChanged(QString id, QString key, QString value)
         else if (get_ioType() == Common::LightDimmer ||
                  get_ioType() == Common::LightRgb)
         {
-            if ((getStateInt() > 0) != (value.toDouble() > 0))
+            if (connection->isHttpApiV2())
             {
-                ioData["state"] = value;
-                if (value.toDouble() > 0)
-                    emit light_on(this);
-                else
-                    emit light_off(this);
+                if ((getStateInt() > 0) != (value.toDouble() > 0))
+                {
+                    ioData["state"] = value;
+                    if (value.toDouble() > 0)
+                        emit light_on(this);
+                    else
+                        emit light_off(this);
+                }
             }
         }
 
         ioData["state"] = value;
 
-        if (ioData["gui_type"].toString() == "light_rgb")
+        if (get_ioType() == Common::LightRgb)
         {
             if (connection->isHttpApiV2())
                 update_rgbColor(QColor(getStateRed(), getStateGreen(), getStateBlue()));
             else
+            {
                 update_rgbColor(QColor(ioData["state"].toString()));
+
+                if (get_rgbColor().red() > 0 ||
+                    get_rgbColor().green() > 0 ||
+                    get_rgbColor().blue() > 0)
+                {
+                    emit light_on(this);
+                }
+                else
+                {
+                    emit light_off(this);
+                }
+            }
         }
 
         emit stateChange();

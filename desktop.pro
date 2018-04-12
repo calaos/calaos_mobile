@@ -22,6 +22,8 @@ CONFIG += link_pkgconfig
 PKGCONFIG += x11 xext
 }
 
+QML_IMPORT_PATH = $$PWD/qml
+
 SOURCES += src/HardwareUtils_desktop.cpp \
     src/CalaosWidget.cpp \
     src/CalaosWidgetModel.cpp \

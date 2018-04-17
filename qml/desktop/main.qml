@@ -5,6 +5,7 @@ import Calaos 1.0
 import SharedComponents 1.0
 import QuickFlux 1.0
 import "../quickflux"
+import QtQuick.VirtualKeyboard.Settings 2.2
 
 Window {
     id: rootWindow
@@ -129,6 +130,8 @@ Window {
         Units.cachedValue = Qt.binding(function() {
             return calaosApp.density;
         });
+
+        VirtualKeyboardSettings.styleName = "calaos"
     }
 
     Component {
@@ -235,6 +238,8 @@ Window {
 
     DialogRGBColorPicker { id: dialogRgbColorPicker }
 
+    DialogKeyboard { id: dialogKeyboard }
+
     //Dispatch actions
     AppListener {
         Filter {
@@ -252,6 +257,22 @@ Window {
             onDispatched: {
                 cameraSingleModel = message.camModel
                 stackView.push(cameraSingleView)
+            }
+        }
+        Filter {
+            type: ActionTypes.openAskTextForIo
+
+            property QtObject io
+
+            onDispatched: {
+                io = message.io
+                console.log("todo keyboard for item:" + io + " - " + io.ioName)
+                dialogKeyboard.openKeyboard(qsTr("Keyboard"),
+                                            qsTr("Change text for '%1'").arg(io.ioName),
+                                            io.stateString,
+                                            function (txt) {
+                                                io.sendStringValue(txt)
+                                            })
             }
         }
     }

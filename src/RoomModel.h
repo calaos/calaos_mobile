@@ -159,7 +159,7 @@ class IOBase: public QObject, public QStandardItem
     QML_READONLY_PROPERTY(QColor, rgbColor)
 
 public:
-    IOBase(CalaosConnection *con, int t);
+    IOBase(QQmlApplicationEngine *eng, CalaosConnection *con, int t);
 
     enum {
         IOInput, IOOutput
@@ -197,6 +197,7 @@ public:
 
 private:
     QVariantMap ioData;
+    QQmlApplicationEngine *engine;
     CalaosConnection *connection;
     int ioType;
 

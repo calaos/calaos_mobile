@@ -365,6 +365,9 @@ QString Application::getPictureSizedPrefix(QString pic, QString prefix)
 {
     QString ret;
 
+    if (pic.isEmpty())
+        return ret;
+
     //force @2x images for specific platform (android) as it's not done automatically by Qt
     if (needPictureHDPI())
         ret = QString("qrc:/%1/%2@2x.png").arg(prefix).arg(pic);

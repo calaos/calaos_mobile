@@ -48,5 +48,6 @@
         <file>qml/desktop/ConfigScreenView.qml</file>
         <file>qml/desktop/ConfigL18nView.qml</file>
         <file>qml/desktop/DialogRGBColorPicker.qml</file>
+        <file>qml/desktop/DialogKeyboard.qml</file>
     </qresource>
 </RCC>

@@ -47,6 +47,8 @@ PopupBase {
     property bool hasActions: true
     property bool floatingActions: false
 
+    property alias flickableContent: content.interactive
+
     default property alias dialogContent: column.data
 
     property color dialogBgColor: "#171717"

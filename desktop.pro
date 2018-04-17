@@ -42,4 +42,5 @@ RESOURCES += qml_desktop.qrc \
     fonts_desktop.qrc \
     qml_shared.qrc \
     widgets.qrc \
-    lang.qrc
+    lang.qrc \
+    qml/desktop/keyboard_style/calaos_style.qrc

@@ -19,6 +19,8 @@ KeyTable {
     property string suspendScreen
 
     property string openCameraSingleView
+
+    property string openAskTextForIo
 	
 	//Mobile actions
 	property string openEventLog

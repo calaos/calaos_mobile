@@ -280,5 +280,7 @@
         <file>img/icon_config_l18n.png</file>
         <file>img/button_widget_drag.png</file>
         <file>img/button_widget_drag@2x.png</file>
+        <file>img/icon_config_info.png</file>
+        <file>img/ic_delete.svg</file>
     </qresource>
 </RCC>

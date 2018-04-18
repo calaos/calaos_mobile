@@ -29,13 +29,15 @@ SOURCES += src/HardwareUtils_desktop.cpp \
     src/CalaosWidgetModel.cpp \
     src/WeatherInfo.cpp \
     src/XUtils.cpp \
-    src/ScreenManager.cpp
+    src/ScreenManager.cpp \
+    src/UserInfoModel.cpp
 HEADERS += src/HardwareUtils_desktop.h \
     src/CalaosWidget.h \
     src/CalaosWidgetModel.h \
     src/WeatherInfo.h \
     src/XUtils.h \
-    src/ScreenManager.h
+    src/ScreenManager.h \
+    src/UserInfoModel.h
 
 RESOURCES += qml_desktop.qrc \
     img_desktop.qrc \

@@ -15,6 +15,7 @@
 #include "CalaosWidgetModel.h"
 #include "WeatherInfo.h"
 #include "ScreenManager.h"
+#include "UserInfoModel.h"
 #endif
 
 Application::Application(int & argc, char ** argv) :
@@ -28,6 +29,7 @@ Application::Application(int & argc, char ** argv) :
 
 #ifdef CALAOS_DESKTOP
     WeatherModel::registerQmlClasses();
+    UserInfoModel::Instance()->load();
 #endif
 }
 
@@ -156,6 +158,7 @@ void Application::createQmlApp()
     CalaosWidgetModel::Instance()->loadFromDisk();
     engine.rootContext()->setContextProperty("widgetsModel", CalaosWidgetModel::Instance());
     engine.rootContext()->setContextProperty("screenManager", &ScreenManager::Instance());
+    engine.rootContext()->setContextProperty("userInfoModel", UserInfoModel::Instance());
 
     update_machineName(Machine::getHostname());
     QList<NetworkInfo *> nets = Machine::getNetworkInfo();
@@ -535,6 +538,7 @@ void Application::setLanguage(QString code)
 
 void Application::pushNotificationReceived(const QString &uuid)
 {
+    Q_UNUSED(uuid)
 #ifndef CALAOS_DESKTOP
     QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(&engine);
     QVariantMap m = {{ "notifUuid", uuid }};

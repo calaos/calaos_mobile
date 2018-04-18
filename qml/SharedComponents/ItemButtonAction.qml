@@ -1,4 +1,5 @@
-import QtQuick 2.0
+import QtQuick 2.7
+import QtGraphicalEffects 1.0
 import "."
 
 Item {
@@ -23,9 +24,18 @@ Item {
         Image {
             id: imgIcon
 
-            source: calaosApp.getPictureSized(iconSource)
+            source: iconSource.endsWith(".svg")?
+                        iconSource: calaosApp.getPictureSized(iconSource)
             anchors.centerIn: parent
             fillMode: Image.PreserveAspectFit
+            height: Units.dp(18)
+            visible: iconSource.endsWith(".svg")? false: iconSource != ""
+        }
+
+        ColorOverlay {
+            anchors.fill: imgIcon
+            source: imgIcon
+            color: "#ffffff"
             visible: iconSource != ""
         }
 

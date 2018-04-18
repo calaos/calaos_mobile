@@ -42,7 +42,7 @@ PopupBase {
 
     property string negativeButtonText: qsTr("Cancel")
     property string positiveButtonText: qsTr("Ok")
-    property alias positiveButtonEnabled: positiveButton.enabled
+    property bool positiveButtonEnabled: true
 
     property bool hasActions: true
     property bool floatingActions: false
@@ -295,7 +295,7 @@ PopupBase {
 
                     width: (parent.width - Units.dp(30)) / 2
 
-                    visible: hasActions
+                    visible: hasActions && positiveButtonEnabled
                     text: positiveButtonText
 
                     anchors {

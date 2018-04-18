@@ -26,6 +26,7 @@ KeyTable {
 
     //Keyboard return actions
     property string changeNoteText
+    property string addUserInfoEmail
 	
 	//Mobile actions
 	property string openEventLog

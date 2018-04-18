@@ -63,6 +63,12 @@ Item {
                         iconItem: "qrc:/img/icon_config_l18n.png"
                         clickId: "config/l18n"
                     }
+                    ListElement {
+                        titleItem: qsTr("Informations")
+                        subtitleItem: qsTr("Personal settings")
+                        iconItem: "qrc:/img/icon_config_info.png"
+                        clickId: "config/info"
+                    }
                 }
 
                 anchors {

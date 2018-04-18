@@ -65,6 +65,8 @@ Window {
             item = configScreen
         } else if (itemId == "config/l18n") {
             item = configL18nView
+        } else if (itemId == "config/info") {
+            item = configUserInfoView
         }
 
         stackView.push(item)
@@ -218,6 +220,11 @@ Window {
     Component {
         id: configL18nView
         ConfigL18nView {}
+    }
+
+    Component {
+        id: configUserInfoView
+        ConfigUserInfoView {}
     }
 
     Notification {

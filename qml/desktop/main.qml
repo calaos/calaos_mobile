@@ -270,8 +270,24 @@ Window {
                 dialogKeyboard.openKeyboard(qsTr("Keyboard"),
                                             qsTr("Change text for '%1'").arg(io.ioName),
                                             io.stateString,
+                                            false,
                                             function (txt) {
                                                 io.sendStringValue(txt)
+                                            })
+            }
+        }
+        Filter {
+            type: ActionTypes.openKeyboard
+
+            onDispatched: {
+                dialogKeyboard.openKeyboard(message.title,
+                                            message.subtitle,
+                                            message.initialText,
+                                            message.multiline,
+                                            function (txt) {
+                                                AppDispatcher.dispatch(message.returnAction,
+                                                                       { text: txt,
+                                                                         returnPayload: message.returnPayload })
                                             })
             }
         }

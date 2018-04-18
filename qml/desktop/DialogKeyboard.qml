@@ -18,11 +18,20 @@ Dialog {
     signal validClicked(string txt)
 
     property var __callback: null
+    property bool multiline: false
+    property string currentText
 
-    function openKeyboard(title, subtitle, initialText, cb) {
+    function openKeyboard(title, subtitle, initialText, multiline, cb) {
         lTitle.text = title
         lSubTitle.text = subtitle
-        textInput.text = initialText
+        dlg.multiline = multiline
+        currentText = initialText
+
+        if (multiline) {
+            textInputMulti.forceActiveFocus()
+        } else {
+            textInput.forceActiveFocus()
+        }
 
         if (cb) {
             __callback = cb
@@ -93,6 +102,7 @@ Dialog {
             Layout.fillHeight: true
             Layout.minimumHeight: textInput.implicitHeight
             focus: true
+            clip: true
 
             TextInput {
                 id: textInput
@@ -102,6 +112,13 @@ Dialog {
                 font.weight: Font.ExtraLight
                 color: "#3ab4d7"
 
+                text: currentText
+                onTextChanged: {
+                    currentText = text
+                    textInput.text = Qt.binding(function() { return currentText })
+                }
+
+                visible: !dlg.multiline
                 cursorVisible: activeFocus
                 passwordCharacter: "\u2022"
                 selectionColor: Qt.rgba(0.23, 0.71, 0.84, 0.30)
@@ -117,6 +134,61 @@ Dialog {
                     margins: Units.dp(24)
                 }
             }
+
+            Flickable {
+                id: flickText
+
+                anchors {
+                    fill: parent
+                    leftMargin: Units.dp(24); rightMargin: Units.dp(24)
+                    topMargin: flickText.visibleArea.heightRatio == 1? Units.dp(24):0
+                }
+
+                visible: dlg.multiline
+                contentHeight: textInputMulti.implicitHeight
+                contentWidth: textInputMulti.width
+
+                function ensureVisible(r) {
+                    if (contentY >= r.y)
+                        contentY = r.y;
+                    else if (contentY + height <= r.y + r.height)
+                        contentY = r.y + r.height - height;
+                }
+
+                TextEdit {
+                    id: textInputMulti
+
+                    font.pixelSize: Units.dp(20)
+                    font.family: calaosFont.fontFamilyLight
+                    font.weight: Font.ExtraLight
+                    color: "#3ab4d7"
+
+                    wrapMode: TextEdit.Wrap
+                    visible: dlg.multiline
+
+                    text: currentText
+                    onTextChanged: {
+                        currentText = text
+                        textInputMulti.text = Qt.binding(function() { return currentText })
+                    }
+
+                    cursorVisible: activeFocus
+                    selectionColor: Qt.rgba(0.23, 0.71, 0.84, 0.30)
+                    selectedTextColor: color
+                    selectByMouse: true
+                    inputMethodHints: Qt.ImhPreferLowercase
+                    focus: true
+
+                    clip: true
+
+                    width: flickText.width
+                    height: implicitHeight
+
+                    onCursorRectangleChanged: flickText.ensureVisible(cursorRectangle)
+                }
+            }
+
+            ScrollBar { listObject: flickText }
         }
 
         Image {
@@ -151,7 +223,11 @@ Dialog {
                     label: qsTr("Clear current text")
                     icon: "qrc:/img/button_action_del.png"
                     Layout.minimumWidth: width
-                    onBtClicked: textInput.text = ""
+                    onBtClicked: {
+                        currentText = ""
+                        textInput.text = Qt.binding(function() { return currentText })
+                        textInputMulti.text = Qt.binding(function() { return currentText })
+                    }
                 }
 
                 FooterButton {
@@ -159,9 +235,9 @@ Dialog {
                     icon: "qrc:/img/button_action_valid.png"
                     Layout.minimumWidth: width
                     onBtClicked: {
-                        validClicked(textInput.text)
+                        validClicked(currentText)
                         if (__callback) {
-                            __callback(textInput.text)
+                            __callback(currentText)
                         }
 
                         dlg.close()

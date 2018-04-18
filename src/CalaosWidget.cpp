@@ -1,5 +1,7 @@
 #include "CalaosWidget.h"
 #include <QUuid>
+#include <QtCore>
+#include "CalaosWidgetModel.h"
 
 CalaosWidget::CalaosWidget():
     QStandardItem()
@@ -16,7 +18,9 @@ QVariantMap CalaosWidget::toVariantMap() const
     m["y"] = get_posY();
     m["width"] = get_width();
     m["height"] = get_height();
-    m["config"] = moduleConfig;
+
+    auto doc = QJsonDocument::fromJson(moduleData.toLocal8Bit());
+    m["data"] = doc.object();
 
     return m;
 }
@@ -38,7 +42,19 @@ CalaosWidget *CalaosWidget::fromVariantMap(const QVariantMap &obj)
     w->set_width(obj["width"].toInt());
     w->set_height(obj["height"].toInt());
 
-    w->moduleConfig = obj["config"].toMap();
+    QJsonDocument doc(QJsonObject::fromVariantMap(obj["data"].toMap()));
+    w->moduleData = doc.toJson();
 
     return w;
+}
+
+QString CalaosWidget::getData()
+{
+    return moduleData;
+}
+
+void CalaosWidget::saveData(QString data)
+{
+    moduleData = data;
+    CalaosWidgetModel::Instance()->saveToDisk();
 }

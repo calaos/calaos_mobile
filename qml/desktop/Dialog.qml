@@ -149,6 +149,7 @@ PopupBase {
 
         ScrollBar {
             listObject: content
+            visible: flickableContent
         }
 
         Rectangle {

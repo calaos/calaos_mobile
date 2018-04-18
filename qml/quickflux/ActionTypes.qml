@@ -20,7 +20,12 @@ KeyTable {
 
     property string openCameraSingleView
 
+    //Keyboard actions
     property string openAskTextForIo
+    property string openKeyboard
+
+    //Keyboard return actions
+    property string changeNoteText
 	
 	//Mobile actions
 	property string openEventLog

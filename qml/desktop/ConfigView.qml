@@ -64,7 +64,7 @@ Item {
                         clickId: "config/l18n"
                     }
                     ListElement {
-                        titleItem: qsTr("Informations")
+                        titleItem: qsTr("Information")
                         subtitleItem: qsTr("Personal settings")
                         iconItem: "qrc:/img/icon_config_info.png"
                         clickId: "config/info"

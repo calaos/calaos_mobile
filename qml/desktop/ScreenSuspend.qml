@@ -27,7 +27,7 @@ Item {
                 name: "awake"; PropertyChanges { target: blackScreen; opacity: 0 }
             },
             State {
-                name: "asleep"; PropertyChanges { target: blackScreen; opacity: 1 }
+                name: "asleep"; PropertyChanges { target: blackScreen; opacity: 0.6 }
             }
         ]
 

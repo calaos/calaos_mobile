@@ -8,14 +8,6 @@ Item {
 
     property bool editWidgetMode: false
 
-    Repeater {
-        model: widgetsModel
-        Widget {
-            widgetModel: widgetsModel.getWidget(index)
-            editMode: editWidgetMode
-        }
-    }
-
     function enterEditMode() {
         editWidgetMode = true
         AppActions.hideHomeboardMenu()
@@ -28,6 +20,14 @@ Item {
             AppActions.saveWidgetsPosition()
         } else {
             AppActions.resetWidgetsPosition()
+        }
+    }
+
+    Repeater {
+        model: widgetsModel
+        Widget {
+            widgetModel: widgetsModel.getWidget(index)
+            editMode: editWidgetMode
         }
     }
 

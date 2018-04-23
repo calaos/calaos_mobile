@@ -31,8 +31,8 @@ Item {
         border.left: Units.dp(51); border.top: Units.dp(53)
         border.right: Units.dp(154); border.bottom: Units.dp(97)
 
-        width: widgetModel.width
-        height: widgetModel.height
+        width: widgetModel.width <= 0? bg.sourceSize.width: widgetModel.width
+        height: widgetModel.height <= 0? bg.sourceSize.height: widgetModel.height
 
         Item {
             anchors {

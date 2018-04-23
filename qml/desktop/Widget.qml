@@ -10,8 +10,8 @@ Item {
 
     x: widgetModel.posX
     y: widgetModel.posY
-    width: widgetModel.width
-    height: widgetModel.height
+    width: widgetModel.width <= 0? minimumSize.width: widgetModel.width
+    height: widgetModel.height <= 0? minimumSize.height: widgetModel.height
 
     property size minimumSize: Qt.size(20, 20)
     property size maximumSize: Qt.size(500, 500)

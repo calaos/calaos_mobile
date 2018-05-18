@@ -26,11 +26,6 @@ Application::Application(int & argc, char ** argv) :
     QCoreApplication::setApplicationName("CalaosHome");
 
     HardwareUtils::Instance()->setParent(this);
-
-#ifdef CALAOS_DESKTOP
-    WeatherModel::registerQmlClasses();
-    UserInfoModel::Instance()->load();
-#endif
 }
 
 Application::~Application()
@@ -42,6 +37,11 @@ Application::~Application()
 
 void Application::createQmlApp()
 {
+#ifdef CALAOS_DESKTOP
+    WeatherModel::registerQmlClasses();
+    UserInfoModel::Instance()->load();
+#endif
+
     loadSettings();
 
     setupLanguage();

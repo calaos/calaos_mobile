@@ -16,6 +16,10 @@ Window {
     //iphone5
     //height: 568
 
+    color: "#080808"
+
+    flags: Qt.platform.os === "ios"? Qt.MaximizeUsingFullscreenGeometryHint : undefined
+
     property bool isLandscape: rootWindow.width > rootWindow.height
 
     property variant roomModel
@@ -27,10 +31,17 @@ Window {
     Fonts { id: calaosFont }
 
     Image {
+        id: background
         source: calaosApp.getPictureSized(isLandscape?
                                               "background_landscape":
                                               "background")
-        anchors.fill: parent
+        anchors {
+            fill: parent
+            topMargin: platformMarginsTop
+            bottomMargin: platformMarginsBottom
+            leftMargin: platformMarginsLeft
+            rightMargin: platformMarginsRight
+        }
         fillMode: Image.PreserveAspectCrop
     }
 
@@ -65,9 +76,9 @@ Window {
     StackView {
         id: stackView
         anchors {
-            top: parent.top
-            left: parent.left
-            right: parent.right
+            top: background.top
+            left: background.left
+            right: background.right
             bottom: menuBar.top
         }
 
@@ -97,8 +108,8 @@ Window {
         id: favoriteView
 
         FavoritesListView {
-            height: parent.height
-            width: parent.width
+            height: background.height
+            width: background.width
         }
     }
 
@@ -106,8 +117,8 @@ Window {
         id: homeView
 
         RoomListView {
-            height: parent.height
-            width: parent.width
+            height: background.height
+            width: background.width
 
             model: homeModel
 
@@ -125,8 +136,8 @@ Window {
         id: roomDetailView
 
         RoomDetailView {
-            height: parent.height
-            width: parent.width
+            height: background.height
+            width: background.width
 
             filteredRoomItemModel: roomModel
         }
@@ -144,8 +155,8 @@ Window {
 
         RoomDetailView {
             id: lightsOnRoomDetailView
-            height: parent.height
-            width: parent.width
+            height: background.height
+            width: background.width
 
             roomItemModel: lightOnClonedModel
         }
@@ -155,8 +166,8 @@ Window {
         id: scenarioView
 
         ScenarioView {
-            width: parent.width
-            height: parent.height
+            width: background.width
+            height: background.height
         }
     }
 
@@ -164,8 +175,8 @@ Window {
         id: mediaView
 
         MediaMenuView {
-            width: parent.width
-            height: parent.height
+            width: background.width
+            height: background.height
         }
     }
 
@@ -173,8 +184,8 @@ Window {
         id: musicView
 
         MusicListView {
-            width: parent.width
-            height: parent.height
+            width: background.width
+            height: background.height
         }
     }
 
@@ -182,8 +193,8 @@ Window {
         id: cameraView
 
         CameraListView {
-            width: parent.width
-            height: parent.height
+            width: background.width
+            height: background.height
         }
     }
 
@@ -193,8 +204,8 @@ Window {
 
         CameraSingleView {
             modelData: currentCameraModel
-            width: parent.width
-            height: parent.height
+            width: background.width
+            height: background.height
         }
     }
 
@@ -202,8 +213,8 @@ Window {
         id: settingsView
 
         SettingsView {
-            width: parent.width
-            height: parent.height - menuBar.height
+            width: background.width
+            height: background.height - menuBar.height
 
             onFavoriteAddClicked: {
                 menuBar.menuType = Common.MenuBack
@@ -220,8 +231,8 @@ Window {
         id: favAddView
 
         FavoritesAddView {
-            width: parent.width
-            height: parent.height - menuBar.height
+            width: background.width
+            height: background.height - menuBar.height
         }
     }
 
@@ -229,8 +240,8 @@ Window {
         id: favEditView
 
         FavoritesEditView {
-            width: parent.width
-            height: parent.height - menuBar.height
+            width: background.width
+            height: background.height - menuBar.height
         }
     }
 
@@ -238,8 +249,8 @@ Window {
         id: eventLogView
 
         EventLogView {
-            width: parent.width
-            height: parent.height - menuBar.height
+            width: background.width
+            height: background.height - menuBar.height
         }
     }
 
@@ -272,8 +283,8 @@ Window {
         id: colorPickerView
 
         ColorPickerRGBView {
-            width: parent.width
-            height: parent.height - menuBar.height
+            width: background.width
+            height: background.height - menuBar.height
             itemColor: itemRgbColor
             itemCallback: itemColorCallback
         }
@@ -283,9 +294,9 @@ Window {
         id: menuBar
 
         anchors {
-            left: parent.left
-            right: parent.right
-            bottom: parent.bottom
+            left: background.left
+            right: background.right
+            bottom: background.bottom
         }
 
         onButtonHomeClicked: {
@@ -319,7 +330,7 @@ Window {
             State {
                 name: "invisible"
                 PropertyChanges { target: menuBar; opacity: 0.2 }
-                PropertyChanges { target: menuBar; anchors.bottomMargin: -menuBar.height }
+                PropertyChanges { target: menuBar; anchors.bottomMargin: -(menuBar.height + platformMarginsBottom) }
             }
         ]
 
@@ -335,6 +346,24 @@ Window {
                 NumberAnimation { properties: "opacity,anchors.bottomMargin"; easing.type: Easing.InExpo; duration: 500 }
             }
         ]
+    }
+
+    //Those Rectangles are for masking top and bottom instead of using clipping
+    Rectangle {
+        color: "#080808"
+        anchors {
+            top: parent.top
+            bottom: background.top
+            left: parent.left; right: parent.right
+        }
+    }
+    Rectangle {
+        color: "#080808"
+        anchors {
+            top: menuBar.bottom
+            bottom: parent.bottom
+            left: parent.left; right: parent.right
+        }
     }
 
     //Dispatch actions

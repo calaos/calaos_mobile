@@ -18,10 +18,9 @@ Item {
     Behavior on opacity { PropertyAnimation { } }
 
     Rectangle {
-        color: "black"
+        color: "#080808"
         opacity: 1
         anchors.fill: parent
-
     }
 
     Image {

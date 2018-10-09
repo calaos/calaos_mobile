@@ -15,6 +15,8 @@
 #include "CalaosWidgetModel.h"
 #include "WeatherInfo.h"
 #include "ScreenManager.h"
+#else
+#include <QtGui/qpa/qplatformwindow.h>
 #endif
 
 Application::Application(int & argc, char ** argv) :
@@ -150,6 +152,11 @@ void Application::createQmlApp()
     eventLogModel = new EventLogModel(&engine, calaosConnect, this);
     engine.rootContext()->setContextProperty("eventLogModel", eventLogModel);
 
+    engine.rootContext()->setContextProperty("platformMarginsLeft", QVariant(0.0));
+    engine.rootContext()->setContextProperty("platformMarginsRight", QVariant(0.0));
+    engine.rootContext()->setContextProperty("platformMarginsTop", QVariant(0.0));
+    engine.rootContext()->setContextProperty("platformMarginsBottom", QVariant(0.0));
+
     m_netAddresses = new QQmlObjectListModel<NetworkInfo>(this);
 
 #ifdef CALAOS_DESKTOP
@@ -183,6 +190,22 @@ void Application::createQmlApp()
 
 #if defined(CALAOS_MOBILE)
     engine.load(QUrl(QStringLiteral("qrc:///qml/mobile/main.qml")));
+
+    QObject *rootObject = engine.rootObjects().first();
+    if (rootObject)
+    {
+        QWindow *w = qobject_cast<QWindow *>(rootObject);
+        if (w)
+        {
+            QPlatformWindow *pw = w->handle();
+            QMargins margins = pw->safeAreaMargins();
+            engine.rootContext()->setContextProperty("platformMarginsLeft", margins.left());
+            engine.rootContext()->setContextProperty("platformMarginsRight", margins.right());
+            engine.rootContext()->setContextProperty("platformMarginsTop", margins.top());
+            engine.rootContext()->setContextProperty("platformMarginsBottom", margins.bottom());
+        }
+    }
+
 #elif defined(CALAOS_DESKTOP)
     engine.load(QUrl(QStringLiteral("qrc:///qml/desktop/main.qml")));
 #else

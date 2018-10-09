@@ -12,7 +12,7 @@ ListView {
         Rectangle {
             z: 99
             width: lst.width
-            color: "black"
+            color: "#080808"
             height: 45 * calaosApp.density
 
             Image {

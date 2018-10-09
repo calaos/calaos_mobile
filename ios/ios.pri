@@ -1,6 +1,8 @@
 QMAKE_INFO_PLIST = $$PWD/AppInfo.plist
 QMAKE_ASSET_CATALOGS = $$PWD/ressources.xcassets
 
+TARGET=CalaosMobile
+
 #Force bundleIdentifier (PRODUCT_BUNDLE_IDENTIFIER) to be fr.calaos.CalaosMobile
 CALAOS_BUNDLE.value = fr.calaos.CalaosMobile
 CALAOS_BUNDLE.name = PRODUCT_BUNDLE_IDENTIFIER
@@ -13,6 +15,12 @@ QMAKE_MAC_XCODE_SETTINGS += CALAOSDEVELOPMENT_TEAM
 PUSH_ENTITLEMENTS.name = CODE_SIGN_ENTITLEMENTS
 PUSH_ENTITLEMENTS.value = $$PWD/pushnotifications.entitlements
 QMAKE_MAC_XCODE_SETTINGS += PUSH_ENTITLEMENTS
+
+Q_ENABLE_BITCODE.name = ENABLE_BITCODE
+Q_ENABLE_BITCODE.value = NO
+QMAKE_MAC_XCODE_SETTINGS += Q_ENABLE_BITCODE
+
+QT += gui-private
 
 #Add framework for Reachability
 LIBS += -framework SystemConfiguration -framework UserNotifications
@@ -44,3 +52,11 @@ OTHER_FILES += \
         $$PWD/Icon@2x.png \
         $$PWD/AppInfo.plist \
         $$PWD/pushnotifications.entitlements
+
+plugins.path = PlugIns
+plugins.files = $$PWD/PushNotif.appex
+QMAKE_BUNDLE_DATA += plugins
+
+splash.files = $$PWD/Splash.storyboard
+splash.path =
+QMAKE_BUNDLE_DATA += splash

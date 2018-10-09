@@ -30,6 +30,8 @@
     // reset badge count
     [UIApplication sharedApplication].applicationIconBadgeNumber = 0;
 
+    [[UIApplication sharedApplication] setStatusBarStyle:(UIStatusBarStyle) UIStatusBarStyleLightContent];
+
     // Register to receive notifications from the system
     if (SYSTEM_VERSION_GRATERTHAN_OR_EQUALTO(@"10.0"))
     {

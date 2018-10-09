@@ -7,7 +7,7 @@ Rectangle {
     property alias iconSource: ic.source
 
     anchors { left: parent.left; right: parent.right; top: parent.top }
-    color: "black"
+    color: "#080808"
     height: 45 * calaosApp.density
 
     Image {

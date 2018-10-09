@@ -14,6 +14,7 @@
 #define HOME_CONFIG_PATH        ".config/calaos"
 #define HOME_CACHE_PATH         ".cache/calaos"
 #define BCAST_UDP_PORT          4545
+#define ENV_CONFIG              "CALAOS_CONFIG"
 
 HardwareUtilsDesktop::HardwareUtilsDesktop(QObject *parent):
     HardwareUtils(parent)
@@ -173,9 +174,17 @@ QString HardwareUtilsDesktop::getCacheFile(QString cacheFile)
 void HardwareUtilsDesktop::initConfigOptions(QString configdir, QString cachedir)
 {
     if (!configdir.isEmpty())
+    {
         configBase = configdir;
+        QDir d(configBase);
+        d.mkpath(".");
+    }
     if (!cachedir.isEmpty())
+    {
         cacheBase = cachedir;
+        QDir d(cacheBase);
+        d.mkpath(".");
+    }
 
     QString file = getConfigFile(LOCAL_CONFIG);
 

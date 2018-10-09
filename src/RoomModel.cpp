@@ -1,6 +1,7 @@
 #include "RoomModel.h"
 #include <QDebug>
 #include "HardwareUtils.h"
+#include <qfappdispatcher.h>
 
 IOBase *IOCache::searchInput(QString id)
 {
@@ -128,7 +129,7 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
         if (r["gui_type"].toString() == "")
             r["gui_type"] = detectOldGuiType(r["type"].toString());
 
-        IOBase *io = new IOBase(connection, IOBase::IOInput);
+        IOBase *io = new IOBase(engine, connection, IOBase::IOInput);
         io->load(r);
         io->update_room_name(name);
         io->checkFirstState();
@@ -175,7 +176,7 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
         if (r["gui_type"].toString() == "")
             r["gui_type"] = detectOldGuiType(r["type"].toString());
 
-        IOBase *io = new IOBase(connection, IOBase::IOOutput);
+        IOBase *io = new IOBase(engine, connection, IOBase::IOOutput);
         connect(io, SIGNAL(light_on(IOBase*)), this, SIGNAL(sig_light_on(IOBase*)));
         connect(io, SIGNAL(light_off(IOBase*)), this, SIGNAL(sig_light_off(IOBase*)));
         io->load(r);
@@ -238,8 +239,9 @@ void RoomModel::temperatureIoChanged()
     emit temp_changed_sig(temperatureIo->getStateInt());
 }
 
-IOBase::IOBase(CalaosConnection *con, int t):
+IOBase::IOBase(QQmlApplicationEngine *eng, CalaosConnection *con, int t):
     QStandardItem(),
+    engine(eng),
     connection(con),
     ioType(t)
 {
@@ -293,7 +295,7 @@ void IOBase::checkFirstState()
 
 IOBase *IOBase::cloneIO() const
 {
-    IOBase *newIO = new IOBase(connection, ioType);
+    IOBase *newIO = new IOBase(engine, connection, ioType);
     newIO->load(ioData);
     newIO->update_room_name(get_room_name());
     newIO->update_stateShutterBool(get_stateShutterBool());
@@ -548,24 +550,40 @@ void IOBase::outputChanged(QString id, QString key, QString value)
         else if (get_ioType() == Common::LightDimmer ||
                  get_ioType() == Common::LightRgb)
         {
-            if ((getStateInt() > 0) != (value.toDouble() > 0))
+            if (connection->isHttpApiV2())
             {
-                ioData["state"] = value;
-                if (value.toDouble() > 0)
-                    emit light_on(this);
-                else
-                    emit light_off(this);
+                if ((getStateInt() > 0) != (value.toDouble() > 0))
+                {
+                    ioData["state"] = value;
+                    if (value.toDouble() > 0)
+                        emit light_on(this);
+                    else
+                        emit light_off(this);
+                }
             }
         }
 
         ioData["state"] = value;
 
-        if (ioData["gui_type"].toString() == "light_rgb")
+        if (get_ioType() == Common::LightRgb)
         {
             if (connection->isHttpApiV2())
                 update_rgbColor(QColor(getStateRed(), getStateGreen(), getStateBlue()));
             else
+            {
                 update_rgbColor(QColor(ioData["state"].toString()));
+
+                if (get_rgbColor().red() > 0 ||
+                    get_rgbColor().green() > 0 ||
+                    get_rgbColor().blue() > 0)
+                {
+                    emit light_on(this);
+                }
+                else
+                {
+                    emit light_off(this);
+                }
+            }
         }
 
         emit stateChange();
@@ -579,9 +597,15 @@ void IOBase::outputChanged(QString id, QString key, QString value)
 
 void IOBase::askStateText()
 {
+#if defined(CALAOS_MOBILE)
     connect(HardwareUtils::Instance(), SIGNAL(dialogTextValid(QString)),
             this, SLOT(textDialogValid(QString)));
     HardwareUtils::Instance()->inputTextDialog(tr("Change value"), tr("Enter new value"));
+#else
+    QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(engine);
+    QVariantMap m = {{ "io", QVariant::fromValue(this) }};
+    appDispatcher->dispatch("openAskTextForIo", m);
+#endif
 }
 
 void IOBase::textDialogValid(const QString &text)

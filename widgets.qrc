@@ -28,5 +28,11 @@
         <file>widgets/Weather/IconRain.qml</file>
         <file>widgets/Weather/IconSpecial.qml</file>
         <file>widgets/Weather/fog.png</file>
+        <file>widgets/Note/Note.qml</file>
+        <file>widgets/Note/note_back.png</file>
+        <file>widgets/Note/settings.svg</file>
+        <file>widgets/Note/NoteFront.qml</file>
+        <file>widgets/Note/NoteBack.qml</file>
+        <file>widgets/Note/shadow.png</file>
     </qresource>
 </RCC>

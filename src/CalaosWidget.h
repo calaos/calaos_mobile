@@ -22,8 +22,11 @@ public:
     QVariantMap toVariantMap() const;
     static CalaosWidget *fromVariantMap(const QVariantMap &obj);
 
+    Q_INVOKABLE QString getData();
+    Q_INVOKABLE void saveData(QString data);
+
 private:
-    QVariantMap moduleConfig;
+    QString moduleData;
 };
 
 #endif // CALAOSWIDGET_H

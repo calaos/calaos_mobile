@@ -426,7 +426,7 @@ void CalaosConnection::sendWebsocket(const QString &msg, const QJsonObject &data
     wsocket->sendTextMessage(doc.toJson());
 }
 
-void CalaosConnection::sendHttp(const QString &msg, QJsonObject &data)
+void CalaosConnection::sendHttp(const QString &msg, QJsonObject &data, bool ignoreErrors)
 {
     if (!isHttp()) return;
 
@@ -442,7 +442,8 @@ void CalaosConnection::sendHttp(const QString &msg, QJsonObject &data)
     QNetworkReply *reqReply = accessManager->post(request, doc.toJson());
 
     connect(reqReply, SIGNAL(finished()), this, SLOT(requestFinished()));
-    connect(reqReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestError(QNetworkReply::NetworkError)));
+    if (!ignoreErrors)
+        connect(reqReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestError(QNetworkReply::NetworkError)));
 
     reqReplies.append(reqReply);
 }
@@ -475,7 +476,12 @@ void CalaosConnection::sendJson(QString action, QJsonObject &jsonData)
     if (isWebsocket())
         sendWebsocket(action, jsonData, "user_cmd_json");
     else
+    {
+        jsonData["cn_user"] = username;
+        jsonData["cn_pass"] = password;
+
         sendHttp(action, jsonData);
+    }
 }
 
 void CalaosConnection::queryState(QStringList inputs, QStringList outputs, QStringList audio_players)

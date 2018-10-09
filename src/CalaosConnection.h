@@ -55,7 +55,7 @@ private:
     void closeWebsocket();
     void connectHttp(QString h);
     void sendWebsocket(const QString &msg, const QJsonObject &data = QJsonObject(), const QString &client_id = QString());
-    void sendHttp(const QString &msg, QJsonObject &data);
+    void sendHttp(const QString &msg, QJsonObject &data, bool ignoreErrors = true);
 
     void processEventsV2(QString msg);
     void processEventsV3(QVariantMap msg);

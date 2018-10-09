@@ -56,4 +56,14 @@ QtObject {
         AppDispatcher.dispatch(ActionTypes.openEventPushViewer,
                                { notifUuid: uuid });
     }
+
+    function openKeyboard(kTitle, kSubtitle, txt, kMultiline, kReturnAction, kReturnPayload) {
+        AppDispatcher.dispatch(ActionTypes.openKeyboard,
+                               { title: kTitle,
+                                 subtitle: kSubtitle,
+                                 initialText: txt,
+                                 multiline: kMultiline,
+                                 returnAction: kReturnAction,
+                                 returnPayload: kReturnPayload });
+    }
 }

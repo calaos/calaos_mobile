@@ -5,6 +5,7 @@ import Calaos 1.0
 import SharedComponents 1.0
 import QuickFlux 1.0
 import "../quickflux"
+import QtQuick.VirtualKeyboard.Settings 2.2
 
 Window {
     id: rootWindow
@@ -64,9 +65,15 @@ Window {
             item = configScreen
         } else if (itemId == "config/l18n") {
             item = configL18nView
+        } else if (itemId == "config/info") {
+            item = configUserInfoView
         }
 
         stackView.push(item)
+    }
+
+    function openColorPicker(item, cb) {
+        dialogRgbColorPicker.openWithIO(item, cb)
     }
 
     //Load fonts
@@ -125,6 +132,8 @@ Window {
         Units.cachedValue = Qt.binding(function() {
             return calaosApp.density;
         });
+
+        VirtualKeyboardSettings.styleName = "calaos"
     }
 
     Component {
@@ -213,6 +222,11 @@ Window {
         ConfigL18nView {}
     }
 
+    Component {
+        id: configUserInfoView
+        ConfigUserInfoView {}
+    }
+
     Notification {
         id: notif
         anchors {
@@ -228,6 +242,10 @@ Window {
     }
 
     DialogReboot { id: dialogReboot }
+
+    DialogRGBColorPicker { id: dialogRgbColorPicker }
+
+    DialogKeyboard { id: dialogKeyboard }
 
     //Dispatch actions
     AppListener {
@@ -246,6 +264,38 @@ Window {
             onDispatched: {
                 cameraSingleModel = message.camModel
                 stackView.push(cameraSingleView)
+            }
+        }
+        Filter {
+            type: ActionTypes.openAskTextForIo
+
+            property QtObject io
+
+            onDispatched: {
+                io = message.io
+                console.log("todo keyboard for item:" + io + " - " + io.ioName)
+                dialogKeyboard.openKeyboard(qsTr("Keyboard"),
+                                            qsTr("Change text for '%1'").arg(io.ioName),
+                                            io.stateString,
+                                            false,
+                                            function (txt) {
+                                                io.sendStringValue(txt)
+                                            })
+            }
+        }
+        Filter {
+            type: ActionTypes.openKeyboard
+
+            onDispatched: {
+                dialogKeyboard.openKeyboard(message.title,
+                                            message.subtitle,
+                                            message.initialText,
+                                            message.multiline,
+                                            function (txt) {
+                                                AppDispatcher.dispatch(message.returnAction,
+                                                                       { text: txt,
+                                                                         returnPayload: message.returnPayload })
+                                            })
             }
         }
     }

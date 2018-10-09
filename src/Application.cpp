@@ -15,6 +15,7 @@
 #include "CalaosWidgetModel.h"
 #include "WeatherInfo.h"
 #include "ScreenManager.h"
+#include "UserInfoModel.h"
 #else
 #include <QtGui/qpa/qplatformwindow.h>
 #endif
@@ -27,10 +28,6 @@ Application::Application(int & argc, char ** argv) :
     QCoreApplication::setApplicationName("CalaosHome");
 
     HardwareUtils::Instance()->setParent(this);
-
-#ifdef CALAOS_DESKTOP
-    WeatherModel::registerQmlClasses();
-#endif
 }
 
 Application::~Application()
@@ -42,6 +39,11 @@ Application::~Application()
 
 void Application::createQmlApp()
 {
+#ifdef CALAOS_DESKTOP
+    WeatherModel::registerQmlClasses();
+    UserInfoModel::Instance()->load();
+#endif
+
     loadSettings();
 
     setupLanguage();
@@ -163,6 +165,7 @@ void Application::createQmlApp()
     CalaosWidgetModel::Instance()->loadFromDisk();
     engine.rootContext()->setContextProperty("widgetsModel", CalaosWidgetModel::Instance());
     engine.rootContext()->setContextProperty("screenManager", &ScreenManager::Instance());
+    engine.rootContext()->setContextProperty("userInfoModel", UserInfoModel::Instance());
 
     update_machineName(Machine::getHostname());
     QList<NetworkInfo *> nets = Machine::getNetworkInfo();
@@ -388,6 +391,9 @@ QString Application::getPictureSizedPrefix(QString pic, QString prefix)
 {
     QString ret;
 
+    if (pic.isEmpty())
+        return ret;
+
     //force @2x images for specific platform (android) as it's not done automatically by Qt
     if (needPictureHDPI())
         ret = QString("qrc:/%1/%2@2x.png").arg(prefix).arg(pic);
@@ -555,6 +561,7 @@ void Application::setLanguage(QString code)
 
 void Application::pushNotificationReceived(const QString &uuid)
 {
+    Q_UNUSED(uuid)
 #ifndef CALAOS_DESKTOP
     QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(&engine);
     QVariantMap m = {{ "notifUuid", uuid }};

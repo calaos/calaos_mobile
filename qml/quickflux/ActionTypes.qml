@@ -19,6 +19,14 @@ KeyTable {
     property string suspendScreen
 
     property string openCameraSingleView
+
+    //Keyboard actions
+    property string openAskTextForIo
+    property string openKeyboard
+
+    //Keyboard return actions
+    property string changeNoteText
+    property string addUserInfoEmail
 	
 	//Mobile actions
 	property string openEventLog

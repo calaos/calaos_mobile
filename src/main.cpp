@@ -4,6 +4,10 @@
 
 int main(int argc, char *argv[])
 {
+#if defined(CALAOS_DESKTOP)
+    qputenv("QT_IM_MODULE", QByteArray("qtvirtualkeyboard"));
+#endif
+
 #if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
     Common::installMessageOutputHandler();
 #endif

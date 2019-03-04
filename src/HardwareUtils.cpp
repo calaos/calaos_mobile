@@ -16,7 +16,7 @@
 
 HardwareUtils *HardwareUtils::Instance(QObject *parent)
 {
-    static HardwareUtils *hu = NULL;
+    static HardwareUtils *hu = nullptr;
     if (hu) return hu;
 #ifdef Q_OS_IOS
     hu = new HardwareUtils_iOS(parent);
@@ -156,12 +156,12 @@ void HardwareUtils::inputTextDialog(const QString &title, const QString &message
     d->setInputMode(QInputDialog::TextInput);
     d->setLabelText(message);
 
-    connect(d, &QInputDialog::rejected, [=]()
+    connect(d, &QInputDialog::rejected, this, [=]()
     {
         d->deleteLater();
         emit dialogCanceled();
     });
-    connect(d, &QInputDialog::accepted, [=]()
+    connect(d, &QInputDialog::accepted, this, [=]()
     {
         d->deleteLater();
         emit dialogTextValid(d->textValue());

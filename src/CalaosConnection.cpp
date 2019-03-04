@@ -138,7 +138,7 @@ void CalaosConnection::onWsConnected()
     //Do login procedure
     wsocket->sendTextMessage(jdoc.toJson());
 
-    connect(wsocket, &QWebSocket::pong, [=](quint64 elapsedTime, const QByteArray &payload)
+    connect(wsocket, &QWebSocket::pong, this, [=](quint64 elapsedTime, const QByteArray &payload)
     {
         if (elapsedTime > 1000)
             qWarning() << "Websocket PING/PONG took " << elapsedTime << "ms. Is your network slow?";
@@ -150,21 +150,21 @@ void CalaosConnection::onWsConnected()
     });
 
     wsPing = new QTimer(this);
-    connect(wsPing, &QTimer::timeout, [=]()
+    connect(wsPing, &QTimer::timeout, this, [=]()
     {
         wsocket->ping("calaos_ping");
     });
     wsPing->start(5 * 1000); //every 5s send a ping to calaos_server
 
     wsPingTimeout = new QTimer(this);
-    connect(wsPingTimeout, &QTimer::timeout, [=]()
+    connect(wsPingTimeout, &QTimer::timeout, this, [=]()
     {
         qWarning() << "Websocket connection timeout, disconnect!";
         logout();
     });
     wsPingTimeout->start(20 * 1000); //20s timeout
     
-    QTimer::singleShot(100, [=]()
+    QTimer::singleShot(100, this, [=]()
     {
         if (!wsocket) return;
         if (HardwareUtils::Instance()->getDeviceToken().isEmpty()) return;
@@ -543,7 +543,7 @@ void CalaosConnection::getCameraPicture(const QString &camid, QString urlSuffix)
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     QNetworkReply *reqReply = accessManagerCam->post(request, jdoc.toJson());
 
-    connect(reqReply, &QNetworkReply::finished, [=]() { requestCamFinished(reqReply, camid); });
+    connect(reqReply, &QNetworkReply::finished, this, [=]() { requestCamFinished(reqReply, camid); });
 //    connect(reqReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestError(QNetworkReply::NetworkError)));
 
     reqReplies.append(reqReply);
@@ -576,7 +576,7 @@ void CalaosConnection::startJsonPolling()
     pollReply = accessManager->post(request, jdoc.toJson());
 
     connect(pollReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestError(QNetworkReply::NetworkError)));
-    connect(pollReply, &QNetworkReply::finished, [=]()
+    connect(pollReply, &QNetworkReply::finished, this, [=]()
     {
         pollReply->deleteLater();
         if (pollReply->error() != QNetworkReply::NoError)

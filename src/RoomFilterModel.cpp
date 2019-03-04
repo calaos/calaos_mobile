@@ -7,7 +7,7 @@ RoomFilterModel::RoomFilterModel(QObject *parent):
     set_filter(Common::FilterAll);
     set_scenarioVisible(true);
 
-    connect(this, &RoomFilterModel::sourceChanged, [=](QObject *source)
+    connect(this, &RoomFilterModel::sourceChanged, this, [=](QObject *source)
     {
         RoomModel *rmodel = dynamic_cast<RoomModel *>(source);
         if (source && !rmodel)

@@ -55,17 +55,17 @@ void Application::createQmlApp()
     connect(HardwareUtils::Instance(), SIGNAL(calaosServerDetected()),
             this, SLOT(calaosServerDetected()));
 
-    connect(HardwareUtils::Instance(), &HardwareUtils::applicationWillResignActive, [=]()
+    connect(HardwareUtils::Instance(), &HardwareUtils::applicationWillResignActive, this, [=]()
     {
         qDebug() << "Application is in background, logout";
         startedWithOptHandled = false;
         logout();
     });
 
-    connect(HardwareUtils::Instance(), &HardwareUtils::applicationBecomeActive, [=]()
+    connect(HardwareUtils::Instance(), &HardwareUtils::applicationBecomeActive, this, [=]()
     {
         qDebug() << "Application is in foreground, login again";
-        QTimer::singleShot(0, [=]()
+        QTimer::singleShot(0, this, [=]()
         {
             login(get_username(), get_password(), get_hostname());
         });
@@ -112,7 +112,7 @@ void Application::createQmlApp()
             this, SLOT(homeLoaded(QVariantMap)));
     connect(calaosConnect, SIGNAL(loginFailed()),
             this, SLOT(loginFailed()));
-    connect(calaosConnect, &CalaosConnection::disconnected, [=]()
+    connect(calaosConnect, &CalaosConnection::disconnected, this, [=]()
     {
         update_applicationStatus(Common::NotConnected);
 
@@ -219,7 +219,7 @@ void Application::createQmlApp()
 
 #ifndef CALAOS_DESKTOP
     //Start autologin, only on mobile. On desktop we wait for calaos_server detection
-    QTimer::singleShot(100, [=]()
+    QTimer::singleShot(100, this, [=]()
     {
         login(get_username(), get_password(), get_hostname());
     });
@@ -305,7 +305,7 @@ void Application::homeLoaded(const QVariantMap &homeData)
         if (HardwareUtils::Instance()->hasStartedWithNotif())
         {
             //If app has been started with notification option, it should open it
-            QTimer::singleShot(400, [=]()
+            QTimer::singleShot(400, this, [=]()
             {
                 QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(&engine);
                 QVariantMap m = {{ "notifUuid", HardwareUtils::Instance()->getNotifUuid() }};

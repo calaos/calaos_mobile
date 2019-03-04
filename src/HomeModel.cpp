@@ -213,7 +213,7 @@ QObject *LightOnModel::getQmlCloneModel()
         }
     }
 
-    foreach (QString k, resortedModel.keys())
+    for (const auto &k: resortedModel.keys())
     {
         const QList<IOBase *> &lst = resortedModel[k];
         foreach (IOBase *newIO, lst)

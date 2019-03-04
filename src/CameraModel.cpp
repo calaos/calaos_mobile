@@ -18,7 +18,7 @@ CameraModel::CameraModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObj
     //add a special image provider for single pictures of cameras
     engine->addImageProvider(QLatin1String("camera"), this);
 
-    connect(this, &CameraModel::cameraVisibleChanged, [=](bool visible)
+    connect(this, &CameraModel::cameraVisibleChanged, this, [=](bool visible)
     {
         for (int i = 0;i < rowCount();i++)
         {
@@ -117,7 +117,7 @@ void CameraItem::load(QVariantMap &d, int countId)
 
     qDebug() << "New camera loaded: " << get_name();
 
-    QTimer::singleShot(100, [=]()
+    QTimer::singleShot(100, this, [=]()
     {
         connection->getCameraPicture(get_cameraId(), get_v1Url());
     });
@@ -135,7 +135,7 @@ QImage CameraModel::requestImage(const QString &qid, QSize *size, const QSize &r
     QStringList sl = qid.split('/');
     if (sl.empty()) return retimg;
 
-    QString id = sl.at(0);
+    const QString& id = sl.at(0);
     CameraItem *cam = nullptr;
 
     if (id.toInt() < 0)
@@ -178,7 +178,7 @@ void CameraItem::cameraPictureDownloaded(const QString &camid, const QByteArray 
 
     if (get_cameraVisible())
     {
-        QTimer::singleShot(200, [=]()
+        QTimer::singleShot(200, this, [=]()
         {
             connection->getCameraPicture(get_cameraId(), get_v1Url());
         });
@@ -194,7 +194,7 @@ void CameraItem::cameraPictureFailed(const QString &camid)
 
     if (get_cameraVisible())
     {
-        QTimer::singleShot(200, [=]()
+        QTimer::singleShot(200, this, [=]()
         {
             connection->getCameraPicture(get_cameraId(), get_v1Url());
         });
@@ -203,7 +203,7 @@ void CameraItem::cameraPictureFailed(const QString &camid)
 
 void CameraItem::startCamera()
 {
-    QTimer::singleShot(0, [=]()
+    QTimer::singleShot(0, this, [=]()
     {
         qDebug() << "Start camera " << get_cameraId();
         connection->getCameraPicture(get_cameraId(), get_v1Url());

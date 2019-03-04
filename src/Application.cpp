@@ -16,7 +16,7 @@
 #include "WeatherInfo.h"
 #include "ScreenManager.h"
 #include "UserInfoModel.h"
-#else
+#elif defined (Q_OS_ANDROID) || defined (Q_OS_IOS)
 #include <QtGui/qpa/qplatformwindow.h>
 #endif
 
@@ -194,6 +194,7 @@ void Application::createQmlApp()
 #if defined(CALAOS_MOBILE)
     engine.load(QUrl(QStringLiteral("qrc:///qml/mobile/main.qml")));
 
+#if defined (Q_OS_ANDROID) || defined (Q_OS_IOS)
     QObject *rootObject = engine.rootObjects().first();
     if (rootObject)
     {
@@ -208,6 +209,7 @@ void Application::createQmlApp()
             engine.rootContext()->setContextProperty("platformMarginsBottom", margins.bottom());
         }
     }
+#endif
 
 #elif defined(CALAOS_DESKTOP)
     engine.load(QUrl(QStringLiteral("qrc:///qml/desktop/main.qml")));

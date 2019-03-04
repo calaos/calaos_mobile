@@ -30,6 +30,8 @@
             <meta-data android:resource="@layout/splash" android:name="android.app.splash_screen"/>
             <!-- Splash screen -->
         </activity>
+
+        <meta-data android:name="firebase_analytics_collection_deactivated" android:value="false" />
     </application>
     <uses-sdk android:minSdkVersion="16" android:targetSdkVersion="18"/>
     <supports-screens android:normalScreens="true" android:smallScreens="true" android:largeScreens="true" android:anyDensity="true"/>
@@ -37,7 +39,7 @@
     <!-- %%INSERT_FEATURES -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-<uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 </manifest>

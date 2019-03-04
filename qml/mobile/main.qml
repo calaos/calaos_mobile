@@ -9,12 +9,9 @@ import QuickFlux 1.0
 Window {
     id: rootWindow
     visible: true
-    width: 320 * calaosApp.density
 
-    //iphone4
-    height: 480 * calaosApp.density
-    //iphone5
-    //height: 568
+    minimumWidth: 320 * calaosApp.density
+    minimumHeight: 480 * calaosApp.density
 
     color: "#080808"
 

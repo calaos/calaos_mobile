@@ -10,6 +10,7 @@
 #endif
 #include <QProcess>
 #include <qfappdispatcher.h>
+#include <QScreen>
 
 #ifdef CALAOS_DESKTOP
 #include "CalaosWidgetModel.h"
@@ -78,6 +79,8 @@ void Application::createQmlApp()
     QAndroidJniObject resource = activity.callObjectMethod("getResources","()Landroid/content/res/Resources;");
     QAndroidJniObject metrics = resource.callObjectMethod("getDisplayMetrics","()Landroid/util/DisplayMetrics;");
     update_density(metrics.getField<float>("density"));
+
+    qDebug() << "Using density from JNI: " << get_density() << " Value from QScreen: " << primaryScreen()->devicePixelRatio();
 
     update_needBackButton(false);
     // Need to fix a bug on Android where text is scratched at runtime on some devices

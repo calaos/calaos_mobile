@@ -12,6 +12,11 @@ int main(int argc, char *argv[])
     Common::installMessageOutputHandler();
 #endif
 
+#ifdef Q_OS_ANDROID
+    //This disables Handles that are visible somehow in the HomeView
+    qputenv( "QT_QPA_NO_TEXT_HANDLES", QByteArray( "1" ) );
+#endif
+
     //Instanciate hardware class early so it can register
     //all observer before Qt starts
     HardwareUtils::Instance();

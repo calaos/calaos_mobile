@@ -78,7 +78,8 @@ void Application::createQmlApp()
     QAndroidJniObject activity = QAndroidJniObject::callStaticObjectMethod("org/qtproject/qt5/android/QtNative", "activity", "()Landroid/app/Activity;");
     QAndroidJniObject resource = activity.callObjectMethod("getResources","()Landroid/content/res/Resources;");
     QAndroidJniObject metrics = resource.callObjectMethod("getDisplayMetrics","()Landroid/util/DisplayMetrics;");
-    update_density(metrics.getField<float>("density"));
+    //update_density(metrics.getField<float>("density"));
+    update_density(1);
 
     qDebug() << "Using density from JNI: " << get_density() << " Value from QScreen: " << primaryScreen()->devicePixelRatio();
 

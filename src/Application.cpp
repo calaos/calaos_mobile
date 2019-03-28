@@ -526,8 +526,6 @@ void Application::setupLanguage()
         uiLanguages.prepend(lang);
     }
 
-    QTranslator translator;
-
     foreach (QString locale, uiLanguages)
     {
         //Set language

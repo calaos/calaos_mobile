@@ -109,6 +109,8 @@ private:
 
     QTimer *sysInfoTimer = nullptr;
 
+    QTranslator translator;
+
     bool startedWithOptHandled = false;
 
     void loadSettings();

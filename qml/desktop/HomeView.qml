@@ -57,13 +57,13 @@ Item {
 
         property int page: 0
         onPageChanged: currentIndex = page * 9
-        onCurrentIndexChanged: console.log(currentIndex)
 
         function movePageDown(){
             var p = lst.page
             p++
-            if (p > lst.count / 9)
-                p = lst.count / 9
+            var m = lst.count % 9 > 0? 1:0
+            if (p > lst.count / 9 + m)
+                p = lst.count / 9 + m
             lst.page = p
         }
 

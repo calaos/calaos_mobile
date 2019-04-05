@@ -79,7 +79,7 @@ signals:
     void eventAudioPlaylistChange(QString playerid);
     void eventAudioStatusChange(QString playerid, QString status);
     void eventAudioVolumeChange(QString playerid, double volume);
-    void eventAudioStateChange(const QVariantMap &data);
+    void eventAudioStateChange(QString playerid, const QVariantMap &data);
     void eventInputStateChange(const QVariantMap &data);
     void eventOutputStateChange(const QVariantMap &data);
     void eventScenarioNew();

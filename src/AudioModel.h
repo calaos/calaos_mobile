@@ -59,19 +59,20 @@ public:
     Q_INVOKABLE void sendStop();
     Q_INVOKABLE void sendNext();
     Q_INVOKABLE void sendPrevious();
+    Q_INVOKABLE void sendVolume(int vol);
 
 public slots:
     void audioChanged(QString playerid);
     void audioStatusChanged(QString playerid, QString status);
     void audioVolumeChanged(QString playerid, double volume);
-
-    void audioStateChanged(const QVariantMap &data);
+    void audioStateChanged(QString playerid, const QVariantMap &data);
 
 private:
     QVariantMap playerData;
     CalaosConnection *connection;
     bool loaded;
 
+    void updatePlayerState(const QVariantMap &data);
 };
 
 #endif // AUDIOMODEL_H

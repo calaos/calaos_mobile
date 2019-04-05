@@ -2,6 +2,7 @@ import QtQuick 2.2
 import Calaos 1.0
 import QtQuick.Controls 1.2
 import SharedComponents 1.0
+import QtQuick.Layouts 1.3
 
 Item {
 
@@ -52,7 +53,7 @@ Item {
 
                 IconMusicPlayer {
                     id: iconcover
-                    coverSource: cover
+                    coverSource: modelData.cover
                     playing: modelData.status === Common.StatusPlay
 
                     anchors {
@@ -120,34 +121,30 @@ Item {
                     }
                 }
 
-                Text {
-                    id: tvol
-                    color: "#3ab4d7"
-                    font { family: calaosFont.fontFamily; bold: false; pointSize: 11 }
-                    text: qsTr("Volume:")
-                    horizontalAlignment: Text.AlignLeft
-                    clip: true
-                    elide: Text.ElideRight
-                    anchors {
-                        left: parent.left; leftMargin: 8 * calaosApp.density
-                        right: parent.right; rightMargin: 8 * calaosApp.density
-                        bottom: volumeSlider.top; bottomMargin: 4 * calaosApp.density
-                    }
-                }
-
-                Slider {
-                    id: volumeSlider
+                RowLayout {
                     anchors {
                         left: parent.left; leftMargin: 8 * calaosApp.density
                         right: parent.right; rightMargin: 8 * calaosApp.density
                         bottom: row.top; bottomMargin: 8 * calaosApp.density
                     }
-                    value: modelData.volume
-                    updateValueWhileDragging: false
-                    maximumValue: 100
-                    onValueChanged: {
-                        modelData.sendVolume(value)
-                        value = Qt.binding(function() { return modelData.audioVolume })
+
+                    Text {
+                        id: tvol
+                        color: "#3ab4d7"
+                        font { family: calaosFont.fontFamily; bold: false; pointSize: 11 }
+                        text: qsTr("Volume:")
+                        horizontalAlignment: Text.AlignLeft
+                        clip: true
+                        elide: Text.ElideRight
+                    }
+
+                    CalaosSlider {
+                        id: volumeSlider
+
+                        value: modelData.volume
+                        updateValueWhileDragging: false
+                        maximumValue: 100
+                        onValueChanged: modelData.sendVolume(value)
                     }
                 }
 

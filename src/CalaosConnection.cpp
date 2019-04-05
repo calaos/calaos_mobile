@@ -335,7 +335,7 @@ void CalaosConnection::requestFinished()
         !jroot["audio_players"].toList().isEmpty())
     {
         //emit event for audio player change
-        emit eventAudioStateChange(jroot);
+        emit eventAudioStateChange({}, jroot);
     }
 
     if (jroot.contains("events") &&
@@ -373,7 +373,7 @@ void CalaosConnection::requestFinished()
             }
             else
             {
-                emit eventAudioStateChange(it.value().toMap());
+                emit eventAudioStateChange(it.key(), it.value().toMap());
             }
         }
     }
@@ -459,7 +459,7 @@ void CalaosConnection::sendCommand(QString id, QString value, QString type, QStr
         jroot["cn_pass"] = password;
         jroot["type"] = type;
     }
-    if (type == "audio")
+    if (type == "audio" && isHttpApiV2())
         jroot["player_id"] = id;
     else
         jroot["id"] = id;
@@ -692,7 +692,7 @@ void CalaosConnection::processEventsV3(QVariantMap msg)
     {
         emit eventAudioVolumeChange(data["player_id"].toString(), data["volume"].toString().toDouble());
     }
-    else if (msg["type_str"].toString() == "audio_volume_changed")
+    else if (msg["type_str"].toString() == "audio_status_changed")
     {
         emit eventAudioStatusChange(data["player_id"].toString(), data["state"].toString());
     }
@@ -726,7 +726,7 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
     QJsonObject jroot = jdoc.object();
     QJsonObject jdata = jroot["data"].toObject();
 
-//    qDebug() << "RECV:" << message;
+    qDebug() << "RECV:" << message;
 
     if (jroot["msg"] == "login")
     {
@@ -761,7 +761,7 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
             }
             else
             {
-                emit eventAudioStateChange(it.value().toObject().toVariantMap());
+                emit eventAudioStateChange(it.key(), it.value().toObject().toVariantMap());
             }
         }
     }

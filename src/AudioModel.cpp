@@ -52,7 +52,7 @@ AudioPlayer::AudioPlayer(CalaosConnection *con):
     loaded = false;
 }
 
-void AudioPlayer::load(QVariantMap &d)
+void AudioPlayer::updatePlayerState(const QVariantMap &d)
 {
     QMap<QString, QVariant>::const_iterator i = d.constBegin();
     while (i != d.constEnd())
@@ -67,26 +67,31 @@ void AudioPlayer::load(QVariantMap &d)
     update_name(playerData["name"].toString());
     update_volume(playerData["volume"].toDouble());
 
-    qDebug() << "New player loaded: " << get_name();
-
     QVariantMap currentTrack = playerData["current_track"].toMap();
     update_title(currentTrack["title"].toString());
     update_album(currentTrack["album"].toString());
     update_artist(currentTrack["artist"].toString());
+}
 
-    connect(connection, SIGNAL(eventAudioChange(QString)),
-            this, SLOT(audioChanged(QString)));
-    connect(connection, SIGNAL(eventAudioStateChange(QVariantMap)),
-            this, SLOT(audioStateChanged(QVariantMap)));
-    connect(connection, SIGNAL(eventAudioStatusChange(QString,QString)),
-            this, SLOT(audioStatusChanged(QString,QString)));
-    connect(connection, SIGNAL(eventAudioVolumeChange(QString,double)),
-            this, SLOT(audioVolumeChanged(QString,double)));
+void AudioPlayer::load(QVariantMap &d)
+{
+    updatePlayerState(d);
+
+    qDebug() << "New player loaded: " << get_name();
+
+    connect(connection, &CalaosConnection::eventAudioChange, this, &AudioPlayer::audioChanged);
+    connect(connection, &CalaosConnection::eventAudioStateChange, this, &AudioPlayer::audioStateChanged);
+    connect(connection, &CalaosConnection::eventAudioStatusChange, this, &AudioPlayer::audioStatusChanged);
+    connect(connection, &CalaosConnection::eventAudioVolumeChange, this, &AudioPlayer::audioVolumeChanged);
 
     if (!loaded)
     {
         loaded = true;
-        audioChanged(get_id());
+
+        //query initial state
+        connection->queryState(QStringList(),
+                               QStringList(),
+                               QStringList() << get_id());
     }
 }
 
@@ -112,7 +117,6 @@ void AudioPlayer::sendPlay()
             "play",
             "audio",
             "set_state");
-    qDebug() << "play";
 }
 
 void AudioPlayer::sendPrevious()
@@ -131,17 +135,33 @@ void AudioPlayer::sendStop()
             "set_state");
 }
 
+void AudioPlayer::sendVolume(int vol)
+{
+    connection->sendCommand(playerData["id"].toString(),
+            QStringLiteral("volume set %1").arg(vol),
+            "audio",
+            "set_state");
+}
+
 void AudioPlayer::audioChanged(QString playerid)
 {
-    if (playerid != playerData["id"].toString()) return;
+    if (playerid != get_id()) return;
 
     connection->queryState(QStringList(),
                            QStringList(),
                            QStringList() << playerid);
 }
 
-void AudioPlayer::audioStateChanged(const QVariantMap &data)
+void AudioPlayer::audioStateChanged(QString playerid, const QVariantMap &data)
 {
+    if (!playerid.isEmpty())
+    {
+        if (playerid != get_id()) return;
+        updatePlayerState(data);
+        return;
+    }
+
+    //this is for old v1/v2
     QVariantList players = data["audio_players"].toList();
     QVariantList::iterator it = players.begin();
     for (;it != players.end();it++)
@@ -149,7 +169,7 @@ void AudioPlayer::audioStateChanged(const QVariantMap &data)
         QVariantMap r = it->toMap();
         if (r["player_id"].toString() == playerData["id"].toString())
         {
-            load(r);
+            updatePlayerState(data);
             break;
         }
     }
@@ -157,7 +177,7 @@ void AudioPlayer::audioStateChanged(const QVariantMap &data)
 
 void AudioPlayer::audioStatusChanged(QString playerid, QString status)
 {
-    if (playerid != playerData["id"].toString()) return;
+    if (playerid != get_id()) return;
 
     playerData["volume"] = status;
     update_status(Common::audioStatusFromString(status));
@@ -165,7 +185,7 @@ void AudioPlayer::audioStatusChanged(QString playerid, QString status)
 
 void AudioPlayer::audioVolumeChanged(QString playerid, double volume)
 {
-    if (playerid != playerData["id"].toString()) return;
+    if (playerid != get_id()) return;
 
     playerData["volume"] = QString("%1").arg(volume);
     update_volume(volume);

@@ -72,4 +72,3 @@ SOURCES += \
     widgets/*/*.qml \
     widgets/*/*.js
 }
-    

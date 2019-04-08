@@ -282,5 +282,41 @@
         <file>img/button_widget_drag@2x.png</file>
         <file>img/icon_config_info.png</file>
         <file>img/ic_delete.svg</file>
+        <file>img/desktop/album_back.png</file>
+        <file>img/desktop/player_cd_shadow.png</file>
+        <file>img/desktop/player_cover_back.png</file>
+        <file>img/desktop/player_cover_front.png</file>
+        <file>img/desktop/player_glow.png</file>
+        <file>img/desktop/player_line_decoration_bottom.png</file>
+        <file>img/desktop/player_line_decoration_cd.png</file>
+        <file>img/desktop/player_line_decoration_left.png</file>
+        <file>img/desktop/player_line_decoration_right.png</file>
+        <file>img/desktop/player_line_decoration_top.png</file>
+        <file>img/desktop/player_shadow.png</file>
+        <file>img/desktop/player_small_cover_back.png</file>
+        <file>img/desktop/player_small_cover_front.png</file>
+        <file>img/desktop/player_small_shadow.png</file>
+        <file>img/desktop/cd_player/cd_player_001.png</file>
+        <file>img/desktop/cd_player/cd_player_002.png</file>
+        <file>img/desktop/cd_player/cd_player_003.png</file>
+        <file>img/desktop/cd_player/cd_player_004.png</file>
+        <file>img/desktop/cd_player/cd_player_005.png</file>
+        <file>img/desktop/cd_player/cd_player_006.png</file>
+        <file>img/desktop/cd_player/cd_player_007.png</file>
+        <file>img/desktop/cd_player/cd_player_008.png</file>
+        <file>img/desktop/cd_player/cd_player_009.png</file>
+        <file>img/desktop/cd_player/menu_media_icon_cd_01.png</file>
+        <file>img/desktop/cd_player/menu_media_icon_cd_02.png</file>
+        <file>img/desktop/cd_player/menu_media_icon_cd_03.png</file>
+        <file>img/desktop/cd_player/menu_media_icon_cd_04.png</file>
+        <file>img/desktop/cd_player/menu_media_icon_cd_05.png</file>
+        <file>img/desktop/cd_player/menu_media_icon_cd_06.png</file>
+        <file>img/desktop/cd_player/menu_media_icon_cd_07.png</file>
+        <file>img/desktop/cd_player/menu_media_icon_cd_08.png</file>
+        <file>img/desktop/cd_player/menu_media_icon_cd_09.png</file>
+        <file>img/desktop/cd_player/mini_cd_player_001.png</file>
+        <file>img/icon_player.png</file>
+        <file>img/ic_pause.svg</file>
+        <file>img/ic_play.svg</file>
     </qresource>
 </RCC>

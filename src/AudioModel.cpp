@@ -15,6 +15,21 @@ AudioModel::AudioModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObjec
     roles[RoleArtist] = "audioArtist";
     roles[RoleStatus] = "audioStatus";
     setItemRoleNames(roles);
+
+    set_playersVisible(false);
+
+    connect(this, &AudioModel::playersVisibleChanged, this, [=](bool visible)
+    {
+        for (int i = 0;i < rowCount();i++)
+        {
+            auto obj = dynamic_cast<AudioPlayer *>(item(i));
+            obj->set_playerVisible(visible);
+            if (visible)
+                obj->startPolling();
+            else
+                obj->stopPolling();
+        }
+    });
 }
 
 void AudioModel::load(const QVariantMap &homeData)
@@ -66,11 +81,15 @@ void AudioPlayer::updatePlayerState(const QVariantMap &d)
     update_cover(playerData["cover_url"].toString());
     update_name(playerData["name"].toString());
     update_volume(playerData["volume"].toDouble());
+    update_elapsed(playerData["time_elapsed"].toDouble());
 
     QVariantMap currentTrack = playerData["current_track"].toMap();
     update_title(currentTrack["title"].toString());
     update_album(currentTrack["album"].toString());
     update_artist(currentTrack["artist"].toString());
+    update_genre(currentTrack["genre"].toString());
+    update_year(currentTrack["year"].toString());
+    update_duration(currentTrack["duration"].toDouble());
 }
 
 void AudioPlayer::load(QVariantMap &d)
@@ -189,4 +208,23 @@ void AudioPlayer::audioVolumeChanged(QString playerid, double volume)
 
     playerData["volume"] = QString("%1").arg(volume);
     update_volume(volume);
+}
+
+void AudioPlayer::startPolling()
+{
+    if (pollTimer) delete pollTimer;
+    pollTimer = new QTimer(this);
+    connect(pollTimer, &QTimer::timeout, this, [=]()
+    {
+        connection->queryState(QStringList(),
+                               QStringList(),
+                               QStringList() << get_id());
+    });
+    pollTimer->start(1000);
+}
+
+void AudioPlayer::stopPolling()
+{
+    delete pollTimer;
+    pollTimer = nullptr;
 }

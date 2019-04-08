@@ -50,5 +50,6 @@
         <file>qml/desktop/DialogRGBColorPicker.qml</file>
         <file>qml/desktop/DialogKeyboard.qml</file>
         <file>qml/desktop/ConfigUserInfoView.qml</file>
+        <file>qml/desktop/AudioPlayer.qml</file>
     </qresource>
 </RCC>

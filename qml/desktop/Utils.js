@@ -103,3 +103,15 @@ function timeToString(s) {
     //trimmed
     return res.replace(/\s*$/, '').replace(/^\s*/, '');
 }
+
+function time2string_digit(s) {
+    var sec_num = parseInt(s, 10)
+    var hours = Math.floor(sec_num / 3600)
+    var minutes = Math.floor((sec_num - (hours * 3600)) / 60)
+    var seconds = sec_num - (hours * 3600) - (minutes * 60)
+
+    if (hours < 10) { hours = "0" + hours }
+    if (minutes < 10) { minutes = "0" + minutes }
+    if (seconds < 10) { seconds = "0" + seconds }
+    return hours > 0? hours + ':' + minutes + ':' + seconds: minutes + ':' + seconds
+}

@@ -256,7 +256,9 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
     QJsonParseError err;
     QJsonDocument jdoc = QJsonDocument::fromJson(bytes, &err);
 
+#ifdef QT_DEBUG
     qDebug().noquote() << "RECV: " << jdoc.toJson();
+#endif
 
     if (err.error != QJsonParseError::NoError)
     {
@@ -325,7 +327,9 @@ void CalaosConnection::requestFinished()
         return;
     }
 
+#ifdef QT_DEBUG
     qDebug().noquote() << "RECV: " << jdoc.toJson();
+#endif
 
     reqReplies.removeAll(reqReply);
 
@@ -421,7 +425,9 @@ void CalaosConnection::sendWebsocket(const QString &msg, const QJsonObject &data
         o["msg_id"] = client_id;
 
     QJsonDocument doc(o);
+#ifdef QT_DEBUG
     qDebug().noquote() << "SEND: " << doc.toJson();
+#endif
 
     wsocket->sendTextMessage(doc.toJson());
 }
@@ -434,7 +440,9 @@ void CalaosConnection::sendHttp(const QString &msg, QJsonObject &data, bool igno
         data["action"] = msg;
 
     QJsonDocument doc(data);
+#ifdef QT_DEBUG
     qDebug().noquote() << "SEND: " << doc.toJson();
+#endif
 
     QUrl url(httphost);
     QNetworkRequest request(url);
@@ -536,7 +544,9 @@ void CalaosConnection::getCameraPicture(const QString &camid, QString urlSuffix)
     jroot["camera_id"] = camid;
     QJsonDocument jdoc(jroot);
 
+#ifdef QT_DEBUG
     qDebug().noquote() << "SEND: " << jdoc.toJson();
+#endif
 
     QUrl url(u);
     QNetworkRequest request(url);
@@ -636,7 +646,9 @@ void CalaosConnection::processEventsV2(QString msg)
 {
     if (msg == "") return;
 
+#ifdef QT_DEBUG
     qDebug().noquote() << "Received: " << msg;
+#endif
 
     QStringList spl = msg.split(' ');
 
@@ -676,7 +688,9 @@ void CalaosConnection::processEventsV2(QString msg)
 
 void CalaosConnection::processEventsV3(QVariantMap msg)
 {
-//    qDebug().noquote() << "Received: " << msg["event_raw"];
+#ifdef QT_DEBUG
+    qDebug().noquote() << "Received: " << msg["event_raw"];
+#endif
 
     QVariantMap data = msg["data"].toMap();
     if (msg["type_str"].toString() == "io_changed")
@@ -726,7 +740,9 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
     QJsonObject jroot = jdoc.object();
     QJsonObject jdata = jroot["data"].toObject();
 
+#ifdef QT_DEBUG
     qDebug() << "RECV:" << message;
+#endif
 
     if (jroot["msg"] == "login")
     {

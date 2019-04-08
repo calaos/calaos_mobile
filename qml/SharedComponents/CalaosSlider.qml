@@ -7,8 +7,8 @@ Controls.Slider {
 
     tickmarksEnabled: false
 
-    implicitHeight: 40 * calaosApp.density
-    implicitWidth: 200 * calaosApp.density
+    implicitHeight: orientation === Qt.Vertical? Units.dp(200): Units.dp(40)
+    implicitWidth: orientation === Qt.Vertical? Units.dp(40): Units.dp(200)
 
     property Component customBackground: null
 

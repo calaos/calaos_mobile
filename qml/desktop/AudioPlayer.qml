@@ -36,7 +36,7 @@ Item {
                 Text {
                     id: labelName
                     font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 12 }
-                    text: hasModel? playerModel.name: qsTr("Aucune zone")
+                    text: hasModel? playerModel.name: qsTr("No audio zone")
                     verticalAlignment: Text.AlignVCenter
                     elide: Text.ElideMiddle
                     color: "white"

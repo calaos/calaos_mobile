@@ -4,37 +4,75 @@
 <context>
     <name>Application</name>
     <message>
-        <location filename="../src/Application.cpp" line="118"/>
-        <location filename="../src/Application.cpp" line="208"/>
+        <location filename="../src/Application.cpp" line="124"/>
+        <location filename="../src/Application.cpp" line="237"/>
         <source>Network error</source>
         <translation>Netzwerkfehler</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="119"/>
+        <location filename="../src/Application.cpp" line="125"/>
         <source>The connection to calaos_server was lost.It will reconnect automatically when calaos_serveris available again.</source>
         <translation>Die Verbindung zu calaos_server wurde unterbrochen. Die Verbindung wird automatisch wiederhergestellt, wenn calaos_server wieder verfügbar ist.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="122"/>
-        <location filename="../src/Application.cpp" line="212"/>
-        <location filename="../src/Application.cpp" line="332"/>
+        <location filename="../src/Application.cpp" line="128"/>
+        <location filename="../src/Application.cpp" line="241"/>
+        <location filename="../src/Application.cpp" line="361"/>
         <source>Close</source>
         <translation>Schliessen</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="209"/>
+        <location filename="../src/Application.cpp" line="238"/>
         <source>No network connection found, this application requires a network connection to work.</source>
         <translation>Keine Netzwerkverbindung gefunden, diese Anwendung benötigt eine Netzwerkverbindung, um zu funktionieren.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="330"/>
+        <location filename="../src/Application.cpp" line="359"/>
         <source>Login failed</source>
         <translation>Fehlgeschlagene Anmeldung</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="331"/>
+        <location filename="../src/Application.cpp" line="360"/>
         <source>Connection failed, please check your credentials.</source>
         <translation>Verbindung fehlgeschlagen, bitte überprüfen Sie Ihre Zugangsdaten.</translation>
+    </message>
+</context>
+<context>
+    <name>AudioPlayer</name>
+    <message>
+        <location filename="../qml/desktop/AudioPlayer.qml" line="39"/>
+        <source>No audio zone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/AudioPlayer.qml" line="103"/>
+        <source>Elapsed:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/AudioPlayer.qml" line="187"/>
+        <source>Artist:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/AudioPlayer.qml" line="199"/>
+        <source>Album:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/AudioPlayer.qml" line="211"/>
+        <source>Track:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/AudioPlayer.qml" line="223"/>
+        <source>Genre:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/AudioPlayer.qml" line="235"/>
+        <source>Duration:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -689,27 +727,27 @@
 <context>
     <name>LoginView</name>
     <message>
-        <location filename="../qml/mobile/LoginView.qml" line="51"/>
+        <location filename="../qml/mobile/LoginView.qml" line="50"/>
         <source>Login to your home</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/mobile/LoginView.qml" line="76"/>
+        <location filename="../qml/mobile/LoginView.qml" line="75"/>
         <source>Username</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/mobile/LoginView.qml" line="87"/>
+        <location filename="../qml/mobile/LoginView.qml" line="86"/>
         <source>Password</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/mobile/LoginView.qml" line="97"/>
+        <location filename="../qml/mobile/LoginView.qml" line="96"/>
         <source>Hostname</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/mobile/LoginView.qml" line="105"/>
+        <location filename="../qml/mobile/LoginView.qml" line="104"/>
         <source>Login</source>
         <translation type="unfinished"></translation>
     </message>
@@ -897,23 +935,23 @@
 <context>
     <name>MusicListView</name>
     <message>
-        <location filename="../qml/desktop/MusicListView.qml" line="50"/>
-        <location filename="../qml/mobile/MusicListView.qml" line="198"/>
+        <location filename="../qml/desktop/MusicListView.qml" line="165"/>
+        <location filename="../qml/mobile/MusicListView.qml" line="195"/>
         <source>Music</source>
         <translation type="unfinished">Musik</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MusicListView.qml" line="77"/>
+        <location filename="../qml/desktop/MusicListView.qml" line="192"/>
         <source>Back to media</source>
         <translation type="unfinished">Zurück zu den Medien</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MusicListView.qml" line="84"/>
+        <location filename="../qml/desktop/MusicListView.qml" line="199"/>
         <source>Quit</source>
         <translation type="unfinished">Beenden</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/MusicListView.qml" line="127"/>
+        <location filename="../qml/mobile/MusicListView.qml" line="135"/>
         <source>Volume:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -921,40 +959,8 @@
 <context>
     <name>NoteBack</name>
     <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="48"/>
-        <source>Edit note</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="49"/>
-        <source>Note</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="50"/>
-        <source>Write your note to be displayed on the desktop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="60"/>
-        <source>Send by mail</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="90"/>
-        <location filename="../widgets/Note/NoteBack.qml" line="106"/>
         <source>Close</source>
-        <translation type="unfinished">Schliessen</translation>
-    </message>
-    <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="103"/>
-        <source>No Emails</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="104"/>
-        <source>No emails are configured. Please go to the Configuration panel and add at least one email address</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Schliessen</translation>
     </message>
 </context>
 <context>
@@ -1125,12 +1131,12 @@
 <context>
     <name>cache</name>
     <message>
-        <location filename="../src/HardwareUtils_desktop.cpp" line="39"/>
+        <location filename="../src/HardwareUtils_desktop.cpp" line="40"/>
         <source>Set cache path to &lt;directory&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/HardwareUtils_desktop.cpp" line="40"/>
+        <location filename="../src/HardwareUtils_desktop.cpp" line="41"/>
         <source>directory</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1138,12 +1144,12 @@
 <context>
     <name>config</name>
     <message>
-        <location filename="../src/HardwareUtils_desktop.cpp" line="35"/>
+        <location filename="../src/HardwareUtils_desktop.cpp" line="36"/>
         <source>Set config path to &lt;directory&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/HardwareUtils_desktop.cpp" line="36"/>
+        <location filename="../src/HardwareUtils_desktop.cpp" line="37"/>
         <source>directory</source>
         <translation type="unfinished"></translation>
     </message>

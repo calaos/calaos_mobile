@@ -7,8 +7,9 @@
 #include <QQmlApplicationEngine>
 #include "CalaosConnection.h"
 #include "Common.h"
+#include <QQuickImageProvider>
 
-class AudioModel: public QStandardItemModel
+class AudioModel: public QStandardItemModel, public QQuickImageProvider
 {
     Q_OBJECT
 
@@ -37,6 +38,9 @@ public:
 
     Q_INVOKABLE QObject *getItemModel(int idx);
     Q_INVOKABLE int audioCount() { return rowCount(); }
+
+    virtual QImage requestImage(const QString &id, QSize *size, const QSize &requestedSize);
+    virtual QPixmap requestPixmap(const QString &id, QSize *size, const QSize &requestedSize);
 
 private:
 
@@ -78,17 +82,21 @@ public:
     Q_INVOKABLE void sendPrevious();
     Q_INVOKABLE void sendVolume(int vol);
 
+    void getCurrentCoverImage(QImage &image);
+
 public slots:
     void audioChanged(QString playerid);
     void audioStatusChanged(QString playerid, QString status);
     void audioVolumeChanged(QString playerid, double volume);
     void audioStateChanged(QString playerid, const QVariantMap &data);
+    void audioCoverDownloaded(QString playerid, const QByteArray &data);
 
 private:
     QVariantMap playerData;
     CalaosConnection *connection;
     bool loaded;
     QTimer *pollTimer = nullptr;
+    QImage currentCoverImage;
 
     void updatePlayerState(const QVariantMap &data);
 };

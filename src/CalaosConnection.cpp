@@ -407,6 +407,29 @@ void CalaosConnection::requestCamFinished(QNetworkReply *reqReply, const QString
     emit cameraPictureDownloaded(camid, bytes);
 }
 
+void CalaosConnection::requestAudioCoverFinished(QNetworkReply *reqReply, const QString &playerid)
+{
+    if (!reqReply)
+    {
+        qWarning() << "Error reqReply is NULL!";
+        return;
+    }
+
+    reqReply->deleteLater();
+
+    if (reqReply->error() != QNetworkReply::NoError)
+    {
+        qDebug() << "Error in " << reqReply->url() << ":" << reqReply->errorString();
+        return;
+    }
+
+    QByteArray bytes = reqReply->readAll();
+    reqReplies.removeAll(reqReply);
+
+    //we have a new picture
+    emit audioCoverDownloaded(playerid, bytes);
+}
+
 void CalaosConnection::requestError(QNetworkReply::NetworkError code)
 {
     Q_UNUSED(code)
@@ -555,6 +578,31 @@ void CalaosConnection::getCameraPicture(const QString &camid, QString urlSuffix)
 
     connect(reqReply, &QNetworkReply::finished, this, [=]() { requestCamFinished(reqReply, camid); });
 //    connect(reqReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestError(QNetworkReply::NetworkError)));
+
+    reqReplies.append(reqReply);
+}
+
+void CalaosConnection::getAudioCover(const QString &playerid)
+{
+    QString u = httphost;
+    QJsonObject jroot;
+    jroot["cn_user"] = username;
+    jroot["cn_pass"] = password;
+    jroot["action"] = QString("audio");
+    jroot["audio_action"] = QString("get_cover");
+    jroot["id"] = playerid;
+    QJsonDocument jdoc(jroot);
+
+#ifdef QT_DEBUG
+    qDebug().noquote() << "SEND: " << jdoc.toJson();
+#endif
+
+    QUrl url(u);
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    QNetworkReply *reqReply = accessManagerCam->post(request, jdoc.toJson());
+
+    connect(reqReply, &QNetworkReply::finished, this, [=]() { requestAudioCoverFinished(reqReply, playerid); });
 
     reqReplies.append(reqReply);
 }

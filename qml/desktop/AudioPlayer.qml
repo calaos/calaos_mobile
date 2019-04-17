@@ -7,8 +7,11 @@ import "../quickflux"
 import "Utils.js" as Utils
 
 Item {
+    id: root
     property variant playerModel
     property bool hasModel: playerModel !== undefined
+
+    property bool selected: false
 
     width: Units.dp(290)
     height: Units.dp(502)
@@ -53,13 +56,100 @@ Item {
                 }
 
                 Image {
+                    id: glow
+                    source: "qrc:/img/desktop/player_glow.png"
+                    anchors {
+                        fill: parent
+                        leftMargin: Units.dp(-14)
+                        topMargin: Units.dp(-10)
+                        rightMargin: Units.dp(-12)
+                        bottomMargin: Units.dp(-12)
+                    }
+                    visible: root.selected
+
+                    SequentialAnimation {
+                        loops: Animation.Infinite
+                        running: parent.visible
+
+                        PropertyAnimation {
+                            target: glow
+                            property: "opacity"
+                            duration: 800
+                            easing.type: Easing.OutQuad
+                            from: 0.5; to: 1
+                        }
+                        PropertyAnimation {
+                            target: glow
+                            property: "opacity"
+                            duration: 500
+                            easing.type: Easing.OutQuad
+                            from: 1; to: 0.5
+                        }
+                    }
+                }
+
+                Image {
                     source: "qrc:/img/desktop/player_cover_back.png"
                     anchors.centerIn: parent
                 }
 
                 Image {
-                    source: "qrc:/img/desktop/player_cover_front.png"
-                    anchors.centerIn: parent
+                    source: "qrc:/img/desktop/cd_player/cd_player_001.png"
+
+                    anchors {
+                        top: parent.top; left: parent.left
+                        topMargin: Units.dp(5)
+                        leftMargin: Units.dp(22)
+                    }
+
+                    visible: hasModel
+                    RotationAnimator on rotation {
+                        running: playerModel.status === Common.StatusPlay
+                        loops: Animation.Infinite
+                        duration: 2000
+                        from: 0 ; to: 360
+                    }
+                }
+
+                Item { //Cover front that can flip
+                    anchors.fill: parent
+
+                    Item { //Cover picture
+                        anchors {
+                            fill: parent
+                            topMargin: Units.dp(3)
+                            leftMargin: Units.dp(20)
+                            rightMargin: Units.dp(4)
+                            bottomMargin: Units.dp(3)
+                        }
+
+                        Image {
+                            fillMode: Image.PreserveAspectFit
+                            source: playerModel.cover
+                            anchors.fill: parent
+                        }
+                    }
+
+                    Image {
+                        source: "qrc:/img/desktop/player_cover_front.png"
+                        anchors.centerIn: parent
+                    }
+
+                    transform: Rotation {
+                        origin.y: Units.dp(170) / 2
+                        axis { x: 0; y: 1; z: 0 }
+                        angle: root.selected? -40:0
+
+                        Behavior on angle {
+                            PropertyAnimation { easing.type: Easing.OutCubic; duration: 400 }
+                        }
+                    }
+
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: root.selected = !root.selected
                 }
             }
 

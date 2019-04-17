@@ -85,10 +85,11 @@ signals:
     void eventScenarioNew();
     void eventScenarioDel();
     void eventScenarioChange();
-    void cameraPictureDownloaded(const QString &camid, const QByteArray data);
+    void cameraPictureDownloaded(const QString &camid, const QByteArray &data);
     void cameraPictureFailed(const QString &camid);
     void eventTouchscreenCamera(QString camid);
     void logEventLoaded(const QVariantMap &data);
+    void audioCoverDownloaded(const QString &camid, const QByteArray &data);
 
 public slots:
     void login(QString user, QString pass, QString host);
@@ -96,6 +97,7 @@ public slots:
     void sendCommand(QString id, QString value, QString type = QString(), QString action = QString());
     void queryState(QStringList inputs, QStringList outputs, QStringList audio_players);
     void getCameraPicture(const QString &camid, QString urlSuffix = QString());
+    void getAudioCover(const QString &playerid);
 
 private slots:
     void sslErrors(QNetworkReply *reply, const QList<QSslError> &);
@@ -105,6 +107,7 @@ private slots:
     void requestFinished();
     void requestCamFinished(QNetworkReply *reqReply, const QString &camid);
     void requestError(QNetworkReply::NetworkError code);
+    void requestAudioCoverFinished(QNetworkReply *reqReply, const QString &camid);
 
     void startJsonPolling();
 

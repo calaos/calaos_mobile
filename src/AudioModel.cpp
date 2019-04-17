@@ -2,6 +2,7 @@
 
 AudioModel::AudioModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent):
     QStandardItemModel(parent),
+    QQuickImageProvider(QQuickImageProvider::Image),
     engine(eng),
     connection(con)
 {
@@ -17,6 +18,9 @@ AudioModel::AudioModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObjec
     setItemRoleNames(roles);
 
     set_playersVisible(false);
+
+    //add a special image provider for single pictures of cameras
+    engine->addImageProvider(QLatin1String("audio_cover"), this);
 
     connect(this, &AudioModel::playersVisibleChanged, this, [=](bool visible)
     {
@@ -60,11 +64,57 @@ QObject *AudioModel::getItemModel(int idx)
     return obj;
 }
 
+QImage AudioModel::requestImage(const QString &qid, QSize *size, const QSize &requestedSize)
+{
+    QImage retimg;
+
+    QStringList sl = qid.split('/');
+    if (sl.empty()) return retimg;
+
+    const QString& id = sl.at(0);
+    AudioPlayer *player = nullptr;
+
+    if (id.toInt() < 0)
+        return retimg;
+
+    for (int i = 0;i < rowCount();i++)
+    {
+        AudioPlayer *p = dynamic_cast<AudioPlayer *>(item(i));
+        if (p->get_id() == id)
+        {
+            player = p;
+            break;
+        }
+    }
+    if (!player)
+        return retimg;
+
+    player->getCurrentCoverImage(retimg);
+
+    *size = retimg.size();
+    if (requestedSize.isValid())
+        return retimg.scaled(requestedSize, Qt::KeepAspectRatio);
+
+    return retimg;
+}
+
+QPixmap AudioModel::requestPixmap(const QString &id, QSize *size, const QSize &requestedSize)
+{
+    return QPixmap::fromImage(requestImage(id, size, requestedSize));
+}
+
 AudioPlayer::AudioPlayer(CalaosConnection *con):
     QStandardItem(),
     connection(con)
 {
     loaded = false;
+
+    connect(connection, &CalaosConnection::audioCoverDownloaded, this, &AudioPlayer::audioCoverDownloaded);
+}
+
+void AudioPlayer::getCurrentCoverImage(QImage &image)
+{
+    image = currentCoverImage;
 }
 
 void AudioPlayer::updatePlayerState(const QVariantMap &d)
@@ -75,10 +125,11 @@ void AudioPlayer::updatePlayerState(const QVariantMap &d)
         playerData[i.key()] = i.value();
         ++i;
     }
+    //refresh audio cover
+    connection->getAudioCover(get_id());
 
     update_status(Common::audioStatusFromString(playerData["status"].toString()));
     update_id(playerData["id"].toString());
-    update_cover(playerData["cover_url"].toString());
     update_name(playerData["name"].toString());
     update_volume(playerData["volume"].toDouble());
     update_elapsed(playerData["time_elapsed"].toDouble());
@@ -227,4 +278,16 @@ void AudioPlayer::stopPolling()
 {
     delete pollTimer;
     pollTimer = nullptr;
+}
+
+void AudioPlayer::audioCoverDownloaded(QString playerid, const QByteArray &data)
+{
+    if (playerid != get_id())
+        return;
+
+    currentCoverImage = QImage::fromData(data);
+    if (currentCoverImage.isNull())
+        update_cover({});
+    else
+        update_cover(QString("image://audio_cover/%1/%2").arg(get_id()).arg(qrand()));
 }

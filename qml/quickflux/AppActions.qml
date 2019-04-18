@@ -66,4 +66,12 @@ QtObject {
                                  returnAction: kReturnAction,
                                  returnPayload: kReturnPayload });
     }
+
+    function showMainMenu() {
+        AppDispatcher.dispatch(ActionTypes.showMainMenu)
+    }
+
+    function hideMainMenu() {
+        AppDispatcher.dispatch(ActionTypes.hideMainMenu)
+    }
 }

@@ -102,10 +102,18 @@ void Application::createQmlApp()
     update_isAndroid(false);
     update_isIOS(true);
     update_isDesktop(false);
+    update_hasWebEngine(false);
 #else
     update_isAndroid(false);
     update_isIOS(false);
     update_isDesktop(true);
+
+#ifdef HAVE_WEBENGINE
+    update_hasWebEngine(true);
+#else
+    update_hasWebEngine(false);
+#endif
+
 #endif
 #endif
 

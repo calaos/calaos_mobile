@@ -16,6 +16,11 @@ TARGET=calaos_home
 
 QT += widgets
 
+qtHaveModule(webengine) {
+QT += webengine
+DEFINES += HAVE_WEBENGINE
+}
+
 linux {
 QT_CONFIG -= no-pkg-config
 CONFIG += link_pkgconfig

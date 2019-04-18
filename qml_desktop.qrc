@@ -51,5 +51,7 @@
         <file>qml/desktop/DialogKeyboard.qml</file>
         <file>qml/desktop/ConfigUserInfoView.qml</file>
         <file>qml/desktop/AudioPlayer.qml</file>
+        <file>qml/desktop/SpotifyView.qml</file>
+        <file>qml/desktop/MediaIconSpotify.qml</file>
     </qresource>
 </RCC>

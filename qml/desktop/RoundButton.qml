@@ -22,7 +22,7 @@ MouseArea {
         source: next?"qrc:/img/button_round_next.png":
                       "qrc:/img/button_round_previous.png"
 
-        opacity: disabled?0:1.0
+        opacity: buttonRound.disabled?0:1.0
         Behavior on opacity { PropertyAnimation { } }
         visible: opacity > 0
     }
@@ -32,7 +32,7 @@ MouseArea {
         source: next?"qrc:/img/button_round_next_glow.png":
                       "qrc:/img/button_round_previous_glow.png"
 
-        state: buttonRound.state
+        state: buttonRound.disabled? "released": buttonRound.state
 
         states: [
             State { name: "released"; PropertyChanges { target: btNormalGlow; opacity: 0.0 } },
@@ -51,7 +51,7 @@ MouseArea {
             }
         ]
 
-        opacity: disabled?0:1.0
+        opacity: buttonRound.disabled?0:1.0
         Behavior on opacity { PropertyAnimation { } }
         visible: opacity > 0
     }
@@ -60,7 +60,7 @@ MouseArea {
         id: btOff
         source: next?"qrc:/img/button_round_next_off.png":
                       "qrc:/img/button_round_previous_off.png"
-        opacity: disabled?1.0:0
+        opacity: buttonRound.disabled?1.0:0
         Behavior on opacity { PropertyAnimation { } }
         visible: opacity > 0
     }
@@ -69,7 +69,7 @@ MouseArea {
         id: btOffGlow
         source: "qrc:/img/button_round_stop.png"
 
-        state: buttonRound.state
+        state: buttonRound.disabled? buttonRound.state: "released"
 
         states: [
             State { name: "released"; PropertyChanges { target: btOffGlow; opacity: 0.0 } },
@@ -88,7 +88,7 @@ MouseArea {
             }
         ]
 
-        opacity: disabled?1.0:0
+        opacity: buttonRound.disabled?1.0:0
         Behavior on opacity { PropertyAnimation { } }
         visible: opacity > 0
     }

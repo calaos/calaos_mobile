@@ -4,8 +4,6 @@ import QtQuick.Layouts 1.3
 import QtWebEngine 1.8
 import QtQuick.VirtualKeyboard 2.2
 import QtQuick.VirtualKeyboard.Settings 2.2
-import QuickFlux 1.0
-import "../quickflux"
 
 Item {
     property bool hideMainMenu: true
@@ -39,19 +37,7 @@ Item {
             top: parent.top
             bottom: inputPanel.top
         }
-        url: "https://www.google.com"
-
-        AppListener {
-            Filter {
-                type: ActionTypes.webGoToUrl
-                onDispatched: {
-                    if (!message.text.startsWith("http://") &&
-                        !message.text.startsWith("https://"))
-                        message.text = "https://google.com/search?q=" + message.text
-                    webView.url = message.text
-                }
-            }
-        }
+        url: "https://open.spotify.com"
     }
 
     Rectangle {
@@ -133,33 +119,8 @@ Item {
 
             spacing: Units.dp(5)
 
-            RoundButton {
-                next: false
-                disabled: !webView.canGoBack
-                scale: 0.8
-                onButtonClicked: webView.goBack()
-            }
-
-            RoundButton {
-                next: true
-                disabled: !webView.canGoForward
-                scale: 0.8
-                onButtonClicked: webView.goForward()
-            }
-
             Item { //spacer
                 height: 1; Layout.fillWidth: true
-            }
-
-            FooterButton {
-                label: qsTr("Go...")
-                icon: "qrc:/img/button_action_plus.png"
-                Layout.minimumWidth: width
-                onBtClicked: AppActions.openKeyboard(qsTr("URL"),
-                                                     qsTr("Enter the url to navigate to"),
-                                                     "",
-                                                     false,
-                                                     ActionTypes.webGoToUrl)
             }
 
             FooterButton {

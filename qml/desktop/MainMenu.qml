@@ -178,27 +178,6 @@ Item {
         }
     }
 
-    AppListener {
-        id: actHomeboard
-        property bool forceHide: false
-        Filter {
-            type: ActionTypes.hideHomeboardMenu
-            onDispatched: actHomeboard.forceHide = true
-        }
-        Filter {
-            type: ActionTypes.showHomeboardMenu
-            onDispatched: actHomeboard.forceHide = false
-        }
-
-        Filter {
-            type: ActionTypes.openCameraSingleView
-            onDispatched: {
-                homeboardOpened = false
-                currentButton = 2
-            }
-        }
-    }
-
     property bool homeboardLinkVisible: currentButton == 0 && !actHomeboard.forceHide
     Item {
         id: homeboardArrow
@@ -247,9 +226,9 @@ Item {
         fillMode: Image.Tile
         horizontalAlignment: Image.AlignLeft
         verticalAlignment: Image.AlignTop
+        height: Units.dp(98)
 
         anchors {
-            top: parent.bottom; topMargin: Units.dp(-98)
             left: parent.left
             right: parent.right
             bottom: parent.bottom
@@ -310,7 +289,7 @@ Item {
         spacing: 0
         anchors {
             horizontalCenter: parent.horizontalCenter
-            bottom: parent.bottom
+            bottom: footerBg.bottom
         }
 
         MainMenuButton {
@@ -362,11 +341,70 @@ Item {
         }
     }
 
-    //Dispatch actions
+    state: "visible"
+
+    states: [
+        State {
+            name: "visible"
+            PropertyChanges { target: footerBg; anchors.bottomMargin: 0 }
+        },
+        State {
+            name: "hidden"
+            PropertyChanges { target: footerBg; anchors.bottomMargin: Units.dp(-100) }
+        }
+    ]
+
+    transitions: [
+        Transition {
+            from: "visible"
+            to: "hidden"
+            PropertyAnimation { duration: 250; properties: "anchors.bottomMargin"; easing.type: Easing.OutCubic }
+        },
+        Transition {
+            from: "hidden"
+            to: "visible"
+            PropertyAnimation { duration: 250; properties: "anchors.bottomMargin"; easing.type: Easing.OutCubic }
+        }
+    ]
+
     AppListener {
+        id: actHomeboard
+        property bool forceHide: false
+        Filter {
+            type: ActionTypes.hideHomeboardMenu
+            onDispatched: actHomeboard.forceHide = true
+        }
+        Filter {
+            type: ActionTypes.showHomeboardMenu
+            onDispatched: actHomeboard.forceHide = false
+        }
+
+        Filter {
+            type: ActionTypes.openCameraSingleView
+            onDispatched: {
+                homeboardOpened = false
+                currentButton = 2
+                menu.state = "visible"
+            }
+        }
+
         Filter {
             type: ActionTypes.clickHomeboardItem
             onDispatched: homeboardOpened = false
+        }
+
+        Filter {
+            type: ActionTypes.hideMainMenu
+            onDispatched: {
+                menu.state = "hidden"
+            }
+        }
+
+        Filter {
+            type: ActionTypes.showMainMenu
+            onDispatched: {
+                menu.state = "visible"
+            }
         }
     }
 }

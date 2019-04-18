@@ -20,6 +20,9 @@ KeyTable {
 
     property string openCameraSingleView
 
+    property string showMainMenu
+    property string hideMainMenu
+
     //Keyboard actions
     property string openAskTextForIo
     property string openKeyboard
@@ -27,6 +30,7 @@ KeyTable {
     //Keyboard return actions
     property string changeNoteText
     property string addUserInfoEmail
+    property string webGoToUrl
 	
 	//Mobile actions
 	property string openEventLog

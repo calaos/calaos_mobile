@@ -48,6 +48,7 @@ public:
     QML_OBJMODEL_PROPERTY(NetworkInfo, netAddresses)
     QML_READONLY_PROPERTY(int, cpuUsage)
     QML_READONLY_PROPERTY(int, memoryUsage)
+    QML_READONLY_PROPERTY(bool, hasWebEngine)
 
 public:
     Application(int &argc, char **argv);

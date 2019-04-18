@@ -67,6 +67,8 @@ Window {
             item = configL18nView
         } else if (itemId == "config/info") {
             item = configUserInfoView
+        } else if (itemId == "media/spotify") {
+            item = spotifyView
         }
 
         stackView.push(item)
@@ -125,6 +127,16 @@ Window {
                                  handleBack()
                                  event.accepted = true;
                              }
+
+            onCurrentItemChanged: {
+                if ('hideMainMenu' in currentItem) {
+                    if (currentItem.hideMainMenu)
+                        AppActions.hideMainMenu()
+                    else
+                        AppActions.showMainMenu()
+                } else
+                    AppActions.showMainMenu()
+            }
         }
     }
 
@@ -207,9 +219,22 @@ Window {
         CameraListView {}
     }
 
-    Component {
-        id: webView
-        MediaWebView {}
+    Item {
+        //Webview are not deleted when popped from StackView.
+        //It allows user to keep the current website open to it's last page
+        id: webParent
+        visible: false
+
+        Loader {
+            id: webView
+            property bool hideMainMenu: true
+            source: "qrc:/qml/desktop/MediaWebView.qml"
+        }
+        Loader {
+            id: spotifyView
+            property bool hideMainMenu: true
+            source: "qrc:/qml/desktop/SpotifyView.qml"
+        }
     }
 
     Component {

@@ -49,10 +49,12 @@ Item {
         delegate: MediaMenuItem {
             labelTitle: title
             labelDesc: subtitle
-            disabled: itemDisabled
+            disabled: itemDisabled || disabledWebEngine
             icon: Loader {
                 source: iconSource
             }
+
+            property bool disabledWebEngine: itemDisabledWithWebEngine && !calaosApp.hasWebEngine
 
             onButtonClicked: rootWindow.handleSubitemClick(clickId)
         }
@@ -73,9 +75,18 @@ Item {
                 clickId: "media/camera"
             }
             ListElement {
+                title: qsTr("Spotify")
+                subtitle: qsTr("Open Spotify Web")
+                itemDisabled: false
+                itemDisabledWithWebEngine: true
+                iconSource: "MediaIconSpotify.qml"
+                clickId: "media/spotify"
+            }
+            ListElement {
                 title: qsTr("Internet")
                 subtitle: qsTr("Go and surf the web")
-                itemDisabled: true
+                itemDisabled: false
+                itemDisabledWithWebEngine: true
                 iconSource: "MediaIconInternet.qml"
                 clickId: "media/web"
             }

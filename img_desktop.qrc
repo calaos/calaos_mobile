@@ -318,5 +318,6 @@
         <file>img/icon_player.png</file>
         <file>img/ic_pause.svg</file>
         <file>img/ic_play.svg</file>
+        <file>img/menu_media_icon_spotify_back.png</file>
     </qresource>
 </RCC>

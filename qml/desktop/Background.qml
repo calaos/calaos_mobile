@@ -1,6 +1,8 @@
 import QtQuick 2.2
 import Calaos 1.0
 import SharedComponents 1.0
+import QuickFlux 1.0
+import "../quickflux"
 
 Rectangle {
     id: bg
@@ -29,7 +31,7 @@ Rectangle {
 
         anchors {
             fill: parent
-            bottomMargin: Units.dp(97)
+            bottomMargin: mainItem.anchors.bottomMargin
         }
     }
 
@@ -46,7 +48,7 @@ Rectangle {
 
         anchors {
             fill: parent
-            bottomMargin: Units.dp(97)
+            bottomMargin: mainItem.anchors.bottomMargin
         }
     }
 
@@ -63,7 +65,7 @@ Rectangle {
 
         anchors {
             fill: parent
-            bottomMargin: Units.dp(97)
+            bottomMargin: mainItem.anchors.bottomMargin
         }
     }
 
@@ -76,7 +78,7 @@ Rectangle {
 
         anchors {
             fill: parent
-            bottomMargin: Units.dp(97)
+            bottomMargin: mainItem.anchors.bottomMargin
         }
     }
 
@@ -87,6 +89,48 @@ Rectangle {
             fill: parent
             topMargin: Units.dp(22)
             bottomMargin: Units.dp(97)
+        }
+
+        state: "visible"
+
+        states: [
+            State {
+                name: "visible"
+                PropertyChanges { target: mainItem; anchors.bottomMargin: Units.dp(97) }
+            },
+            State {
+                name: "hidden"
+                PropertyChanges { target: mainItem; anchors.bottomMargin: 0 }
+            }
+        ]
+
+        transitions: [
+            Transition {
+                from: "visible"
+                to: "hidden"
+                PropertyAnimation { duration: 250; properties: "anchors.bottomMargin"; easing.type: Easing.OutCubic }
+            },
+            Transition {
+                from: "hidden"
+                to: "visible"
+                PropertyAnimation { duration: 250; properties: "anchors.bottomMargin"; easing.type: Easing.OutCubic }
+            }
+        ]
+
+        AppListener {
+            Filter {
+                type: ActionTypes.hideMainMenu
+                onDispatched: {
+                    mainItem.state = "hidden"
+                }
+            }
+
+            Filter {
+                type: ActionTypes.showMainMenu
+                onDispatched: {
+                    mainItem.state = "visible"
+                }
+            }
         }
     }
 

@@ -1,7 +1,7 @@
 import QtQuick 2.10
 import SharedComponents 1.0
 import QtQuick.Layouts 1.3
-import QtWebEngine 1.8
+import QtWebEngine 1.7
 import QtQuick.VirtualKeyboard 2.2
 import QtQuick.VirtualKeyboard.Settings 2.2
 

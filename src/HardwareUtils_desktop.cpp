@@ -40,7 +40,26 @@ void HardwareUtilsDesktop::platformInit(QQmlApplicationEngine *e)
                                  QCoreApplication::translate("cache", "Set cache path to <directory>"),
                                  QCoreApplication::translate("cache", "directory"));
     parser.addOption(cachepath);
-    parser.process(*qApp);
+
+    QStringList args;
+    QStringList webengineArgs = QStringList() << "--no-sandbox"
+                                              << "--remote-debugging-port"
+                                              << "--ppapi-flash-path"
+                                              << "--ppapi-flash-version"
+                                              << "--ppapi-widevine-path"
+                                              << "--register-pepper-plugins"
+                                              << "--touch-events"
+                                              << "--disable-gpu"
+                                              << "--disable-logging"
+                                              << "--enable-logging"
+                                              << "--single-process";
+
+    for (const auto &a: qApp->arguments())
+    {
+        if (!webengineArgs.contains(a))
+            args << a;
+    }
+    parser.process(args);
 
     initConfigOptions(parser.value(confpath), parser.value(cachepath));
 

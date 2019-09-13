@@ -124,6 +124,13 @@ Item {
             }
 
             FooterButton {
+                label: qsTr("Reload")
+                icon: "qrc:/img/button_action_reload.png"
+                Layout.minimumWidth: width
+                onBtClicked: webView.reload()
+            }
+
+            FooterButton {
                 label: qsTr("Keyboard")
                 icon: "qrc:/img/button_action_clavier.png"
                 Layout.minimumWidth: width

@@ -63,6 +63,8 @@ ListView {
             z: index
             sourceComponent: model.ioType === Common.Pump? pump:
                              model.ioType === Common.Outlet? outlet:
+                             model.ioType === Common.Boiler? boiler:
+                             model.ioType === Common.Heater? heater:
                              model.ioType === Common.Light? light:
                              model.ioType === Common.Temp? temp:
                              model.ioType === Common.VarInt? var_int:
@@ -132,4 +134,6 @@ ListView {
     Component { id: fav_all_lights; IOFavAllLights {} }
     Component { id: pump; IOPump {} }
     Component { id: outlet; IOOutlet {} }
+    Component { id: boiler; IOBoiler {} }
+    Component { id: heater; IOHeater {} }
 }

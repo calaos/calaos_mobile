@@ -147,11 +147,15 @@ void EventLogItem::load(const QVariantMap &data)
 
         if (io->get_ioType() == Common::Light ||
             io->get_ioType() == Common::Pump ||
-            io->get_ioType() == Common::Outlet)
+            io->get_ioType() == Common::Outlet ||
+            io->get_ioType() == Common::Boiler ||
+            io->get_ioType() == Common::Heater)
         {
             QString style = "light";
             if (io->get_ioType() == Common::Pump) style = "pump";
             if (io->get_ioType() == Common::Outlet) style = "outlet";
+            if (io->get_ioType() == Common::Boiler) style = "boiler";
+            if (io->get_ioType() == Common::Heater) style = "heater";
 
             if (data["io_state"].toString() == "true")
             {

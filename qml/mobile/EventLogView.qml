@@ -148,6 +148,7 @@ Item {
                         id: icon
                         source: calaosApp.getPictureSized(evIconSource)
                         visible: evIconSource != ""
+                        Layout.alignment: Qt.AlignVCenter
                     }
 
                     Text {
@@ -155,7 +156,7 @@ Item {
                         font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
                         text: evTitle
                         elide: Text.ElideRight
-                        anchors.verticalCenter: icon.verticalCenter
+                        Layout.alignment: Qt.AlignVCenter
                     }
 
                     Item { Layout.fillWidth: true; height: 1 }
@@ -165,7 +166,7 @@ Item {
                         font { family: calaosFont.fontFamily; bold: false; pointSize: 8 }
                         text: evTime
                         elide: Text.ElideRight
-                        anchors.verticalCenter: icon.verticalCenter
+                        Layout.alignment: Qt.AlignVCenter
                     }
                 }
 

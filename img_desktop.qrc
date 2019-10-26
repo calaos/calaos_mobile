@@ -344,5 +344,9 @@
         <file>img/icon_outlet_009.svg</file>
         <file>img/icon_outlet_off.svg</file>
         <file>img/icon_outlet_on.svg</file>
+        <file>img/icon_boiler_off.svg</file>
+        <file>img/icon_boiler_on.svg</file>
+        <file>img/icon_heater_off.svg</file>
+        <file>img/icon_heater_on.svg</file>
     </qresource>
 </RCC>

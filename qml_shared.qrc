@@ -32,5 +32,7 @@
         <file>qml/SharedComponents/CalaosCheck.qml</file>
         <file>qml/SharedComponents/IOPump.qml</file>
         <file>qml/SharedComponents/IOOutlet.qml</file>
+        <file>qml/SharedComponents/IOBoiler.qml</file>
+        <file>qml/SharedComponents/IOHeater.qml</file>
     </qresource>
 </RCC>

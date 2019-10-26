@@ -4,21 +4,12 @@ import "."
 ItemBase {
     property variant modelData
 
-    IconItem {
-        id: iconBg
-        anchors {
-            left: parent.left; leftMargin: 8 * calaosApp.density
-            verticalCenter: parent.verticalCenter
-        }
-        source: calaosApp.getPictureSized("icon_pump_bg")
-    }
-
     AnimatedIcon {
         id: icon
 
         countImage: 9
-        imageFilenameOn: "icon_pump_00%1"
-        imageFilenameOff: "icon_pump_off"
+        imageFilenameOn: "icon_outlet_00%1"
+        imageFilenameOff: "icon_outlet_off"
 
         anchors {
             left: parent.left; leftMargin: 8 * calaosApp.density

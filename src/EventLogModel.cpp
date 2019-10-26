@@ -145,16 +145,22 @@ void EventLogItem::load(const QVariantMap &data)
         update_evTitle(io->get_ioName());
         update_evRoomName(io->get_room_name());
 
-        if (io->get_ioType() == Common::Light)
+        if (io->get_ioType() == Common::Light ||
+            io->get_ioType() == Common::Pump ||
+            io->get_ioType() == Common::Outlet)
         {
+            QString style = "light";
+            if (io->get_ioType() == Common::Pump) style = "pump";
+            if (io->get_ioType() == Common::Outlet) style = "outlet";
+
             if (data["io_state"].toString() == "true")
             {
-                update_evIconSource("icon_light_on");
+                update_evIconSource(QStringLiteral("icon_%1_on").arg(style));
                 update_evActionText(tr("On"));
             }
             else
             {
-                update_evIconSource("icon_light_off");
+                update_evIconSource(QStringLiteral("icon_%1_off").arg(style));
                 update_evActionText(tr("Off"));
             }
         }
@@ -169,19 +175,6 @@ void EventLogItem::load(const QVariantMap &data)
             else
             {
                 update_evIconSource("icon_light_off");
-                update_evActionText(tr("Off"));
-            }
-        }
-        if (io->get_ioType() == Common::Pump)
-        {
-            if (data["io_state"].toString() == "true")
-            {
-                update_evIconSource("icon_pump_on");
-                update_evActionText(tr("On"));
-            }
-            else
-            {
-                update_evIconSource("icon_pump_off");
                 update_evActionText(tr("Off"));
             }
         }

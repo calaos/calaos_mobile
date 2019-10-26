@@ -29,7 +29,7 @@ Item {
             anchors.centerIn: parent
             fillMode: Image.PreserveAspectFit
             height: Units.dp(18)
-            visible: iconSource.endsWith(".svg")? false: iconSource != ""
+            visible: iconSource != ""
         }
 
         ColorOverlay {

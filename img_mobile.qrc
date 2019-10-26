@@ -196,5 +196,18 @@
         <file>img/icon_pump_bg.svg</file>
         <file>img/icon_pump_off.svg</file>
         <file>img/icon_pump_on.svg</file>
+        <file>img/ic_outlet_off.svg</file>
+        <file>img/ic_outlet_on.svg</file>
+        <file>img/icon_outlet_001.svg</file>
+        <file>img/icon_outlet_002.svg</file>
+        <file>img/icon_outlet_003.svg</file>
+        <file>img/icon_outlet_004.svg</file>
+        <file>img/icon_outlet_005.svg</file>
+        <file>img/icon_outlet_006.svg</file>
+        <file>img/icon_outlet_007.svg</file>
+        <file>img/icon_outlet_008.svg</file>
+        <file>img/icon_outlet_009.svg</file>
+        <file>img/icon_outlet_off.svg</file>
+        <file>img/icon_outlet_on.svg</file>
     </qresource>
 </RCC>

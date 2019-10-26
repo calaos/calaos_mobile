@@ -31,5 +31,6 @@
         <file>qml/SharedComponents/CalaosCheckStyle.qml</file>
         <file>qml/SharedComponents/CalaosCheck.qml</file>
         <file>qml/SharedComponents/IOPump.qml</file>
+        <file>qml/SharedComponents/IOOutlet.qml</file>
     </qresource>
 </RCC>

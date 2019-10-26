@@ -61,7 +61,8 @@ ListView {
 
         Loader {
             z: index
-            sourceComponent: model.ioType === Common.Light? light:
+            sourceComponent: model.ioType === Common.Pump? pump:
+                             model.ioType === Common.Light? light:
                              model.ioType === Common.Temp? temp:
                              model.ioType === Common.VarInt? var_int:
                              model.ioType === Common.AnalogIn? var_int:
@@ -128,4 +129,5 @@ ListView {
     Component { id: light_rgb; IOLightRGB {} }
     Component { id: shutter_smart; IOShutterSmart {} }
     Component { id: fav_all_lights; IOFavAllLights {} }
+    Component { id: pump; IOPump {} }
 }

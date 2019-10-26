@@ -408,11 +408,16 @@ QString Application::getPictureSizedPrefix(QString pic, QString prefix)
     if (pic.isEmpty())
         return ret;
 
+    //if file exists in svg, use it first
+    ret = QStringLiteral(":/%1/%2.svg").arg(prefix, pic);
+    if (QFile::exists(ret))
+        return QStringLiteral("qrc%1").arg(ret);
+
     //force @2x images for specific platform (android) as it's not done automatically by Qt
     if (needPictureHDPI())
-        ret = QString("qrc:/%1/%2@2x.png").arg(prefix).arg(pic);
+        ret = QString("qrc:/%1/%2@2x.png").arg(prefix, pic);
     else
-        ret = QString("qrc:/%1/%2.png").arg(prefix).arg(pic);
+        ret = QString("qrc:/%1/%2.png").arg(prefix, pic);
 
     //qDebug() << "PIC: " << ret;
 

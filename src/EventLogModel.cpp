@@ -172,6 +172,19 @@ void EventLogItem::load(const QVariantMap &data)
                 update_evActionText(tr("Off"));
             }
         }
+        if (io->get_ioType() == Common::Pump)
+        {
+            if (data["io_state"].toString() == "true")
+            {
+                update_evIconSource("icon_pump_on");
+                update_evActionText(tr("On"));
+            }
+            else
+            {
+                update_evIconSource("icon_pump_off");
+                update_evActionText(tr("Off"));
+            }
+        }
         else if (io->get_ioType() == Common::Temp)
         {
             update_evIconSource("icon_temp");

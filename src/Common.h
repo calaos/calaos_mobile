@@ -53,7 +53,14 @@ public:
         AudioOutput,
         CameraInput,
         CameraOutput,
-        FavoritesLightsCount
+        FavoritesLightsCount,
+
+        //Special type for styled items
+        //they must be different as Light are treated differently with LightOnModel
+        Pump,
+        Outlet,
+        Heater,
+        Boiler,
     };
     Q_ENUMS(IOType)
 
@@ -90,7 +97,7 @@ public:
     Q_ENUMS(EventType)
 
     static QString IOTypeToString(IOType t);
-    static IOType IOTypeFromString(QString t);
+    static IOType IOTypeFromString(QString t, QString style = {});
     static QString audioStatusToString(AudioStatusType t);
     static AudioStatusType audioStatusFromString(QString t);
 

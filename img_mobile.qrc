@@ -184,5 +184,17 @@
         <file>img/icon_filter.png</file>
         <file>img/icon_filter@2x.png</file>
         <file>img/down_arrow.svg</file>
+        <file>img/icon_pump_001.svg</file>
+        <file>img/icon_pump_002.svg</file>
+        <file>img/icon_pump_003.svg</file>
+        <file>img/icon_pump_004.svg</file>
+        <file>img/icon_pump_005.svg</file>
+        <file>img/icon_pump_006.svg</file>
+        <file>img/icon_pump_007.svg</file>
+        <file>img/icon_pump_008.svg</file>
+        <file>img/icon_pump_009.svg</file>
+        <file>img/icon_pump_bg.svg</file>
+        <file>img/icon_pump_off.svg</file>
+        <file>img/icon_pump_on.svg</file>
     </qresource>
 </RCC>

@@ -94,7 +94,8 @@ public:
         RoleId,
         RoleUnit,
         RoleRW,
-        RoleRoomName
+        RoleRoomName,
+        RoleStyle,
     };
 
     enum {
@@ -135,6 +136,7 @@ class IOBase: public QObject, public QStandardItem
     QML_READONLY_PROPERTY_MODEL(int, ioHits, RoomModel::RoleHits)
     QML_READONLY_PROPERTY_MODEL(QString, ioName, RoomModel::RoleName)
     QML_READONLY_PROPERTY_MODEL(QString, ioId, RoomModel::RoleId)
+    QML_READONLY_PROPERTY_MODEL(QString, ioStyle, RoomModel::RoleStyle)
 
     QML_READONLY_PROPERTY_MODEL(QString, unit, RoomModel::RoleUnit)
     QML_READONLY_PROPERTY_MODEL(bool, rw, RoomModel::RoleRW)

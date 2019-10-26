@@ -319,5 +319,17 @@
         <file>img/ic_pause.svg</file>
         <file>img/ic_play.svg</file>
         <file>img/menu_media_icon_spotify_back.png</file>
+        <file>img/icon_pump_001.svg</file>
+        <file>img/icon_pump_002.svg</file>
+        <file>img/icon_pump_003.svg</file>
+        <file>img/icon_pump_004.svg</file>
+        <file>img/icon_pump_005.svg</file>
+        <file>img/icon_pump_006.svg</file>
+        <file>img/icon_pump_007.svg</file>
+        <file>img/icon_pump_008.svg</file>
+        <file>img/icon_pump_009.svg</file>
+        <file>img/icon_pump_bg.svg</file>
+        <file>img/icon_pump_off.svg</file>
+        <file>img/icon_pump_on.svg</file>
     </qresource>
 </RCC>

@@ -11,14 +11,18 @@ Item {
     property alias sourceHeight: picoff.sourceSize.height
     property bool iconState
 
+    signal animationFinished()
+
     onIconStateChanged: {
         if (iconState)
         {
             currentImage = 1
             tmr.start()
         }
-        else
+        else {
             tmr.stop()
+            animationFinished()
+        }
     }
 
     width: picoff.width
@@ -43,8 +47,10 @@ Item {
         repeat: true
         onTriggered: {
             currentImage++
-            if (currentImage == countImage)
+            if (currentImage == countImage) {
                 tmr.stop()
+                animationFinished()
+            }
         }
     }
 }

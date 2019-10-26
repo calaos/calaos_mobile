@@ -253,10 +253,12 @@ void IOBase::load(const QVariantMap &io)
 
     update_ioName(ioData["name"].toString());
     update_ioHits(ioData["hits"].toInt());
-    update_ioType(Common::IOTypeFromString(ioData["gui_type"].toString()));
+    update_ioStyle(ioData["io_style"].toString());
+    update_ioType(Common::IOTypeFromString(ioData["gui_type"].toString(), get_ioStyle()));
     update_ioId(ioData["id"].toString());
     update_unit(ioData["unit"].toString());
     update_rw(ioData["rw"].toString() == "true");
+    update_ioStyle(ioData["io_style"].toString());
 
     if (ioData["gui_type"].toString() == "light_rgb")
     {

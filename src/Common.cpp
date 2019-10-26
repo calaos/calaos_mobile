@@ -5,6 +5,7 @@ QString Common::IOTypeToString(Common::IOType t)
 {
     switch (t)
     {
+    case Pump:
     case Light: return "light";
     case Temp: return "temp";
     case AnalogIn: return "analog_in";
@@ -37,8 +38,9 @@ QString Common::IOTypeToString(Common::IOType t)
     return QString();
 }
 
-Common::IOType Common::IOTypeFromString(QString t)
+Common::IOType Common::IOTypeFromString(QString t, QString style)
 {
+    if (t == "light" && style == "pump") return Pump;
     if (t == "light") return Light;
     if (t == "temp") return Temp;
     if (t == "analog_in") return AnalogIn;

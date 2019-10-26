@@ -7,9 +7,8 @@ ItemBase {
     IconItem {
         id: icon
 
-//        source: modelData.ioStyle === "temperature"? calaosApp.getPictureSized("icon_temp"):
-//                    calaosApp.getPictureSized("icon_%1".arg(modelData.ioStyle))
-        source: calaosApp.getPictureSized("icon_luminosity")
+        source: modelData.ioStyle === "temperature"? calaosApp.getPictureSized("icon_temp"):
+                    calaosApp.getPictureSized("icon_%1".arg(modelData.ioStyle))
 
         anchors {
             left: parent.left; leftMargin: 8 * calaosApp.density

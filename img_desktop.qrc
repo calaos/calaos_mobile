@@ -348,5 +348,8 @@
         <file>img/icon_boiler_on.svg</file>
         <file>img/icon_heater_off.svg</file>
         <file>img/icon_heater_on.svg</file>
+        <file>img/icon_humidity.svg</file>
+        <file>img/icon_pressure.svg</file>
+        <file>img/icon_luminosity.svg</file>
     </qresource>
 </RCC>

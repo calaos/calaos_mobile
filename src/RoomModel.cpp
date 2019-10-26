@@ -89,6 +89,7 @@ RoomModel::RoomModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject 
     roles[RoleName] = "ioName";
     roles[RoleId] = "ioId";
     roles[RoleRoomName] = "roomName";
+    roles[RoleStyle] = "ioStyle";
     setItemRoleNames(roles);
 }
 

@@ -68,6 +68,7 @@ ListView {
                              model.ioType === Common.Light? light:
                              model.ioType === Common.Temp? temp:
                              model.ioType === Common.VarInt? var_int:
+                             model.ioType === Common.AnalogIn && (model.ioStyle !== "default" && model.ioStyle !== "") ? analogStyled:
                              model.ioType === Common.AnalogIn? var_int:
                              model.ioType === Common.AnalogOut? var_int:
                              model.ioType === Common.VarBool? var_bool:
@@ -136,4 +137,5 @@ ListView {
     Component { id: outlet; IOOutlet {} }
     Component { id: boiler; IOBoiler {} }
     Component { id: heater; IOHeater {} }
+    Component { id: analogStyled; IOAnalogStyled {} }
 }

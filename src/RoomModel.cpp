@@ -552,7 +552,7 @@ void IOBase::outputChanged(QString id, QString key, QString value)
         else if (get_ioType() == Common::LightDimmer ||
                  get_ioType() == Common::LightRgb)
         {
-            if (connection->isHttpApiV2())
+            if (connection->isHttpApiV2() || get_ioType() == Common::LightDimmer)
             {
                 if ((getStateInt() > 0) != (value.toDouble() > 0))
                 {

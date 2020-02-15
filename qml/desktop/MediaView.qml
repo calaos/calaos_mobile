@@ -83,6 +83,14 @@ Item {
                 clickId: "media/spotify"
             }
             ListElement {
+                title: qsTr("Deezer")
+                subtitle: qsTr("Open Deezer Web")
+                itemDisabled: false
+                itemDisabledWithWebEngine: true
+                iconSource: "MediaIconDeezer.qml"
+                clickId: "media/deezer"
+            }
+            ListElement {
                 title: qsTr("Internet")
                 subtitle: qsTr("Go and surf the web")
                 itemDisabled: false

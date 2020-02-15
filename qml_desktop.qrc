@@ -53,5 +53,7 @@
         <file>qml/desktop/AudioPlayer.qml</file>
         <file>qml/desktop/SpotifyView.qml</file>
         <file>qml/desktop/MediaIconSpotify.qml</file>
+        <file>qml/desktop/DeezerView.qml</file>
+        <file>qml/desktop/MediaIconDeezer.qml</file>
     </qresource>
 </RCC>

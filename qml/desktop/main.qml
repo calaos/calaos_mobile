@@ -69,6 +69,8 @@ Window {
             item = configUserInfoView
         } else if (itemId == "media/spotify") {
             item = spotifyView
+        }else if (itemId == "media/deezer") {
+            item = deezerView
         }
 
         stackView.push(item)
@@ -234,6 +236,11 @@ Window {
             id: spotifyView
             property bool hideMainMenu: true
             source: "qrc:/qml/desktop/SpotifyView.qml"
+        }
+        Loader {
+            id: deezerView
+            property bool hideMainMenu: true
+            source: "qrc:/qml/desktop/DeezerView.qml"
         }
     }
 

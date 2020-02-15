@@ -355,5 +355,6 @@
         <file>img/icon_voltage.svg</file>
         <file>img/icon_watt.svg</file>
         <file>img/icon_current.svg</file>
+        <file>img/menu_media_icon_deezer_back.png</file>
     </qresource>
 </RCC>

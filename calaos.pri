@@ -13,6 +13,7 @@ include(3rd_party/quickflux-1.0.6/quickflux.pri)
 include(3rd_party/qt-qml-models/QtQmlModels.pri)
 
 SOURCES += src/main.cpp \
+    $$PWD/src/ChartTheme.cpp \
     src/HomeModel.cpp \
     src/Application.cpp \
     src/CalaosConnection.cpp \
@@ -29,6 +30,7 @@ SOURCES += src/main.cpp \
 QML_IMPORT_PATH = qml
 
 HEADERS += \
+    $$PWD/src/ChartTheme.h \
     src/HomeModel.h \
     src/Application.h \
     src/CalaosConnection.h \

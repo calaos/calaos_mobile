@@ -6,7 +6,7 @@ DEFINES += CALAOS_MOBILE
 
 TARGET=CalaosHome
 
-QT += qml quick network gui websockets svg
+QT += qml quick network gui websockets svg charts
 
 include(calaos.pri)
 
@@ -64,7 +64,5 @@ QML_IMPORT_PATH =
 include(deployment.pri)
 
 contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
-    ANDROID_EXTRA_LIBS = \
-        $$PWD/../openssl-1.0.2k/libcrypto.so \
-        $$PWD/../openssl-1.0.2k/libssl.so
+    ANDROID_EXTRA_LIBS = /Users/nico/Dev/Calaos/calaos_mobile/../android-openssl-qt/prebuilt/armeabi-v7a/libcrypto.so /Users/nico/Dev/Calaos/calaos_mobile/../android-openssl-qt/prebuilt/armeabi-v7a/libssl.so
 }

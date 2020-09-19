@@ -13,7 +13,7 @@ include(calaos.pri)
 
 TARGET=calaos_home
 
-QT += widgets
+QT += widgets charts
 
 linux {
 QT_CONFIG -= no-pkg-config

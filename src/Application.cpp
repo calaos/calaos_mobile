@@ -5,6 +5,7 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include "RoomFilterModel.h"
+#include "ChartTheme.h"
 #ifdef Q_OS_ANDROID
 #include <QtAndroidExtras/QAndroidJniObject>
 #endif
@@ -142,6 +143,10 @@ void Application::createQmlApp()
     engine.rootContext()->setContextProperty("favoritesHomeModel", favHomeModel);
     cameraModel = new CameraModel(&engine, calaosConnect);
     engine.rootContext()->setContextProperty("cameraModel", cameraModel);
+
+    ChartTheme *chartTheme = new ChartTheme();
+    engine.rootContext()->setContextProperty("chartTheme", chartTheme);
+
 
     m_netAddresses = new QQmlObjectListModel<NetworkInfo>(this);
 

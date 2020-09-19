@@ -172,5 +172,6 @@
         <file>img/button_action_glow@2x.png</file>
         <file>img/player_line_decoration_left.png</file>
         <file>img/player_line_decoration_right.png</file>
+        <file>img/button_info_glow.png</file>
     </qresource>
 </RCC>

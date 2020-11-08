@@ -4,35 +4,35 @@
 <context>
     <name>Application</name>
     <message>
-        <location filename="../src/Application.cpp" line="124"/>
-        <location filename="../src/Application.cpp" line="237"/>
+        <location filename="../src/Application.cpp" line="132"/>
+        <location filename="../src/Application.cpp" line="245"/>
         <source>Network error</source>
         <translation>Netzwerkfehler</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="125"/>
+        <location filename="../src/Application.cpp" line="133"/>
         <source>The connection to calaos_server was lost.It will reconnect automatically when calaos_serveris available again.</source>
         <translation>Die Verbindung zu calaos_server wurde unterbrochen. Die Verbindung wird automatisch wiederhergestellt, wenn calaos_server wieder verfügbar ist.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="128"/>
-        <location filename="../src/Application.cpp" line="241"/>
-        <location filename="../src/Application.cpp" line="361"/>
+        <location filename="../src/Application.cpp" line="136"/>
+        <location filename="../src/Application.cpp" line="249"/>
+        <location filename="../src/Application.cpp" line="369"/>
         <source>Close</source>
         <translation>Schliessen</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="238"/>
+        <location filename="../src/Application.cpp" line="246"/>
         <source>No network connection found, this application requires a network connection to work.</source>
         <translation>Keine Netzwerkverbindung gefunden, diese Anwendung benötigt eine Netzwerkverbindung, um zu funktionieren.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="359"/>
+        <location filename="../src/Application.cpp" line="367"/>
         <source>Login failed</source>
         <translation>Fehlgeschlagene Anmeldung</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="360"/>
+        <location filename="../src/Application.cpp" line="368"/>
         <source>Connection failed, please check your credentials.</source>
         <translation>Verbindung fehlgeschlagen, bitte überprüfen Sie Ihre Zugangsdaten.</translation>
     </message>
@@ -40,37 +40,37 @@
 <context>
     <name>AudioPlayer</name>
     <message>
-        <location filename="../qml/desktop/AudioPlayer.qml" line="39"/>
+        <location filename="../qml/desktop/AudioPlayer.qml" line="42"/>
         <source>No audio zone</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/AudioPlayer.qml" line="103"/>
+        <location filename="../qml/desktop/AudioPlayer.qml" line="193"/>
         <source>Elapsed:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/AudioPlayer.qml" line="187"/>
+        <location filename="../qml/desktop/AudioPlayer.qml" line="277"/>
         <source>Artist:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/AudioPlayer.qml" line="199"/>
+        <location filename="../qml/desktop/AudioPlayer.qml" line="289"/>
         <source>Album:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/AudioPlayer.qml" line="211"/>
+        <location filename="../qml/desktop/AudioPlayer.qml" line="301"/>
         <source>Track:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/AudioPlayer.qml" line="223"/>
+        <location filename="../qml/desktop/AudioPlayer.qml" line="313"/>
         <source>Genre:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/AudioPlayer.qml" line="235"/>
+        <location filename="../qml/desktop/AudioPlayer.qml" line="325"/>
         <source>Duration:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -530,34 +530,34 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="153"/>
-        <location filename="../src/EventLogModel.cpp" line="167"/>
+        <location filename="../src/EventLogModel.cpp" line="163"/>
+        <location filename="../src/EventLogModel.cpp" line="177"/>
         <source>On</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="158"/>
-        <location filename="../src/EventLogModel.cpp" line="172"/>
+        <location filename="../src/EventLogModel.cpp" line="168"/>
+        <location filename="../src/EventLogModel.cpp" line="182"/>
         <source>Off</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="178"/>
+        <location filename="../src/EventLogModel.cpp" line="188"/>
         <source>Temp changed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="186"/>
+        <location filename="../src/EventLogModel.cpp" line="196"/>
         <source>Open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="191"/>
+        <location filename="../src/EventLogModel.cpp" line="201"/>
         <source>Closed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="197"/>
+        <location filename="../src/EventLogModel.cpp" line="207"/>
         <source>Started</source>
         <translation type="unfinished"></translation>
     </message>
@@ -614,7 +614,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/mobile/FavoritesListView.qml" line="38"/>
+        <location filename="../qml/mobile/FavoritesListView.qml" line="39"/>
         <source>Favorites</source>
         <translation type="unfinished"></translation>
     </message>
@@ -646,49 +646,67 @@
     </message>
 </context>
 <context>
+    <name>IOAnalogStyled</name>
+    <message>
+        <location filename="../qml/SharedComponents/IOAnalogStyled.qml" line="49"/>
+        <source>Warning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/IOAnalogStyled.qml" line="49"/>
+        <source>The value has not been updated for a long time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/IOAnalogStyled.qml" line="49"/>
+        <source>Close</source>
+        <translation type="unfinished">Schliessen</translation>
+    </message>
+</context>
+<context>
     <name>IOBase</name>
     <message>
-        <location filename="../src/RoomModel.cpp" line="498"/>
+        <location filename="../src/RoomModel.cpp" line="502"/>
         <source>State: Opened.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="500"/>
+        <location filename="../src/RoomModel.cpp" line="504"/>
         <source>State: %1% Opened.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="502"/>
+        <location filename="../src/RoomModel.cpp" line="506"/>
         <source>State: %1% Closed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="505"/>
+        <location filename="../src/RoomModel.cpp" line="509"/>
         <source>State: Closed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="508"/>
+        <location filename="../src/RoomModel.cpp" line="512"/>
         <source>Action: stopped.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="510"/>
+        <location filename="../src/RoomModel.cpp" line="514"/>
         <source>Action: Closing...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="512"/>
+        <location filename="../src/RoomModel.cpp" line="516"/>
         <source>Action: Opening...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="603"/>
+        <location filename="../src/RoomModel.cpp" line="612"/>
         <source>Change value</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="603"/>
+        <location filename="../src/RoomModel.cpp" line="612"/>
         <source>Enter new value</source>
         <translation type="unfinished"></translation>
     </message>
@@ -709,6 +727,24 @@
         <location filename="../qml/SharedComponents/IOFavAllLights.qml" line="27"/>
         <source>All lights are off</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>IOTemp</name>
+    <message>
+        <location filename="../qml/SharedComponents/IOTemp.qml" line="48"/>
+        <source>Warning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/IOTemp.qml" line="48"/>
+        <source>The value has not been updated for a long time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/IOTemp.qml" line="48"/>
+        <source>Close</source>
+        <translation type="unfinished">Schliessen</translation>
     </message>
 </context>
 <context>
@@ -805,22 +841,22 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MainMenu.qml" line="318"/>
+        <location filename="../qml/desktop/MainMenu.qml" line="297"/>
         <source>My Home</source>
         <translation>Mein Haus</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MainMenu.qml" line="330"/>
+        <location filename="../qml/desktop/MainMenu.qml" line="309"/>
         <source>Media</source>
         <translation>Medien</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MainMenu.qml" line="342"/>
+        <location filename="../qml/desktop/MainMenu.qml" line="321"/>
         <source>Scenarios</source>
         <translation>Szenarien</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MainMenu.qml" line="354"/>
+        <location filename="../qml/desktop/MainMenu.qml" line="333"/>
         <source>Configuration</source>
         <translation>Konfiguration</translation>
     </message>
@@ -874,42 +910,52 @@
 <context>
     <name>MediaView</name>
     <message>
-        <location filename="../qml/desktop/MediaView.qml" line="62"/>
+        <location filename="../qml/desktop/MediaView.qml" line="64"/>
         <source>Your Music</source>
         <translation>Deine Musik</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MediaView.qml" line="63"/>
+        <location filename="../qml/desktop/MediaView.qml" line="65"/>
         <source>Access you media library</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MediaView.qml" line="69"/>
+        <location filename="../qml/desktop/MediaView.qml" line="71"/>
         <source>CCTV</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MediaView.qml" line="70"/>
+        <location filename="../qml/desktop/MediaView.qml" line="72"/>
         <source>Drive all you cctv cameras</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MediaView.qml" line="76"/>
+        <location filename="../qml/desktop/MediaView.qml" line="78"/>
+        <source>Spotify</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/MediaView.qml" line="79"/>
+        <source>Open Spotify Web</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/MediaView.qml" line="86"/>
         <source>Internet</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MediaView.qml" line="77"/>
+        <location filename="../qml/desktop/MediaView.qml" line="87"/>
         <source>Go and surf the web</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MediaView.qml" line="101"/>
+        <location filename="../qml/desktop/MediaView.qml" line="112"/>
         <source>Media</source>
         <translation>Medien</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MediaView.qml" line="128"/>
+        <location filename="../qml/desktop/MediaView.qml" line="139"/>
         <source>Quit</source>
         <translation>Beenden</translation>
     </message>
@@ -917,17 +963,37 @@
 <context>
     <name>MediaWebView</name>
     <message>
-        <location filename="../qml/desktop/MediaWebView.qml" line="50"/>
-        <source>Web</source>
+        <location filename="../qml/desktop/MediaWebView.qml" line="155"/>
+        <source>Reload</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MediaWebView.qml" line="77"/>
+        <location filename="../qml/desktop/MediaWebView.qml" line="162"/>
+        <source>Go...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/MediaWebView.qml" line="165"/>
+        <source>URL</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/MediaWebView.qml" line="166"/>
+        <source>Enter the url to navigate to</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/MediaWebView.qml" line="173"/>
+        <source>Keyboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/MediaWebView.qml" line="180"/>
         <source>Back to media</source>
         <translation type="unfinished">Zurück zu den Medien</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MediaWebView.qml" line="84"/>
+        <location filename="../qml/desktop/MediaWebView.qml" line="187"/>
         <source>Quit</source>
         <translation type="unfinished">Beenden</translation>
     </message>
@@ -1073,6 +1139,29 @@
     </message>
 </context>
 <context>
+    <name>SpotifyView</name>
+    <message>
+        <location filename="../qml/desktop/SpotifyView.qml" line="127"/>
+        <source>Reload</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/SpotifyView.qml" line="134"/>
+        <source>Keyboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/SpotifyView.qml" line="141"/>
+        <source>Back to media</source>
+        <translation type="unfinished">Zurück zu den Medien</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/SpotifyView.qml" line="148"/>
+        <source>Quit</source>
+        <translation type="unfinished">Beenden</translation>
+    </message>
+</context>
+<context>
     <name>Utils</name>
     <message>
         <location filename="../qml/desktop/Utils.js" line="85"/>
@@ -1157,12 +1246,12 @@
 <context>
     <name>main</name>
     <message>
-        <location filename="../qml/desktop/main.qml" line="277"/>
+        <location filename="../qml/desktop/main.qml" line="302"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/main.qml" line="278"/>
+        <location filename="../qml/desktop/main.qml" line="303"/>
         <source>Change text for &apos;%1&apos;</source>
         <translation type="unfinished"></translation>
     </message>

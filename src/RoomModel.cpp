@@ -260,6 +260,7 @@ void IOBase::load(const QVariantMap &io)
     update_unit(ioData["unit"].toString());
     update_rw(ioData["rw"].toString() == "true");
     update_ioStyle(ioData["io_style"].toString());
+    update_hasWarning(ioData["value_warning"].toString() != "true");
 
     if (ioData["gui_type"].toString() == "light_rgb")
     {
@@ -530,6 +531,11 @@ void IOBase::inputChanged(QString id, QString key, QString value)
     {
         ioData["name"] = value;
         update_ioName(value);
+    }
+    else if (key == "value_warning")
+    {
+        ioData["value_warning"] = value;
+        update_hasWarning(value == "true");
     }
 }
 

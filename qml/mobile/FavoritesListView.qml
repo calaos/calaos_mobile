@@ -29,6 +29,7 @@ Item {
         visible: listViewFav.count == 0
         textFormat: Text.RichText
         wrapMode: Text.WordWrap
+        width: parent.width
     }
 
     ScrollBar { listObject: listViewFav }

@@ -220,5 +220,6 @@
         <file>img/icon_speed.svg</file>
         <file>img/icon_voltage.svg</file>
         <file>img/icon_watt.svg</file>
+        <file>img/icon_warning.svg</file>
     </qresource>
 </RCC>

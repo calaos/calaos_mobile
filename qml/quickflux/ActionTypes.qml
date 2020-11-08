@@ -36,5 +36,7 @@ KeyTable {
 	property string openEventLog
     property string openEventPushViewer
     property string openEventPushViewerUuid
+
+    property string showNotificationMsg
 }
 

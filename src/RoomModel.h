@@ -96,6 +96,7 @@ public:
         RoleRW,
         RoleRoomName,
         RoleStyle,
+        RoleWarning,
     };
 
     enum {
@@ -142,6 +143,8 @@ class IOBase: public QObject, public QStandardItem
     QML_READONLY_PROPERTY_MODEL(bool, rw, RoomModel::RoleRW)
 
     QML_READONLY_PROPERTY_MODEL(QString, room_name, RoomModel::RoleRoomName)
+
+    QML_READONLY_PROPERTY_MODEL(bool, hasWarning, RoomModel::RoleWarning)
 
     Q_PROPERTY(bool stateBool READ getStateBool NOTIFY stateChange)
     Q_PROPERTY(double stateInt READ getStateInt NOTIFY stateChange)

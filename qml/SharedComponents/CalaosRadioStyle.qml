@@ -9,13 +9,21 @@ RadioButtonStyle {
         color: "transparent"
     }
 
-    label: Text {
-        text: control.text
-        font.pixelSize: Units.dp(14)
-        font.family: calaosFont.fontFamily
-        font.weight: Font.Thin
-        color: "#E7E7E7"
-    }
+    label: Item {
+            implicitWidth: text.implicitWidth + 2
+            implicitHeight: Units.dp(48)
+            baselineOffset: text.y + text.baselineOffset
+            Text {
+                id: text
+                text: control.text
+                anchors.centerIn: parent
+                renderType: calaosApp.isAndroid || calaosApp.isIOS ? Text.QtRendering : Text.NativeRendering
+                font.pixelSize: Units.dp(14)
+                font.family: calaosFont.fontFamily
+                font.weight: Font.Thin
+                color: "#E7E7E7"
+            }
+        }
 
     indicator: Item {
         implicitWidth: Units.dp(48)

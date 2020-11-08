@@ -139,7 +139,9 @@ int Machine::getMemoryUsage()
 #include <arpa/inet.h>
 #include <errno.h>
 #include <unistd.h>
+#if HAVE_STROPTS_H
 #include <stropts.h>
+#endif
 
 quint32 Machine::getMachineUptime()
 {

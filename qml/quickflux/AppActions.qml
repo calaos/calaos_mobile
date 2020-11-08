@@ -74,4 +74,11 @@ QtObject {
     function hideMainMenu() {
         AppDispatcher.dispatch(ActionTypes.hideMainMenu)
     }
+
+    function showNotificationMsg(nTitle, nMsg, nButton) {
+        AppDispatcher.dispatch(ActionTypes.showNotificationMsg,
+                               { title: nTitle,
+                                 message: nMsg,
+                                 button: nButton });
+    }
 }

@@ -323,6 +323,14 @@ Window {
                                             })
             }
         }
+
+        Filter {
+            type: ActionTypes.showNotificationMsg
+
+            onDispatched: {
+                rootWindow.showAlertMessage(message.title, message.message, message.button)
+            }
+        }
     }
 
     //This should stay at the top of all object layer

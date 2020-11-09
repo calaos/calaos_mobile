@@ -260,7 +260,7 @@ void IOBase::load(const QVariantMap &io)
     update_unit(ioData["unit"].toString());
     update_rw(ioData["rw"].toString() == "true");
     update_ioStyle(ioData["io_style"].toString());
-    update_hasWarning(ioData["value_warning"].toString() != "true");
+    update_hasWarning(ioData["value_warning"].toString() == "true");
 
     if (ioData["gui_type"].toString() == "light_rgb")
     {

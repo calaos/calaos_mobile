@@ -1,5 +1,7 @@
 import QtQuick 2.0
 import "."
+import QuickFlux 1.0
+import "../quickflux"
 
 ItemBase {
     property variant modelData
@@ -26,9 +28,28 @@ ItemBase {
         elide: Text.ElideMiddle
         anchors {
             left: val.right; leftMargin: 8 * calaosApp.density
-            right: modelData.rw?btmin.left:parent.right
+            right: iconWarning.right
             rightMargin: 8 * calaosApp.density
             verticalCenter: parent.verticalCenter
+        }
+    }
+
+    IconItem {
+        id: iconWarning
+
+        source: calaosApp.getPictureSized("icon_warning")
+
+        anchors {
+            rightMargin: 8 * calaosApp.density
+            right: modelData.rw?btmin.left:parent.right
+            verticalCenter: parent.verticalCenter
+        }
+
+        visible: modelData.hasWarning
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: AppActions.showNotificationMsg(qsTr("Warning"), qsTr("The value has not been updated for a long time"), qsTr("Close"))
         }
     }
 

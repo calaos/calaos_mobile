@@ -1,5 +1,6 @@
 #include "CameraModel.h"
 #include "ScreenManager.h"
+#include <qfappdispatcher.h>
 
 CameraModel::CameraModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent):
     QStandardItemModel(parent),
@@ -65,6 +66,10 @@ void CameraModel::eventTouchscreenCamera(QString cameraId)
             //Wake up screen
 #ifdef CALAOS_DESKTOP
             ScreenManager::Instance().wakeupScreen();
+
+            //Also tell ScreenSuspend.qml to wake up
+            QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(engine);
+            appDispatcher->dispatch("suspendScreen");
 #endif
             emit actionViewCamera(getItemModel(i));
         }

@@ -98,13 +98,6 @@ ItemBase {
 
     property int shutterPos: modelData.stateShutterPos
 
-    onShutterPosChanged: {
-        // shutterPos can be 0 <-> 100
-        // picture should be -45 <-> 0
-        var val = Math.round(shutterPos * 45 * calaosApp.density / 100) - 45 * calaosApp.density
-         shutter.anchors.verticalCenterOffset = val
-    }
-
     Item {
         anchors {
             horizontalCenterOffset: 7 * calaosApp.density
@@ -117,6 +110,10 @@ ItemBase {
             id: shutter
             source: calaosApp.getPictureSized("part_shutter2")
             anchors.centerIn: parent
+
+            // shutterPos can be 0 <-> 100
+            // picture should be -45 <-> 0
+            anchors.verticalCenterOffset: Math.round(shutterPos * Units.dp(45) / 100) - Units.dp(45)
         }
     }
 

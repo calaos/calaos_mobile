@@ -69,7 +69,7 @@ void CameraModel::eventTouchscreenCamera(QString cameraId)
 
             //Also tell ScreenSuspend.qml to wake up
             QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(engine);
-            appDispatcher->dispatch("suspendScreen");
+            appDispatcher->dispatch("wakeupScreen");
 #endif
             emit actionViewCamera(getItemModel(i));
         }

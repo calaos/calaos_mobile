@@ -1,1 +1,11 @@
 *.user
+*.o
+moc_*
+CalaosHome.app
+Makefile
+.qmake.stash
+qrc_fonts_mobile.cpp
+qrc_img_mobile.cpp
+qrc_lang.cpp
+qrc_qml_mobile.cpp
+qrc_qml_shared.cpp

@@ -58,11 +58,13 @@ public:
     //It is used by iOS when started with a QuickAction
     bool hasStartedWithOption() { return startedWithOpt; }
     virtual QString getStartOption(const QString &key) { Q_UNUSED(key); return QString(); }
+    void resetStartedWithOption() { startedWithOpt = false; }
 
     //Used when user clicked on a notification
     //It should open the app and load the notif
     bool hasStartedWithNotif() { return startedWithNotif; }
     QString getNotifUuid() { return notifUuid; }
+    void resetStartedWithNotif() { startedWithNotif = false; }
 
     virtual void setQuickLinks(QVariantList quicklinks) { Q_UNUSED(quicklinks); }
 

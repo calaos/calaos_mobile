@@ -207,7 +207,8 @@ void Application::createQmlApp()
     engine.load(QUrl(QStringLiteral("qrc:///qml/mobile/main.qml")));
 
 #if defined (Q_OS_ANDROID) || defined (Q_OS_IOS)
-    QObject *rootObject = engine.rootObjects().first();
+    auto rootObjs = engine.rootObjects();
+    QObject *rootObject = rootObjs.first();
     if (rootObject)
     {
         QWindow *w = qobject_cast<QWindow *>(rootObject);
@@ -304,6 +305,8 @@ void Application::homeLoaded(const QVariantMap &homeData)
         startedWithOptHandled = true;
         if (HardwareUtils::Instance()->hasStartedWithOption())
         {
+            HardwareUtils::Instance()->resetStartedWithOption();
+
             //If app has been started with option, it should be a scenario (only supported action for now)
             QString io = HardwareUtils::Instance()->getStartOption("scenario");
             qDebug() << "Start option: activate scenario: " << io;
@@ -316,6 +319,8 @@ void Application::homeLoaded(const QVariantMap &homeData)
 
         if (HardwareUtils::Instance()->hasStartedWithNotif())
         {
+            HardwareUtils::Instance()->resetStartedWithNotif();
+
             //If app has been started with notification option, it should open it
             QTimer::singleShot(400, this, [=]()
             {
@@ -350,7 +355,7 @@ void Application::loginFailed()
     homeModel->clear();
     audioModel->clear();
     scenarioModel->clear();
-    scenarioSortModel->clear();
+    scenarioSortModel->invalidate();
     favModel->clear();
     favHomeModel->clear();
     lightOnModel->clear();

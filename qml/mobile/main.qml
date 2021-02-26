@@ -15,7 +15,7 @@ Window {
 
     color: "#080808"
 
-    flags: Qt.platform.os === "ios"? Qt.MaximizeUsingFullscreenGeometryHint : undefined
+    //flags: Qt.platform.os === "ios"? Qt.MaximizeUsingFullscreenGeometryHint : undefined
 
     property bool isLandscape: rootWindow.width > rootWindow.height
 

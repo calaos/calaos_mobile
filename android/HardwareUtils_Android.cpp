@@ -33,6 +33,19 @@ public:
         qDebug() << "Initializing Firebase module";
         fbInitializer.Initialize(fbApp, nullptr, firebaseInitializeMessaging);
         qDebug() << "Module initialized. Waiting on messaging initialization";
+
+        firebase::messaging::GetToken().OnCompletion([](const firebase::Future<std::string> &completed_future)
+        {
+            if (completed_future.status() != firebase::kFutureStatusComplete)
+            {
+                qDebug() << "FB: GetToken future status not completed";
+                return;
+            }
+
+            std::string token = *completed_future.result();
+            HardwareUtilsAndroid *o = reinterpret_cast<HardwareUtilsAndroid *>(HardwareUtils::Instance());
+            o->setDeviceToken(QString::fromStdString(token));
+        });
     }
 
     virtual void OnTokenReceived(const char *token)

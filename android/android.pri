@@ -18,15 +18,15 @@ LIBS += -L$$FIREBASE_SDK/libs/android/$$ANDROID_TARGET_ARCH/c++ \
         -lfirebase_app \
         -lfirebase_auth
 
-ANDROID_EXTRA_LIBS += \
-        $$PWD/openssl_prebuilt/$$ANDROID_TARGET_ARCH/libcrypto.so \
-        $$PWD/openssl_prebuilt/$$ANDROID_TARGET_ARCH/libssl.so
+include(C:/Users/raoul/AppData/Local/Android/Sdk/android_openssl/openssl.pri)
 
 DISTFILES += \
+        $$PWD/gradle.properties \
         $$PWD/res/drawable-hdpi/icon.png \
         $$PWD/res/drawable-ldpi/icon.png \
         $$PWD/res/drawable-mdpi/icon.png \
         $$PWD/google-services.json \
         $$PWD/AndroidManifest.xml \
         $$PWD/build.gradle \
-        $$PWD/gradle/wrapper/gradle-wrapper.properties
+        $$PWD/gradle/wrapper/gradle-wrapper.properties \
+        $$PWD/settings.gradle

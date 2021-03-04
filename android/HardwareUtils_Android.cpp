@@ -33,6 +33,19 @@ public:
         qDebug() << "Initializing Firebase module";
         fbInitializer.Initialize(fbApp, nullptr, firebaseInitializeMessaging);
         qDebug() << "Module initialized. Waiting on messaging initialization";
+
+        firebase::messaging::GetToken().OnCompletion([](const firebase::Future<std::string> &completed_future)
+        {
+            if (completed_future.status() != firebase::kFutureStatusComplete)
+            {
+                qDebug() << "FB: GetToken future status not completed";
+                return;
+            }
+
+            std::string token = *completed_future.result();
+            HardwareUtilsAndroid *o = reinterpret_cast<HardwareUtilsAndroid *>(HardwareUtils::Instance());
+            o->setDeviceToken(QString::fromStdString(token));
+        });
     }
 
     virtual void OnTokenReceived(const char *token)
@@ -57,7 +70,12 @@ static ::firebase::InitResult firebaseInitializeMessaging(::firebase::App *app, 
 {
     qDebug() << "Try to initialize Firebase Messaging";
     HardwareUtilsAndroid *o = reinterpret_cast<HardwareUtilsAndroid *>(HardwareUtils::Instance());
-    return ::firebase::messaging::Initialize(*app, o->getFbListener());
+    auto res = ::firebase::messaging::Initialize(*app, o->getFbListener());
+    if (res == firebase::kInitResultSuccess)
+        qDebug() << "FB Messaging Init success";
+    if (res == firebase::kInitResultFailedMissingDependency)
+        qWarning() << "FB Messaging init failed: missing dependency (google play services)";
+    return res;
 }
 
 HardwareUtilsAndroid::HardwareUtilsAndroid(QObject *parent):

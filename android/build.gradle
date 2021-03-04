@@ -70,6 +70,11 @@ android {
 
     buildToolsVersion androidBuildToolsVersion
 
+    defaultConfig {
+        minSdkVersion 26
+        targetSdkVersion 29
+    }
+
     sourceSets {
         main {
             manifest.srcFile 'AndroidManifest.xml'
@@ -86,6 +91,11 @@ android {
     lintOptions {
         abortOnError false
     }
+}
+
+apply from: "$gradle.firebase_cpp_sdk_dir/Android/firebase_dependencies.gradle"
+firebaseCpp.dependencies {
+  messaging
 }
 
 apply plugin: 'com.google.gms.google-services'

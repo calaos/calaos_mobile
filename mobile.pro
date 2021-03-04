@@ -33,3 +33,9 @@ include(deployment.pri)
 android: include(C:/Users/raoul/AppData/Local/Android/Sdk/android_openssl/openssl.pri)
 
 ANDROID_EXTRA_LIBS = C:/Users/raoul/AppData/Local/Android/Sdk/android_openssl/no-asm/latest/arm/libcrypto_1_1.so C:/Users/raoul/AppData/Local/Android/Sdk/android_openssl/no-asm/latest/arm/libssl_1_1.so C:/Users/raoul/AppData/Local/Android/Sdk/android_openssl/no-asm/latest/arm64/libcrypto_1_1.so C:/Users/raoul/AppData/Local/Android/Sdk/android_openssl/no-asm/latest/arm64/libssl_1_1.so C:/Users/raoul/AppData/Local/Android/Sdk/android_openssl/no-asm/latest/x86/libcrypto_1_1.so C:/Users/raoul/AppData/Local/Android/Sdk/android_openssl/no-asm/latest/x86/libssl_1_1.so C:/Users/raoul/AppData/Local/Android/Sdk/android_openssl/no-asm/latest/x86_64/libcrypto_1_1.so C:/Users/raoul/AppData/Local/Android/Sdk/android_openssl/no-asm/latest/x86_64/libssl_1_1.so
+
+DISTFILES += \
+    android/gradle/wrapper/gradle-wrapper.jar \
+    android/gradlew \
+    android/gradlew.bat \
+    android/res/values/libs.xml

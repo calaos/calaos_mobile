@@ -57,7 +57,12 @@ static ::firebase::InitResult firebaseInitializeMessaging(::firebase::App *app, 
 {
     qDebug() << "Try to initialize Firebase Messaging";
     HardwareUtilsAndroid *o = reinterpret_cast<HardwareUtilsAndroid *>(HardwareUtils::Instance());
-    return ::firebase::messaging::Initialize(*app, o->getFbListener());
+    auto res = ::firebase::messaging::Initialize(*app, o->getFbListener());
+    if (res == firebase::kInitResultSuccess)
+        qDebug() << "FB Messaging Init success";
+    if (res == firebase::kInitResultFailedMissingDependency)
+        qWarning() << "FB Messaging init failed: missing dependency (google play services)";
+    return res;
 }
 
 HardwareUtilsAndroid::HardwareUtilsAndroid(QObject *parent):

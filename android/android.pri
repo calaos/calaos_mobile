@@ -28,4 +28,5 @@ DISTFILES += \
         $$PWD/google-services.json \
         $$PWD/AndroidManifest.xml \
         $$PWD/build.gradle \
-        $$PWD/gradle/wrapper/gradle-wrapper.properties
+        $$PWD/gradle/wrapper/gradle-wrapper.properties \
+        $$PWD/settings.gradle

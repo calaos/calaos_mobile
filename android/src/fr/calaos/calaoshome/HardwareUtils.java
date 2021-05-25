@@ -7,20 +7,46 @@ import android.content.DialogInterface;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.widget.EditText;
+import android.util.Log;
+import android.os.Bundle;
+import android.content.SharedPreferences;
+import java.lang.String;
+import fr.calaos.calaoshome.Common;
 
 class HardwareUtilsNatives
 {
     public static native void emitDialogTextValid(String text);
     public static native void emitDialogCancel();
+    public static native String getDemoUser();
+    public static native String getDemoPass();
+    public static native String getDemoHost();
 }
 
 public class HardwareUtils extends org.qtproject.qt5.android.bindings.QtActivity
 {
-    private static HardwareUtils _context;
+    private static String SharedPreferencesKey = "fr.calaos.CalaosMobile";
+    private static String SharedPreferencesHostKey = "calaos.hostname";
+    private static String SharedPreferencesUserKey = "calaos-cn-user";
+    private static String SharedPreferencesPassKey = "calaos-cn-pass";
+    public static HardwareUtils _context;
+
+    public String host;
+    public String email;
+    public String pass;
 
     public HardwareUtils()
     {
         _context = this;
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // getSharedPreferences is not available in constructor (before onCreate). So we should use it here.
+        SharedPreferences pref = this.getSharedPreferences(HardwareUtils.SharedPreferencesKey, Context.MODE_PRIVATE);
+        this.host = pref.getString(HardwareUtils.SharedPreferencesHostKey, Common.getDemoHost());
+        this.email = pref.getString(HardwareUtils.SharedPreferencesUserKey, Common.getDemoUser());
+        this.pass = pref.getString(HardwareUtils.SharedPreferencesPassKey, Common.getDemoPass());
     }
 
     public static void showAlertMessage(String _title, String _message, String _buttontext)
@@ -113,33 +139,53 @@ public class HardwareUtils extends org.qtproject.qt5.android.bindings.QtActivity
         });
     }
 
-
-
-/*
-
-//Qt example for showing the user a notification in the notif center
-//Maybe use that later.
-
-    private static NotificationManager m_notificationManager;
-    private static Notification.Builder m_builder;
-    private static NotificationClient m_instance;
-
-    public NotificationClient()
+    public static void loadAuthKeychain()
     {
-        m_instance = this;
+        SharedPreferences pref = _context.getSharedPreferences(HardwareUtils.SharedPreferencesKey, Context.MODE_PRIVATE);
+        String email = pref.getString(HardwareUtils.SharedPreferencesUserKey, "");
+        String pass = pref.getString(HardwareUtils.SharedPreferencesPassKey, "");
+        _context.email = email;
+        _context.pass = pass;
     }
 
-    public static void notify(String s)
+    public static void saveAuthKeychain(String email, String pass)
     {
-        if (m_notificationManager == null) {
-            m_notificationManager = (NotificationManager)m_instance.getSystemService(Context.NOTIFICATION_SERVICE);
-            m_builder = new Notification.Builder(m_instance);
-            m_builder.setSmallIcon(R.drawable.icon);
-            m_builder.setContentTitle("A message from Qt!");
+        SharedPreferences pref = _context.getSharedPreferences(HardwareUtils.SharedPreferencesKey, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = pref.edit();
+        editor.putString(HardwareUtils.SharedPreferencesUserKey, email);
+        editor.putString(HardwareUtils.SharedPreferencesPassKey, pass);
+        editor.apply();
+    }
+
+    public static void setConfigOption(String key, String value)
+    {
+        if (key.equals("calaos/host")) {
+            SharedPreferences pref = _context.getSharedPreferences(HardwareUtils.SharedPreferencesKey, Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = pref.edit();
+            editor.putString(HardwareUtils.SharedPreferencesHostKey, value);
+            editor.apply();
+            _context.host = value;
         }
-
-        m_builder.setContentText(s);
-        m_notificationManager.notify(1, m_builder.build());
     }
-*/
+
+    public static void resetAuthKeychain()
+    {
+        SharedPreferences pref = _context.getSharedPreferences(HardwareUtils.SharedPreferencesKey, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = pref.edit();
+        editor.putString(HardwareUtils.SharedPreferencesUserKey, Common.getDemoUser());
+        editor.putString(HardwareUtils.SharedPreferencesPassKey, Common.getDemoPass());
+        editor.apply();
+    }
+
+    public String getNotificationPictureURL(String uuid)
+    {
+        String host = this.host;
+        if (host.startsWith("ws://") || host.startsWith("wss://")) {
+            host = host.replace("ws", "http");
+        }
+        if (!host.startsWith("http://") && !host.startsWith("https://")) {
+            host = String.format("https://%s/api", host);
+        }
+        return String.format("%s?cn_user=%s&cn_pass=%s&action=eventlog&uuid=%s", host, this.email, this.pass, uuid);
+    }
 }

@@ -16,9 +16,21 @@ private:
 public:
     virtual ~HardwareUtilsAndroid();
 
+    static HardwareUtilsAndroid *Instance(QObject *parent = NULL);
+
     virtual void platformInit(QQmlApplicationEngine *e);
 
     virtual void showAlertMessage(QString title, QString message, QString buttontext);
+
+    virtual void loadAuthKeychain(QString &email, QString &pass);
+
+    virtual void saveAuthKeychain(const QString &email, const QString &pass);
+
+    virtual void setConfigOption(QString key, QString value);
+
+    virtual void resetAuthKeychain();
+
+    virtual QString getConfigOption(QString key);
 
     enum NetworkStatus
     {

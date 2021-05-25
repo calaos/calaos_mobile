@@ -4,8 +4,10 @@ QT += gui-private
 OTHER_FILES += $$PWD/src/fr/calaos/calaoshome/HardwareUtils.java
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD
 
-SOURCES += $$PWD/HardwareUtils_Android.cpp
-HEADERS += $$PWD/HardwareUtils_Android.h
+SOURCES += $$PWD/HardwareUtils_Android.cpp \
+    $$PWD/NotificationService.cpp
+HEADERS += $$PWD/HardwareUtils_Android.h \
+    $$PWD/NotificationService.h
 
 FIREBASE_SDK = $$(FIREBASE_CPP_SDK_DIR)
 isEmpty(FIREBASE_SDK) {
@@ -29,4 +31,7 @@ DISTFILES += \
         $$PWD/AndroidManifest.xml \
         $$PWD/build.gradle \
         $$PWD/gradle/wrapper/gradle-wrapper.properties \
-        $$PWD/settings.gradle
+        $$PWD/settings.gradle \
+        $$PWD/src/fr/calaos/calaoshome/Common.java \
+        $$PWD/src/fr/calaos/calaoshome/Logger.java \
+        $$PWD/src/fr/calaos/calaoshome/NotificationService.java

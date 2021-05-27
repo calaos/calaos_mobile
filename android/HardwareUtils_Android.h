@@ -30,8 +30,6 @@ public:
 
     virtual void resetAuthKeychain();
 
-    virtual QString getConfigOption(QString key);
-
     enum NetworkStatus
     {
         NotConnected = 0,

@@ -76,32 +76,7 @@ android {
         minSdkVersion 26
         targetSdkVersion 29
     }
-/*
-    buildTypes {
-        release {
 
-        }
-
-        debug {
-
-        }
-    }
-
-    flavorDimensions "version"
-
-    productFlavors {
-        debug {
-            dimension "version"
-            applicationIdSuffix ".debug"
-            versionNameSuffix "-debug"
-        }
-        demo {
-            dimension "version"
-            applicationIdSuffix ".demo"
-            versionNameSuffix "-demo"
-        }
-    }
-*/
     sourceSets {
         main {
             manifest.srcFile 'AndroidManifest.xml'

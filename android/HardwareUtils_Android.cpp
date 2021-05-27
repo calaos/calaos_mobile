@@ -59,7 +59,7 @@ public:
     virtual void OnMessage(const ::firebase::messaging::Message &message)
     {
         qDebug() << "Received FCM message";
-        NotificationService *ns = new NotificationService();
+        NotificationService *ns = NotificationService::Instance();
         ns->handleMessage(message);
     }
 
@@ -81,16 +81,6 @@ static ::firebase::InitResult firebaseInitializeMessaging(::firebase::App *app, 
     return res;
 }
 
-
-
-
-
-
-
-
-
-
-
 HardwareUtilsAndroid::HardwareUtilsAndroid(QObject *parent):
     HardwareUtils(parent),
     fcmListener(new FbListener())
@@ -103,7 +93,7 @@ HardwareUtilsAndroid::~HardwareUtilsAndroid()
 
 HardwareUtilsAndroid *HardwareUtilsAndroid::Instance(QObject *parent)
 {
-    return static_cast<HardwareUtilsAndroid*>(HardwareUtils::Instance(parent));
+    return dynamic_cast<HardwareUtilsAndroid*>(HardwareUtils::Instance(parent));
 }
 
 void HardwareUtilsAndroid::platformInit(QQmlApplicationEngine *e)
@@ -174,13 +164,13 @@ void HardwareUtilsAndroid::inputTextDialog(const QString &title, const QString &
 
 void HardwareUtilsAndroid::loadAuthKeychain(QString &email, QString &pass)
 {
-    this->HardwareUtils::loadAuthKeychain(email, pass);
+    Q_UNUSED(email);
+    Q_UNUSED(pass);
     QAndroidJniObject::callStaticMethod<void>("fr/calaos/calaoshome/HardwareUtils", "loadAuthKeychain");
 }
 
 void HardwareUtilsAndroid::saveAuthKeychain(const QString &email, const QString &pass)
 {
-    this->HardwareUtils::saveAuthKeychain(email, pass);
     QAndroidJniObject jEmail = QAndroidJniObject::fromString(email);
     QAndroidJniObject jPass = QAndroidJniObject::fromString(pass);
     QAndroidJniObject::callStaticMethod<void>("fr/calaos/calaoshome/HardwareUtils", "saveAuthKeychain", "(Ljava/lang/String;Ljava/lang/String;)V",
@@ -191,7 +181,7 @@ void HardwareUtilsAndroid::saveAuthKeychain(const QString &email, const QString 
 
 void HardwareUtilsAndroid::setConfigOption(QString key, QString value)
 {
-    this->HardwareUtils::setConfigOption(key, value);
+    HardwareUtils::setConfigOption(key, value);
     QAndroidJniObject jKey = QAndroidJniObject::fromString(key);
     QAndroidJniObject jValue = QAndroidJniObject::fromString(value);
     QAndroidJniObject::callStaticMethod<void>("fr/calaos/calaoshome/HardwareUtils", "setConfigOption", "(Ljava/lang/String;Ljava/lang/String;)V",
@@ -200,35 +190,11 @@ void HardwareUtilsAndroid::setConfigOption(QString key, QString value)
                                               );
 }
 
-QString HardwareUtilsAndroid::getConfigOption(QString key)
-{
-    return this->HardwareUtils::getConfigOption(key);
-}
-
 void HardwareUtilsAndroid::resetAuthKeychain()
 {
-    this->HardwareUtils::resetAuthKeychain();
+    HardwareUtils::resetAuthKeychain();
     QAndroidJniObject::callStaticMethod<void>("fr/calaos/calaoshome/HardwareUtils", "resetAuthKeychain", "()V");
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // JNI //
 
@@ -254,7 +220,6 @@ static void emitDialogCancel(JNIEnv *env, jobject obj)
 
 static jstring getDemoUser(JNIEnv *env, jobject obj)
 {
-    Q_UNUSED(env);
     Q_UNUSED(obj);
     auto stduser = Common::getDemoUser().toStdString();
     const char* ret = stduser.c_str();
@@ -263,7 +228,6 @@ static jstring getDemoUser(JNIEnv *env, jobject obj)
 
 static jstring getDemoPass(JNIEnv *env, jobject obj)
 {
-    Q_UNUSED(env);
     Q_UNUSED(obj);
     auto stdpass = Common::getDemoPass().toStdString();
     const char* ret = stdpass.c_str();
@@ -272,7 +236,6 @@ static jstring getDemoPass(JNIEnv *env, jobject obj)
 
 static jstring getDemoHost(JNIEnv *env, jobject obj)
 {
-    Q_UNUSED(env);
     Q_UNUSED(obj);
     auto stdhost = Common::getDemoHost().toStdString();
     const char* ret = stdhost.c_str();

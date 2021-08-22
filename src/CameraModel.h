@@ -39,6 +39,7 @@ signals:
 private slots:
     void eventTouchscreenCamera(QString cameraId);
 
+
 private:
 
     QQmlApplicationEngine *engine;
@@ -59,6 +60,14 @@ public:
     CameraItem(CalaosConnection *con);
 
     void load(QVariantMap &d, int countId);
+    Q_INVOKABLE void cameraMoveUp();
+    Q_INVOKABLE void cameraMoveDown();
+    Q_INVOKABLE void cameraMoveRight();
+    Q_INVOKABLE void cameraMoveLeft();
+    Q_INVOKABLE void cameraMoveStop();
+    Q_INVOKABLE void cameraZoomIn();
+    Q_INVOKABLE void cameraZoomOut();
+    Q_INVOKABLE void cameraZoomStop();
 
     void getPictureImage(QImage &image);
 

@@ -206,6 +206,102 @@ void CameraItem::cameraPictureFailed(const QString &camid)
     }
 }
 
+void CameraItem::cameraMoveUp()
+{
+    qDebug() << "Move camera up " << get_cameraId();
+    if (get_cameraVisible())
+    {
+        connection->sendCommand(get_cameraId(),
+                "move up",
+                "output",
+                "set_state");
+    }
+}
+
+void CameraItem::cameraMoveDown()
+{
+    qDebug() << "Move camera down " << get_cameraId();
+    if (get_cameraVisible())
+    {
+        connection->sendCommand(get_cameraId(),
+                "move down",
+                "output",
+                "set_state");
+    }
+}
+
+void CameraItem::cameraMoveLeft()
+{
+    qDebug() << "Move camera left " << get_cameraId();
+    if (get_cameraVisible())
+    {
+        connection->sendCommand(get_cameraId(),
+                "move left",
+                "output",
+                "set_state");
+    }
+}
+
+void CameraItem::cameraMoveRight()
+{
+    qDebug() << "Move camera right " << get_cameraId();
+    if (get_cameraVisible())
+    {
+        connection->sendCommand(get_cameraId(),
+                "move right",
+                "output",
+                "set_state");
+    }
+}
+
+void CameraItem::cameraMoveStop()
+{
+    qDebug() << "Stop moving Camera" << get_cameraId();
+    if (get_cameraVisible())
+    {
+        connection->sendCommand(get_cameraId(),
+                "move stop",
+                "output",
+                "set_state");
+    }
+}
+
+void CameraItem::cameraZoomIn()
+{
+    qDebug() << "Zoom in camera" << get_cameraId();
+    if (get_cameraVisible())
+    {
+            connection->sendCommand(get_cameraId(),
+                    "move zoomin",
+                    "output",
+                    "set_state");
+    }
+}
+
+void CameraItem::cameraZoomOut()
+{
+    qDebug() << "Zoom out camera" << get_cameraId();
+    if (get_cameraVisible())
+    {
+        connection->sendCommand(get_cameraId(),
+                "move zoomout",
+                "output",
+                "set_state");
+    }
+}
+
+void CameraItem::cameraZoomStop()
+{
+    qDebug() << "Stop zooming camera" << get_cameraId();
+    if (get_cameraVisible())
+    {
+        connection->sendCommand(get_cameraId(),
+                "move zoomstop",
+                "output",
+                "set_state");
+    }
+}
+
 void CameraItem::startCamera()
 {
     QTimer::singleShot(0, this, [=]()

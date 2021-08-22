@@ -45,6 +45,16 @@ Item {
                 leftMargin: Units.dp(19); rightMargin: Units.dp(19)
                 topMargin: Units.dp(18); bottomMargin: Units.dp(18)
             }
+        }  
+    }
+
+    CameraCommandItem {
+        id: camCmd
+        height: Units.dp(40)
+        anchors {
+            top: cambg.top ; topMargin: Units.dp(31 * calaosApp.density);
+            right: parent.right
+            left: cambg.right
         }
     }
 
@@ -106,3 +116,9 @@ Item {
         }
     }
 }
+
+/*##^##
+Designer {
+    D{i:0;autoSize:true;height:480;width:640}
+}
+##^##*/

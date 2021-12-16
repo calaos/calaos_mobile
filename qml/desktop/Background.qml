@@ -1,7 +1,7 @@
-import QtQuick 2.2
-import Calaos 1.0
-import SharedComponents 1.0
-import QuickFlux 1.0
+import QtQuick
+import Calaos
+import SharedComponents
+import QuickFlux
 import "../quickflux"
 
 Rectangle {
@@ -120,14 +120,15 @@ Rectangle {
         AppListener {
             Filter {
                 type: ActionTypes.hideMainMenu
-                onDispatched: {
+
+                onDispatched: (filtertype, message) => {
                     mainItem.state = "hidden"
                 }
             }
 
             Filter {
                 type: ActionTypes.showMainMenu
-                onDispatched: {
+                onDispatched: (filtertype, message) => {
                     mainItem.state = "visible"
                 }
             }

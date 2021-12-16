@@ -1,8 +1,8 @@
-import QtQuick 2.5
-import SharedComponents 1.0
-import QtQuick.Layouts 1.1
-import Calaos 1.0
-import QuickFlux 1.0
+import QtQuick
+import SharedComponents
+import QtQuick.Layouts
+import Calaos
+import QuickFlux
 import "../quickflux"
 import "Utils.js" as Utils
 
@@ -356,8 +356,8 @@ Item {
                 left: parent.left; leftMargin: Units.dp(0)
                 top: parent.top; topMargin: Units.dp(28)
             }
-            updateValueWhileDragging: false
-            maximumValue: 100
+            live: false
+            from: 0; to: 100
             value: playerModel.volume
             onValueChanged: playerModel.sendVolume(value)
         }

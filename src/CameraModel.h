@@ -9,7 +9,22 @@
 #include "Common.h"
 #include <QQuickImageProvider>
 
-class CameraModel: public QStandardItemModel, public QQuickImageProvider
+class CameraModel;
+
+class CameraImageProvider: public QQuickImageProvider
+{
+public:
+    CameraImageProvider(CameraModel *model);
+
+    virtual QImage requestImage(const QString &id, QSize *size, const QSize &requestedSize);
+    virtual QPixmap requestPixmap(const QString &id, QSize *size, const QSize &requestedSize);
+
+private:
+    CameraModel *model = nullptr;
+};
+
+
+class CameraModel: public QStandardItemModel
 {
     Q_OBJECT
 
@@ -30,9 +45,6 @@ public:
     Q_INVOKABLE QObject *getItemModel(int idx);
     Q_INVOKABLE int cameraCount() { return rowCount(); }
 
-    virtual QImage requestImage(const QString &id, QSize *size, const QSize &requestedSize);
-    virtual QPixmap requestPixmap(const QString &id, QSize *size, const QSize &requestedSize);
-
 signals:
     void actionViewCamera(QObject *camModel);
 
@@ -41,8 +53,9 @@ private slots:
 
 private:
 
-    QQmlApplicationEngine *engine;
-    CalaosConnection *connection;
+    QQmlApplicationEngine *engine = nullptr;
+    CalaosConnection *connection = nullptr;
+    CameraImageProvider *imgProvider = nullptr;
 };
 
 class CameraItem: public QObject, public QStandardItem

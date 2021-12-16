@@ -1,6 +1,6 @@
-import QtQuick 2.5
-import SharedComponents 1.0
-import QtQuick.Layouts 1.1
+import QtQuick
+import SharedComponents
+import QtQuick.Layouts
 
 Item {
 
@@ -62,9 +62,8 @@ Item {
 
                 Layout.fillWidth: true
 
-                updateValueWhileDragging: true
-                maximumValue: 60
-                minimumValue: 1
+                live: true
+                from: 1; to: 60
                 value: screenManager.dpmsTime / 60 / 1000
                 onValueChanged: screenManager.updateDpmsTime(value)
             }

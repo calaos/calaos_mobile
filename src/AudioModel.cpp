@@ -2,7 +2,6 @@
 
 AudioModel::AudioModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent):
     QStandardItemModel(parent),
-    QQuickImageProvider(QQuickImageProvider::Image),
     engine(eng),
     connection(con)
 {
@@ -20,7 +19,8 @@ AudioModel::AudioModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObjec
     set_playersVisible(false);
 
     //add a special image provider for single pictures of cameras
-    engine->addImageProvider(QLatin1String("audio_cover"), this);
+    imgProvider = new AudioImageProvider(this);
+    engine->addImageProvider(QLatin1String("audio_cover"), imgProvider);
 
     connect(this, &AudioModel::playersVisibleChanged, this, [=](bool visible)
     {
@@ -64,9 +64,12 @@ QObject *AudioModel::getItemModel(int idx)
     return obj;
 }
 
-QImage AudioModel::requestImage(const QString &qid, QSize *size, const QSize &requestedSize)
+QImage AudioImageProvider::requestImage(const QString &qid, QSize *size, const QSize &requestedSize)
 {
     QImage retimg;
+
+    if (!model)
+        return {};
 
     QStringList sl = qid.split('/');
     if (sl.empty()) return retimg;
@@ -77,9 +80,9 @@ QImage AudioModel::requestImage(const QString &qid, QSize *size, const QSize &re
     if (id.toInt() < 0)
         return retimg;
 
-    for (int i = 0;i < rowCount();i++)
+    for (int i = 0;i < model->rowCount();i++)
     {
-        AudioPlayer *p = dynamic_cast<AudioPlayer *>(item(i));
+        AudioPlayer *p = dynamic_cast<AudioPlayer *>(model->item(i));
         if (p->get_id() == id)
         {
             player = p;
@@ -98,7 +101,7 @@ QImage AudioModel::requestImage(const QString &qid, QSize *size, const QSize &re
     return retimg;
 }
 
-QPixmap AudioModel::requestPixmap(const QString &id, QSize *size, const QSize &requestedSize)
+QPixmap AudioImageProvider::requestPixmap(const QString &id, QSize *size, const QSize &requestedSize)
 {
     return QPixmap::fromImage(requestImage(id, size, requestedSize));
 }
@@ -289,5 +292,13 @@ void AudioPlayer::audioCoverDownloaded(QString playerid, const QByteArray &data)
     if (currentCoverImage.isNull())
         update_cover({});
     else
-        update_cover(QString("image://audio_cover/%1/%2").arg(get_id()).arg(qrand()));
+        update_cover(QString("image://audio_cover/%1/%2")
+                     .arg(get_id())
+                     .arg(QRandomGenerator::global()->generate()));
+}
+
+AudioImageProvider::AudioImageProvider(AudioModel *m):
+    QQuickImageProvider(QQuickImageProvider::Image),
+    model(m)
+{
 }

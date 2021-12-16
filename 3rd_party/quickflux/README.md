@@ -87,6 +87,42 @@ Installation Instruction (without qpm)
 import QuickFlux 1.0
 ```
 
+Installation Instruction (with CMake)
+=====================================
+
+Add QuickFlux as an external project in your CMakeLists.txt:
+ 
+```
+include(ExternalProject)
+
+ExternalProject_Add(QuickFlux
+	PREFIX "${PROJECT_BINARY_DIR}/QuickFlux-build"
+	GIT_REPOSITORY "https://github.com/benlau/quickflux.git"
+	CMAKE_ARGS "-DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}"
+                    "-DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/QuickFlux"
+                    "-DCMAKE_INSTALL_LIBDIR=${PROJECT_BINARY_DIR}/QuickFlux/lib"
+                    "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+)
+
+link_directories("${PROJECT_BINARY_DIR}/QuickFlux/lib")
+include_directories("${PROJECT_BINARY_DIR}/QuickFlux/include/quickflux")
+
+...
+
+add_dependencies(<your target> QuickFlux)
+target_link_libraries(<your target>	debug quickfluxd optimized quickflux)
+```
+
+Instead of using GIT_REPOSITORY which clones a remote repository, you can use SOURCE_DIR with a local path which contains the project sources.
+
+You may need to add ```"-DCMAKE_PREFIX_PATH=<your Qt install path>"``` to the CMAKE_ARGS on some platforms.
+
+Also make sure that your cpp file actually calls ```registerQuickFluxQmlTypes();```
+
+If you are facing linking problems with QML, make sure to link the Qt5:: modules after linking quickflux.
+
+Reference: [examples/todo/CMakeLists.txt](https://github.com/benlau/quickflux/blob/master/examples/todo/CMakeLists.txt)
+
 Example Projects
 ================
 
@@ -105,7 +141,7 @@ If you think that it is very troublesome to have lots of copy & paste of source 
 Class Reference
 ---------------
 
-[QuickFlux 1.0 Class Reference](http://benlau.github.io/quickflux/)
+[QuickFlux 1.1 Class Reference](http://benlau.github.io/quickflux/)
 
 Wish List / Under Development
 ---------

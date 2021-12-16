@@ -1,6 +1,5 @@
-import QtQuick 2.5
-import QtQuick.Controls 1.3 as QuickControls
-import SharedComponents 1.0
+import QtQuick
+import SharedComponents
 
 Dialog {
     id: dlg
@@ -15,17 +14,12 @@ Dialog {
 
     property string widgetSelected
 
-    QuickControls.ExclusiveGroup {
-        id: optionGroup
-    }
-
     Repeater {
         model: widgetsModel.availableWidgets
 
         CalaosRadio {
             text: modelData
             checked: index == 0
-            exclusiveGroup: optionGroup
             onCheckedChanged: {
                 if (checked) {
                     widgetSelected = modelData

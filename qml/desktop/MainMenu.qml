@@ -1,7 +1,7 @@
-import QtQuick 2.2
-import SharedComponents 1.0
-import QtQuick.Layouts 1.1
-import QuickFlux 1.0
+import QtQuick
+import SharedComponents
+import QtQuick.Layouts
+import QuickFlux
 import "../quickflux"
 import "Utils.js" as Utils
 
@@ -372,16 +372,20 @@ Item {
         property bool forceHide: false
         Filter {
             type: ActionTypes.hideHomeboardMenu
-            onDispatched: actHomeboard.forceHide = true
+            onDispatched: (filtertype, message) => {
+                actHomeboard.forceHide = true
+            }
         }
         Filter {
             type: ActionTypes.showHomeboardMenu
-            onDispatched: actHomeboard.forceHide = false
+            onDispatched: (filtertype, message) => {
+                actHomeboard.forceHide = false
+            }
         }
 
         Filter {
             type: ActionTypes.openCameraSingleView
-            onDispatched: {
+            onDispatched: (filtertype, message) => {
                 homeboardOpened = false
                 currentButton = 2
                 menu.state = "visible"
@@ -390,19 +394,21 @@ Item {
 
         Filter {
             type: ActionTypes.clickHomeboardItem
-            onDispatched: homeboardOpened = false
+            onDispatched: (filtertype, message) => {
+                homeboardOpened = false
+            }
         }
 
         Filter {
             type: ActionTypes.hideMainMenu
-            onDispatched: {
+            onDispatched: (filtertype, message) => {
                 menu.state = "hidden"
             }
         }
 
         Filter {
             type: ActionTypes.showMainMenu
-            onDispatched: {
+            onDispatched: (filtertype, message) => {
                 menu.state = "visible"
             }
         }

@@ -1,6 +1,6 @@
-import QtQuick 2.5
-import QtGraphicalEffects 1.0
-import SharedComponents 1.0
+import QtQuick
+import Qt5Compat.GraphicalEffects
+import SharedComponents
 
 Item {
     id: item

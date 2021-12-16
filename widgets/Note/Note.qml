@@ -50,7 +50,7 @@ Flipable {
     AppListener {
         Filter {
             type: ActionTypes.changeNoteText
-            onDispatched: {
+            onDispatched: (filtertype, message) => {
                 console.log("note text update")
 
                 if (message.returnPayload.uuid !== widgetModel.uuid) {

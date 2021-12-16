@@ -125,7 +125,11 @@ QFStore::QFStore(QObject *parent) : QObject(parent) , m_filterFunctionEnabled(fa
 
 QQmlListProperty<QObject> QFStore::children()
 {
+    #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    return QQmlListProperty<QObject>(qobject_cast<QObject*>(this), &m_children);
+    #else
     return QQmlListProperty<QObject>(qobject_cast<QObject*>(this), m_children);
+    #endif
 }
 
 void QFStore::dispatch(QString type, QJSValue message)
@@ -245,15 +249,19 @@ void QFStore::setup()
 
 QQmlListProperty<QObject> QFStore::redispatchTargets()
 {
+    #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    return QQmlListProperty<QObject>(qobject_cast<QObject*>(this), &m_redispatchTargets);
+    #else
     return QQmlListProperty<QObject>(qobject_cast<QObject*>(this), m_redispatchTargets);
+    #endif
 }
 
 
 /*! \qmlproperty object Store::bindSource
  *
- * This property hold the source of action. It can be an ActionCreator / Dispatcher component
+ * This property holds the source of action. It can be an ActionCreator / Dispatcher component
  *
- * The default value is null.
+ * The default value is null, and it listens to AppDispatcher
  */
 
 

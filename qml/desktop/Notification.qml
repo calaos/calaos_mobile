@@ -1,8 +1,8 @@
-import QtQuick 2.5
-import QtQuick.Layouts 1.1
-import Calaos 1.0
-import SharedComponents 1.0
-import QtGraphicalEffects 1.0
+import QtQuick
+import QtQuick.Layouts
+import Calaos
+import SharedComponents
+import Qt5Compat.GraphicalEffects
 
 Flipable {
     id: flipable

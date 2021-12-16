@@ -2,14 +2,7 @@
 #include <QDebug>
 
 #if defined(Q_OS_WIN32)
-#ifdef WINVER
-#undef WINVER
-#endif
-#ifdef _WIN32_WINNT
-#undef _WIN32_WINNT
-#endif
-#define WINVER 0x0600
-#define _WIN32_WINNT 0x0600
+
 #include <qt_windows.h>
 #include <tchar.h>
 #include <iphlpapi.h>

@@ -12,13 +12,13 @@ static void forecastAppend(QQmlListProperty<WeatherData> *prop, WeatherData *val
     Q_UNUSED(prop);
 }
 
-static WeatherData *forecastAt(QQmlListProperty<WeatherData> *prop, int index)
+static WeatherData *forecastAt(QQmlListProperty<WeatherData> *prop, qsizetype index)
 {
     WeatherModel *m = static_cast<WeatherModel*>(prop->data);
     return m->getForecastData(index);
 }
 
-static int forecastCount(QQmlListProperty<WeatherData> *prop)
+static qsizetype forecastCount(QQmlListProperty<WeatherData> *prop)
 {
     WeatherModel *m = static_cast<WeatherModel*>(prop->data);
     return m->getForecastCount();

@@ -1,6 +1,7 @@
 #include "EventLogModel.h"
 #include "RoomModel.h"
 
+
 EventLogModel::EventLogModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent):
     QStandardItemModel(parent),
     engine(eng),
@@ -133,7 +134,7 @@ void EventLogItem::load(const QVariantMap &data)
     if (dt.date() == QDate::currentDate())
         update_evDate(tr("Today"));
     else
-        update_evDate(dt.date().toString(Qt::SystemLocaleShortDate));
+        update_evDate(dt.date().toString(QLocale::system().dateFormat(QLocale::ShortFormat)));
 
     update_evTime(dt.time().toString("hh:mm:ss"));
 

@@ -1,7 +1,6 @@
-import QtQuick 2.5
-import SharedComponents 1.0
-import QtQuick.Layouts 1.1
-import QtQuick.Controls 1.3 as QuickControls
+import QtQuick
+import SharedComponents
+import QtQuick.Layouts
 
 Item {
 
@@ -60,10 +59,6 @@ Item {
                 Layout.fillWidth: true
             }
 
-            QuickControls.ExclusiveGroup {
-                id: optionGroup
-            }
-
             Repeater {
                 model: langModel
 
@@ -76,7 +71,6 @@ Item {
                     }
 
                     text: langItemModel.langName
-                    exclusiveGroup: optionGroup
                     onCheckedChanged: {
                         langItemModel.langActive = checked
                         if (checked) {

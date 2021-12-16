@@ -1,7 +1,6 @@
-import QtQuick 2.3
-import QtQuick.Controls 1.3 as QuickControls
-import SharedComponents 1.0
-import QtQuick.Layouts 1.2
+import QtQuick
+import SharedComponents
+import QtQuick.Layouts
 
 Dialog {
     id: dlg
@@ -52,8 +51,8 @@ Dialog {
             id: slider_red
             Layout.fillWidth: true
 
-            updateValueWhileDragging: true
-            maximumValue: 255
+            live: true
+            from: 0; to: 255
             onValueChanged: updatePreview()
 
             property color currentColor: Qt.hsla(slider_red.value / 255.0, 1, 0.5, 1)
@@ -76,8 +75,8 @@ Dialog {
             id: slider_green
             Layout.fillWidth: true
 
-            updateValueWhileDragging: true
-            maximumValue: 255
+            live: true
+            from: 0; to: 255
             onValueChanged: updatePreview()
 
             customBackground: Item {
@@ -98,8 +97,8 @@ Dialog {
             id: slider_blue
             Layout.fillWidth: true
 
-            updateValueWhileDragging: true
-            maximumValue: 255
+            live: true
+            from: 0; to: 255
             onValueChanged: updatePreview()
 
             customBackground: Item {

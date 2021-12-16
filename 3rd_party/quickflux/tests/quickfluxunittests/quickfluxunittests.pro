@@ -14,7 +14,8 @@ DEFINES += SRCDIR=\\\"$$PWD/\\\" QUICK_TEST_SOURCE_DIR=\\\"$$PWD/qmltests\\\"
 SOURCES += main.cpp \
     quickfluxunittests.cpp \
     testenv.cpp \
-    actiontypes.cpp
+    actiontypes.cpp \
+    messagelogger.cpp
 
 include(vendor/vendor.pri)
 include(../../quickflux.pri)
@@ -22,7 +23,8 @@ include(../../quickflux.pri)
 HEADERS += \
     quickfluxunittests.h \
     testenv.h \
-    actiontypes.h
+    actiontypes.h \
+    messagelogger.h
 
 RESOURCES += \
     qml.qrc
@@ -47,7 +49,6 @@ DISTFILES += \
     qmltests/tst_keytable.qml \
     qmltests/tst_qimage.qml \
     qmltests/tst_actioncreator.qml \
-    qmltests/tst_object.qml \
     qmltests/tst_store.qml \
     qmltests/tst_store_children.qml \
     qmltests/tst_hydrate.qml \
@@ -55,4 +56,6 @@ DISTFILES += \
     qpm.json \
     qmltests/tst_middleware_filterFunctionEnabled.qml \
     qmltests/tst_middlewarelist.qml \
-    qmltests/tst_middlewarelist_applyTarget.qml
+    qmltests/tst_middlewarelist_applyTarget.qml \
+    ../../appveyor.yml \
+    qmltests/tst_middleware_exception.qml

@@ -1,6 +1,6 @@
 #include <QString>
-#include <QtTest>
 #include <QCoreApplication>
+#include <QTest>
 #include <QQmlEngine>
 #include <QQmlComponent>
 #include <QQmlApplicationEngine>
@@ -322,7 +322,7 @@ void QuickFluxUnitTests::dispatcherHook()
     dispatcher.dispatch("action1");
     QCOMPARE(count, 3);
 
-    dispatcher.setHook(0);
+    dispatcher.setHook(nullptr);
 
     dispatcher.dispatch("action1");
     QCOMPARE(count, 4);
@@ -333,19 +333,22 @@ void QuickFluxUnitTests::loading()
 {
     QFETCH(QString, input);
 
-
     QQmlEngine engine;
     engine.addImportPath("qrc:///");
 
-
     QQmlComponent comp(&engine);
-    comp.loadUrl(QUrl(input));
+
+    QString path = QtShell::realpath_strip(input);
+    QUrl url = QUrl::fromLocalFile(path);
+
+    QString content = QtShell::cat(path);
+
+    comp.setData(content.toUtf8(), url);
 
     if (comp.isError()) {
         qDebug() << QString("%1 : Load Failed. Reason :  %2").arg(input).arg(comp.errorString());
     }
     QVERIFY(!comp.isError());
-
 }
 
 void QuickFluxUnitTests::loading_data()

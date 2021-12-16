@@ -1,6 +1,6 @@
-import QtQuick 2.5
+import QtQuick
 import "Utils.js" as Utils
-import SharedComponents 1.0
+import SharedComponents
 
 PopupBase {
     id: overlay

@@ -1,7 +1,7 @@
-import QtQuick 2.5
-import SharedComponents 1.0
-import QtQuick.Layouts 1.1
-import QuickFlux 1.0
+import QtQuick
+import SharedComponents
+import QtQuick.Layouts
+import QuickFlux
 import "../quickflux"
 
 Item {
@@ -86,7 +86,7 @@ Item {
     AppListener {
         Filter {
             type: ActionTypes.clickHomeboardItem
-            onDispatched: {
+            onDispatched: (filtertype, message) => {
                 if (message.text == "widgets_add") {
                     dialogAddWidget.show()
                 }

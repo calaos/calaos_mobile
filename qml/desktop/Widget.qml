@@ -1,6 +1,6 @@
-import QtQuick 2.5
-import SharedComponents 1.0
-import QuickFlux 1.0
+import QtQuick
+import SharedComponents
+import QuickFlux
 import "../quickflux"
 
 Item {
@@ -348,7 +348,7 @@ Item {
     AppListener {
         Filter {
             type: ActionTypes.saveWidgetsPosition
-            onDispatched: {
+            onDispatched: (filtertype, message) => {
                 widgetModel.posX = widget.x
                 widgetModel.posY = widget.y
                 widgetModel.width = widget.width
@@ -358,7 +358,7 @@ Item {
         }
         Filter {
             type: ActionTypes.resetWidgetsPosition
-            onDispatched: {
+            onDispatched: (filtertype, message) => {
                 //Reset the size
                 widgetModel.width = savedW
                 widgetModel.height = savedH

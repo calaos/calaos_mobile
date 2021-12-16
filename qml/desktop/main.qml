@@ -1,11 +1,10 @@
-import QtQuick 2.2
-import QtQuick.Window 2.1
-import QtQuick.Controls 1.2
-import Calaos 1.0
-import SharedComponents 1.0
-import QuickFlux 1.0
+import QtQuick
+import QtQuick.Controls
+import Calaos
+import SharedComponents
+import QuickFlux
 import "../quickflux"
-import QtQuick.VirtualKeyboard.Settings 2.2
+import QtQuick.VirtualKeyboard.Settings
 
 Window {
     id: rootWindow
@@ -54,7 +53,7 @@ Window {
 
     function handleSubitemClick(itemId) {
         var item;
-        if (itemId == "media/music") {
+        if (itemId === "media/music") {
             item = musicListView
         }
         else if (itemId == "media/camera") {
@@ -113,13 +112,11 @@ Window {
             }
         }
 
-        mainContent: StackView {
+        mainContent: StackViewAnim {
             id: stackView
             anchors.fill: parent
 
             initialItem: desktopView
-
-            delegate: StackViewAnim {}
 
             // Implements back key navigation
             focus: true
@@ -276,7 +273,7 @@ Window {
     AppListener {
         Filter {
             type: ActionTypes.clickHomeboardItem
-            onDispatched: {
+            onDispatched: (filtertype, message) => {
                 if (message.text == "reboot") {
                     dialogReboot.show()
                 } else if (message.text == "screensaver") {
@@ -286,7 +283,8 @@ Window {
         }
         Filter {
             type: ActionTypes.openCameraSingleView
-            onDispatched: {
+            onDispatched: (filtertype, message) => {
+                console.log("********* openCameraSingleView")
                 cameraSingleModel = message.camModel
                 stackView.push(cameraSingleView)
             }
@@ -296,7 +294,7 @@ Window {
 
             property QtObject io
 
-            onDispatched: {
+            onDispatched: (filtertype, message) => {
                 io = message.io
                 console.log("todo keyboard for item:" + io + " - " + io.ioName)
                 dialogKeyboard.openKeyboard(qsTr("Keyboard"),
@@ -311,7 +309,7 @@ Window {
         Filter {
             type: ActionTypes.openKeyboard
 
-            onDispatched: {
+            onDispatched: (filtertype, message) => {
                 dialogKeyboard.openKeyboard(message.title,
                                             message.subtitle,
                                             message.initialText,
@@ -327,7 +325,7 @@ Window {
         Filter {
             type: ActionTypes.showNotificationMsg
 
-            onDispatched: {
+            onDispatched: (filtertype, message) => {
                 rootWindow.showAlertMessage(message.title, message.message, message.button)
             }
         }
@@ -340,6 +338,10 @@ Window {
 
     Connections {
         target: cameraModel
-        onActionViewCamera: AppActions.openCameraSingleView(camModel)
+
+        function onActionViewCamera() {
+            console.log("**************** open single camera")
+            AppActions.openCameraSingleView(camModel)
+        }
     }
 }

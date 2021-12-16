@@ -449,7 +449,7 @@ void CalaosConnection::sendWebsocket(const QString &msg, const QJsonObject &data
 
     QJsonDocument doc(o);
 #ifdef QT_DEBUG
-    qDebug().noquote() << "SEND: " << doc.toJson();
+    //qDebug().noquote() << "SEND: " << doc.toJson();
 #endif
 
     wsocket->sendTextMessage(doc.toJson());
@@ -568,7 +568,7 @@ void CalaosConnection::getCameraPicture(const QString &camid, QString urlSuffix)
     QJsonDocument jdoc(jroot);
 
 #ifdef QT_DEBUG
-    qDebug().noquote() << "SEND: " << jdoc.toJson();
+    //qDebug().noquote() << "SEND: " << jdoc.toJson();
 #endif
 
     QUrl url(u);
@@ -594,7 +594,7 @@ void CalaosConnection::getAudioCover(const QString &playerid)
     QJsonDocument jdoc(jroot);
 
 #ifdef QT_DEBUG
-    qDebug().noquote() << "SEND: " << jdoc.toJson();
+    //qDebug().noquote() << "SEND: " << jdoc.toJson();
 #endif
 
     QUrl url(u);
@@ -737,7 +737,7 @@ void CalaosConnection::processEventsV2(QString msg)
 void CalaosConnection::processEventsV3(QVariantMap msg)
 {
 #ifdef QT_DEBUG
-    qDebug().noquote() << "Received: " << msg["event_raw"];
+    //qDebug().noquote() << "Received: " << msg["event_raw"];
 #endif
 
     QVariantMap data = msg["data"].toMap();
@@ -789,7 +789,7 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
     QJsonObject jdata = jroot["data"].toObject();
 
 #ifdef QT_DEBUG
-    qDebug() << "RECV:" << message;
+    //qDebug() << "RECV:" << message;
 #endif
 
     if (jroot["msg"] == "login")

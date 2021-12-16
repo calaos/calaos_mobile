@@ -560,7 +560,8 @@ void Application::setupLanguage()
                 break;
             }
 
-            translator.load(QString()); // unload()
+            if (!translator.load(QString())) // unload()
+                qDebug() << "Failure to unload translation";
         }
         else if (locale == QStringLiteral("C") ||
                  locale == QStringLiteral("en"))

@@ -50,19 +50,34 @@ void registerQuickFluxQmlTypes()
     qmlRegisterType<QFAppScript>("QuickFlux", 1, 0, "AppScript");
     qmlRegisterType<QFAppListenerGroup>("QuickFlux", 1, 0, "AppListenerGroup");
     qmlRegisterType<QFAppScriptGroup>("QuickFlux", 1, 0, "AppScriptGroup");
+
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+    qmlRegisterAnonymousType<QFAppScriptRunnable>("QuickFlux", 1);
+#else
     qmlRegisterType<QFAppScriptRunnable>();
-    qmlRegisterType<QFFilter>("QuickFlux", 1, 0, "Filter");
+#endif
+
     qmlRegisterType<QFKeyTable>("QuickFlux", 1, 0, "KeyTable");
     qmlRegisterType<QFActionCreator>("QuickFlux", 1, 0, "ActionCreator");
+    qmlRegisterType<QFFilter>("QuickFlux", 1, 0, "Filter");
 
     /* 1.1 */
-    qmlRegisterType<QFDispatcher>("QuickFlux", 1, 1, "Dispatcher");
+    qmlRegisterType<QFActionCreator>("QuickFlux", 1, 1, "ActionCreator");
+    qmlRegisterType<QFAppListener>("QuickFlux", 1, 1, "AppListener");
+    qmlRegisterType<QFAppScript>("QuickFlux", 1, 1, "AppScript");
+    qmlRegisterType<QFAppListenerGroup>("QuickFlux", 1, 1, "AppListenerGroup");
+    qmlRegisterType<QFAppScriptGroup>("QuickFlux", 1, 1, "AppScriptGroup");
+    qmlRegisterType<QFFilter>("QuickFlux", 1, 1, "Filter");
+    qmlRegisterType<QFKeyTable>("QuickFlux", 1, 1, "KeyTable");
+    qmlRegisterType<QFActionCreator>("QuickFlux", 1, 1, "ActionCreator");
+
+    /* New components in 1.1 */
     qmlRegisterSingletonType<QFHydrate>("QuickFlux", 1, 1, "Hydrate", hydrateProvider);
+    qmlRegisterType<QFDispatcher>("QuickFlux", 1, 1, "Dispatcher");
     qmlRegisterType<QFStore>("QuickFlux", 1, 1, "Store");
-    qmlRegisterType<QFObject>("QuickFlux", 1, 1, "Object");
     qmlRegisterType<QFMiddlewareList>("QuickFlux", 1, 1, "MiddlewareList");
     qmlRegisterType<QFMiddleware>("QuickFlux", 1, 1, "Middleware");
-
+    //    qmlRegisterType<QFObject>("QuickFlux", 1, 1, "Object");
 }
 
 // Allow to disable QML types auto registration as required by #9

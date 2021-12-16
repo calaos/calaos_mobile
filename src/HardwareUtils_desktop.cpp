@@ -238,7 +238,7 @@ void HardwareUtilsDesktop::initConfigOptions(QString configdir, QString cachedir
         setConfigOption("longitude", "2.322235");
         setConfigOption("latitude", "48.864715");
 
-        qInfo() << "WARNING: no local_config.xml found, generating default config with username: \"user\" and password: \"pass\"" << endl;
+        qInfo() << "WARNING: no local_config.xml found, generating default config with username: \"user\" and password: \"pass\"";
     }
 }
 
@@ -291,7 +291,7 @@ QHash<QString, QString> HardwareUtilsDesktop::getAllOptions()
 
         if (reader.isStartElement())
         {
-            if (reader.name() == "option")
+            if (reader.name() == QStringLiteral("option"))
             {
                 QXmlStreamAttributes attrs = reader.attributes();
                 values[attrs.value("name").toString()] = attrs.value("value").toString();

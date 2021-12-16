@@ -1,4 +1,4 @@
-import QtQuick 2.0
+import QtQuick
 
 Image {
     source: "qrc:/img/icon_item_lock.png"

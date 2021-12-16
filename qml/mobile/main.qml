@@ -367,14 +367,14 @@ Window {
     AppListener {
         Filter {
             type: ActionTypes.openEventLog
-            onDispatched: {
+            onDispatched: (filtertype, message) => {
                 stackView.push(eventLogView)
             }
         }
 
         Filter {
             type: ActionTypes.openEventPushViewer
-            onDispatched: {
+            onDispatched: (filtertype, message) => {
                 pushEventText = message.notifText
                 pushEventPicUrl = message.notifUrl
                 pushEventUuid = ""
@@ -384,7 +384,7 @@ Window {
 
         Filter {
             type: ActionTypes.openEventPushViewerUuid
-            onDispatched: {
+            onDispatched: (filtertype, message) => {
                 pushEventText = ""
                 pushEventPicUrl = ""
                 pushEventUuid = message.notifUuid

@@ -47,8 +47,8 @@ Item {
                 id: slider_red
                 Layout.fillWidth: true
 
-                updateValueWhileDragging: true
-                maximumValue: 255
+                live: true
+                from: 0; to: 255
                 onValueChanged: updatePreview()
 
                 property color currentColor: Qt.hsla(slider_red.value / 255.0, 1, 0.5, 1)
@@ -71,8 +71,8 @@ Item {
                 id: slider_green
                 Layout.fillWidth: true
 
-                updateValueWhileDragging: true
-                maximumValue: 255
+                live: true
+                from: 0; to: 255
                 onValueChanged: updatePreview()
 
                 customBackground: Item {
@@ -93,8 +93,8 @@ Item {
                 id: slider_blue
                 Layout.fillWidth: true
 
-                updateValueWhileDragging: true
-                maximumValue: 255
+                live: true
+                from: 0; to: 255
                 onValueChanged: updatePreview()
 
                 customBackground: Item {

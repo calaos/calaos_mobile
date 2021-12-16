@@ -1,6 +1,6 @@
-import QtQuick 2.5
-import SharedComponents 1.0
-import QtQuick.Layouts 1.1
+import QtQuick
+import SharedComponents
+import QtQuick.Layouts
 
 Item {
 

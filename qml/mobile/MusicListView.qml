@@ -142,8 +142,8 @@ Item {
                         id: volumeSlider
 
                         value: modelData.volume
-                        updateValueWhileDragging: false
-                        maximumValue: 100
+                        live: false
+                        from: 0; to: 100
                         onValueChanged: modelData.sendVolume(value)
                     }
                 }

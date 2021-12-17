@@ -178,7 +178,7 @@ void QFKeyTable::componentComplete()
         }
 
         QVariant v = property(p.name());
-        if (!v.isNull()) {
+        if (!v.isValid()) {
             continue;
         }
 

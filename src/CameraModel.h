@@ -23,6 +23,7 @@ public:
         RoleName = Qt::UserRole + 1,
         RoleId,
         RoleUrl,
+        RolePTZ,
     };
 
     void load(const QVariantMap &homeData);
@@ -53,6 +54,7 @@ class CameraItem: public QObject, public QStandardItem
     QML_READONLY_PROPERTY_MODEL(QString, name, CameraModel::RoleName)
     QML_READONLY_PROPERTY_MODEL(QString, url_single, CameraModel::RoleUrl)
     QML_READONLY_PROPERTY_MODEL(QString, cameraId, CameraModel::RoleId)
+    QML_READONLY_PROPERTY_MODEL(bool, hasPTZ, CameraModel::RolePTZ)
     QML_WRITABLE_PROPERTY(bool, cameraVisible)
     QML_READONLY_PROPERTY(QString, v1Url)
 

@@ -49,10 +49,12 @@ Item {
     }
 
     CameraCommandItem {
-        id: camCmd
         height: Units.dp(40)
+
+        visible: camModel.hasPTZ
+
         anchors {
-            top: cambg.top ; topMargin: Units.dp(31 * calaosApp.density);
+            top: cambg.top ; topMargin: Units.dp(31);
             right: parent.right
             left: cambg.right
         }
@@ -116,9 +118,3 @@ Item {
         }
     }
 }
-
-/*##^##
-Designer {
-    D{i:0;autoSize:true;height:480;width:640}
-}
-##^##*/

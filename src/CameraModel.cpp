@@ -12,6 +12,7 @@ CameraModel::CameraModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObj
     roles[RoleId] = "cameraId";
     roles[RoleName] = "name";
     roles[RoleUrl] = "url_single";
+    roles[RolePTZ] = "hasPTZ";
     setItemRoleNames(roles);
 
     set_cameraVisible(false);
@@ -88,6 +89,7 @@ CameraItem::CameraItem(CalaosConnection *con):
     connection(con)
 {
     set_cameraVisible(false);
+    update_hasPTZ(false);
     connect(connection, SIGNAL(cameraPictureDownloaded(QString,QByteArray)),
             this, SLOT(cameraPictureDownloaded(QString,QByteArray)));
     connect(connection, SIGNAL(cameraPictureFailed(QString)),
@@ -110,6 +112,8 @@ void CameraItem::load(QVariantMap &d, int countId)
     }
 
     update_cameraId(cameraData["id"].toString());
+    update_hasPTZ(cameraData["ptz"].toString() == "true");
+
     if (cameraData.contains("url_lowres"))
     {
         update_cameraId(QString::number(countId));

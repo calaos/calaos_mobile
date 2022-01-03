@@ -7,10 +7,6 @@ import SharedComponents
 
 StackView {
 
-    //    function transitionFinished(properties) {
-    //        properties.exitItem.opacity = 1
-    //    }
-
     pushEnter: Transition {
         ParallelAnimation {
             PropertyAnimation {
@@ -25,6 +21,7 @@ StackView {
             }
         }
     }
+    replaceEnter: pushEnter
 
     pushExit: Transition {
         ParallelAnimation {
@@ -40,6 +37,7 @@ StackView {
             }
         }
     }
+    replaceExit: pushExit
 
     popEnter: Transition {
         PropertyAnimation {

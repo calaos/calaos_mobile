@@ -86,29 +86,33 @@ Window {
         menuContent: MainMenu {
             id: mainMenu
 
-            onButtonHomeClicked: {                
+            onButtonHomeClicked: {
+                console.log("currentButton", currentButton)
                 if (currentButton == 0)
                     stackView.push(homeView)
                 else
-                    stackView.replace(homeView)
+                    stackView.replace(desktopView, homeView)
             }
             onButtonMediaClicked: {
+                console.log("currentButton", currentButton)
                 if (currentButton == 0)
                     stackView.push(mediaMenuView)
                 else
-                    stackView.replace(mediaMenuView)
+                    stackView.replace(desktopView, mediaMenuView)
             }
             onButtonScenariosClicked: {
+                console.log("currentButton", currentButton)
                 if (currentButton == 0)
                     stackView.push(scenariosView)
                 else
-                    stackView.replace(scenariosView)
+                    stackView.replace(desktopView, scenariosView)
             }
             onButtonConfigClicked: {
+                console.log("currentButton", currentButton)
                 if (currentButton == 0)
                     stackView.push(configPanelView)
                 else
-                    stackView.replace(configPanelView)
+                    stackView.replace(desktopView, configPanelView)
             }
         }
 

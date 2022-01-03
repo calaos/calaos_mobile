@@ -30,4 +30,4 @@ jobs:
           token: ${{ secrets.ACTION_DISPATCH }}
           repository: calaos/calaos-os-2
           event-type: build_pkg
-          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}", "pkgname": "calaos_mobile"}'
+          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}", "pkgname": "calaos_mobile", "github": ${{ toJson(github) }}}'

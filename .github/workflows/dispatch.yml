@@ -28,6 +28,6 @@ jobs:
         uses: peter-evans/repository-dispatch@v1
         with:
           token: ${{ secrets.ACTION_DISPATCH }}
-          repository: calaos/calaos-os-2
+          repository: calaos/calaos-build
           event-type: build_pkg
           client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}", "pkgname": "calaos-home", "github": ${{ toJson(github) }}}'

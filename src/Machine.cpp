@@ -218,12 +218,12 @@ int Machine::getCpuUsage()
     QString data = f.readAll();
 
     QStringList statList;
-    foreach (const QString &l, data.split('\n', QString::SkipEmptyParts))
+    foreach (const QString &l, data.split('\n', Qt::SkipEmptyParts))
     {
         QString line = l.trimmed();
         if (line.startsWith("cpu "))
         {
-            statList = line.split(QRegularExpression("\\s+"), QString::SkipEmptyParts);
+            statList = line.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
             break;
         }
     }

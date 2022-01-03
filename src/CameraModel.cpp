@@ -12,6 +12,7 @@ CameraModel::CameraModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObj
     roles[RoleId] = "cameraId";
     roles[RoleName] = "name";
     roles[RoleUrl] = "url_single";
+    roles[RolePTZ] = "hasPTZ";
     setItemRoleNames(roles);
 
     set_cameraVisible(false);
@@ -88,6 +89,7 @@ CameraItem::CameraItem(CalaosConnection *con):
     connection(con)
 {
     set_cameraVisible(false);
+    update_hasPTZ(false);
     connect(connection, SIGNAL(cameraPictureDownloaded(QString,QByteArray)),
             this, SLOT(cameraPictureDownloaded(QString,QByteArray)));
     connect(connection, SIGNAL(cameraPictureFailed(QString)),
@@ -110,6 +112,8 @@ void CameraItem::load(QVariantMap &d, int countId)
     }
 
     update_cameraId(cameraData["id"].toString());
+    update_hasPTZ(cameraData["ptz"].toString() == "true");
+
     if (cameraData.contains("url_lowres"))
     {
         update_cameraId(QString::number(countId));
@@ -203,6 +207,102 @@ void CameraItem::cameraPictureFailed(const QString &camid)
         {
             connection->getCameraPicture(get_cameraId(), get_v1Url());
         });
+    }
+}
+
+void CameraItem::cameraMoveUp()
+{
+    qDebug() << "Move camera up " << get_cameraId();
+    if (get_cameraVisible())
+    {
+        connection->sendCommand(get_cameraId(),
+                "move up",
+                "output",
+                "set_state");
+    }
+}
+
+void CameraItem::cameraMoveDown()
+{
+    qDebug() << "Move camera down " << get_cameraId();
+    if (get_cameraVisible())
+    {
+        connection->sendCommand(get_cameraId(),
+                "move down",
+                "output",
+                "set_state");
+    }
+}
+
+void CameraItem::cameraMoveLeft()
+{
+    qDebug() << "Move camera left " << get_cameraId();
+    if (get_cameraVisible())
+    {
+        connection->sendCommand(get_cameraId(),
+                "move left",
+                "output",
+                "set_state");
+    }
+}
+
+void CameraItem::cameraMoveRight()
+{
+    qDebug() << "Move camera right " << get_cameraId();
+    if (get_cameraVisible())
+    {
+        connection->sendCommand(get_cameraId(),
+                "move right",
+                "output",
+                "set_state");
+    }
+}
+
+void CameraItem::cameraMoveStop()
+{
+    qDebug() << "Stop moving Camera" << get_cameraId();
+    if (get_cameraVisible())
+    {
+        connection->sendCommand(get_cameraId(),
+                "move stop",
+                "output",
+                "set_state");
+    }
+}
+
+void CameraItem::cameraZoomIn()
+{
+    qDebug() << "Zoom in camera" << get_cameraId();
+    if (get_cameraVisible())
+    {
+            connection->sendCommand(get_cameraId(),
+                    "move zoomin",
+                    "output",
+                    "set_state");
+    }
+}
+
+void CameraItem::cameraZoomOut()
+{
+    qDebug() << "Zoom out camera" << get_cameraId();
+    if (get_cameraVisible())
+    {
+        connection->sendCommand(get_cameraId(),
+                "move zoomout",
+                "output",
+                "set_state");
+    }
+}
+
+void CameraItem::cameraZoomStop()
+{
+    qDebug() << "Stop zooming camera" << get_cameraId();
+    if (get_cameraVisible())
+    {
+        connection->sendCommand(get_cameraId(),
+                "move zoomstop",
+                "output",
+                "set_state");
     }
 }
 

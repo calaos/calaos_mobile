@@ -77,3 +77,6 @@ SOURCES += \
     widgets/*/*.qml \
     widgets/*/*.js
 }
+
+DISTFILES += \
+    qml/desktop/CameraCommandItem.qml

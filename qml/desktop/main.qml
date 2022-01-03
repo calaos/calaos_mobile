@@ -158,7 +158,7 @@ Window {
         HomeView {
             model: homeModel
 
-            onRoomClicked: {
+            onRoomClicked: (idx, room_name, room_type) => {
                 //get room model
                 console.debug("model: " + homeModel)
                 roomModel = homeModel.getRoomModel(idx)

@@ -28,6 +28,6 @@ jobs:
         uses: peter-evans/repository-dispatch@v1
         with:
           token: ${{ secrets.ACTION_DISPATCH }}
-          repository: username/my-repo
+          repository: calaos/calaos-os-2
           event-type: my-event
           client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'

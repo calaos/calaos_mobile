@@ -14,7 +14,7 @@ include(lang/lang.pri)
 
 TARGET=calaos_home
 
-QT += core widgets network 
+QT += core widgets network qml
 
 qtHaveModule(webengine) {
 QT += webengine

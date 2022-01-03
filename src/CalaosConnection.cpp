@@ -78,6 +78,7 @@ void CalaosConnection::connectHttp(QString h)
 
     QUrl url(h);
     QNetworkRequest request(url);
+    request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     accessManager->post(request, jdoc.toJson());
 }
@@ -470,6 +471,7 @@ void CalaosConnection::sendHttp(const QString &msg, QJsonObject &data, bool igno
     QUrl url(httphost);
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
     QNetworkReply *reqReply = accessManager->post(request, doc.toJson());
 
     connect(reqReply, SIGNAL(finished()), this, SLOT(requestFinished()));
@@ -573,6 +575,7 @@ void CalaosConnection::getCameraPicture(const QString &camid, QString urlSuffix)
 
     QUrl url(u);
     QNetworkRequest request(url);
+    request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     QNetworkReply *reqReply = accessManagerCam->post(request, jdoc.toJson());
 
@@ -599,6 +602,7 @@ void CalaosConnection::getAudioCover(const QString &playerid)
 
     QUrl url(u);
     QNetworkRequest request(url);
+    request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     QNetworkReply *reqReply = accessManagerCam->post(request, jdoc.toJson());
 
@@ -631,6 +635,7 @@ void CalaosConnection::startJsonPolling()
     QUrl url(httphost);
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
     pollReply = accessManager->post(request, jdoc.toJson());
 
     connect(pollReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestError(QNetworkReply::NetworkError)));

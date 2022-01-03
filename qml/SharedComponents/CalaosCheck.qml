@@ -5,8 +5,8 @@ import "."
 Controls.CheckBox {
     id: control
 
-    implicitHeight: 40 * calaosApp.density
-    implicitWidth: 200 * calaosApp.density
+    implicitHeight: Units.dp(40)
+    implicitWidth: Units.dp(200)
 
     background: Rectangle {
         color: "transparent"
@@ -18,11 +18,15 @@ Controls.CheckBox {
         font.family: calaosFont.fontFamily
         font.weight: Font.Thin
         color: "#E7E7E7"
+        verticalAlignment: Text.AlignVCenter
+        leftPadding: control.indicator.width + control.spacing
     }
 
     indicator: Item {
         implicitWidth: Units.dp(48)
         implicitHeight: Units.dp(48)
+        x: control.leftPadding
+        y: parent.height / 2 - height / 2
 
         Rectangle {
             anchors.centerIn: parent

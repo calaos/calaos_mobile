@@ -61,6 +61,7 @@ Dialog {
                 Rectangle {
                     anchors.centerIn: parent
                     rotation: 90
+                    radius: 2
                     width: parent.height
                     height: parent.width
                     gradient: Gradient {
@@ -83,6 +84,7 @@ Dialog {
                 Rectangle {
                     anchors.centerIn: parent
                     rotation: 90
+                    radius: 2
                     width: parent.height
                     height: parent.width
                     gradient: Gradient {
@@ -105,6 +107,7 @@ Dialog {
                 Rectangle {
                     anchors.centerIn: parent
                     rotation: 90
+                    radius: 2
                     width: parent.height
                     height: parent.width
                     gradient: Gradient {

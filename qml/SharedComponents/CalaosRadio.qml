@@ -12,25 +12,24 @@ Controls.RadioButton {
         color: "transparent"
     }
 
-    contentItem: Item {
-            implicitWidth: text.implicitWidth + 2
-            implicitHeight: Units.dp(48)
-            baselineOffset: text.y + text.baselineOffset
-            Text {
-                id: text
-                text: control.text
-                anchors.centerIn: parent
-                renderType: calaosApp.isAndroid || calaosApp.isIOS ? Text.QtRendering : Text.NativeRendering
-                font.pixelSize: Units.dp(14)
-                font.family: calaosFont.fontFamily
-                font.weight: Font.Thin
-                color: "#E7E7E7"
-            }
-        }
+    contentItem: Text {
+        id: text
+        text: control.text
+        anchors.centerIn: parent
+        //renderType: calaosApp.isAndroid || calaosApp.isIOS ? Text.QtRendering : Text.NativeRendering
+        font.pixelSize: Units.dp(14)
+        font.family: calaosFont.fontFamily
+        font.weight: Font.Thin
+        color: "#E7E7E7"
+        verticalAlignment: Text.AlignVCenter
+        leftPadding: control.indicator.width + control.spacing
+    }
 
     indicator: Item {
         implicitWidth: Units.dp(48)
         implicitHeight: Units.dp(48)
+        x: control.leftPadding
+        y: parent.height / 2 - height / 2
 
         Rectangle {
             anchors.centerIn: parent

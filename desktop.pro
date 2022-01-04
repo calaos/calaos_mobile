@@ -16,8 +16,8 @@ TARGET=calaos_home
 
 QT += core widgets network qml core5compat
 
-qtHaveModule(webengine) {
-QT += webengine
+qtHaveModule(webenginequick) {
+QT += webenginequick
 DEFINES += HAVE_WEBENGINE
 }
 

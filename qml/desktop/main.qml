@@ -56,17 +56,17 @@ Window {
         if (itemId === "media/music") {
             item = musicListView
         }
-        else if (itemId == "media/camera") {
+        else if (itemId === "media/camera") {
             item = cameraListView
-        } else if (itemId == "media/web") {
+        } else if (itemId === "media/web") {
             item = webView
-        } else if (itemId == "config/screen") {
+        } else if (itemId === "config/screen") {
             item = configScreen
-        } else if (itemId == "config/l18n") {
+        } else if (itemId === "config/l18n") {
             item = configL18nView
-        } else if (itemId == "config/info") {
+        } else if (itemId === "config/info") {
             item = configUserInfoView
-        } else if (itemId == "media/spotify") {
+        } else if (itemId === "media/spotify") {
             item = spotifyView
         }
 
@@ -278,9 +278,9 @@ Window {
         Filter {
             type: ActionTypes.clickHomeboardItem
             onDispatched: (filtertype, message) => {
-                if (message.text == "reboot") {
+                if (message.text === "reboot") {
                     dialogReboot.show()
-                } else if (message.text == "screensaver") {
+                } else if (message.text === "screensaver") {
                     AppActions.suspendScreen()
                 }
             }

@@ -2,7 +2,7 @@
 #include "Common.h"
 #include "HardwareUtils.h"
 #ifdef HAVE_WEBENGINE
-#include <QtWebEngine>
+#include <QtWebEngineQuick/QtWebEngineQuick>
 #endif
 
 int main(int argc, char *argv[])
@@ -24,11 +24,11 @@ int main(int argc, char *argv[])
     //all observer before Qt starts
     HardwareUtils::Instance();
 
-    QAPP::setAttribute(Qt::AA_EnableHighDpiScaling);
+    //QAPP::setAttribute(Qt::AA_EnableHighDpiScaling);
     Application app(argc, argv);
 
 #if defined(CALAOS_DESKTOP) && defined(HAVE_WEBENGINE)
-    QtWebEngine::initialize();
+    QtWebEngineQuick::initialize();
 #endif
 
     //init platform code after QApp is created and initialized

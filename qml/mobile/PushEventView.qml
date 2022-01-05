@@ -1,9 +1,10 @@
-import QtQuick 2.2
-import Calaos 1.0
-import QtQuick.Layouts 1.3
-import SharedComponents 1.0
-import QtQuick.Controls 1.4
-import QtQuick.Controls.Styles 1.4
+import QtQuick
+import Calaos
+import QtQuick.Layouts
+import SharedComponents
+import QtQuick.Controls
+import QtQuick.Controls.Material
+//import QtQuick.Controls.Styles
 
 Item {
     id: rootitem

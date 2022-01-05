@@ -1,5 +1,5 @@
-import QtQuick 2.4
-import SharedComponents 1.0
+import QtQuick
+import SharedComponents
 
 CalaosItemBase {
     id: thisButton

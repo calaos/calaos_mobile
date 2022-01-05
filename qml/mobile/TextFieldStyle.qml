@@ -1,8 +1,10 @@
-import QtQuick 2.3
-import QtQuick.Controls 1.4
-import QtQuick.Controls.Styles 1.4
-import QtQuick.Layouts 1.1
-import SharedComponents 1.0
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Controls.Material
+import QtQuick.Controls.Universal
+//import QtQuick.Controls.Styles
+import QtQuick.Layouts
+import SharedComponents
 
 TextFieldStyle {
     readonly property TextField control: __control

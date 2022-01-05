@@ -19,7 +19,7 @@ Example Code
 
 \code
 
-import QtQuick 2.0
+import QtQuick
 import QuickFlux 1.1
 import "./actions"
 import "./middlewares"

@@ -159,7 +159,7 @@ Why use AppDispatcher instead of listening from AppActions directly?
 
 Example:
 ```
-import QtQuick 2.2
+import QtQuick
 pragma Singleton
 
 QtObject {

@@ -1,7 +1,7 @@
-import QtQuick 2.2
-import QtQuick.Controls 1.2
-import Calaos 1.0
-import SharedComponents 1.0
+import QtQuick
+import QtQuick.Controls
+import Calaos
+import SharedComponents
 
 Item {
 

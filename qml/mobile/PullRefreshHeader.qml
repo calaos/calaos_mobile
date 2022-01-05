@@ -1,6 +1,6 @@
-import QtQuick 2.0
-import SharedComponents 1.0
-import Calaos 1.0;
+import QtQuick
+import SharedComponents
+import Calaos
 
 Item {
     height: Units.dp(60)

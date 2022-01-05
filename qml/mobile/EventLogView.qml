@@ -1,7 +1,7 @@
-import QtQuick 2.0
-import Calaos 1.0;
-import SharedComponents 1.0
-import QtQuick.Layouts 1.3
+import QtQuick
+import Calaos
+import SharedComponents
+import QtQuick.Layouts
 import "../quickflux"
 
 Item {

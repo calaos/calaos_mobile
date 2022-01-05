@@ -1,6 +1,6 @@
-import QtQuick 2.0
-import Calaos 1.0;
-import SharedComponents 1.0
+import QtQuick
+import Calaos
+import SharedComponents
 
 Item {
     Image {

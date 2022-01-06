@@ -14,7 +14,7 @@ ActionCreator is a component that listens on its own signals, convert to message
 For example, you may declare an ActionCreator based component as:
 
 \code
-import QtQuick 2.0
+import QtQuick
 import QuickFlux 1.0
 pragma singleton
 
@@ -26,7 +26,7 @@ ActionCreator {
 It is equivalent to:
 
 \code
-import QtQuick 2.0
+import QtQuick
 import QuickFlux 1.0
 pragma singleton
 
@@ -49,7 +49,7 @@ QString QFActionCreator::genKeyTable()
     QStringList imports, header, footer, properties;
 
     imports << "pragma Singleton"
-            << "import QtQuick 2.0"
+            << "import QtQuick"
             << "import QuickFlux 1.0\n";
 
     header << "KeyTable {\n";

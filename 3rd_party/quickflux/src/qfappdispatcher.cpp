@@ -50,7 +50,7 @@ QFAppDispatcher *QFAppDispatcher::instance(QQmlEngine *engine)
 
 QObject *QFAppDispatcher::singletonObject(QQmlEngine *engine, QString package, int versionMajor, int versionMinor, QString typeName)
 {
-    QString pattern  = "import QtQuick 2.0\nimport %1 %2.%3;QtObject { property var object : %4 }";
+    QString pattern  = "import QtQuick\nimport %1 %2.%3;QtObject { property var object : %4 }";
 
     QString qml = pattern.arg(package).arg(versionMajor).arg(versionMinor).arg(typeName);
 

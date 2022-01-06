@@ -1,7 +1,7 @@
-import QtQuick 2.4
-import QtQuick.Controls 1.4 as Controls
-import QtGraphicalEffects 1.0
-import SharedComponents 1.0
+import QtQuick
+import QtQuick.Controls as Controls
+import Qt5Compat.GraphicalEffects
+import SharedComponents
 
 Controls.TextField {
 

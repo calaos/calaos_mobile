@@ -42,7 +42,8 @@ HEADERS += src/HardwareUtils_desktop.h \
     src/WeatherInfo.h \
     src/XUtils.h \
     src/ScreenManager.h \
-    src/UserInfoModel.h
+    src/UserInfoModel.h \
+    src/version.h
 
 RESOURCES += qml_desktop.qrc \
     img_desktop.qrc \

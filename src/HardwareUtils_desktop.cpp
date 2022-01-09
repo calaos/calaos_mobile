@@ -226,7 +226,6 @@ void HardwareUtilsDesktop::initConfigOptions(QString configdir, QString cachedir
 
         conf.write("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n");
         conf.write("<calaos:config xmlns:calaos=\"http://www.calaos.fr\">\n");
-        conf.write("<calaos:option name=\"fw_version\" value=\"0\" />\n");
         conf.write("</calaos:config>");
         conf.close();
 

@@ -50,6 +50,8 @@ public:
     QML_READONLY_PROPERTY(int, memoryUsage)
     QML_READONLY_PROPERTY(bool, hasWebEngine)
 
+    QML_READONLY_PROPERTY(QString, appVersion)
+
 public:
     Application(int &argc, char **argv);
 

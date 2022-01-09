@@ -61,7 +61,7 @@ Item {
             verticalAlignment: Text.AlignVCenter
             anchors.fill: parent
             anchors.rightMargin: Units.dp(5)
-            text: "v2.99+git"
+            text: calaosApp.appVersion
             font.pixelSize: Units.dp(10)
             color: "#5f5f5f"
             font.family: calaosFont.fontFamilyCalaosTextBold

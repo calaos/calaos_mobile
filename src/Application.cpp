@@ -5,6 +5,9 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include "RoomFilterModel.h"
+
+#include "version.h"
+
 #ifdef Q_OS_ANDROID
 #include <QtAndroidExtras/QAndroidJniObject>
 #endif
@@ -116,6 +119,8 @@ void Application::createQmlApp()
 
 #endif
 #endif
+
+    update_appVersion(PKG_VERSION_STR);
 
     update_applicationStatus(Common::NotConnected);
 
@@ -571,9 +576,7 @@ void Application::setupLanguage()
         }
     }
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
     engine.retranslate();
-#endif
 }
 
 void Application::setLanguage(QString code)

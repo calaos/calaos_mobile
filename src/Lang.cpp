@@ -10,11 +10,7 @@ LangModel::LangModel(QQmlApplicationEngine *e, QObject *parent):
     roles[RoleActive] = "langActive";
     setItemRoleNames(roles);
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
     update_hasDynamicLangChange(true);
-#else
-    update_hasDynamicLangChange(false);
-#endif
 
     load();
 }

@@ -69,6 +69,28 @@ Item {
                         iconItem: "qrc:/img/icon_config_info.png"
                         clickId: "config/info"
                     }
+
+                    ListElement {
+                        titleItem: qsTr("Network")
+                        subtitleItem: qsTr("IP, gateway, DNS")
+                        iconItem: "qrc:/img/icon_config_network.png"
+                        clickId: "config/network"
+                    }
+
+                    ListElement {
+                        titleItem: qsTr("Update")
+                        subtitleItem: qsTr("Software updates")
+                        iconItem: "qrc:/img/icon_config_fw.png"
+                        clickId: "config/update"
+                    }
+
+                    ListElement {
+                        titleItem: qsTr("Installation")
+                        subtitleItem: qsTr("Install on disk")
+                        iconItem: "qrc:/img/icon_config_install.png"
+                        clickId: "config/install"
+                    }
+
                 }
 
                 anchors {
@@ -87,6 +109,9 @@ Item {
                     subtitle: subtitleItem
                     icon: iconItem
                     onButtonClicked: rootWindow.handleSubitemClick(clickId)
+
+                    visible: clickId === "config/install"?
+                                 calaosApp.hasInstall? true: false: true
                 }
             }
             ScrollBar { listObject: gridViewLeft }

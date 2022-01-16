@@ -54,5 +54,8 @@
         <file>qml/desktop/SpotifyView.qml</file>
         <file>qml/desktop/MediaIconSpotify.qml</file>
         <file>qml/desktop/CameraCommandItem.qml</file>
+        <file>qml/desktop/ConfigNetworkView.qml</file>
+        <file>qml/desktop/ConfigUpdateView.qml</file>
+        <file>qml/desktop/ConfigInstallView.qml</file>
     </qresource>
 </RCC>

@@ -68,6 +68,12 @@ Window {
             item = configUserInfoView
         } else if (itemId === "media/spotify") {
             item = spotifyView
+        } else if (itemId === "config/network") {
+            item = configNetworkView
+        } else if (itemId === "config/update") {
+            item = configUpdateView
+        } else if (itemId === "config/install") {
+            item = configInstallView
         }
 
         stackView.push(item)
@@ -251,6 +257,21 @@ Window {
     Component {
         id: configUserInfoView
         ConfigUserInfoView {}
+    }
+
+    Component {
+        id: configNetworkView
+        ConfigNetworkView {}
+    }
+
+    Component {
+        id: configUpdateView
+        ConfigUpdateView {}
+    }
+
+    Component {
+        id: configInstallView
+        ConfigInstallView {}
     }
 
     Notification {

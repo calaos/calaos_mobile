@@ -49,6 +49,7 @@ public:
     QML_READONLY_PROPERTY(int, cpuUsage)
     QML_READONLY_PROPERTY(int, memoryUsage)
     QML_READONLY_PROPERTY(bool, hasWebEngine)
+    QML_READONLY_PROPERTY(bool, hasInstall) //If running on live install enable installation mode
 
     QML_READONLY_PROPERTY(QString, appVersion)
 

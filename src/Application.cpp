@@ -122,6 +122,8 @@ void Application::createQmlApp()
 
     update_appVersion(PKG_VERSION_STR);
 
+    update_hasInstall(QFile::exists("/.calaos-live"));
+
     update_applicationStatus(Common::NotConnected);
 
     calaosConnect = new CalaosConnection(this);

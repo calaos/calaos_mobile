@@ -362,9 +362,9 @@ Window {
 
             onDispatched: (filtertype, message) => {
                 if (message.hasOwnProperty("timeout")) {
-                    rootWindow.showAlertMessage(message.title, message.message, message.button)
-                } else {
                     rootWindow.showAlertMessage(message.title, message.message, message.button, message.timeout)
+                } else {
+                    rootWindow.showAlertMessage(message.title, message.message, message.button)
                 }
             }
         }

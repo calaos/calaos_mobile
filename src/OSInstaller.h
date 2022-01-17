@@ -11,6 +11,7 @@ class OSInstaller : public QObject
 
     QML_READONLY_PROPERTY(bool, isInstalling)
     QML_READONLY_PROPERTY(bool, installFinished)
+    QML_READONLY_PROPERTY(bool, installError)
 
 public:
     explicit OSInstaller(QQmlApplicationEngine *engine, QObject *parent = nullptr);

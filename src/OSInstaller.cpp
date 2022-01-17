@@ -12,6 +12,7 @@ OSInstaller::OSInstaller(QQmlApplicationEngine *eng, QObject *parent):
 {
     update_isInstalling(false);
     update_installFinished(false);
+    update_installError(false);
 }
 
 void OSInstaller::startInstallation(QString disk)
@@ -36,6 +37,7 @@ void OSInstaller::startInstallation(QString disk)
                              { "button", tr("Close") },
                              { "timeout", 0 }};
             appDispatcher->dispatch("showNotificationMsg", m);
+            update_installError(true);
         }
         else
         {
@@ -73,6 +75,7 @@ void OSInstaller::startInstallation(QString disk)
                              { "timeout", 0 }};
             appDispatcher->dispatch("showNotificationMsg", m);
 
+            update_installError(true);
             update_installFinished(true);
         }
         else if (err == QProcess::Crashed)
@@ -86,6 +89,7 @@ void OSInstaller::startInstallation(QString disk)
                              { "timeout", 0 }};
             appDispatcher->dispatch("showNotificationMsg", m);
 
+            update_installError(true);
             update_installFinished(true);
         }
     });

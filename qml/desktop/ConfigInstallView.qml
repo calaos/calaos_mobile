@@ -225,8 +225,13 @@ Item {
                 label: qsTr("Reboot")
                 icon: "qrc:/img/button_action_reload.png"
                 Layout.minimumWidth: width
-                onBtClicked: {
-                    AppActions.showRebootDialog(true, false)
+                onBtClicked: AppActions.showRebootDialog(true, false)
+
+                onVisibleChanged: {
+                    if (osInstaller.installFinished &&
+                        !osInstaller.installError) {
+                        AppActions.showRebootDialog(true, false)
+                    }
                 }
             }
 

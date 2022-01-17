@@ -86,9 +86,11 @@ QtObject {
         AppDispatcher.dispatch(ActionTypes.showNotificationMsg, m);
     }
 
-    function newLogItem(txt) {
+    function newLogItem(txt, ccolor) {
         AppDispatcher.dispatch(ActionTypes.newLogItem, {
-                                   line: txt })
+                                   line: txt,
+                                   color: ccolor,
+                               })
     }
 
     function showRebootDialog(showRebootMachine, showRebootApp) {

@@ -129,7 +129,10 @@ Item {
                         font.family: "Courier New"
                         font.pointSize: 10
                         width: logView.width
-                        color: Theme.whiteColor
+                        color: lineColor === "blue"? Theme.blueColor:
+                               lineColor === "red"? Theme.redColor:
+                               lineColor === "yellow"? Theme.yellowColor:
+                               lineColor === "green"? Theme.greenColor: Theme.whiteColor
                         text: line
                     }
 
@@ -145,7 +148,7 @@ Item {
         Filter {
             type: ActionTypes.newLogItem
             onDispatched: (filtertype, message) => {
-                              logView.model.append({ "line": message.line })
+                              logView.model.append({ "line": message.line, "lineColor": message.color })
                           }
         }
     }

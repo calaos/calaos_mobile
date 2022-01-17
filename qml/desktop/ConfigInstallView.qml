@@ -149,6 +149,7 @@ Item {
             type: ActionTypes.newLogItem
             onDispatched: (filtertype, message) => {
                               logView.model.append({ "line": message.line, "lineColor": message.color })
+                              logView.positionViewAtEnd()
                           }
         }
     }

@@ -128,7 +128,8 @@ void OSInstaller::sendLog(QString line)
     }
 
     QString color{"nocolor"};
-    if (s.at(0) == QChar(0x1B)) //color code
+    if (s.length() > 0 &&
+        s.at(0) == QChar(0x1B)) //color code
     {
         //extract color and string from line
         s.remove(QChar(0x1B));

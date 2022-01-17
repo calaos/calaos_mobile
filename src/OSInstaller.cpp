@@ -18,6 +18,7 @@ OSInstaller::OSInstaller(QQmlApplicationEngine *eng, QObject *parent):
 void OSInstaller::startInstallation(QString disk)
 {
     QProcess *proc = new QProcess(this);
+    proc->setProcessChannelMode(QProcess::MergedChannels);
 
     sendLog("** Starting installation on disk " + disk);
     update_isInstalling(true);

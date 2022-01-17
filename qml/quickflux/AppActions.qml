@@ -75,10 +75,26 @@ QtObject {
         AppDispatcher.dispatch(ActionTypes.hideMainMenu)
     }
 
-    function showNotificationMsg(nTitle, nMsg, nButton) {
-        AppDispatcher.dispatch(ActionTypes.showNotificationMsg,
-                               { title: nTitle,
-                                 message: nMsg,
-                                 button: nButton });
+    function showNotificationMsg(nTitle, nMsg, nButton, nTimeout) {
+        var m = { title: nTitle,
+                  message: nMsg,
+                  button: nButton };
+        if (typeof nTimeout !== "undefined") {
+            m.timeout = nTimeout
+        }
+
+        AppDispatcher.dispatch(ActionTypes.showNotificationMsg, m);
+    }
+
+    function newLogItem(txt) {
+        AppDispatcher.dispatch(ActionTypes.newLogItem, {
+                                   line: txt })
+    }
+
+    function showRebootDialog(showRebootMachine, showRebootApp) {
+        AppDispatcher.dispatch(ActionTypes.showRebootDialog, {
+                                showMachine: showRebootMachine,
+                                showApp: showRebootApp,
+                               });
     }
 }

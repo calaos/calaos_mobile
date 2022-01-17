@@ -1,8 +1,14 @@
 import QtQuick
 import SharedComponents
 import QtQuick.Layouts
+import QtQuick.Controls
+import QuickFlux
+import "../quickflux"
 
 Item {
+    id: installer
+
+    property string installDevice
 
     Image {
         source: "qrc:/img/module_header_shadow.png"
@@ -43,32 +49,107 @@ Item {
         ColumnLayout {
 
             anchors {
-                left: parent.left; leftMargin: Units.dp(60)
-                right: parent.right; rightMargin: Units.dp(60)
-                verticalCenter: parent.verticalCenter
+                left: parent.left; leftMargin: Units.dp(20)
+                right: parent.right; rightMargin: Units.dp(20)
+                top: parent.top; topMargin: Units.dp(20)
+                bottom: parent.bottom; bottomMargin: Units.dp(20)
             }
 
             spacing: Units.dp(10)
 
             Text {
+                font { family: calaosFont.fontFamily; weight: Font.Medium; pixelSize: Units.dp(20) }
+                color: Theme.colorAlpha(Theme.whiteColor, 0.7)
+                text: qsTr("Calaos OS Installation")
+                wrapMode: Text.WordWrap
+
+                Layout.fillWidth: true
+            }
+
+            Text {
                 font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pixelSize: Units.dp(15) }
                 color: Theme.colorAlpha(Theme.whiteColor, 0.7)
-                text: qsTr("TODO: Installation")
+                text: qsTr("Choose a destination disk and click Install to start the installation script")
+                wrapMode: Text.WordWrap
+
+                Layout.fillWidth: true
+            }
+
+            Text {
+                font { family: calaosFont.fontFamily; weight: Font.Normal; pixelSize: Units.dp(15) }
+                color: Theme.colorAlpha(Theme.yellowColor, 0.7)
+                text: qsTr("WARNING: All data from the destination disk are going to be lost!")
                 wrapMode: Text.WordWrap
 
                 Layout.fillWidth: true
             }
 
 
+            Repeater {
+                model: usbDiskModel
+
+                CalaosRadio {
+                    property variant diskItemModel
+
+                    Component.onCompleted: {
+                        diskItemModel = Qt.binding(function() { return usbDiskModel.getUsbModel(model.index) })
+                    }
+
+                    text: diskItemModel.name + "   (" + diskItemModel.physicalDevice + ")   [" + diskItemModel.sizeHuman + "]"
+
+                    onCheckedChanged: installer.installDevice = diskItemModel.physicalDevice
+
+                    enabled: !osInstaller.isInstalling
+                }
+            }
 
 
+            Frame {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.alignment: Qt.AlignHCenter
 
+                ListView {
+                    id: logView
+                    clip: true
 
+                    anchors {
+                        fill: parent
+                        leftMargin: 4
+                        rightMargin: 5
+                        topMargin: 4
+                        bottomMargin: 4
+                    }
 
+                    model: ListModel {}
+
+                    ScrollIndicator.vertical: ScrollIndicator { }
+
+                    delegate: Text {
+                        font.family: "Courier New"
+                        font.pointSize: 10
+                        width: logView.width
+                        color: Theme.whiteColor
+                        text: line
+                    }
+
+                    onCountChanged: logView.positionViewAtEnd()
+                }
+            }
 
         }
 
     }
+
+    AppListener {
+        Filter {
+            type: ActionTypes.newLogItem
+            onDispatched: (filtertype, message) => {
+                              logView.model.append({ "line": message.line })
+                          }
+        }
+    }
+
 
     ConfigTabs {
         id: tabs
@@ -124,6 +205,33 @@ Item {
             }
 
             FooterButton {
+                label: qsTr("Install")
+                icon: "qrc:/img/button_action_valid.png"
+                Layout.minimumWidth: width
+                visible: !osInstaller.isInstalling
+                onBtClicked: {
+                    if (installer.installDevice === "") {
+                        AppActions.showNotificationMsg(qsTr("Warning"), qsTr("No destination disk selected"), qsTr("Close"))
+                    } else {
+                        AppActions.hideMainMenu()
+                        osInstaller.startInstallation(installer.installDevice)
+                    }
+                }
+            }
+
+            FooterButton {
+                id: rebootBt
+                visible: osInstaller.installFinished
+                label: qsTr("Reboot")
+                icon: "qrc:/img/button_action_reload.png"
+                Layout.minimumWidth: width
+                onBtClicked: {
+                    AppActions.showRebootDialog(true, false)
+                }
+            }
+
+            FooterButton {
+                visible: !osInstaller.isInstalling
                 label: qsTr("Back to config")
                 icon: "qrc:/img/button_action_back.png"
                 Layout.minimumWidth: width
@@ -131,6 +239,7 @@ Item {
             }
 
             FooterButton {
+                visible: !osInstaller.isInstalling
                 label: qsTr("Quit")
                 icon: "qrc:/img/button_action_quit.png"
                 Layout.minimumWidth: width

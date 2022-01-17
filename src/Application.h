@@ -29,6 +29,8 @@
 #include "QQmlVariantListModel.h"
 #include "Lang.h"
 #include "EventLogModel.h"
+#include "OSInstaller.h"
+#include "UsbDisk.h"
 
 class Application : public QAPP
 {
@@ -108,6 +110,8 @@ private:
     CameraModel *cameraModel;
     LangModel *langModel;
     EventLogModel *eventLogModel;
+    UsbDiskModel *usbDiskModel = nullptr;
+    OSInstaller *osInstaller = nullptr;
 
     QVariantList favoritesList;
 

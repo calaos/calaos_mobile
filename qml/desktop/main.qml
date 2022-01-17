@@ -21,8 +21,8 @@ Window {
     property bool isSingleCameraView: false
 
     //this is called by HardwareUtils
-    function showAlertMessage(title, message, buttonText) {
-        notif.showMessage(title, message)
+    function showAlertMessage(title, message, buttonText, timeout) {
+        notif.showMessage(title, message, timeout)
     }
 
     //this is called by HardwareUtils
@@ -130,9 +130,11 @@ Window {
 
             // Implements back key navigation
             focus: true
-            Keys.onReleased: if (event.key === Qt.Key_Back || event.key === Qt.Key_Backspace) {
-                                 handleBack()
-                                 event.accepted = true;
+            Keys.onReleased: (event) => {
+                                 if (event.key === Qt.Key_Back || event.key === Qt.Key_Backspace) {
+                                     handleBack()
+                                     event.accepted = true;
+                                 }
                              }
 
             onCurrentItemChanged: {
@@ -300,12 +302,20 @@ Window {
             type: ActionTypes.clickHomeboardItem
             onDispatched: (filtertype, message) => {
                 if (message.text === "reboot") {
-                    dialogReboot.show()
+                    dialogReboot.showDialog(true, true)
                 } else if (message.text === "screensaver") {
                     AppActions.suspendScreen()
                 }
             }
         }
+
+        Filter {
+            type: ActionTypes.showRebootDialog
+            onDispatched: (filtertype, message) => {
+                dialogReboot.showDialog(message.showMachine, message.showApp)
+            }
+        }
+
         Filter {
             type: ActionTypes.openCameraSingleView
             onDispatched: (filtertype, message) => {
@@ -351,7 +361,11 @@ Window {
             type: ActionTypes.showNotificationMsg
 
             onDispatched: (filtertype, message) => {
-                rootWindow.showAlertMessage(message.title, message.message, message.button)
+                if (message.hasOwnProperty("timeout")) {
+                    rootWindow.showAlertMessage(message.title, message.message, message.button)
+                } else {
+                    rootWindow.showAlertMessage(message.title, message.message, message.button, message.timeout)
+                }
             }
         }
     }

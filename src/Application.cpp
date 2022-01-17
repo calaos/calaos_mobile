@@ -173,6 +173,14 @@ void Application::createQmlApp()
     eventLogModel = new EventLogModel(&engine, calaosConnect, this);
     engine.rootContext()->setContextProperty("eventLogModel", eventLogModel);
 
+    if (get_hasInstall())
+    {
+        usbDiskModel = new UsbDiskModel(&engine, this);
+        engine.rootContext()->setContextProperty("usbDiskModel", usbDiskModel);
+        osInstaller = new OSInstaller(&engine, this);
+        engine.rootContext()->setContextProperty("osInstaller", osInstaller);
+    }
+
     engine.rootContext()->setContextProperty("platformMarginsLeft", QVariant(0.0));
     engine.rootContext()->setContextProperty("platformMarginsRight", QVariant(0.0));
     engine.rootContext()->setContextProperty("platformMarginsTop", QVariant(0.0));

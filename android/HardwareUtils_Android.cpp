@@ -1,5 +1,7 @@
 
 #include "HardwareUtils_Android.h"
+#include "notificationservice.h"
+#include "../src/Common.h"
 #include <QtAndroidExtras/QAndroidJniObject>
 #include <QtAndroidExtras/QAndroidJniEnvironment>
 #include <jni.h>
@@ -56,8 +58,9 @@ public:
 
     virtual void OnMessage(const ::firebase::messaging::Message &message)
     {
-        Q_UNUSED(message)
         qDebug() << "Received FCM message";
+        NotificationService *ns = NotificationService::Instance();
+        ns->handleMessage(message);
     }
 
 private:
@@ -86,6 +89,11 @@ HardwareUtilsAndroid::HardwareUtilsAndroid(QObject *parent):
 
 HardwareUtilsAndroid::~HardwareUtilsAndroid()
 {
+}
+
+HardwareUtilsAndroid *HardwareUtilsAndroid::Instance(QObject *parent)
+{
+    return dynamic_cast<HardwareUtilsAndroid*>(HardwareUtils::Instance(parent));
 }
 
 void HardwareUtilsAndroid::platformInit(QQmlApplicationEngine *e)
@@ -154,6 +162,42 @@ void HardwareUtilsAndroid::inputTextDialog(const QString &title, const QString &
                                        jMessage.object<jstring>());
 }
 
+void HardwareUtilsAndroid::loadAuthKeychain(QString &email, QString &pass)
+{
+    Q_UNUSED(email);
+    Q_UNUSED(pass);
+    QAndroidJniObject::callStaticMethod<void>("fr/calaos/calaoshome/HardwareUtils", "loadAuthKeychain");
+}
+
+void HardwareUtilsAndroid::saveAuthKeychain(const QString &email, const QString &pass)
+{
+    QAndroidJniObject jEmail = QAndroidJniObject::fromString(email);
+    QAndroidJniObject jPass = QAndroidJniObject::fromString(pass);
+    QAndroidJniObject::callStaticMethod<void>("fr/calaos/calaoshome/HardwareUtils", "saveAuthKeychain", "(Ljava/lang/String;Ljava/lang/String;)V",
+                                              jEmail.object<jstring>(),
+                                              jPass.object<jstring>()
+                                              );
+}
+
+void HardwareUtilsAndroid::setConfigOption(QString key, QString value)
+{
+    HardwareUtils::setConfigOption(key, value);
+    QAndroidJniObject jKey = QAndroidJniObject::fromString(key);
+    QAndroidJniObject jValue = QAndroidJniObject::fromString(value);
+    QAndroidJniObject::callStaticMethod<void>("fr/calaos/calaoshome/HardwareUtils", "setConfigOption", "(Ljava/lang/String;Ljava/lang/String;)V",
+                                              jKey.object<jstring>(),
+                                              jValue.object<jstring>()
+                                              );
+}
+
+void HardwareUtilsAndroid::resetAuthKeychain()
+{
+    HardwareUtils::resetAuthKeychain();
+    QAndroidJniObject::callStaticMethod<void>("fr/calaos/calaoshome/HardwareUtils", "resetAuthKeychain", "()V");
+}
+
+// JNI //
+
 static void emitDialogTextValid(JNIEnv *env, jobject obj, jstring text)
 {
     Q_UNUSED(env);
@@ -174,10 +218,37 @@ static void emitDialogCancel(JNIEnv *env, jobject obj)
                               Qt::QueuedConnection);
 }
 
+static jstring getDemoUser(JNIEnv *env, jobject obj)
+{
+    Q_UNUSED(obj);
+    auto stduser = Common::getDemoUser().toStdString();
+    const char* ret = stduser.c_str();
+    return env->NewStringUTF(ret);
+}
+
+static jstring getDemoPass(JNIEnv *env, jobject obj)
+{
+    Q_UNUSED(obj);
+    auto stdpass = Common::getDemoPass().toStdString();
+    const char* ret = stdpass.c_str();
+    return env->NewStringUTF(ret);
+}
+
+static jstring getDemoHost(JNIEnv *env, jobject obj)
+{
+    Q_UNUSED(obj);
+    auto stdhost = Common::getDemoHost().toStdString();
+    const char* ret = stdhost.c_str();
+    return env->NewStringUTF(ret);
+}
+
 static JNINativeMethod jniMethods[] =
 {
     { "emitDialogTextValid", "(Ljava/lang/String;)V", reinterpret_cast<void *>(emitDialogTextValid) },
     { "emitDialogCancel", "()V", reinterpret_cast<void *>(emitDialogCancel) },
+    { "getDemoUser", "()Ljava/lang/String;", reinterpret_cast<void *>(getDemoUser) },
+    { "getDemoPass", "()Ljava/lang/String;", reinterpret_cast<void *>(getDemoPass) },
+    { "getDemoHost", "()Ljava/lang/String;", reinterpret_cast<void *>(getDemoHost) },
 };
 
 // this method is called automatically by Java after the .so file is loaded

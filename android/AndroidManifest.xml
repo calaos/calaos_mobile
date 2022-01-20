@@ -1,10 +1,7 @@
 <?xml version="1.0"?>
-<manifest package="fr.calaos.calaoshome" xmlns:android="http://schemas.android.com/apk/res/android"
-    android:versionName="3.1.0"
-    android:versionCode="18"
-    android:installLocation="auto">
+<manifest package="fr.calaos.calaoshome" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="3.1.0" android:versionCode="18" android:installLocation="auto">
 
-    <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="29" />
+    <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="29"/>
 
     <!-- The following comment will be replaced upon deployment with default permissions based on the dependencies of the application.
          Remove the comment if you do not require these default permissions. -->
@@ -16,18 +13,12 @@
 
     <supports-screens android:largeScreens="true" android:normalScreens="true" android:anyDensity="true" android:smallScreens="true"/>
 
-    <application android:hardwareAccelerated="true"
-                 android:name="org.qtproject.qt5.android.bindings.QtApplication"
-                 android:label="CalaosHome"
-                 android:extractNativeLibs="true"
-                 android:icon="@drawable/icon">
+    <uses-permission android:name="android.permission.INTERNET" />
 
-        <activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation|mcc|mnc|density"
-                  android:name="fr.calaos.calaoshome.HardwareUtils"
-                  android:label="-- %%INSERT_APP_NAME%% --"
-                  android:screenOrientation="unspecified"
-                  android:launchMode="singleTop">
-
+    <application android:hardwareAccelerated="true" android:name="org.qtproject.qt5.android.bindings.QtApplication" android:label="CalaosHome" android:extractNativeLibs="true" android:icon="@drawable/icon"
+        android:usesCleartextTraffic="true"
+    >
+        <activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation|mcc|mnc|density" android:name="fr.calaos.calaoshome.HardwareUtils" android:label="-- %%INSERT_APP_NAME%% --" android:screenOrientation="unspecified" android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
@@ -87,5 +78,24 @@
             <!-- extract android style -->
         </activity>
         <!-- For adding service(s) please check: https://wiki.qt.io/AndroidServices -->
+
+
+        <!-- Firebase Messaging specific services -->
+        <service android:name="com.google.firebase.messaging.cpp.ListenerService" android:exported="false">
+          <intent-filter>
+            <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+          </intent-filter>
+        </service>
+
+        <service android:name="com.google.firebase.messaging.cpp.FcmInstanceIDListenerService" android:exported="false">
+          <intent-filter>
+            <action android:name="com.google.firebase.INSTANCE_ID_EVENT"/>
+          </intent-filter>
+        </service>
+
+        <service android:name="com.google.firebase.messaging.cpp.RegistrationIntentService" android:exported="false">
+        </service>
+        <service android:name="com.google.firebase.messaging.MessageForwardingService" android:exported="false">
+        </service>
     </application>
 </manifest>

@@ -24,6 +24,7 @@ public:
     static QList<NetworkInfo *> getNetworkInfo();
     static int getMemoryUsage();
     static int getCpuUsage();
+    static bool isBootReadOnly();
 };
 
 #endif // UPTIME_H

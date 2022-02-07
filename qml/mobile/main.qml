@@ -83,9 +83,11 @@ Window {
 
         // Implements back key navigation
         focus: true
-        Keys.onReleased: if (event.key === Qt.Key_Back || event.key === Qt.Key_Backspace) {
-                             handleBack()
-                             event.accepted = true;
+        Keys.onReleased: (event) => {
+                             if (event.key === Qt.Key_Back || event.key === Qt.Key_Backspace) {
+                                 handleBack()
+                                 event.accepted = true;
+                             }
                          }
     }
 

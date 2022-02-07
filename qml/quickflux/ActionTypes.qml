@@ -41,5 +41,7 @@ KeyTable {
     property string openEventPushViewerUuid
 
     property string showNotificationMsg
+
+    property string showReadOnlyBootDialog
 }
 

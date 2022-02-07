@@ -32,6 +32,7 @@ QML_IMPORT_PATH = $$PWD/qml
 SOURCES += src/HardwareUtils_desktop.cpp \
     src/CalaosWidget.cpp \
     src/CalaosWidgetModel.cpp \
+    src/ControlPanelModel.cpp \
     src/OSInstaller.cpp \
     src/WeatherInfo.cpp \
     src/XUtils.cpp \
@@ -42,6 +43,7 @@ SOURCES += src/HardwareUtils_desktop.cpp \
 HEADERS += src/HardwareUtils_desktop.h \
     src/CalaosWidget.h \
     src/CalaosWidgetModel.h \
+    src/ControlPanelModel.h \
     src/OSInstaller.h \
     src/WeatherInfo.h \
     src/XUtils.h \

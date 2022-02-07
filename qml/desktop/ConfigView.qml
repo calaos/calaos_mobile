@@ -50,48 +50,7 @@ Item {
 
             GridView {
                 id: gridViewLeft
-                model: ListModel {
-                    ListElement {
-                        titleItem: qsTr("Screen saver")
-                        subtitleItem: qsTr("Screen power management")
-                        iconItem: "qrc:/img/icon_item_screensaver.png"
-                        clickId: "config/screen"
-                    }
-                    ListElement {
-                        titleItem: qsTr("Localization")
-                        subtitleItem: qsTr("Language settings")
-                        iconItem: "qrc:/img/icon_config_l18n.png"
-                        clickId: "config/l18n"
-                    }
-                    ListElement {
-                        titleItem: qsTr("Information")
-                        subtitleItem: qsTr("Personal settings")
-                        iconItem: "qrc:/img/icon_config_info.png"
-                        clickId: "config/info"
-                    }
-
-                    ListElement {
-                        titleItem: qsTr("Network")
-                        subtitleItem: qsTr("IP, gateway, DNS")
-                        iconItem: "qrc:/img/icon_config_network.png"
-                        clickId: "config/network"
-                    }
-
-                    ListElement {
-                        titleItem: qsTr("Update")
-                        subtitleItem: qsTr("Software updates")
-                        iconItem: "qrc:/img/icon_config_fw.png"
-                        clickId: "config/update"
-                    }
-
-                    ListElement {
-                        titleItem: qsTr("Installation")
-                        subtitleItem: qsTr("Install on disk")
-                        iconItem: "qrc:/img/icon_config_install.png"
-                        clickId: "config/install"
-                    }
-
-                }
+                model: controlPanelModel
 
                 anchors {
                     fill: parent
@@ -105,13 +64,10 @@ Item {
                 cellWidth: Units.dp(190)
 
                 delegate: ConfigItem {
-                    title: titleItem
-                    subtitle: subtitleItem
-                    icon: iconItem
-                    onButtonClicked: rootWindow.handleSubitemClick(clickId)
-
-                    visible: clickId === "config/install"?
-                                 calaosApp.hasInstall? true: false: true
+                    title: cpTitle
+                    subtitle: cpSubTitle
+                    icon: cpIcon
+                    onButtonClicked: rootWindow.handleSubitemClick(cpClickId)
                 }
             }
             ScrollBar { listObject: gridViewLeft }

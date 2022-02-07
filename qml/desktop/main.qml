@@ -74,6 +74,9 @@ Window {
             item = configUpdateView
         } else if (itemId === "config/install") {
             item = configInstallView
+        } else if (itemId === "config/rollback") {
+            dialogRecoveryBoot.show()
+            return
         }
 
         stackView.push(item)
@@ -155,6 +158,10 @@ Window {
         });
 
         VirtualKeyboardSettings.styleName = "calaos"
+
+        if (calaosApp.isSnapshotBoot) {
+
+        }
     }
 
     Component {
@@ -296,6 +303,8 @@ Window {
 
     DialogKeyboard { id: dialogKeyboard }
 
+    DialogRecoveryBoot { id: dialogRecoveryBoot }
+
     //Dispatch actions
     AppListener {
         Filter {
@@ -319,7 +328,6 @@ Window {
         Filter {
             type: ActionTypes.openCameraSingleView
             onDispatched: (filtertype, message) => {
-                console.log("********* openCameraSingleView")
                 cameraSingleModel = message.camModel
                 stackView.push(cameraSingleView)
             }
@@ -368,6 +376,14 @@ Window {
                 }
             }
         }
+
+        Filter {
+            type: ActionTypes.showReadOnlyBootDialog
+
+            onDispatched: (filtertype, message) => {
+                dialogRecoveryBoot.show()
+            }
+        }
     }
 
     //This should stay at the top of all object layer
@@ -379,7 +395,6 @@ Window {
         target: cameraModel
 
         function onActionViewCamera() {
-            console.log("**************** open single camera")
             AppActions.openCameraSingleView(camModel)
         }
     }

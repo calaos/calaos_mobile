@@ -359,5 +359,6 @@
         <file>img/icon_config_fw.png</file>
         <file>img/icon_config_install.png</file>
         <file>img/icon_config_network.png</file>
+        <file>img/icon_config_rollback.png</file>
     </qresource>
 </RCC>

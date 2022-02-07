@@ -5,6 +5,7 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include "RoomFilterModel.h"
+#include "ControlPanelModel.h"
 
 #include "version.h"
 
@@ -123,6 +124,7 @@ void Application::createQmlApp()
     update_appVersion(PKG_VERSION_STR);
 
     update_hasInstall(QFile::exists("/.calaos-live"));
+    update_isSnapshotBoot(Machine::isBootReadOnly());
 
     update_applicationStatus(Common::NotConnected);
 
@@ -194,6 +196,9 @@ void Application::createQmlApp()
     engine.rootContext()->setContextProperty("screenManager", &ScreenManager::Instance());
     engine.rootContext()->setContextProperty("userInfoModel", UserInfoModel::Instance());
 
+    controlPanelModel = new ControlPanelModel(this);
+    engine.rootContext()->setContextProperty("controlPanelModel", controlPanelModel);
+
     update_machineName(Machine::getHostname());
 
     //network info timer
@@ -207,6 +212,15 @@ void Application::createQmlApp()
     connect(sysInfoTimer, SIGNAL(timeout()), this, SLOT(sysInfoTimerSlot()));
     sysInfoTimer->start(5000);
     sysInfoTimerSlot();
+
+    if (get_isSnapshotBoot())
+    {
+        QTimer::singleShot(2000, this, [=]()
+        {
+            QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(&engine);
+            appDispatcher->dispatch("showReadOnlyBootDialog");
+        });
+    }
 #endif
 
     engine.rootContext()->setContextProperty("calaosApp", this);
@@ -533,6 +547,16 @@ void Application::restartApp()
 #ifdef CALAOS_DESKTOP
     this->quit();
     QProcess::startDetached(arguments()[0], arguments());
+#endif
+}
+
+void Application::rollbackSnapshot()
+{
+    qInfo() << "Rollback calaos os";
+#ifdef CALAOS_DESKTOP
+    QProcess::startDetached("/bin/sh", QStringList() <<
+                            "-c" <<
+                            "calaos_rollback.sh && reboot");
 #endif
 }
 

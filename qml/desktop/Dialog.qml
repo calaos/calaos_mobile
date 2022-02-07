@@ -69,13 +69,13 @@ PopupBase {
         NumberAnimation { duration: 200 }
     }
 
-    Keys.onPressed: {
+    Keys.onPressed: (event) => {
         if (event.key === Qt.Key_Escape) {
             closeKeyPressed(event)
         }
     }
 
-    Keys.onReleased: {
+    Keys.onReleased: (event) => {
         if (event.key === Qt.Key_Back) {
             closeKeyPressed(event)
         }

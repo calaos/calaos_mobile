@@ -120,6 +120,11 @@ int Machine::getMemoryUsage()
     return (memInfo.ullTotalPhys - memInfo.ullAvailPhys) * 100.0 / memInfo.ullTotalPhys;
 }
 
+bool Machine::isBootReadOnly()
+{
+    return false;
+}
+
 #endif /* Q_OS_WIN32 */
 
 
@@ -262,6 +267,41 @@ int Machine::getMemoryUsage()
     return (info.totalram - info.freeram) * 100.0 / info.totalram;
 }
 
+bool Machine::isBootReadOnly()
+{
+    QProcess proc;
+    proc.setProcessChannelMode(QProcess::MergedChannels);
+    proc.start("/usr/bin/findmnt", {{"--json"}, {"/"}});
+
+    if (!proc.waitForStarted())
+        return false;
+
+    if (!proc.waitForFinished())
+        return false;
+
+    QJsonParseError err;
+    QJsonDocument doc = QJsonDocument::fromJson(proc.readAll(), &err);
+    if (err.error != QJsonParseError::NoError)
+        return false;
+
+    auto o = doc.object();
+    if (!o["filesystems"].isArray())
+        return false;
+
+    auto a = o["filesystems"].toArray();
+    if (a.isEmpty())
+        return false;
+
+    o = a.at(0).toObject();
+
+    if (o["target"].toString() == "/" &&
+        o["source"].toString() == "rootfs" &&
+        o["fstype"].toString() == "overlay")
+        return true;
+
+    return false;
+}
+
 #endif /* Q_OS_LINUX */
 
 
@@ -296,6 +336,10 @@ int Machine::getCpuUsage()
     return 0;
 }
 
+bool Machine::isBootReadOnly()
+{
+    return false;
+}
 #endif /* Q_OS_OSX */
 
 
@@ -319,6 +363,11 @@ int Machine::getMemoryUsage()
 int Machine::getCpuUsage()
 {
     return 0;
+}
+
+bool Machine::isBootReadOnly()
+{
+    return false;
 }
 #endif
 

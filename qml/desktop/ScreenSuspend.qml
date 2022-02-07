@@ -58,10 +58,8 @@ Item {
         repeat: false
         running: true && screenManager.dpmsEnabled
         triggeredOnStart: false
-        onTriggered: {
-            console.log("**** timer trigger")
+        onTriggered: {            
             if (screenManager.dpmsEnabled) {
-                console.log("**** sleep screen")
                 blackScreen.state = "asleep"
             }
         }
@@ -88,14 +86,12 @@ Item {
         Filter {
             type: ActionTypes.suspendScreen
             onDispatched: (filtertype, message) => {
-                console.log("### dispatch: screen sleep")
                 blackScreen.state = "asleep"
             }
         }
         Filter {
             type: ActionTypes.wakeupScreen
             onDispatched: (filtertype, message) => {
-                              console.log("### dispatch: screen wake")
                 blackScreen.state = "awake"
             }
         }

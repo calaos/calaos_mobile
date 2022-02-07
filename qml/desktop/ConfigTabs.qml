@@ -47,7 +47,6 @@ BorderImage {
         Flickable {
             anchors.fill: parent
             contentHeight: col.implicitHeight
-            onContentHeightChanged: console.log("contentheight: " + contentHeight)
             flickableDirection: Flickable.VerticalFlick
 
             Column {

@@ -57,5 +57,6 @@
         <file>qml/desktop/ConfigNetworkView.qml</file>
         <file>qml/desktop/ConfigUpdateView.qml</file>
         <file>qml/desktop/ConfigInstallView.qml</file>
+        <file>qml/desktop/DialogRecoveryBoot.qml</file>
     </qresource>
 </RCC>

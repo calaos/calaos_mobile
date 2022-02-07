@@ -31,6 +31,7 @@
 #include "EventLogModel.h"
 #include "OSInstaller.h"
 #include "UsbDisk.h"
+#include "ControlPanelModel.h"
 
 class Application : public QAPP
 {
@@ -52,6 +53,7 @@ public:
     QML_READONLY_PROPERTY(int, memoryUsage)
     QML_READONLY_PROPERTY(bool, hasWebEngine)
     QML_READONLY_PROPERTY(bool, hasInstall) //If running on live install enable installation mode
+    QML_READONLY_PROPERTY(bool, isSnapshotBoot) //if system has been booted read only from a snapshot
 
     QML_READONLY_PROPERTY(QString, appVersion)
 
@@ -82,6 +84,7 @@ public:
 
     Q_INVOKABLE void rebootMachine();
     Q_INVOKABLE void restartApp();
+    Q_INVOKABLE void rollbackSnapshot();
 
     Q_INVOKABLE quint32 getUptimeDays();
 
@@ -113,6 +116,7 @@ private:
     EventLogModel *eventLogModel;
     UsbDiskModel *usbDiskModel = nullptr;
     OSInstaller *osInstaller = nullptr;
+    ControlPanelModel *controlPanelModel = nullptr;
 
     QVariantList favoritesList;
 

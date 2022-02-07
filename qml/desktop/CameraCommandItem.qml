@@ -43,7 +43,7 @@ ColumnLayout {
     Text {
         id: moveText
         Layout.alignment: Qt.AlignHCenter
-        text: qsTr("Déplacement")
+        text: qsTr("Move")
         color: "#e7e7e7"
         font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 12 }
         clip: true

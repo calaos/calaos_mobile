@@ -32,7 +32,7 @@ Window {
 
     function goToDesktop() {
         mainMenu.unselectAll()
-        stackView.pop({ item: desktopView })
+        stackView.pop(null)
     }
 
     function handleBack() {

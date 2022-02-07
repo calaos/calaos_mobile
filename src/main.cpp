@@ -24,12 +24,12 @@ int main(int argc, char *argv[])
     //all observer before Qt starts
     HardwareUtils::Instance();
 
-    //QAPP::setAttribute(Qt::AA_EnableHighDpiScaling);
-    Application app(argc, argv);
-
 #if defined(CALAOS_DESKTOP) && defined(HAVE_WEBENGINE)
     QtWebEngineQuick::initialize();
 #endif
+
+    //QAPP::setAttribute(Qt::AA_EnableHighDpiScaling);
+    Application app(argc, argv);
 
     //init platform code after QApp is created and initialized
     HardwareUtils::Instance()->platformInit(app.getEngine());

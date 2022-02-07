@@ -195,14 +195,14 @@ void Application::createQmlApp()
     engine.rootContext()->setContextProperty("userInfoModel", UserInfoModel::Instance());
 
     update_machineName(Machine::getHostname());
-    QList<NetworkInfo *> nets = Machine::getNetworkInfo();
-    for (int i = 0;i < nets.count();i++)
-    {
-        if (nets.at(i)->get_isLoopback())
-            continue;
-        m_netAddresses->append(nets.at(i));
-    }
 
+    //network info timer
+    updateNetworkInfo();
+    auto netTimer = new QTimer(this);
+    connect(netTimer, &QTimer::timeout, this, &Application::updateNetworkInfo);
+    netTimer->start(120000);
+
+    //sys info timer
     sysInfoTimer = new QTimer();
     connect(sysInfoTimer, SIGNAL(timeout()), this, SLOT(sysInfoTimerSlot()));
     sysInfoTimer->start(5000);
@@ -603,4 +603,15 @@ void Application::pushNotificationReceived(const QString &uuid)
     QVariantMap m = {{ "notifUuid", uuid }};
     appDispatcher->dispatch("openEventPushViewerUuid", m);
 #endif
+}
+
+void Application::updateNetworkInfo()
+{
+    QList<NetworkInfo *> nets = Machine::getNetworkInfo();
+    for (int i = 0;i < nets.count();i++)
+    {
+        if (nets.at(i)->get_isLoopback())
+            continue;
+        m_netAddresses->append(nets.at(i));
+    }
 }

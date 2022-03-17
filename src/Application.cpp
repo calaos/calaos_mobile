@@ -631,6 +631,7 @@ void Application::pushNotificationReceived(const QString &uuid)
 
 void Application::updateNetworkInfo()
 {
+    m_netAddresses->clear();
     QList<NetworkInfo *> nets = Machine::getNetworkInfo();
     for (int i = 0;i < nets.count();i++)
     {

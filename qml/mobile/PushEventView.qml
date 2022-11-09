@@ -50,17 +50,15 @@ Item {
             horizontalCenter: parent.horizontalCenter
         }
 
-        style: BusyIndicatorStyle {
-            indicator: Image {
-                opacity: 0.70
-                visible: control.running
-                source: "qrc:/img/spinner.svg"
-                RotationAnimator on rotation {
-                    running: control.running
-                    loops: Animation.Infinite
-                    duration: 2000
-                    from: 0 ; to: 360
-                }
+        contentItem: Image {
+            opacity: 0.70
+            visible: control.running
+            source: "qrc:/img/spinner.svg"
+            RotationAnimator on rotation {
+                running: control.running
+                loops: Animation.Infinite
+                duration: 2000
+                from: 0 ; to: 360
             }
         }
     }

@@ -89,10 +89,6 @@ Item {
 
             ListGroupHeader { width: listFlick.width; title: qsTr("Language:") }
 
-            QuickControls.ExclusiveGroup {
-                id: optionGroup
-            }
-
             Repeater {
                 model: langModel
 
@@ -105,7 +101,6 @@ Item {
                     }
 
                     text: langItemModel.langName
-                    exclusiveGroup: optionGroup
                     onCheckedChanged: {
                         langItemModel.langActive = checked
                         if (checked) {

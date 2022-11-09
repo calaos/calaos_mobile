@@ -12,8 +12,6 @@ Item {
 
     property color textEditColor: calaosApp.isAndroid? "white": "black"
 
-    anchors.fill: parent
-
     visible: opacity > 0?true:false
     Behavior on opacity { PropertyAnimation { } }
 
@@ -73,7 +71,6 @@ Item {
                 width: 200 * calaosApp.density
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Username")
-                floatingLabel: true
                 enabled: !loginButton.loadingEnabled
                 onClearButtonClicked: { userField.selectAll(); userField.cut() }
             }
@@ -84,7 +81,6 @@ Item {
                 echoMode: TextInput.Password
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Password")
-                floatingLabel: true
                 enabled: !loginButton.loadingEnabled
                 onClearButtonClicked: { passField.selectAll(); passField.cut() }
             }
@@ -94,7 +90,6 @@ Item {
                 width: 200 * calaosApp.density
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Hostname")
-                floatingLabel: true
                 enabled: !loginButton.loadingEnabled
                 onClearButtonClicked: { hostField.selectAll(); hostField.cut() }
             }

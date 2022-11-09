@@ -44,13 +44,13 @@ Window {
 
     Connections {
         target: calaosApp
-        onApplicationStatusChanged: {
+        function onApplicationStatusChanged(status) {
             if (calaosApp.applicationStatus === Common.LoggedIn) {
                 menuBar.menuType = Common.MenuMain
                 stackView.push(favoriteView)
             }
             else if (calaosApp.applicationStatus === Common.NotConnected)
-                stackView.pop({ item: loginView, immediate: true })
+                stackView.pop(null, StackView.Immediate)
         }
     }
 
@@ -107,8 +107,6 @@ Window {
         id: favoriteView
 
         FavoritesListView {
-            height: background.height
-            width: background.width
         }
     }
 
@@ -116,9 +114,6 @@ Window {
         id: homeView
 
         RoomListView {
-            height: background.height
-            width: background.width
-
             model: homeModel
 
             onRoomClicked: {
@@ -135,9 +130,6 @@ Window {
         id: roomDetailView
 
         RoomDetailView {
-            height: background.height
-            width: background.width
-
             filteredRoomItemModel: roomModel
         }
     }
@@ -154,9 +146,6 @@ Window {
 
         RoomDetailView {
             id: lightsOnRoomDetailView
-            height: background.height
-            width: background.width
-
             roomItemModel: lightOnClonedModel
         }
     }
@@ -165,8 +154,6 @@ Window {
         id: scenarioView
 
         ScenarioView {
-            width: background.width
-            height: background.height
         }
     }
 
@@ -174,8 +161,6 @@ Window {
         id: mediaView
 
         MediaMenuView {
-            width: background.width
-            height: background.height
         }
     }
 
@@ -183,8 +168,6 @@ Window {
         id: musicView
 
         MusicListView {
-            width: background.width
-            height: background.height
         }
     }
 
@@ -192,8 +175,6 @@ Window {
         id: cameraView
 
         CameraListView {
-            width: background.width
-            height: background.height
         }
     }
 
@@ -203,8 +184,6 @@ Window {
 
         CameraSingleView {
             modelData: currentCameraModel
-            width: background.width
-            height: background.height
         }
     }
 
@@ -212,9 +191,6 @@ Window {
         id: settingsView
 
         SettingsView {
-            width: background.width
-            height: background.height - menuBar.height
-
             onFavoriteAddClicked: {
                 menuBar.menuType = Common.MenuBack
                 stackView.push(favAddView)
@@ -230,8 +206,6 @@ Window {
         id: favAddView
 
         FavoritesAddView {
-            width: background.width
-            height: background.height - menuBar.height
         }
     }
 
@@ -239,8 +213,6 @@ Window {
         id: favEditView
 
         FavoritesEditView {
-            width: background.width
-            height: background.height - menuBar.height
         }
     }
 
@@ -248,8 +220,6 @@ Window {
         id: eventLogView
 
         EventLogView {
-            width: background.width
-            height: background.height - menuBar.height
         }
     }
 
@@ -282,8 +252,6 @@ Window {
         id: colorPickerView
 
         ColorPickerRGBView {
-            width: background.width
-            height: background.height - menuBar.height
             itemColor: itemRgbColor
             itemCallback: itemColorCallback
         }

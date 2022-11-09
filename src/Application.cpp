@@ -175,6 +175,7 @@ void Application::createQmlApp()
     eventLogModel = new EventLogModel(&engine, calaosConnect, this);
     engine.rootContext()->setContextProperty("eventLogModel", eventLogModel);
 
+#ifdef CALAOS_DESKTOP
     if (get_hasInstall())
     {
         usbDiskModel = new UsbDiskModel(&engine, this);
@@ -182,6 +183,7 @@ void Application::createQmlApp()
         osInstaller = new OSInstaller(&engine, this);
         engine.rootContext()->setContextProperty("osInstaller", osInstaller);
     }
+#endif
 
     engine.rootContext()->setContextProperty("platformMarginsLeft", QVariant(0.0));
     engine.rootContext()->setContextProperty("platformMarginsRight", QVariant(0.0));

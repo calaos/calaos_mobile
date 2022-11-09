@@ -24,7 +24,6 @@
         <file>qml/mobile/CameraListView.qml</file>
         <file>qml/mobile/CameraSingleView.qml</file>
         <file>qml/mobile/ButtonLogin.qml</file>
-        <file>qml/mobile/TextFieldStyle.qml</file>
         <file>qml/mobile/CalaosTextField.qml</file>
         <file>qml/mobile/ColorPickerView.qml</file>
         <file>qml/mobile/ColorPickerRGBView.qml</file>

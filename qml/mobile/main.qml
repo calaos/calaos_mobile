@@ -100,6 +100,7 @@ Window {
             hostname: calaosApp.hostname
 
             onLoginClicked: calaosApp.login(username, password, hostname)
+            onCancelClicked: calaosApp.logout()
         }
     }
 

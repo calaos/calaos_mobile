@@ -118,7 +118,6 @@ CalaosItemBase {
 
     function startAnim() {
         animStart.start()
-        thisButton.enabled = false
     }
 
     function stopAnim() {
@@ -145,7 +144,5 @@ CalaosItemBase {
             PropertyAnimation { target: __label; duration: 250; properties: "opacity"; to: 1; easing.type: Easing.InCubic }
             PropertyAnimation { target: __rectBorder; duration: 250; properties: "width"; to: parent.width; easing.type: Easing.InCubic }
         }
-        //enable mouse area again after anim finishes
-        ScriptAction { script: thisButton.enabled = true }
     }
 }

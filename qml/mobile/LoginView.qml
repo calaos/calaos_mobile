@@ -9,6 +9,7 @@ Item {
     property alias password: passField.text
     property alias hostname: hostField.text
     signal loginClicked(var user, var pass, var host)
+    signal cancelClicked()
 
     property color textEditColor: calaosApp.isAndroid? "white": "black"
 
@@ -104,7 +105,14 @@ Item {
                 text: qsTr("Login")
                 width: 200 * calaosApp.density
 
-                onButtonClicked: loginClicked(userField.text, passField.text, hostField.text)
+                onButtonClicked: () => {
+                                     if (calaosApp.applicationStatus === Common.Loading) {
+                                         cancelClicked()
+                                     } else {
+                                         loginClicked(userField.text, passField.text, hostField.text)
+                                     }
+                                 }
+
                 loadingEnabled: calaosApp.applicationStatus === Common.Loading
             }
         }

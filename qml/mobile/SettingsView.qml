@@ -1,7 +1,7 @@
-import QtQuick 2.0
-import QtQuick.Controls 1.2
-import SharedComponents 1.0
-import QtQuick.Controls 1.3 as QuickControls
+import QtQuick
+import QtQuick.Controls as QuickControls
+import SharedComponents
+//import QtQuick.Controls 1.3 as QuickControls
 import "../quickflux"
 
 Item {
@@ -89,10 +89,6 @@ Item {
 
             ListGroupHeader { width: listFlick.width; title: qsTr("Language:") }
 
-            QuickControls.ExclusiveGroup {
-                id: optionGroup
-            }
-
             Repeater {
                 model: langModel
 
@@ -105,7 +101,6 @@ Item {
                     }
 
                     text: langItemModel.langName
-                    exclusiveGroup: optionGroup
                     onCheckedChanged: {
                         langItemModel.langActive = checked
                         if (checked) {

@@ -1,7 +1,7 @@
-import QtQuick 2.5
-import SharedComponents 1.0
-import QtQuick.Layouts 1.1
-import Calaos 1.0
+import QtQuick
+import SharedComponents
+import QtQuick.Layouts
+import Calaos
 import "."
 
 ColumnLayout {
@@ -43,7 +43,7 @@ ColumnLayout {
     Text {
         id: moveText
         Layout.alignment: Qt.AlignHCenter
-        text: qsTr("Déplacement")
+        text: qsTr("Move")
         color: "#e7e7e7"
         font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 12 }
         clip: true

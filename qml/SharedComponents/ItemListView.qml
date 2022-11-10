@@ -1,5 +1,5 @@
-import QtQuick 2.2
-import Calaos 1.0
+import QtQuick
+import Calaos
 import "."
 
 ListView {

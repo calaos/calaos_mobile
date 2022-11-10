@@ -1,6 +1,6 @@
-import QtQuick 2.5
-import SharedComponents 1.0
-import QtQuick.Layouts 1.1
+import QtQuick
+import SharedComponents
+import QtQuick.Layouts
 
 BorderImage {
 
@@ -47,7 +47,6 @@ BorderImage {
         Flickable {
             anchors.fill: parent
             contentHeight: col.implicitHeight
-            onContentHeightChanged: console.log("contentheight: " + contentHeight)
             flickableDirection: Flickable.VerticalFlick
 
             Column {

@@ -29,6 +29,9 @@
 #include "QQmlVariantListModel.h"
 #include "Lang.h"
 #include "EventLogModel.h"
+#include "OSInstaller.h"
+#include "UsbDisk.h"
+#include "ControlPanelModel.h"
 
 class Application : public QAPP
 {
@@ -49,6 +52,10 @@ public:
     QML_READONLY_PROPERTY(int, cpuUsage)
     QML_READONLY_PROPERTY(int, memoryUsage)
     QML_READONLY_PROPERTY(bool, hasWebEngine)
+    QML_READONLY_PROPERTY(bool, hasInstall) //If running on live install enable installation mode
+    QML_READONLY_PROPERTY(bool, isSnapshotBoot) //if system has been booted read only from a snapshot
+
+    QML_READONLY_PROPERTY(QString, appVersion)
 
 public:
     Application(int &argc, char **argv);
@@ -77,6 +84,7 @@ public:
 
     Q_INVOKABLE void rebootMachine();
     Q_INVOKABLE void restartApp();
+    Q_INVOKABLE void rollbackSnapshot();
 
     Q_INVOKABLE quint32 getUptimeDays();
 
@@ -91,6 +99,7 @@ private slots:
     void calaosServerDetected();
     void sysInfoTimerSlot();
     void pushNotificationReceived(const QString &uuid);
+    void updateNetworkInfo();
 
 private:
     QQmlApplicationEngine engine;
@@ -105,6 +114,9 @@ private:
     CameraModel *cameraModel;
     LangModel *langModel;
     EventLogModel *eventLogModel;
+    UsbDiskModel *usbDiskModel = nullptr;
+    OSInstaller *osInstaller = nullptr;
+    ControlPanelModel *controlPanelModel = nullptr;
 
     QVariantList favoritesList;
 

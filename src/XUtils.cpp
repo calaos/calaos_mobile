@@ -116,10 +116,10 @@ void XUtils::WakeUpScreen(bool enable)
 #elif defined(HAVE_WIN_DMPS)
     //Windows API
 
-    if (enable)
-        PostMessage(HWND_BROADCAST, WM_SYSCOMMAND, SC_MONITORPOWER, MONITOR_ON);
-    else
-        PostMessage(HWND_BROADCAST, WM_SYSCOMMAND, SC_MONITORPOWER, MONITOR_OFF);
+//    if (enable)
+//        PostMessage(HWND_BROADCAST, WM_SYSCOMMAND, SC_MONITORPOWER, MONITOR_ON);
+//    else
+//        PostMessage(HWND_BROADCAST, WM_SYSCOMMAND, SC_MONITORPOWER, MONITOR_OFF);
 #else
     Q_UNUSED(enable)
 #endif

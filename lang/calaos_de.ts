@@ -4,35 +4,35 @@
 <context>
     <name>Application</name>
     <message>
-        <location filename="../src/Application.cpp" line="132"/>
-        <location filename="../src/Application.cpp" line="245"/>
+        <location filename="../src/Application.cpp" line="141"/>
+        <location filename="../src/Application.cpp" line="275"/>
         <source>Network error</source>
         <translation>Netzwerkfehler</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="133"/>
+        <location filename="../src/Application.cpp" line="142"/>
         <source>The connection to calaos_server was lost.It will reconnect automatically when calaos_serveris available again.</source>
         <translation>Die Verbindung zu calaos_server wurde unterbrochen. Die Verbindung wird automatisch wiederhergestellt, wenn calaos_server wieder verfügbar ist.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="136"/>
-        <location filename="../src/Application.cpp" line="249"/>
-        <location filename="../src/Application.cpp" line="369"/>
+        <location filename="../src/Application.cpp" line="145"/>
+        <location filename="../src/Application.cpp" line="279"/>
+        <location filename="../src/Application.cpp" line="403"/>
         <source>Close</source>
         <translation>Schliessen</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="246"/>
+        <location filename="../src/Application.cpp" line="276"/>
         <source>No network connection found, this application requires a network connection to work.</source>
         <translation>Keine Netzwerkverbindung gefunden, diese Anwendung benötigt eine Netzwerkverbindung, um zu funktionieren.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="367"/>
+        <location filename="../src/Application.cpp" line="401"/>
         <source>Login failed</source>
         <translation>Fehlgeschlagene Anmeldung</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="368"/>
+        <location filename="../src/Application.cpp" line="402"/>
         <source>Connection failed, please check your credentials.</source>
         <translation>Verbindung fehlgeschlagen, bitte überprüfen Sie Ihre Zugangsdaten.</translation>
     </message>
@@ -94,6 +94,19 @@
     </message>
 </context>
 <context>
+    <name>CameraCommandItem</name>
+    <message>
+        <location filename="../qml/desktop/CameraCommandItem.qml" line="13"/>
+        <source>Zoom</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/CameraCommandItem.qml" line="46"/>
+        <source>Move</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>CameraItem</name>
     <message>
         <location filename="../qml/desktop/CameraItem.qml" line="40"/>
@@ -127,12 +140,12 @@
 <context>
     <name>CameraSingleView</name>
     <message>
-        <location filename="../qml/desktop/CameraSingleView.qml" line="94"/>
+        <location filename="../qml/desktop/CameraSingleView.qml" line="106"/>
         <source>Back</source>
         <translation>Zurück</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/CameraSingleView.qml" line="101"/>
+        <location filename="../qml/desktop/CameraSingleView.qml" line="113"/>
         <source>Quit</source>
         <translation>Beenden</translation>
     </message>
@@ -154,34 +167,115 @@
     </message>
 </context>
 <context>
-    <name>ConfigL18nView</name>
+    <name>ConfigInstallView</name>
     <message>
-        <location filename="../qml/desktop/ConfigL18nView.qml" line="57"/>
-        <source>Choose the desired language for the user interface from the list below:</source>
+        <location filename="../qml/desktop/ConfigInstallView.qml" line="63"/>
+        <source>Calaos OS Installation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigL18nView.qml" line="92"/>
-        <source>* Restart required to apply changes</source>
+        <location filename="../qml/desktop/ConfigInstallView.qml" line="72"/>
+        <source>Choose a destination disk and click Install to start the installation script</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigL18nView.qml" line="103"/>
-        <source>If your language is not listed here or if you found some mistake in the translation, please contact the Calaos development team to help us improve the software.</source>
+        <location filename="../qml/desktop/ConfigInstallView.qml" line="81"/>
+        <source>WARNING: All data from the destination disk are going to be lost!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigL18nView.qml" line="139"/>
-        <source>Localization configuration</source>
+        <location filename="../qml/desktop/ConfigInstallView.qml" line="185"/>
+        <source>Installation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigL18nView.qml" line="166"/>
+        <location filename="../qml/desktop/ConfigInstallView.qml" line="212"/>
+        <source>Install</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigInstallView.qml" line="218"/>
+        <source>Warning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigInstallView.qml" line="218"/>
+        <source>No destination disk selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigInstallView.qml" line="218"/>
+        <source>Close</source>
+        <translation type="unfinished">Schliessen</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigInstallView.qml" line="229"/>
+        <source>Reboot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigInstallView.qml" line="244"/>
         <source>Back to config</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigL18nView.qml" line="173"/>
+        <location filename="../qml/desktop/ConfigInstallView.qml" line="252"/>
+        <source>Quit</source>
+        <translation type="unfinished">Beenden</translation>
+    </message>
+</context>
+<context>
+    <name>ConfigL18nView</name>
+    <message>
+        <location filename="../qml/desktop/ConfigL18nView.qml" line="56"/>
+        <source>Choose the desired language for the user interface from the list below:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigL18nView.qml" line="86"/>
+        <source>* Restart required to apply changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigL18nView.qml" line="97"/>
+        <source>If your language is not listed here or if you found some mistake in the translation, please contact the Calaos development team to help us improve the software.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigL18nView.qml" line="133"/>
+        <source>Localization configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigL18nView.qml" line="160"/>
+        <source>Back to config</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigL18nView.qml" line="167"/>
+        <source>Quit</source>
+        <translation type="unfinished">Beenden</translation>
+    </message>
+</context>
+<context>
+    <name>ConfigNetworkView</name>
+    <message>
+        <location filename="../qml/desktop/ConfigNetworkView.qml" line="56"/>
+        <source>TODO: Network</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigNetworkView.qml" line="100"/>
+        <source>Network configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigNetworkView.qml" line="127"/>
+        <source>Back to config</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigNetworkView.qml" line="134"/>
         <source>Quit</source>
         <translation type="unfinished">Beenden</translation>
     </message>
@@ -194,27 +288,27 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigScreenView.qml" line="74"/>
+        <location filename="../qml/desktop/ConfigScreenView.qml" line="73"/>
         <source>Screen will be turned off after %1 minutes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigScreenView.qml" line="75"/>
+        <location filename="../qml/desktop/ConfigScreenView.qml" line="74"/>
         <source>Screen will remain always on</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigScreenView.qml" line="112"/>
+        <location filename="../qml/desktop/ConfigScreenView.qml" line="111"/>
         <source>Screen configuration</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigScreenView.qml" line="139"/>
+        <location filename="../qml/desktop/ConfigScreenView.qml" line="138"/>
         <source>Back to config</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigScreenView.qml" line="146"/>
+        <location filename="../qml/desktop/ConfigScreenView.qml" line="145"/>
         <source>Quit</source>
         <translation type="unfinished">Beenden</translation>
     </message>
@@ -227,105 +321,128 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigTabs.qml" line="61"/>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="60"/>
         <source>Product Version:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigTabs.qml" line="67"/>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="66"/>
         <source>System started since:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigTabs.qml" line="73"/>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="72"/>
         <source>%1 day</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigTabs.qml" line="75"/>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="74"/>
         <source>%1 days</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigTabs.qml" line="83"/>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="82"/>
         <source>Machine name:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigTabs.qml" line="88"/>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="87"/>
         <source>Network:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigTabs.qml" line="103"/>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="102"/>
         <source>CPU Usage:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigTabs.qml" line="110"/>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="109"/>
         <source>Memory Usage:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigTabs.qml" line="139"/>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="138"/>
         <source>Calaos is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License version 3</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>ConfigUserInfoView</name>
+    <name>ConfigUpdateView</name>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="43"/>
-        <source>Here you can configure some personal information like your email address. It is used by Calaos to send you some email. For example, the Note widget can use those addresses to send notes to your mailbox.</source>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="56"/>
+        <source>TODO: Arch pkg Update</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="121"/>
-        <source>Add email</source>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="100"/>
+        <source>Update your system</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="122"/>
-        <source>Email</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="123"/>
-        <source>Add a new email address to the list</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="161"/>
-        <source>User information</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="188"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="127"/>
         <source>Back to config</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="195"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="134"/>
+        <source>Quit</source>
+        <translation type="unfinished">Beenden</translation>
+    </message>
+</context>
+<context>
+    <name>ConfigUserInfoView</name>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="42"/>
+        <source>Here you can configure some personal information like your email address. It is used by Calaos to send you some email. For example, the Note widget can use those addresses to send notes to your mailbox.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="120"/>
+        <source>Add email</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="121"/>
+        <source>Email</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="122"/>
+        <source>Add a new email address to the list</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="160"/>
+        <source>User information</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="187"/>
+        <source>Back to config</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="194"/>
         <source>Quit</source>
         <translation type="unfinished">Beenden</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="207"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="206"/>
         <source>Remove email</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="208"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="207"/>
         <source>Remove this email &apos;%1&apos; from the list?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="210"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="209"/>
         <source>Yes, remove</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="211"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="210"/>
         <source>No</source>
         <translation type="unfinished">Nein</translation>
     </message>
@@ -333,44 +450,87 @@
 <context>
     <name>ConfigView</name>
     <message>
-        <location filename="../qml/desktop/ConfigView.qml" line="55"/>
-        <source>Screen saver</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../qml/desktop/ConfigView.qml" line="56"/>
-        <source>Screen power management</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../qml/desktop/ConfigView.qml" line="61"/>
-        <source>Localization</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../qml/desktop/ConfigView.qml" line="62"/>
-        <source>Language settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../qml/desktop/ConfigView.qml" line="67"/>
-        <source>Information</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../qml/desktop/ConfigView.qml" line="68"/>
-        <source>Personal settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../qml/desktop/ConfigView.qml" line="123"/>
+        <location filename="../qml/desktop/ConfigView.qml" line="104"/>
         <source>Configuration Panel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigView.qml" line="150"/>
+        <location filename="../qml/desktop/ConfigView.qml" line="131"/>
         <source>Quit</source>
         <translation>Beenden</translation>
+    </message>
+</context>
+<context>
+    <name>ControlPanelModel</name>
+    <message>
+        <location filename="../src/ControlPanelModel.cpp" line="27"/>
+        <source>Screen saver</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ControlPanelModel.cpp" line="28"/>
+        <source>Screen power management</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ControlPanelModel.cpp" line="34"/>
+        <source>Localization</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ControlPanelModel.cpp" line="35"/>
+        <source>Language settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ControlPanelModel.cpp" line="41"/>
+        <source>Information</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ControlPanelModel.cpp" line="42"/>
+        <source>Personal settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ControlPanelModel.cpp" line="48"/>
+        <source>Network</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ControlPanelModel.cpp" line="49"/>
+        <source>IP, gateway, DNS</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ControlPanelModel.cpp" line="55"/>
+        <source>Update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ControlPanelModel.cpp" line="56"/>
+        <source>Software updates</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ControlPanelModel.cpp" line="64"/>
+        <source>Installation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ControlPanelModel.cpp" line="65"/>
+        <source>Install on disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ControlPanelModel.cpp" line="74"/>
+        <source>Rollback</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ControlPanelModel.cpp" line="75"/>
+        <source>Rollback to this snapshot</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -402,18 +562,18 @@
 <context>
     <name>DialogAddWidget</name>
     <message>
-        <location filename="../qml/desktop/DialogAddWidget.qml" line="8"/>
-        <location filename="../qml/desktop/DialogAddWidget.qml" line="11"/>
+        <location filename="../qml/desktop/DialogAddWidget.qml" line="7"/>
+        <location filename="../qml/desktop/DialogAddWidget.qml" line="10"/>
         <source>Add widget</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogAddWidget.qml" line="9"/>
+        <location filename="../qml/desktop/DialogAddWidget.qml" line="8"/>
         <source>Select a widget to add to the desktop</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogAddWidget.qml" line="12"/>
+        <location filename="../qml/desktop/DialogAddWidget.qml" line="11"/>
         <source>Cancel</source>
         <translation>Beenden</translation>
     </message>
@@ -421,27 +581,27 @@
 <context>
     <name>DialogKeyboard</name>
     <message>
-        <location filename="../qml/desktop/DialogKeyboard.qml" line="68"/>
+        <location filename="../qml/desktop/DialogKeyboard.qml" line="67"/>
         <source>Title</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogKeyboard.qml" line="89"/>
+        <location filename="../qml/desktop/DialogKeyboard.qml" line="88"/>
         <source>Sub Title</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogKeyboard.qml" line="223"/>
+        <location filename="../qml/desktop/DialogKeyboard.qml" line="222"/>
         <source>Clear current text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogKeyboard.qml" line="234"/>
+        <location filename="../qml/desktop/DialogKeyboard.qml" line="233"/>
         <source>Valid</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogKeyboard.qml" line="248"/>
+        <location filename="../qml/desktop/DialogKeyboard.qml" line="247"/>
         <source>Quit</source>
         <translation type="unfinished">Beenden</translation>
     </message>
@@ -449,22 +609,22 @@
 <context>
     <name>DialogRGBColorPicker</name>
     <message>
-        <location filename="../qml/desktop/DialogRGBColorPicker.qml" line="18"/>
+        <location filename="../qml/desktop/DialogRGBColorPicker.qml" line="17"/>
         <source>Choose a color</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogRGBColorPicker.qml" line="19"/>
+        <location filename="../qml/desktop/DialogRGBColorPicker.qml" line="18"/>
         <source>Change the color of the light</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogRGBColorPicker.qml" line="21"/>
+        <location filename="../qml/desktop/DialogRGBColorPicker.qml" line="20"/>
         <source>Change color</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogRGBColorPicker.qml" line="22"/>
+        <location filename="../qml/desktop/DialogRGBColorPicker.qml" line="21"/>
         <source>Cancel</source>
         <translation type="unfinished">Beenden</translation>
     </message>
@@ -472,92 +632,119 @@
 <context>
     <name>DialogReboot</name>
     <message>
-        <location filename="../qml/desktop/DialogReboot.qml" line="8"/>
+        <location filename="../qml/desktop/DialogReboot.qml" line="7"/>
         <source>Reboot?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogReboot.qml" line="9"/>
+        <location filename="../qml/desktop/DialogReboot.qml" line="8"/>
         <source>Do you want to reboot the machine or only the App? A full reboot will do a complete restart of Calaos.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogReboot.qml" line="11"/>
+        <location filename="../qml/desktop/DialogReboot.qml" line="10"/>
         <source>Yes, reboot</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogReboot.qml" line="11"/>
+        <location filename="../qml/desktop/DialogReboot.qml" line="10"/>
         <source>Yes, restart</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogReboot.qml" line="12"/>
+        <location filename="../qml/desktop/DialogReboot.qml" line="11"/>
         <source>Cancel</source>
         <translation type="unfinished">Beenden</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogReboot.qml" line="22"/>
+        <location filename="../qml/desktop/DialogReboot.qml" line="23"/>
         <source>Reboot machine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogReboot.qml" line="27"/>
+        <location filename="../qml/desktop/DialogReboot.qml" line="28"/>
         <source>Restart application</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
+    <name>DialogRecoveryBoot</name>
+    <message>
+        <location filename="../qml/desktop/DialogRecoveryBoot.qml" line="7"/>
+        <source>Recovery System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogRecoveryBoot.qml" line="8"/>
+        <source>The system is booted from a previous snapshot. That means the system is read only and all data will not be saved on the disk.
+
+You have the ability to rollback to this snapshot as the primary boot system. This rollback procedure will set this snapshot as the current read write system and reboot.
+
+The rollback option is also available in the Control Panel (Configuration menu)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogRecoveryBoot.qml" line="11"/>
+        <source>Rollback</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogRecoveryBoot.qml" line="12"/>
+        <source>Close</source>
+        <translation type="unfinished">Schliessen</translation>
+    </message>
+</context>
+<context>
     <name>EventLogItem</name>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="101"/>
+        <location filename="../src/EventLogModel.cpp" line="102"/>
         <source>Appliance change</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="106"/>
+        <location filename="../src/EventLogModel.cpp" line="107"/>
         <source>Push Notification</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="126"/>
+        <location filename="../src/EventLogModel.cpp" line="127"/>
         <source>Unknown event!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="134"/>
+        <location filename="../src/EventLogModel.cpp" line="135"/>
         <source>Today</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="163"/>
-        <location filename="../src/EventLogModel.cpp" line="177"/>
+        <location filename="../src/EventLogModel.cpp" line="164"/>
+        <location filename="../src/EventLogModel.cpp" line="178"/>
         <source>On</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="168"/>
-        <location filename="../src/EventLogModel.cpp" line="182"/>
+        <location filename="../src/EventLogModel.cpp" line="169"/>
+        <location filename="../src/EventLogModel.cpp" line="183"/>
         <source>Off</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="188"/>
+        <location filename="../src/EventLogModel.cpp" line="189"/>
         <source>Temp changed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="196"/>
+        <location filename="../src/EventLogModel.cpp" line="197"/>
         <source>Open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="201"/>
+        <location filename="../src/EventLogModel.cpp" line="202"/>
         <source>Closed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="207"/>
+        <location filename="../src/EventLogModel.cpp" line="208"/>
         <source>Started</source>
         <translation type="unfinished"></translation>
     </message>
@@ -748,14 +935,32 @@
     </message>
 </context>
 <context>
+    <name>IOVarInt</name>
+    <message>
+        <location filename="../qml/SharedComponents/IOVarInt.qml" line="52"/>
+        <source>Warning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/IOVarInt.qml" line="52"/>
+        <source>The value has not been updated for a long time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/IOVarInt.qml" line="52"/>
+        <source>Close</source>
+        <translation type="unfinished">Schliessen</translation>
+    </message>
+</context>
+<context>
     <name>LangModel</name>
     <message>
-        <location filename="../src/Lang.cpp" line="34"/>
+        <location filename="../src/Lang.cpp" line="30"/>
         <source>System default</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/Lang.cpp" line="43"/>
+        <location filename="../src/Lang.cpp" line="39"/>
         <source>English</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1025,8 +1230,64 @@
 <context>
     <name>NoteBack</name>
     <message>
+        <location filename="../widgets/Note/NoteBack.qml" line="48"/>
+        <source>Edit note</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/Note/NoteBack.qml" line="49"/>
+        <source>Note</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/Note/NoteBack.qml" line="50"/>
+        <source>Write your note to be displayed on the desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/Note/NoteBack.qml" line="60"/>
+        <source>Send by mail</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/Note/NoteBack.qml" line="90"/>
+        <location filename="../widgets/Note/NoteBack.qml" line="106"/>
         <source>Close</source>
-        <translation type="obsolete">Schliessen</translation>
+        <translation type="unfinished">Schliessen</translation>
+    </message>
+    <message>
+        <location filename="../widgets/Note/NoteBack.qml" line="103"/>
+        <source>No Emails</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/Note/NoteBack.qml" line="104"/>
+        <source>No emails are configured. Please go to the Configuration panel and add at least one email address</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>OSInstaller</name>
+    <message>
+        <location filename="../src/OSInstaller.cpp" line="36"/>
+        <location filename="../src/OSInstaller.cpp" line="73"/>
+        <location filename="../src/OSInstaller.cpp" line="87"/>
+        <source>Error</source>
+        <translation type="unfinished">Fehler</translation>
+    </message>
+    <message>
+        <location filename="../src/OSInstaller.cpp" line="37"/>
+        <location filename="../src/OSInstaller.cpp" line="74"/>
+        <location filename="../src/OSInstaller.cpp" line="88"/>
+        <source>Installation failed. See log...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/OSInstaller.cpp" line="38"/>
+        <location filename="../src/OSInstaller.cpp" line="75"/>
+        <location filename="../src/OSInstaller.cpp" line="89"/>
+        <source>Close</source>
+        <translation type="unfinished">Schliessen</translation>
     </message>
 </context>
 <context>
@@ -1045,8 +1306,16 @@
 <context>
     <name>PushEventView</name>
     <message>
-        <location filename="../qml/mobile/PushEventView.qml" line="104"/>
+        <location filename="../qml/mobile/PushEventView.qml" line="105"/>
         <source>Push Notification</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>QObject</name>
+    <message>
+        <location filename="../3rd_party/drivelist_linux/linuxdrivelist.cpp" line="111"/>
+        <source>Internal SD card reader</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1162,6 +1431,14 @@
     </message>
 </context>
 <context>
+    <name>UsbDiskModel</name>
+    <message>
+        <location filename="../src/UsbDisk.cpp" line="114"/>
+        <source>Removable disks</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Utils</name>
     <message>
         <location filename="../qml/desktop/Utils.js" line="85"/>
@@ -1246,12 +1523,12 @@
 <context>
     <name>main</name>
     <message>
-        <location filename="../qml/desktop/main.qml" line="302"/>
+        <location filename="../qml/desktop/main.qml" line="343"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/main.qml" line="303"/>
+        <location filename="../qml/desktop/main.qml" line="344"/>
         <source>Change text for &apos;%1&apos;</source>
         <translation type="unfinished"></translation>
     </message>

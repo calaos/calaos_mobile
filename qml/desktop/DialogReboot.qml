@@ -1,6 +1,5 @@
-import QtQuick 2.5
-import QtQuick.Controls 1.3 as QuickControls
-import SharedComponents 1.0
+import QtQuick
+import SharedComponents
 
 Dialog {
     id: dlg
@@ -13,18 +12,19 @@ Dialog {
 
     onAccepted: rebootRadio.checked?calaosApp.rebootMachine():calaosApp.restartApp()
 
-    QuickControls.ExclusiveGroup {
-        id: optionGroup
+    function showDialog(showMachine, showApp) {
+        rebootRadio.visible = showMachine
+        restartRadio.visible = showApp
+        show()
     }
 
     CalaosRadio {
         id: rebootRadio
         text: qsTr("Reboot machine")
         checked: true
-        exclusiveGroup: optionGroup
     }
     CalaosRadio {
+        id: restartRadio
         text: qsTr("Restart application")
-        exclusiveGroup: optionGroup
     }
 }

@@ -1,9 +1,8 @@
-import QtQuick 2.3
-import QtQuick.Controls 1.3 as QuickControls
-import SharedComponents 1.0
-import QtQuick.Layouts 1.2
-import QtQuick.VirtualKeyboard 2.2
-import QtQuick.VirtualKeyboard.Settings 2.2
+import QtQuick
+import SharedComponents
+import QtQuick.Layouts
+import QtQuick.VirtualKeyboard
+import QtQuick.VirtualKeyboard.Settings
 
 Dialog {
     id: dlg

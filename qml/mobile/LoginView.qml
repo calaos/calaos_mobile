@@ -1,7 +1,7 @@
-import QtQuick 2.2
-import QtQuick.Controls 1.2
-import Calaos 1.0
-import SharedComponents 1.0
+import QtQuick
+import QtQuick.Controls
+import Calaos
+import SharedComponents
 
 Item {
 
@@ -9,10 +9,9 @@ Item {
     property alias password: passField.text
     property alias hostname: hostField.text
     signal loginClicked(var user, var pass, var host)
+    signal cancelClicked()
 
     property color textEditColor: calaosApp.isAndroid? "white": "black"
-
-    anchors.fill: parent
 
     visible: opacity > 0?true:false
     Behavior on opacity { PropertyAnimation { } }
@@ -73,7 +72,6 @@ Item {
                 width: 200 * calaosApp.density
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Username")
-                floatingLabel: true
                 enabled: !loginButton.loadingEnabled
                 onClearButtonClicked: { userField.selectAll(); userField.cut() }
             }
@@ -84,7 +82,6 @@ Item {
                 echoMode: TextInput.Password
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Password")
-                floatingLabel: true
                 enabled: !loginButton.loadingEnabled
                 onClearButtonClicked: { passField.selectAll(); passField.cut() }
             }
@@ -94,7 +91,6 @@ Item {
                 width: 200 * calaosApp.density
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Hostname")
-                floatingLabel: true
                 enabled: !loginButton.loadingEnabled
                 onClearButtonClicked: { hostField.selectAll(); hostField.cut() }
             }
@@ -104,7 +100,14 @@ Item {
                 text: qsTr("Login")
                 width: 200 * calaosApp.density
 
-                onButtonClicked: loginClicked(userField.text, passField.text, hostField.text)
+                onButtonClicked: () => {
+                                     if (calaosApp.applicationStatus === Common.Loading) {
+                                         cancelClicked()
+                                     } else {
+                                         loginClicked(userField.text, passField.text, hostField.text)
+                                     }
+                                 }
+
                 loadingEnabled: calaosApp.applicationStatus === Common.Loading
             }
         }

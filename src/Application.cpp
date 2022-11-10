@@ -5,8 +5,12 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include "RoomFilterModel.h"
+#include "ControlPanelModel.h"
+
+#include "version.h"
+
 #ifdef Q_OS_ANDROID
-#include <QtAndroidExtras/QAndroidJniObject>
+#include <QJniObject>
 #endif
 #include <QProcess>
 #include <qfappdispatcher.h>
@@ -75,9 +79,9 @@ void Application::createQmlApp()
     Common::registerQml();
 
 #ifdef Q_OS_ANDROID
-    QAndroidJniObject activity = QAndroidJniObject::callStaticObjectMethod("org/qtproject/qt5/android/QtNative", "activity", "()Landroid/app/Activity;");
-    QAndroidJniObject resource = activity.callObjectMethod("getResources","()Landroid/content/res/Resources;");
-    QAndroidJniObject metrics = resource.callObjectMethod("getDisplayMetrics","()Landroid/util/DisplayMetrics;");
+    QJniObject activity = QJniObject::callStaticObjectMethod("org/qtproject/qt6/android/QtNative", "activity", "()Landroid/app/Activity;");
+    QJniObject resource = activity.callObjectMethod("getResources","()Landroid/content/res/Resources;");
+    QJniObject metrics = resource.callObjectMethod("getDisplayMetrics","()Landroid/util/DisplayMetrics;");
     //update_density(metrics.getField<float>("density"));
     update_density(1);
 
@@ -116,6 +120,11 @@ void Application::createQmlApp()
 
 #endif
 #endif
+
+    update_appVersion(PKG_VERSION_STR);
+
+    update_hasInstall(QFile::exists("/.calaos-live"));
+    update_isSnapshotBoot(Machine::isBootReadOnly());
 
     update_applicationStatus(Common::NotConnected);
 
@@ -166,6 +175,16 @@ void Application::createQmlApp()
     eventLogModel = new EventLogModel(&engine, calaosConnect, this);
     engine.rootContext()->setContextProperty("eventLogModel", eventLogModel);
 
+#ifdef CALAOS_DESKTOP
+    if (get_hasInstall())
+    {
+        usbDiskModel = new UsbDiskModel(&engine, this);
+        engine.rootContext()->setContextProperty("usbDiskModel", usbDiskModel);
+        osInstaller = new OSInstaller(&engine, this);
+        engine.rootContext()->setContextProperty("osInstaller", osInstaller);
+    }
+#endif
+
     engine.rootContext()->setContextProperty("platformMarginsLeft", QVariant(0.0));
     engine.rootContext()->setContextProperty("platformMarginsRight", QVariant(0.0));
     engine.rootContext()->setContextProperty("platformMarginsTop", QVariant(0.0));
@@ -179,19 +198,31 @@ void Application::createQmlApp()
     engine.rootContext()->setContextProperty("screenManager", &ScreenManager::Instance());
     engine.rootContext()->setContextProperty("userInfoModel", UserInfoModel::Instance());
 
-    update_machineName(Machine::getHostname());
-    QList<NetworkInfo *> nets = Machine::getNetworkInfo();
-    for (int i = 0;i < nets.count();i++)
-    {
-        if (nets.at(i)->get_isLoopback())
-            continue;
-        m_netAddresses->append(nets.at(i));
-    }
+    controlPanelModel = new ControlPanelModel(this);
+    engine.rootContext()->setContextProperty("controlPanelModel", controlPanelModel);
 
+    update_machineName(Machine::getHostname());
+
+    //network info timer
+    updateNetworkInfo();
+    auto netTimer = new QTimer(this);
+    connect(netTimer, &QTimer::timeout, this, &Application::updateNetworkInfo);
+    netTimer->start(120000);
+
+    //sys info timer
     sysInfoTimer = new QTimer();
     connect(sysInfoTimer, SIGNAL(timeout()), this, SLOT(sysInfoTimerSlot()));
     sysInfoTimer->start(5000);
     sysInfoTimerSlot();
+
+    if (get_isSnapshotBoot())
+    {
+        QTimer::singleShot(2000, this, [=]()
+        {
+            QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(&engine);
+            appDispatcher->dispatch("showReadOnlyBootDialog");
+        });
+    }
 #endif
 
     engine.rootContext()->setContextProperty("calaosApp", this);
@@ -521,6 +552,16 @@ void Application::restartApp()
 #endif
 }
 
+void Application::rollbackSnapshot()
+{
+    qInfo() << "Rollback calaos os";
+#ifdef CALAOS_DESKTOP
+    QProcess::startDetached("/bin/sh", QStringList() <<
+                            "-c" <<
+                            "calaos_rollback.sh && reboot");
+#endif
+}
+
 quint32 Application::getUptimeDays()
 {
     return Machine::getMachineUptime() / 60 / 60 / 24;
@@ -560,7 +601,8 @@ void Application::setupLanguage()
                 break;
             }
 
-            translator.load(QString()); // unload()
+            if (!translator.load(QString())) // unload()
+                qDebug() << "Failure to unload translation";
         }
         else if (locale == QStringLiteral("C") ||
                  locale == QStringLiteral("en"))
@@ -570,9 +612,7 @@ void Application::setupLanguage()
         }
     }
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
     engine.retranslate();
-#endif
 }
 
 void Application::setLanguage(QString code)
@@ -589,4 +629,16 @@ void Application::pushNotificationReceived(const QString &uuid)
     QVariantMap m = {{ "notifUuid", uuid }};
     appDispatcher->dispatch("openEventPushViewerUuid", m);
 #endif
+}
+
+void Application::updateNetworkInfo()
+{
+    m_netAddresses->clear();
+    QList<NetworkInfo *> nets = Machine::getNetworkInfo();
+    for (int i = 0;i < nets.count();i++)
+    {
+        if (nets.at(i)->get_isLoopback())
+            continue;
+        m_netAddresses->append(nets.at(i));
+    }
 }

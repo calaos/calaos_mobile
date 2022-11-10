@@ -1,7 +1,9 @@
-import QtQuick 2.2
-import QtQuick.Controls 1.2
-import QtQuick.Controls.Styles 1.2
-import SharedComponents 1.0
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Controls.Material
+import QtQuick.Controls.Universal
+//import QtQuick.Controls.Styles 1.2
+import SharedComponents
 
 ButtonStyle {
     background: Item {

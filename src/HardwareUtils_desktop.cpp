@@ -226,7 +226,6 @@ void HardwareUtilsDesktop::initConfigOptions(QString configdir, QString cachedir
 
         conf.write("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n");
         conf.write("<calaos:config xmlns:calaos=\"http://www.calaos.fr\">\n");
-        conf.write("<calaos:option name=\"fw_version\" value=\"0\" />\n");
         conf.write("</calaos:config>");
         conf.close();
 
@@ -238,7 +237,7 @@ void HardwareUtilsDesktop::initConfigOptions(QString configdir, QString cachedir
         setConfigOption("longitude", "2.322235");
         setConfigOption("latitude", "48.864715");
 
-        qInfo() << "WARNING: no local_config.xml found, generating default config with username: \"user\" and password: \"pass\"" << endl;
+        qInfo() << "WARNING: no local_config.xml found, generating default config with username: \"user\" and password: \"pass\"";
     }
 }
 
@@ -291,7 +290,7 @@ QHash<QString, QString> HardwareUtilsDesktop::getAllOptions()
 
         if (reader.isStartElement())
         {
-            if (reader.name() == "option")
+            if (reader.name() == QStringLiteral("option"))
             {
                 QXmlStreamAttributes attrs = reader.attributes();
                 values[attrs.value("name").toString()] = attrs.value("value").toString();

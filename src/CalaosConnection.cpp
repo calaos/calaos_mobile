@@ -78,6 +78,7 @@ void CalaosConnection::connectHttp(QString h)
 
     QUrl url(h);
     QNetworkRequest request(url);
+    request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     accessManager->post(request, jdoc.toJson());
 }
@@ -449,7 +450,7 @@ void CalaosConnection::sendWebsocket(const QString &msg, const QJsonObject &data
 
     QJsonDocument doc(o);
 #ifdef QT_DEBUG
-    qDebug().noquote() << "SEND: " << doc.toJson();
+    //qDebug().noquote() << "SEND: " << doc.toJson();
 #endif
 
     wsocket->sendTextMessage(doc.toJson());
@@ -470,6 +471,7 @@ void CalaosConnection::sendHttp(const QString &msg, QJsonObject &data, bool igno
     QUrl url(httphost);
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
     QNetworkReply *reqReply = accessManager->post(request, doc.toJson());
 
     connect(reqReply, SIGNAL(finished()), this, SLOT(requestFinished()));
@@ -568,11 +570,12 @@ void CalaosConnection::getCameraPicture(const QString &camid, QString urlSuffix)
     QJsonDocument jdoc(jroot);
 
 #ifdef QT_DEBUG
-    qDebug().noquote() << "SEND: " << jdoc.toJson();
+    //qDebug().noquote() << "SEND: " << jdoc.toJson();
 #endif
 
     QUrl url(u);
     QNetworkRequest request(url);
+    request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     QNetworkReply *reqReply = accessManagerCam->post(request, jdoc.toJson());
 
@@ -594,11 +597,12 @@ void CalaosConnection::getAudioCover(const QString &playerid)
     QJsonDocument jdoc(jroot);
 
 #ifdef QT_DEBUG
-    qDebug().noquote() << "SEND: " << jdoc.toJson();
+    //qDebug().noquote() << "SEND: " << jdoc.toJson();
 #endif
 
     QUrl url(u);
     QNetworkRequest request(url);
+    request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     QNetworkReply *reqReply = accessManagerCam->post(request, jdoc.toJson());
 
@@ -631,6 +635,7 @@ void CalaosConnection::startJsonPolling()
     QUrl url(httphost);
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
     pollReply = accessManager->post(request, jdoc.toJson());
 
     connect(pollReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestError(QNetworkReply::NetworkError)));
@@ -737,7 +742,7 @@ void CalaosConnection::processEventsV2(QString msg)
 void CalaosConnection::processEventsV3(QVariantMap msg)
 {
 #ifdef QT_DEBUG
-    qDebug().noquote() << "Received: " << msg["event_raw"];
+    //qDebug().noquote() << "Received: " << msg["event_raw"];
 #endif
 
     QVariantMap data = msg["data"].toMap();
@@ -789,7 +794,7 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
     QJsonObject jdata = jroot["data"].toObject();
 
 #ifdef QT_DEBUG
-    qDebug() << "RECV:" << message;
+    //qDebug() << "RECV:" << message;
 #endif
 
     if (jroot["msg"] == "login")

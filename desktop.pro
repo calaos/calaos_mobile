@@ -14,10 +14,10 @@ include(lang/lang.pri)
 
 TARGET=calaos_home
 
-QT += widgets
+QT += core widgets network qml core5compat
 
-qtHaveModule(webengine) {
-QT += webengine
+qtHaveModule(webenginequick) {
+QT += webenginequick
 DEFINES += HAVE_WEBENGINE
 }
 
@@ -32,17 +32,30 @@ QML_IMPORT_PATH = $$PWD/qml
 SOURCES += src/HardwareUtils_desktop.cpp \
     src/CalaosWidget.cpp \
     src/CalaosWidgetModel.cpp \
+    src/ControlPanelModel.cpp \
+    src/OSInstaller.cpp \
     src/WeatherInfo.cpp \
     src/XUtils.cpp \
     src/ScreenManager.cpp \
-    src/UserInfoModel.cpp
+    src/UserInfoModel.cpp \
+    src/UsbDisk.cpp
+
 HEADERS += src/HardwareUtils_desktop.h \
     src/CalaosWidget.h \
     src/CalaosWidgetModel.h \
+    src/ControlPanelModel.h \
+    src/OSInstaller.h \
     src/WeatherInfo.h \
     src/XUtils.h \
     src/ScreenManager.h \
-    src/UserInfoModel.h
+    src/UserInfoModel.h \
+    src/UsbDisk.h \
+    src/version.h
+
+linux {
+    SOURCES += 3rd_party/drivelist_linux/linuxdrivelist.cpp
+    HEADERS += 3rd_party/drivelist/src/drivelist.hpp
+}
 
 RESOURCES += qml_desktop.qrc \
     img_desktop.qrc \
@@ -77,6 +90,3 @@ SOURCES += \
     widgets/*/*.qml \
     widgets/*/*.js
 }
-
-DISTFILES += \
-    qml/desktop/CameraCommandItem.qml

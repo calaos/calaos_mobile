@@ -4,7 +4,6 @@
 
 CameraModel::CameraModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent):
     QStandardItemModel(parent),
-    QQuickImageProvider(QQuickImageProvider::Image),
     engine(eng),
     connection(con)
 {
@@ -18,7 +17,8 @@ CameraModel::CameraModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObj
     set_cameraVisible(false);
 
     //add a special image provider for single pictures of cameras
-    engine->addImageProvider(QLatin1String("camera"), this);
+    imgProvider = new CameraImageProvider(this);
+    engine->addImageProvider(QLatin1String("camera"), imgProvider);
 
     connect(this, &CameraModel::cameraVisibleChanged, this, [=](bool visible)
     {
@@ -121,7 +121,9 @@ void CameraItem::load(QVariantMap &d, int countId)
         update_v1Url(cameraData["url_lowres"].toString());
     }
     update_name(cameraData["name"].toString());
-    update_url_single(QString("image://camera/%1/%2").arg(get_cameraId()).arg(qrand()));
+    update_url_single(QString("image://camera/%1/%2")
+                      .arg(get_cameraId())
+                      .arg(QRandomGenerator::global()->generate()));
     currentImage = QImage(":/img/camera_nocam.png");
 
     qDebug() << "New camera loaded: " << get_name();
@@ -137,9 +139,12 @@ void CameraItem::getPictureImage(QImage &image)
     image = currentImage;
 }
 
-QImage CameraModel::requestImage(const QString &qid, QSize *size, const QSize &requestedSize)
+QImage CameraImageProvider::requestImage(const QString &qid, QSize *size, const QSize &requestedSize)
 {
     QImage retimg;
+
+    if (!model)
+        return {};
 
     QStringList sl = qid.split('/');
     if (sl.empty()) return retimg;
@@ -150,9 +155,9 @@ QImage CameraModel::requestImage(const QString &qid, QSize *size, const QSize &r
     if (id.toInt() < 0)
         return retimg;
 
-    for (int i = 0;i < rowCount();i++)
+    for (int i = 0;i < model->rowCount();i++)
     {
-        CameraItem *c = dynamic_cast<CameraItem *>(item(i));
+        CameraItem *c = dynamic_cast<CameraItem *>(model->item(i));
         if (c->get_cameraId() == id)
         {
             cam = c;
@@ -171,7 +176,7 @@ QImage CameraModel::requestImage(const QString &qid, QSize *size, const QSize &r
     return retimg;
 }
 
-QPixmap CameraModel::requestPixmap(const QString &id, QSize *size, const QSize &requestedSize)
+QPixmap CameraImageProvider::requestPixmap(const QString &id, QSize *size, const QSize &requestedSize)
 {
     return QPixmap::fromImage(requestImage(id, size, requestedSize));
 }
@@ -183,7 +188,9 @@ void CameraItem::cameraPictureDownloaded(const QString &camid, const QByteArray 
 
     currentImage = QImage::fromData(data);
 
-    update_url_single(QString("image://camera/%1/%2").arg(get_cameraId()).arg(qrand()));
+    update_url_single(QString("image://camera/%1/%2")
+                      .arg(get_cameraId())
+                      .arg(QRandomGenerator::global()->generate()));
 
     if (get_cameraVisible())
     {
@@ -313,4 +320,10 @@ void CameraItem::startCamera()
         qDebug() << "Start camera " << get_cameraId();
         connection->getCameraPicture(get_cameraId(), get_v1Url());
     });
+}
+
+CameraImageProvider::CameraImageProvider(CameraModel *m):
+    QQuickImageProvider(QQuickImageProvider::Image),
+    model(m)
+{
 }

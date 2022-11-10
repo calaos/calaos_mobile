@@ -1,18 +1,27 @@
-import QtQuick 2.5
-import QtQuick.Layouts 1.1
-import Calaos 1.0
-import SharedComponents 1.0
-import QtGraphicalEffects 1.0
+import QtQuick
+import QtQuick.Layouts
+import Calaos
+import SharedComponents
+import Qt5Compat.GraphicalEffects
 
 Flipable {
     id: flipable
 
-    function showMessage(title, msg) {
+    function showMessage(title, msg, timeout) {
         titleitem.text = title;
         msgitem.text = msg;
 
         flipable.state = "back"
-        closeTimeout.restart()
+        if (typeof timeout !== "undefined") {
+            if (timeout > 0) {
+                closeTimeout.interval = timeout
+                closeTimeout.restart()
+            }
+        } else {
+            //reset to default
+            closeTimeout.interval = 5000
+            closeTimeout.restart()
+        }
     }
 
     Timer {

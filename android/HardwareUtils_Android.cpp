@@ -1,9 +1,9 @@
 
 #include "HardwareUtils_Android.h"
-#include <QtAndroidExtras/QAndroidJniObject>
-#include <QtAndroidExtras/QAndroidJniEnvironment>
+#include <QJniObject>
+#include <QJniEnvironment>
 #include <jni.h>
-#include <QtAndroid>
+#include <QCoreApplication>
 
 #include <firebase/messaging.h>
 #include <firebase/app.h>
@@ -16,7 +16,7 @@ class FbListener: public ::firebase::messaging::Listener
 public:
     FbListener()
     {
-        QAndroidJniObject jniObject = QtAndroid::androidActivity();
+        QJniObject jniObject = QNativeInterface::QAndroidApplication::context();
         ::firebase::App *instance = ::firebase::App::GetInstance();
         if (instance)
         {
@@ -24,7 +24,7 @@ public:
         }
         else
         {
-            fbApp = ::firebase::App::Create(QAndroidJniEnvironment(), jniObject.object<jobject>());
+            fbApp = ::firebase::App::Create(QJniEnvironment().jniEnv(), jniObject.object<jobject>());
         }
     }
 
@@ -61,7 +61,7 @@ public:
     }
 
 private:
-    QAndroidJniEnvironment jniEnv;
+    QJniEnvironment jniEnv;
     ::firebase::App* fbApp;
     ::firebase::ModuleInitializer fbInitializer;
 };
@@ -104,10 +104,10 @@ void HardwareUtilsAndroid::setDeviceToken(QString t)
 
 void HardwareUtilsAndroid::showAlertMessage(QString title, QString message, QString buttontext)
 {
-    QAndroidJniObject jTitle = QAndroidJniObject::fromString(title);
-    QAndroidJniObject jMessage = QAndroidJniObject::fromString(message);
-    QAndroidJniObject jButtontext = QAndroidJniObject::fromString(buttontext);
-    QAndroidJniObject::callStaticMethod<void>("fr/calaos/calaoshome/HardwareUtils",
+    QJniObject jTitle = QJniObject::fromString(title);
+    QJniObject jMessage = QJniObject::fromString(message);
+    QJniObject jButtontext = QJniObject::fromString(buttontext);
+    QJniObject::callStaticMethod<void>("fr/calaos/calaoshome/HardwareUtils",
                                        "showAlertMessage",
                                        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
                                        jTitle.object<jstring>(),
@@ -115,7 +115,7 @@ void HardwareUtilsAndroid::showAlertMessage(QString title, QString message, QStr
                                        jButtontext.object<jstring>());
 
     //Clear exception if any
-    QAndroidJniEnvironment env;
+    QJniEnvironment env;
     if (env->ExceptionCheck())
     {
         qDebug() << "JNI call failed";
@@ -126,12 +126,12 @@ void HardwareUtilsAndroid::showAlertMessage(QString title, QString message, QStr
 
 int HardwareUtilsAndroid::getNetworkStatus()
 {
-    jint status = QAndroidJniObject::callStaticMethod<jint>("fr/calaos/calaoshome/HardwareUtils",
-                                                            "getNetworkStatus");
+    jint status = QJniObject::callStaticMethod<jint>("fr/calaos/calaoshome/HardwareUtils",
+                                                     "getNetworkStatus");
 
     qDebug() << "Android: HardwareUtilsAndroid::getNetworkStatus(): " << status;
     //Clear exception if any
-    QAndroidJniEnvironment env;
+    QJniEnvironment env;
     if (env->ExceptionCheck())
     {
         qDebug() << "JNI call failed";
@@ -144,10 +144,10 @@ int HardwareUtilsAndroid::getNetworkStatus()
 
 void HardwareUtilsAndroid::inputTextDialog(const QString &title, const QString &message)
 {
-    QAndroidJniObject jTitle = QAndroidJniObject::fromString(title);
-    QAndroidJniObject jMessage = QAndroidJniObject::fromString(message);
+    QJniObject jTitle = QJniObject::fromString(title);
+    QJniObject jMessage = QJniObject::fromString(message);
 
-    QAndroidJniObject::callStaticMethod<void>("fr/calaos/calaoshome/HardwareUtils",
+    QJniObject::callStaticMethod<void>("fr/calaos/calaoshome/HardwareUtils",
                                        "inputtextDialog",
                                        "(Ljava/lang/String;Ljava/lang/String;)V",
                                        jTitle.object<jstring>(),
@@ -158,7 +158,7 @@ static void emitDialogTextValid(JNIEnv *env, jobject obj, jstring text)
 {
     Q_UNUSED(env);
     Q_UNUSED(obj);
-    QAndroidJniObject jnitext(text);
+    QJniObject jnitext(text);
     QMetaObject::invokeMethod(HardwareUtils::Instance(),
                               "emitDialogTextValid",
                               Qt::QueuedConnection,

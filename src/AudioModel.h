@@ -9,7 +9,21 @@
 #include "Common.h"
 #include <QQuickImageProvider>
 
-class AudioModel: public QStandardItemModel, public QQuickImageProvider
+class AudioModel;
+
+class AudioImageProvider: public QQuickImageProvider
+{
+public:
+    AudioImageProvider(AudioModel *model);
+
+    virtual QImage requestImage(const QString &id, QSize *size, const QSize &requestedSize);
+    virtual QPixmap requestPixmap(const QString &id, QSize *size, const QSize &requestedSize);
+
+private:
+    AudioModel *model = nullptr;
+};
+
+class AudioModel: public QStandardItemModel
 {
     Q_OBJECT
 
@@ -39,13 +53,11 @@ public:
     Q_INVOKABLE QObject *getItemModel(int idx);
     Q_INVOKABLE int audioCount() { return rowCount(); }
 
-    virtual QImage requestImage(const QString &id, QSize *size, const QSize &requestedSize);
-    virtual QPixmap requestPixmap(const QString &id, QSize *size, const QSize &requestedSize);
-
 private:
 
-    QQmlApplicationEngine *engine;
-    CalaosConnection *connection;
+    QQmlApplicationEngine *engine = nullptr;
+    CalaosConnection *connection = nullptr;
+    AudioImageProvider *imgProvider = nullptr;
 };
 
 class AudioPlayer: public QObject, public QStandardItem

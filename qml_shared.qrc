@@ -3,7 +3,6 @@
         <file>qml/SharedComponents/calaos.js</file>
         <file>qml/SharedComponents/CalaosItemBase.qml</file>
         <file>qml/SharedComponents/CalaosSlider.qml</file>
-        <file>qml/SharedComponents/CalaosSliderStyle.qml</file>
         <file>qml/SharedComponents/Fonts.qml</file>
         <file>qml/SharedComponents/IOFavAllLights.qml</file>
         <file>qml/SharedComponents/IOLight.qml</file>
@@ -26,9 +25,7 @@
         <file>qml/SharedComponents/ItemListView.qml</file>
         <file>qml/SharedComponents/CalaosButton.qml</file>
         <file>qml/SharedComponents/CalaosRadio.qml</file>
-        <file>qml/SharedComponents/CalaosRadioStyle.qml</file>
         <file>qml/SharedComponents/Theme.qml</file>
-        <file>qml/SharedComponents/CalaosCheckStyle.qml</file>
         <file>qml/SharedComponents/CalaosCheck.qml</file>
         <file>qml/SharedComponents/IOPump.qml</file>
         <file>qml/SharedComponents/IOOutlet.qml</file>

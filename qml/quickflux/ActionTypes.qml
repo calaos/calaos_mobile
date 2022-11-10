@@ -23,6 +23,9 @@ KeyTable {
     property string showMainMenu
     property string hideMainMenu
 
+    property string newLogItem
+    property string showRebootDialog
+
     //Keyboard actions
     property string openAskTextForIo
     property string openKeyboard
@@ -38,5 +41,7 @@ KeyTable {
     property string openEventPushViewerUuid
 
     property string showNotificationMsg
+
+    property string showReadOnlyBootDialog
 }
 

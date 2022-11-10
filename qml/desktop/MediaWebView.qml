@@ -1,10 +1,10 @@
-import QtQuick 2.10
-import SharedComponents 1.0
-import QtQuick.Layouts 1.3
-import QtWebEngine 1.7
-import QtQuick.VirtualKeyboard 2.2
-import QtQuick.VirtualKeyboard.Settings 2.2
-import QuickFlux 1.0
+import QtQuick
+import SharedComponents
+import QtQuick.Layouts
+import QtWebEngine
+import QtQuick.VirtualKeyboard
+import QtQuick.VirtualKeyboard.Settings
+import QuickFlux
 import "../quickflux"
 
 Item {
@@ -44,7 +44,7 @@ Item {
         AppListener {
             Filter {
                 type: ActionTypes.webGoToUrl
-                onDispatched: {
+                onDispatched: (filtertype, message) => {
                     if (!message.text.startsWith("http://") &&
                         !message.text.startsWith("https://"))
                         message.text = "https://google.com/search?q=" + message.text

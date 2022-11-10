@@ -1,10 +1,10 @@
-import QtQuick 2.2
-import QtQuick.Window 2.1
-import QtQuick.Controls 1.2
-import Calaos 1.0
-import SharedComponents 1.0
+import QtQuick
+import QtQuick.Window
+import QtQuick.Controls
+import Calaos
+import SharedComponents
 import "../quickflux"
-import QuickFlux 1.0
+import QuickFlux
 
 Window {
     id: rootWindow
@@ -44,13 +44,13 @@ Window {
 
     Connections {
         target: calaosApp
-        onApplicationStatusChanged: {
+        function onApplicationStatusChanged(status) {
             if (calaosApp.applicationStatus === Common.LoggedIn) {
                 menuBar.menuType = Common.MenuMain
                 stackView.push(favoriteView)
             }
             else if (calaosApp.applicationStatus === Common.NotConnected)
-                stackView.pop({ item: loginView, immediate: true })
+                stackView.pop(null, StackView.Immediate)
         }
     }
 
@@ -83,9 +83,11 @@ Window {
 
         // Implements back key navigation
         focus: true
-        Keys.onReleased: if (event.key === Qt.Key_Back || event.key === Qt.Key_Backspace) {
-                             handleBack()
-                             event.accepted = true;
+        Keys.onReleased: (event) => {
+                             if (event.key === Qt.Key_Back || event.key === Qt.Key_Backspace) {
+                                 handleBack()
+                                 event.accepted = true;
+                             }
                          }
     }
 
@@ -98,6 +100,7 @@ Window {
             hostname: calaosApp.hostname
 
             onLoginClicked: calaosApp.login(username, password, hostname)
+            onCancelClicked: calaosApp.logout()
         }
     }
 
@@ -105,8 +108,6 @@ Window {
         id: favoriteView
 
         FavoritesListView {
-            height: background.height
-            width: background.width
         }
     }
 
@@ -114,9 +115,6 @@ Window {
         id: homeView
 
         RoomListView {
-            height: background.height
-            width: background.width
-
             model: homeModel
 
             onRoomClicked: {
@@ -133,9 +131,6 @@ Window {
         id: roomDetailView
 
         RoomDetailView {
-            height: background.height
-            width: background.width
-
             filteredRoomItemModel: roomModel
         }
     }
@@ -152,9 +147,6 @@ Window {
 
         RoomDetailView {
             id: lightsOnRoomDetailView
-            height: background.height
-            width: background.width
-
             roomItemModel: lightOnClonedModel
         }
     }
@@ -163,8 +155,6 @@ Window {
         id: scenarioView
 
         ScenarioView {
-            width: background.width
-            height: background.height
         }
     }
 
@@ -172,8 +162,6 @@ Window {
         id: mediaView
 
         MediaMenuView {
-            width: background.width
-            height: background.height
         }
     }
 
@@ -181,8 +169,6 @@ Window {
         id: musicView
 
         MusicListView {
-            width: background.width
-            height: background.height
         }
     }
 
@@ -190,8 +176,6 @@ Window {
         id: cameraView
 
         CameraListView {
-            width: background.width
-            height: background.height
         }
     }
 
@@ -201,8 +185,6 @@ Window {
 
         CameraSingleView {
             modelData: currentCameraModel
-            width: background.width
-            height: background.height
         }
     }
 
@@ -210,9 +192,6 @@ Window {
         id: settingsView
 
         SettingsView {
-            width: background.width
-            height: background.height - menuBar.height
-
             onFavoriteAddClicked: {
                 menuBar.menuType = Common.MenuBack
                 stackView.push(favAddView)
@@ -228,8 +207,6 @@ Window {
         id: favAddView
 
         FavoritesAddView {
-            width: background.width
-            height: background.height - menuBar.height
         }
     }
 
@@ -237,8 +214,6 @@ Window {
         id: favEditView
 
         FavoritesEditView {
-            width: background.width
-            height: background.height - menuBar.height
         }
     }
 
@@ -246,8 +221,6 @@ Window {
         id: eventLogView
 
         EventLogView {
-            width: background.width
-            height: background.height - menuBar.height
         }
     }
 
@@ -280,8 +253,6 @@ Window {
         id: colorPickerView
 
         ColorPickerRGBView {
-            width: background.width
-            height: background.height - menuBar.height
             itemColor: itemRgbColor
             itemCallback: itemColorCallback
         }
@@ -367,14 +338,14 @@ Window {
     AppListener {
         Filter {
             type: ActionTypes.openEventLog
-            onDispatched: {
+            onDispatched: (filtertype, message) => {
                 stackView.push(eventLogView)
             }
         }
 
         Filter {
             type: ActionTypes.openEventPushViewer
-            onDispatched: {
+            onDispatched: (filtertype, message) => {
                 pushEventText = message.notifText
                 pushEventPicUrl = message.notifUrl
                 pushEventUuid = ""
@@ -384,7 +355,7 @@ Window {
 
         Filter {
             type: ActionTypes.openEventPushViewerUuid
-            onDispatched: {
+            onDispatched: (filtertype, message) => {
                 pushEventText = ""
                 pushEventPicUrl = ""
                 pushEventUuid = message.notifUuid

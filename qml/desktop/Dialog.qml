@@ -1,6 +1,6 @@
-import QtQuick 2.5
-import QtQuick.Layouts 1.1
-import SharedComponents 1.0
+import QtQuick
+import QtQuick.Layouts
+import SharedComponents
 
 PopupBase {
     id: dialog
@@ -69,13 +69,13 @@ PopupBase {
         NumberAnimation { duration: 200 }
     }
 
-    Keys.onPressed: {
+    Keys.onPressed: (event) => {
         if (event.key === Qt.Key_Escape) {
             closeKeyPressed(event)
         }
     }
 
-    Keys.onReleased: {
+    Keys.onReleased: (event) => {
         if (event.key === Qt.Key_Back) {
             closeKeyPressed(event)
         }

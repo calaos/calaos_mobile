@@ -1,6 +1,6 @@
-import QtQuick 2.0
+import QtQuick
 import "."
-import QuickFlux 1.0
+import QuickFlux
 import "../quickflux"
 
 ItemBase {

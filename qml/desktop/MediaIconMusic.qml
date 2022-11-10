@@ -1,5 +1,5 @@
-import QtQuick 2.0
-import SharedComponents 1.0
+import QtQuick
+import SharedComponents
 
 Image {
     width: Units.dp(118)

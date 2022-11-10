@@ -1,6 +1,6 @@
-import QtQuick 2.5
-import SharedComponents 1.0
-import QuickFlux 1.0
+import QtQuick
+import SharedComponents
+import QuickFlux
 import "../quickflux"
 
 Item {
@@ -58,7 +58,7 @@ Item {
         repeat: false
         running: true && screenManager.dpmsEnabled
         triggeredOnStart: false
-        onTriggered: {
+        onTriggered: {            
             if (screenManager.dpmsEnabled) {
                 blackScreen.state = "asleep"
             }
@@ -69,27 +69,31 @@ Item {
         anchors.fill: parent
         propagateComposedEvents: true
         hoverEnabled: true
-        onPositionChanged: {
+        onPositionChanged: (mouse) => {
             timerSuspend.restart()
             mouse.accepted = false
         }
-        onClicked: mouse.accepted = false
-        onDoubleClicked: mouse.accepted = false
-        onPressAndHold: mouse.accepted = false
-        onPressed: mouse.accepted = false
-        onReleased: mouse.accepted = false
-        onWheel: wheel.accepted = false
+        onClicked: (mouse) => { mouse.accepted = false }
+        onDoubleClicked: (mouse) => { mouse.accepted = false }
+        onPressAndHold: (mouse) => { mouse.accepted = false }
+        onPressed: (mouse) => { mouse.accepted = false }
+        onReleased: (mouse) => { mouse.accepted = false }
+        onWheel: (mouse) => { wheel.accepted = false }
     }
 
     //Dispatch actions
     AppListener {
         Filter {
             type: ActionTypes.suspendScreen
-            onDispatched: blackScreen.state = "asleep"
+            onDispatched: (filtertype, message) => {
+                blackScreen.state = "asleep"
+            }
         }
         Filter {
             type: ActionTypes.wakeupScreen
-            onDispatched: blackScreen.state = "awake"
+            onDispatched: (filtertype, message) => {
+                blackScreen.state = "awake"
+            }
         }
     }
 }

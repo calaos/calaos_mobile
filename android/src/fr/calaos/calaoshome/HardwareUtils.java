@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.widget.EditText;
+import org.qtproject.qt.android.bindings.QtActivity;
 
 class HardwareUtilsNatives
 {
@@ -14,7 +15,7 @@ class HardwareUtilsNatives
     public static native void emitDialogCancel();
 }
 
-public class HardwareUtils extends org.qtproject.qt5.android.bindings.QtActivity
+public class HardwareUtils extends QtActivity
 {
     private static HardwareUtils _context;
 

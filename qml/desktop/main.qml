@@ -1,11 +1,10 @@
-import QtQuick 2.2
-import QtQuick.Window 2.1
-import QtQuick.Controls 1.2
-import Calaos 1.0
-import SharedComponents 1.0
-import QuickFlux 1.0
+import QtQuick
+import QtQuick.Controls
+import Calaos
+import SharedComponents
+import QuickFlux
 import "../quickflux"
-import QtQuick.VirtualKeyboard.Settings 2.2
+import QtQuick.VirtualKeyboard.Settings
 
 Window {
     id: rootWindow
@@ -22,8 +21,8 @@ Window {
     property bool isSingleCameraView: false
 
     //this is called by HardwareUtils
-    function showAlertMessage(title, message, buttonText) {
-        notif.showMessage(title, message)
+    function showAlertMessage(title, message, buttonText, timeout) {
+        notif.showMessage(title, message, timeout)
     }
 
     //this is called by HardwareUtils
@@ -33,7 +32,7 @@ Window {
 
     function goToDesktop() {
         mainMenu.unselectAll()
-        stackView.pop({ item: desktopView })
+        stackView.pop(null)
     }
 
     function handleBack() {
@@ -54,21 +53,30 @@ Window {
 
     function handleSubitemClick(itemId) {
         var item;
-        if (itemId == "media/music") {
+        if (itemId === "media/music") {
             item = musicListView
         }
-        else if (itemId == "media/camera") {
+        else if (itemId === "media/camera") {
             item = cameraListView
-        } else if (itemId == "media/web") {
+        } else if (itemId === "media/web") {
             item = webView
-        } else if (itemId == "config/screen") {
+        } else if (itemId === "config/screen") {
             item = configScreen
-        } else if (itemId == "config/l18n") {
+        } else if (itemId === "config/l18n") {
             item = configL18nView
-        } else if (itemId == "config/info") {
+        } else if (itemId === "config/info") {
             item = configUserInfoView
-        } else if (itemId == "media/spotify") {
+        } else if (itemId === "media/spotify") {
             item = spotifyView
+        } else if (itemId === "config/network") {
+            item = configNetworkView
+        } else if (itemId === "config/update") {
+            item = configUpdateView
+        } else if (itemId === "config/install") {
+            item = configInstallView
+        } else if (itemId === "config/rollback") {
+            dialogRecoveryBoot.show()
+            return
         }
 
         stackView.push(item)
@@ -87,45 +95,49 @@ Window {
         menuContent: MainMenu {
             id: mainMenu
 
-            onButtonHomeClicked: {                
+            onButtonHomeClicked: {
+                console.log("currentButton", currentButton)
                 if (currentButton == 0)
                     stackView.push(homeView)
                 else
-                    stackView.replace(homeView)
+                    stackView.replace(desktopView, homeView)
             }
             onButtonMediaClicked: {
+                console.log("currentButton", currentButton)
                 if (currentButton == 0)
                     stackView.push(mediaMenuView)
                 else
-                    stackView.replace(mediaMenuView)
+                    stackView.replace(desktopView, mediaMenuView)
             }
             onButtonScenariosClicked: {
+                console.log("currentButton", currentButton)
                 if (currentButton == 0)
                     stackView.push(scenariosView)
                 else
-                    stackView.replace(scenariosView)
+                    stackView.replace(desktopView, scenariosView)
             }
             onButtonConfigClicked: {
+                console.log("currentButton", currentButton)
                 if (currentButton == 0)
                     stackView.push(configPanelView)
                 else
-                    stackView.replace(configPanelView)
+                    stackView.replace(desktopView, configPanelView)
             }
         }
 
-        mainContent: StackView {
+        mainContent: StackViewAnim {
             id: stackView
             anchors.fill: parent
 
             initialItem: desktopView
 
-            delegate: StackViewAnim {}
-
             // Implements back key navigation
             focus: true
-            Keys.onReleased: if (event.key === Qt.Key_Back || event.key === Qt.Key_Backspace) {
-                                 handleBack()
-                                 event.accepted = true;
+            Keys.onReleased: (event) => {
+                                 if (event.key === Qt.Key_Back || event.key === Qt.Key_Backspace) {
+                                     handleBack()
+                                     event.accepted = true;
+                                 }
                              }
 
             onCurrentItemChanged: {
@@ -146,6 +158,10 @@ Window {
         });
 
         VirtualKeyboardSettings.styleName = "calaos"
+
+        if (calaosApp.isSnapshotBoot) {
+
+        }
     }
 
     Component {
@@ -161,7 +177,7 @@ Window {
         HomeView {
             model: homeModel
 
-            onRoomClicked: {
+            onRoomClicked: (idx, room_name, room_type) => {
                 //get room model
                 console.debug("model: " + homeModel)
                 roomModel = homeModel.getRoomModel(idx)
@@ -252,6 +268,21 @@ Window {
         ConfigUserInfoView {}
     }
 
+    Component {
+        id: configNetworkView
+        ConfigNetworkView {}
+    }
+
+    Component {
+        id: configUpdateView
+        ConfigUpdateView {}
+    }
+
+    Component {
+        id: configInstallView
+        ConfigInstallView {}
+    }
+
     Notification {
         id: notif
         anchors {
@@ -272,21 +303,31 @@ Window {
 
     DialogKeyboard { id: dialogKeyboard }
 
+    DialogRecoveryBoot { id: dialogRecoveryBoot }
+
     //Dispatch actions
     AppListener {
         Filter {
             type: ActionTypes.clickHomeboardItem
-            onDispatched: {
-                if (message.text == "reboot") {
-                    dialogReboot.show()
-                } else if (message.text == "screensaver") {
+            onDispatched: (filtertype, message) => {
+                if (message.text === "reboot") {
+                    dialogReboot.showDialog(true, true)
+                } else if (message.text === "screensaver") {
                     AppActions.suspendScreen()
                 }
             }
         }
+
+        Filter {
+            type: ActionTypes.showRebootDialog
+            onDispatched: (filtertype, message) => {
+                dialogReboot.showDialog(message.showMachine, message.showApp)
+            }
+        }
+
         Filter {
             type: ActionTypes.openCameraSingleView
-            onDispatched: {
+            onDispatched: (filtertype, message) => {
                 cameraSingleModel = message.camModel
                 stackView.push(cameraSingleView)
             }
@@ -296,7 +337,7 @@ Window {
 
             property QtObject io
 
-            onDispatched: {
+            onDispatched: (filtertype, message) => {
                 io = message.io
                 console.log("todo keyboard for item:" + io + " - " + io.ioName)
                 dialogKeyboard.openKeyboard(qsTr("Keyboard"),
@@ -311,7 +352,7 @@ Window {
         Filter {
             type: ActionTypes.openKeyboard
 
-            onDispatched: {
+            onDispatched: (filtertype, message) => {
                 dialogKeyboard.openKeyboard(message.title,
                                             message.subtitle,
                                             message.initialText,
@@ -327,8 +368,20 @@ Window {
         Filter {
             type: ActionTypes.showNotificationMsg
 
-            onDispatched: {
-                rootWindow.showAlertMessage(message.title, message.message, message.button)
+            onDispatched: (filtertype, message) => {
+                if (message.hasOwnProperty("timeout")) {
+                    rootWindow.showAlertMessage(message.title, message.message, message.button, message.timeout)
+                } else {
+                    rootWindow.showAlertMessage(message.title, message.message, message.button)
+                }
+            }
+        }
+
+        Filter {
+            type: ActionTypes.showReadOnlyBootDialog
+
+            onDispatched: (filtertype, message) => {
+                dialogRecoveryBoot.show()
             }
         }
     }
@@ -340,6 +393,9 @@ Window {
 
     Connections {
         target: cameraModel
-        onActionViewCamera: AppActions.openCameraSingleView(camModel)
+
+        function onActionViewCamera() {
+            AppActions.openCameraSingleView(camModel)
+        }
     }
 }

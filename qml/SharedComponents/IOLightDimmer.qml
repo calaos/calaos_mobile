@@ -1,5 +1,5 @@
-import QtQuick 2.0
-import QtQuick.Controls 1.2
+import QtQuick
+import QtQuick.Controls
 import "."
 
 ItemBase {
@@ -78,8 +78,8 @@ ItemBase {
             verticalCenterOffset: 18 * calaosApp.density
             //bottom: parent.bottom; bottomMargin: 14 * calaosApp.density
         }
-        updateValueWhileDragging: false
-        maximumValue: 100
+        live: false
+        from: 0; to: 100
         value: modelData.stateInt
         onValueChanged: {
             console.log("slider value changed")

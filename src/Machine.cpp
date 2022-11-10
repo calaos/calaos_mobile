@@ -2,14 +2,7 @@
 #include <QDebug>
 
 #if defined(Q_OS_WIN32)
-#ifdef WINVER
-#undef WINVER
-#endif
-#ifdef _WIN32_WINNT
-#undef _WIN32_WINNT
-#endif
-#define WINVER 0x0600
-#define _WIN32_WINNT 0x0600
+
 #include <qt_windows.h>
 #include <tchar.h>
 #include <iphlpapi.h>
@@ -127,6 +120,11 @@ int Machine::getMemoryUsage()
     return (memInfo.ullTotalPhys - memInfo.ullAvailPhys) * 100.0 / memInfo.ullTotalPhys;
 }
 
+bool Machine::isBootReadOnly()
+{
+    return false;
+}
+
 #endif /* Q_OS_WIN32 */
 
 
@@ -225,12 +223,12 @@ int Machine::getCpuUsage()
     QString data = f.readAll();
 
     QStringList statList;
-    foreach (const QString &l, data.split('\n', QString::SkipEmptyParts))
+    foreach (const QString &l, data.split('\n', Qt::SkipEmptyParts))
     {
         QString line = l.trimmed();
         if (line.startsWith("cpu "))
         {
-            statList = line.split(QRegularExpression("\\s+"), QString::SkipEmptyParts);
+            statList = line.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
             break;
         }
     }
@@ -269,6 +267,41 @@ int Machine::getMemoryUsage()
     return (info.totalram - info.freeram) * 100.0 / info.totalram;
 }
 
+bool Machine::isBootReadOnly()
+{
+    QProcess proc;
+    proc.setProcessChannelMode(QProcess::MergedChannels);
+    proc.start("/usr/bin/findmnt", {{"--json"}, {"/"}});
+
+    if (!proc.waitForStarted())
+        return false;
+
+    if (!proc.waitForFinished())
+        return false;
+
+    QJsonParseError err;
+    QJsonDocument doc = QJsonDocument::fromJson(proc.readAll(), &err);
+    if (err.error != QJsonParseError::NoError)
+        return false;
+
+    auto o = doc.object();
+    if (!o["filesystems"].isArray())
+        return false;
+
+    auto a = o["filesystems"].toArray();
+    if (a.isEmpty())
+        return false;
+
+    o = a.at(0).toObject();
+
+    if (o["target"].toString() == "/" &&
+        o["source"].toString() == "rootfs" &&
+        o["fstype"].toString() == "overlay")
+        return true;
+
+    return false;
+}
+
 #endif /* Q_OS_LINUX */
 
 
@@ -303,6 +336,10 @@ int Machine::getCpuUsage()
     return 0;
 }
 
+bool Machine::isBootReadOnly()
+{
+    return false;
+}
 #endif /* Q_OS_OSX */
 
 
@@ -326,6 +363,11 @@ int Machine::getMemoryUsage()
 int Machine::getCpuUsage()
 {
     return 0;
+}
+
+bool Machine::isBootReadOnly()
+{
+    return false;
 }
 #endif
 

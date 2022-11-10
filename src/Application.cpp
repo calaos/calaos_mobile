@@ -10,7 +10,7 @@
 #include "version.h"
 
 #ifdef Q_OS_ANDROID
-#include <QtAndroidExtras/QAndroidJniObject>
+#include <QJniObject>
 #endif
 #include <QProcess>
 #include <qfappdispatcher.h>
@@ -79,9 +79,9 @@ void Application::createQmlApp()
     Common::registerQml();
 
 #ifdef Q_OS_ANDROID
-    QAndroidJniObject activity = QAndroidJniObject::callStaticObjectMethod("org/qtproject/qt5/android/QtNative", "activity", "()Landroid/app/Activity;");
-    QAndroidJniObject resource = activity.callObjectMethod("getResources","()Landroid/content/res/Resources;");
-    QAndroidJniObject metrics = resource.callObjectMethod("getDisplayMetrics","()Landroid/util/DisplayMetrics;");
+    QJniObject activity = QJniObject::callStaticObjectMethod("org/qtproject/qt6/android/QtNative", "activity", "()Landroid/app/Activity;");
+    QJniObject resource = activity.callObjectMethod("getResources","()Landroid/content/res/Resources;");
+    QJniObject metrics = resource.callObjectMethod("getDisplayMetrics","()Landroid/util/DisplayMetrics;");
     //update_density(metrics.getField<float>("density"));
     update_density(1);
 

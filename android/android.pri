@@ -1,4 +1,3 @@
-QT += androidextras
 QT += gui-private
 
 OTHER_FILES += $$PWD/src/fr/calaos/calaoshome/HardwareUtils.java
@@ -13,12 +12,12 @@ isEmpty(FIREBASE_SDK) {
 }
 
 INCLUDEPATH += $$FIREBASE_SDK/include
-LIBS += -L$$FIREBASE_SDK/libs/android/$$ANDROID_TARGET_ARCH/c++ \
+LIBS += -L$$FIREBASE_SDK/libs/android/$$ANDROID_TARGET_ARCH \
         -lfirebase_messaging \
         -lfirebase_app \
         -lfirebase_auth
 
-include(C:/Users/raoul/AppData/Local/Android/Sdk/android_openssl/openssl.pri)
+include(C:/Users/$$(USERNAME)/AppData/Local/Android/Sdk/android_openssl/openssl.pri)
 
 DISTFILES += \
         $$PWD/gradle.properties \

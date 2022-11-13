@@ -79,7 +79,7 @@ void Application::createQmlApp()
     Common::registerQml();
 
 #ifdef Q_OS_ANDROID
-    QJniObject activity = QJniObject::callStaticObjectMethod("org/qtproject/qt6/android/QtNative", "activity", "()Landroid/app/Activity;");
+    QJniObject activity = QJniObject::callStaticObjectMethod("org/qtproject/qt/android/QtNative", "activity", "()Landroid/app/Activity;");
     QJniObject resource = activity.callObjectMethod("getResources","()Landroid/content/res/Resources;");
     QJniObject metrics = resource.callObjectMethod("getDisplayMetrics","()Landroid/util/DisplayMetrics;");
     //update_density(metrics.getField<float>("density"));

@@ -51,6 +51,8 @@ private:
     QTimer *wsPingTimeout = nullptr;
     QTimer *wsPing = nullptr;
 
+    bool demoMode = false;
+
     void connectWebsocket(QString h);
     void closeWebsocket();
     void connectHttp(QString h);

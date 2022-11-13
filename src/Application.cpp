@@ -265,7 +265,20 @@ void Application::createQmlApp()
     //Start autologin, only on mobile. On desktop we wait for calaos_server detection
     QTimer::singleShot(100, this, [=]()
     {
-        login(get_username(), get_password(), get_hostname());
+        bool demoMode = false;
+        QString user = get_username();
+        QString pass = get_password();
+        QString h = get_hostname();
+
+        if ((user == "demo" || user == "demo@calaos.fr") &&
+            pass == "demo" &&
+            h == "demo.calaos.fr")
+        {
+            demoMode = true;
+        }
+
+        if (!demoMode)
+            login(user, pass, h);
     });
 #endif
 }

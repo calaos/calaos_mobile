@@ -38,6 +38,27 @@ void CalaosConnection::login(QString user, QString pass, QString h)
     password = pass;
     uuidPolling.clear();
 
+    if ((user == "demo" || user == "demo@calaos.fr") &&
+        pass == "demo" &&
+        h == "demo.calaos.fr")
+    {
+        demoMode = true;
+
+        //Wait some time for animation
+        QTimer::singleShot(1000, this, [this]()
+        {
+            constate = ConStateWebsocket;
+            HardwareUtils::Instance()->showNetworkActivity(false);
+            emit homeLoaded({});
+        });
+
+        return;
+    }
+    else
+    {
+        demoMode = false;
+    }
+
     if (h.startsWith("http://") || h.startsWith("https://"))
     {
         httphost = h;
@@ -164,12 +185,12 @@ void CalaosConnection::onWsConnected()
         logout();
     });
     wsPingTimeout->start(20 * 1000); //20s timeout
-    
+
     QTimer::singleShot(100, this, [=]()
     {
         if (!wsocket) return;
         if (HardwareUtils::Instance()->getDeviceToken().isEmpty()) return;
-        
+
 #if defined(Q_OS_ANDROID)
         QString hw = QStringLiteral("android");
 #elif defined(Q_OS_IOS)
@@ -216,6 +237,9 @@ void CalaosConnection::logout()
     HardwareUtils::Instance()->showNetworkActivity(false);
 
     constate = ConStateUnknown;
+
+    if (demoMode)
+        demoMode = false;
 
     closeWebsocket();
 
@@ -272,7 +296,7 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
     //Connection success
     constate = ConStateHttp;
     QVariantMap jroot = jdoc.object().toVariantMap();
-    
+
     if (!HardwareUtils::Instance()->getDeviceToken().isEmpty())
     {
 #if defined(Q_OS_ANDROID)

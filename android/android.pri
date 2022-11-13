@@ -12,8 +12,10 @@ isEmpty(FIREBASE_SDK) {
     error("FIREBASE_CPP_SDK_DIR env is not set. Please set it first")
 }
 
+ANDROID_SDK_BUILD_TOOLS_REVISION = 28.0.3
+
 INCLUDEPATH += $$FIREBASE_SDK/include
-LIBS += -L$$FIREBASE_SDK/libs/android/$$ANDROID_TARGET_ARCH/c++ \
+LIBS += -L$$FIREBASE_SDK/libs/android/$$ANDROID_TARGET_ARCH \
         -lfirebase_messaging \
         -lfirebase_app \
         -lfirebase_auth

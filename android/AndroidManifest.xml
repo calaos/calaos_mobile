@@ -1,10 +1,5 @@
 <?xml version="1.0"?>
-<manifest package="fr.calaos.calaoshome" xmlns:android="http://schemas.android.com/apk/res/android"
-    android:versionName="3.1.0"
-    android:versionCode="18"
-    android:installLocation="auto">
-
-    <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="29" />
+<manifest package="fr.calaos.calaoshome" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="3.1.1" android:versionCode="19" android:installLocation="auto">
 
     <!-- The following comment will be replaced upon deployment with default permissions based on the dependencies of the application.
          Remove the comment if you do not require these default permissions. -->
@@ -16,18 +11,8 @@
 
     <supports-screens android:largeScreens="true" android:normalScreens="true" android:anyDensity="true" android:smallScreens="true"/>
 
-    <application android:hardwareAccelerated="true"
-                 android:name="org.qtproject.qt5.android.bindings.QtApplication"
-                 android:label="CalaosHome"
-                 android:extractNativeLibs="true"
-                 android:icon="@drawable/icon">
-
-        <activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation|mcc|mnc|density"
-                  android:name="fr.calaos.calaoshome.HardwareUtils"
-                  android:label="-- %%INSERT_APP_NAME%% --"
-                  android:screenOrientation="unspecified"
-                  android:launchMode="singleTop">
-
+    <application android:hardwareAccelerated="true" android:name="org.qtproject.qt5.android.bindings.QtApplication" android:label="CalaosHome" android:extractNativeLibs="true" android:icon="@drawable/icon">
+        <activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation|mcc|mnc|density" android:name="fr.calaos.calaoshome.HardwareUtils" android:label="-- %%INSERT_APP_NAME%% --" android:screenOrientation="unspecified" android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>

@@ -20,8 +20,8 @@ jobs:
   
     # steps to perform in job
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
   
       # setup Docker buld action
       - name: Set up Docker Buildx
@@ -38,10 +38,10 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build image and push to Docker Hub and GitHub Container Registry
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v4
         with:
           # relative path to the place where source code with Dockerfile is located
-          context: calaos_mobile/docker
+          context: docker
           # Note: tags has to be all lower-case
           tags: |
             ghcr.io/calaos/calaos_home:latest 

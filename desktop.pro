@@ -25,6 +25,10 @@ linux {
 QT_CONFIG -= no-pkg-config
 CONFIG += link_pkgconfig
 PKGCONFIG += x11 xext
+
+    # install binary
+    target.path = $PREFIX/bin
+    INSTALLS += target
 }
 
 QML_IMPORT_PATH = $$PWD/qml

@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    branches: [ qt6_porting ]
+    branches: [ master ]
 
 jobs:
   build:

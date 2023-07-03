@@ -17,7 +17,8 @@ RUN git clone https://github.com/calaos/calaos_mobile.git
 RUN cd calaos_mobile && mkdir -p build && cd build && \
     qmake6 ../desktop.pro && \
     make -j$(nproc) PREFIX=/opt && \
-    make install
+    install -d /opt/bin && \
+    install -m 0755 calaos_home /opt/bin/calaos_home
 
 # Clean up APT when done.
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /build/*

@@ -30,7 +30,7 @@ RUN apt-get update -qq && \
         x11-xkb-utils x11-xserver-utils xauth \
         libqt6core6 libqt6gui6 \
         libqt6network6 libqt6qml6 \
-        libqt6quick6 \
+        libqt6quick6 libqt6widget6 \
         qml6-module-qtquick-virtualkeyboard
 
 COPY --from=builder /opt /opt

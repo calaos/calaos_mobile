@@ -41,7 +41,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           # relative path to the place where source code with Dockerfile is located
-          context: calaos_mobile
+          context: calaos_mobile/docker
           # Note: tags has to be all lower-case
           tags: |
             ghcr.io/calaos/calaos_home:latest 

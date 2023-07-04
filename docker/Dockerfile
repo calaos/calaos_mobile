@@ -30,7 +30,13 @@ RUN apt-get update -qq && \
         x11-xkb-utils x11-xserver-utils xauth \
         libqt6core6 libqt6gui6 \
         libqt6network6 libqt6qml6 \
-        libqt6quick6 libqt6widgets6 \
-        qml6-module-qtquick-virtualkeyboard
+        libqt6quick6 libqt6widgets6 libqt6websockets6 \
+        qml6-module-qtquick-virtualkeyboard \
+        qml6-module-qtquick-controls qml6-module-qtquick qml6-module-qtqml-workerscript \
+        qml6-module-qtquick-dialogs qml6-module-qtquick-layouts qml6-module-qtquick-window \
+        qml6-module-qtquick-templates qml6-module-qt5compat-graphicaleffects \
+        qml6-module-qt-labs-folderlistmodel qml6-module-qtwebengine \
+        libqt6shadertools6
+
 
 COPY --from=builder /opt /opt

@@ -1,4 +1,4 @@
-FROM archlinux:latest as builder
+FROM menci/archlinuxarm:base-devel as builder
 
 ARG UID=1001
 ARG GID=1001
@@ -40,7 +40,7 @@ RUN cd calaos-build && \
     scripts/get_pkgbuilds.sh && \
     scripts/build_pkg.sh "calaos-home" "" "$ARCH" "$COMMIT" "$PKGVERSION"
 
-FROM archlinux:latest as runner
+FROM menci/archlinuxarm:base as runner
 
 # Set TERM environment variable
 ENV TERM=xterm-color

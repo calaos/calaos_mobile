@@ -1,42 +1,57 @@
-FROM debian:bookworm as builder
+FROM archlinux:latest as builder
 
-ENV DEBIAN_FRONTEND noninteractive
+ARG UID=1001
+ARG GID=1001
+ARG USER=calaos
 
-ENV HOME /opt
-RUN mkdir -p $HOME /build /opt
+ARG ARCH=x86_64
+ARG COMMIT=
+ARG PKGVERSION=
+
+# Set TERM environment variable
+ENV TERM=xterm-color
 
 #required packages
-RUN apt-get update -qq && \
-    apt-get install -y build-essential wget git curl qt6-base-dev \
-        qt6-5compat-dev qt6-declarative-dev qt6-svg-dev qt6-virtualkeyboard-dev \
-        qt6-webchannel-dev qt6-websockets-dev qt6-webview-dev qt6-shadertools-dev \
-        libxext-dev xorg-dev qt6-l10n-tools
+RUN pacman-key --init
+RUN pacman-key --populate archlinux
+RUN pacman -Syu --noconfirm
+RUN pacman -S --noconfirm git
+RUN pacman -S --noconfirm fakeroot base-devel sudo nano
 
-RUN git clone https://github.com/calaos/calaos_mobile.git
+# Create user and its home
+#RUN addgroup --gid ${GID} docker
+RUN groupadd -g ${GID} docker
+RUN useradd -d /home/${USER} -r -u ${UID} -g ${GID} ${USER}
+RUN usermod -G wheel ${USER}
+RUN mkdir -p -m 0755 /home/${USER}
+RUN chown ${USER} /home/${USER}
+RUN echo '%wheel ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
-RUN cd calaos_mobile && mkdir -p build && cd build && \
-    qmake6 ../desktop.pro && \
-    make -j$(nproc) PREFIX=/opt && \
-    install -d /opt/bin && \
-    install -m 0755 calaos_home /opt/bin/calaos_home
+RUN echo 'PACKAGER="Calaos <raoul-arch@calaos.fr>"' >> /etc/makepkg.conf
 
-# Clean up APT when done.
-RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /build/*
+USER ${USER}
 
-FROM debian:bookworm-slim as runner
+# Define entry point
+WORKDIR /src
 
-RUN apt-get update -qq && \
-    apt-get install -y xserver-xorg xkb-data xinit xfonts-base xfonts-scalable xfonts-75dpi xfonts-100dpi libxext6 \
-        x11-xkb-utils x11-xserver-utils xauth \
-        libqt6core6 libqt6gui6 \
-        libqt6network6 libqt6qml6 \
-        libqt6quick6 libqt6widgets6 libqt6websockets6 \
-        qml6-module-qtquick-virtualkeyboard \
-        qml6-module-qtquick-controls qml6-module-qtquick qml6-module-qtqml-workerscript \
-        qml6-module-qtquick-dialogs qml6-module-qtquick-layouts qml6-module-qtquick-window \
-        qml6-module-qtquick-templates qml6-module-qt5compat-graphicaleffects \
-        qml6-module-qt-labs-folderlistmodel qml6-module-qtwebengine \
-        libqt6shadertools6
+RUN git clone https://github.com/calaos/calaos-build.git
 
+RUN cd calaos-build && \
+    scripts/get_pkgbuilds.sh && \
+    scripts/build_pkg.sh "calaos-home" "" "$ARCH" "$COMMIT" "$PKGVERSION"
 
-COPY --from=builder /opt /opt
+FROM archlinux:latest as runner
+
+# Set TERM environment variable
+ENV TERM=xterm-color
+
+#required packages
+RUN pacman-key --init
+RUN pacman-key --populate archlinux
+RUN pacman -Syu --noconfirm
+
+COPY --from=builder /src/pkgbuilds/calaos-home/*pkg.tar.zst* /
+
+RUN pacman -U --noconfirm /*pkg.tar.zst*
+
+RUN rm -fr /*pkg.tar.zst*

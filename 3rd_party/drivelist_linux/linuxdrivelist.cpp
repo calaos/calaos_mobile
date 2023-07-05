@@ -10,8 +10,6 @@
 #include <QJsonObject>
 #include <QDebug>
 
-#include <cstdint>
-
 /*
  * Our third-party drivelist module does not provide a C++ implementation
  * for listing drives on Linux (only Javascript)

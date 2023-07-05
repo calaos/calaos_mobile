@@ -17,12 +17,12 @@ jobs:
     name: Build Docker image and push to repositories
     # run only when code is compiling and tests are passing
     runs-on: ubuntu-latest
-  
+
     # steps to perform in job
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
-  
+
       # setup Docker buld action
       - name: Set up Docker Buildx
         id: buildx
@@ -44,7 +44,7 @@ jobs:
           context: "{{defaultContext}}:docker"
           # Note: tags has to be all lower-case
           tags: |
-            ghcr.io/calaos/calaos_home:latest 
+            ghcr.io/calaos/calaos_home:latest
             ghcr.io/calaos/calaos_home:${{ github.sha }}
           push: ${{ github.ref == 'refs/heads/master' }}
           platforms: linux/amd64

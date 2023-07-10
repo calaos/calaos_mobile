@@ -55,3 +55,5 @@ COPY --from=builder /src/pkgbuilds/calaos-home/*pkg.tar.zst* /
 RUN pacman -U --noconfirm /*pkg.tar.zst*
 
 RUN rm -fr /*pkg.tar.zst*
+
+COPY start.sh /usr/bin

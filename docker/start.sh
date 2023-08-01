@@ -1,4 +1,3 @@
 #!/bin/sh
 
-export QTWEBENGINE_CHROMIUM_FLAGS="--no-sandbox"
-/usr/bin/calaos_home
+/usr/bin/startx -- vt8 -keeptty -verbose 3 -logfile /dev/null

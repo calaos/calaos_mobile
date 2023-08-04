@@ -7,6 +7,7 @@
 #include <QXmlStreamWriter>
 #include <QApplication>
 #include <QQmlApplicationEngine>
+#include <qfappdispatcher.h>
 
 #define PREFIX_CONFIG_PATH      ETC_DIR"/calaos"
 #define LOCAL_CONFIG            "local_config.xml"
@@ -104,13 +105,11 @@ void HardwareUtilsDesktop::showAlertMessage(QString title, QString message, QStr
 
     qInfo() << "showAlertMessage(" << title << ", " << message << ", " << buttontext << ")";
 
-    QVariant ret;
-    QObject *root = qmlEngine->rootObjects().at(0);
-    QMetaObject::invokeMethod(root, "showAlertMessage",
-                              Q_RETURN_ARG(QVariant, ret),
-                              Q_ARG(QVariant, title),
-                              Q_ARG(QVariant, message),
-                              Q_ARG(QVariant, buttontext));
+    QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(qmlEngine);
+    QVariantMap m = {{ "title", title },
+                     { "message", message },
+                     { "button", buttontext }};
+    appDispatcher->dispatch("showNotificationMsg", m);
 }
 
 void HardwareUtilsDesktop::showNetworkActivity(bool en)

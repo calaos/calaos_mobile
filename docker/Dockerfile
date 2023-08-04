@@ -68,7 +68,7 @@ RUN pacman -U --noconfirm /*pkg.tar.zst*
 RUN rm -fr /*pkg.tar.zst*
 
 RUN pacman -S --noconfirm \
-    xorg-server mesa-amber \
+    xorg-server mesa \
     xf86-input-{libinput,evdev,elographics,synaptics,vmmouse} \
     xf86-video-{amdgpu,ati,fbdev,intel,nouveau,vesa,vmware} \
     xorg-setxkbmap virtualbox-guest-utils \

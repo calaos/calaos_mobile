@@ -1,7 +1,7 @@
 #include "CalaosOsAPI.h"
 #include <QStringBuilder>
 
-#define TOKEN_FILE  "/run/calaos-ct.token"
+#define TOKEN_FILE  "/run/calaos/calaos-ct.token"
 
 CalaosOsAPI::CalaosOsAPI(QNetworkAccessManager *nm, QObject *parent):
     QObject(parent),

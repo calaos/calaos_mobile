@@ -21,6 +21,7 @@
 #include "WeatherInfo.h"
 #include "ScreenManager.h"
 #include "UserInfoModel.h"
+#include "CalaosOsAPI.h"
 #elif defined (Q_OS_ANDROID) || defined (Q_OS_IOS)
 #include <QtGui/qpa/qplatformwindow.h>
 #endif
@@ -124,7 +125,46 @@ void Application::createQmlApp()
     update_appVersion(PKG_VERSION_STR);
 
     update_hasInstall(QFile::exists("/.calaos-live"));
-    update_isSnapshotBoot(Machine::isBootReadOnly());
+
+#ifdef CALAOS_DESKTOP
+
+    CalaosOsAPI::Instance()->getFsStatus(
+        [this](bool success, const QJsonObject &o)
+        {
+            if (!success)
+            {
+                qDebug() << "Failed to get fs status for rollback";
+                return;
+            }
+
+            if (!o["filesystems"].isArray())
+            {
+                update_isSnapshotBoot(false);
+                return;
+            }
+
+            auto a = o["filesystems"].toArray();
+            if (a.isEmpty())
+            {
+                update_isSnapshotBoot(false);
+                return;
+            }
+
+            auto obj = a.at(0).toObject();
+
+            if (obj["target"].toString() == "/" &&
+                obj["source"].toString() == "rootfs" &&
+                obj["fstype"].toString() == "overlay")
+            {
+                update_isSnapshotBoot(true);
+                return;
+            }
+
+            update_isSnapshotBoot(false);
+        });
+#else
+    update_isSnapshotBoot(false);
+#endif
 
     update_applicationStatus(Common::NotConnected);
 
@@ -550,9 +590,7 @@ void Application::rebootMachine()
 {
     qInfo() << "Full reboot requested";
 #ifdef CALAOS_DESKTOP
-    QProcess::startDetached("/bin/sh", QStringList() <<
-                            "-c" <<
-                            "sync; reboot");
+    CalaosOsAPI::Instance()->rebootMachine({});
 #endif
 }
 
@@ -560,8 +598,7 @@ void Application::restartApp()
 {
     qInfo() << "Restart of calaos_home requested";
 #ifdef CALAOS_DESKTOP
-    this->quit();
-    QProcess::startDetached(arguments()[0], arguments());
+    CalaosOsAPI::Instance()->restartApp({});
 #endif
 }
 
@@ -569,9 +606,21 @@ void Application::rollbackSnapshot()
 {
     qInfo() << "Rollback calaos os";
 #ifdef CALAOS_DESKTOP
-    QProcess::startDetached("/bin/sh", QStringList() <<
-                            "-c" <<
-                            "calaos_rollback.sh && reboot");
+    CalaosOsAPI::Instance()->rollbackSnapshot([this](bool success)
+                                              {
+                                                  if (!success)
+                                                  {
+                                                      QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(&engine);
+                                                      QVariantMap m = {{ "title", "Error" },
+                                                                       { "message", "Failed to rollback calaos os to previous version. An error occured. Please check logs" },
+                                                                       { "button", "Close" }};
+                                                      appDispatcher->dispatch("showNotificationMsg", m);
+                                                  }
+                                                  else
+                                                  {
+                                                      CalaosOsAPI::Instance()->rebootMachine({});
+                                                  }
+                                              });
 #endif
 }
 

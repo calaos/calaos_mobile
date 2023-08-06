@@ -34,6 +34,7 @@ PKGCONFIG += x11 xext
 QML_IMPORT_PATH = $$PWD/qml
 
 SOURCES += src/HardwareUtils_desktop.cpp \
+    src/CalaosOsAPI.cpp \
     src/CalaosWidget.cpp \
     src/CalaosWidgetModel.cpp \
     src/ControlPanelModel.cpp \
@@ -42,9 +43,12 @@ SOURCES += src/HardwareUtils_desktop.cpp \
     src/XUtils.cpp \
     src/ScreenManager.cpp \
     src/UserInfoModel.cpp \
-    src/UsbDisk.cpp
+    src/UsbDisk.cpp \
+    src/AsyncJobs.cpp \
+    src/NetworkRequest.cpp
 
 HEADERS += src/HardwareUtils_desktop.h \
+    src/CalaosOsAPI.h \
     src/CalaosWidget.h \
     src/CalaosWidgetModel.h \
     src/ControlPanelModel.h \
@@ -54,6 +58,8 @@ HEADERS += src/HardwareUtils_desktop.h \
     src/ScreenManager.h \
     src/UserInfoModel.h \
     src/UsbDisk.h \
+    src/AsyncJobs.h \
+    src/NetworkRequest.h \
     src/version.h
 
 linux {

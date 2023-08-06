@@ -9,3 +9,5 @@ qrc_img_mobile.cpp
 qrc_lang.cpp
 qrc_qml_mobile.cpp
 qrc_qml_shared.cpp
+desktop.pro.user*
+mobile.pro.user*

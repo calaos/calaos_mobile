@@ -1,6 +1,7 @@
 #include "OSInstaller.h"
 #include <QProcess>
 #include <qfappdispatcher.h>
+#include "CalaosOsAPI.h"
 
 #ifdef Q_OS_LINUX
 #include <unistd.h>
@@ -17,44 +18,32 @@ OSInstaller::OSInstaller(QQmlApplicationEngine *eng, QObject *parent):
 
 void OSInstaller::startInstallation(QString disk)
 {
-    QProcess *proc = new QProcess(this);
-    proc->setProcessChannelMode(QProcess::MergedChannels);
-
-    sendLog("** Starting installation on disk " + disk);
-    update_isInstalling(true);
-
-    connect(proc, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),
-            [=](int exitCode, QProcess::ExitStatus exitStatus)
-    {
-        Q_UNUSED(exitStatus)
-        if (exitCode != 0)
+    CalaosOsAPI::Instance()->startInstallation(
+        disk,
+        [this](bool success)
         {
-            sendLog("Install process exited with a non clean error code.");
-            sendLog("Error.");
+            if (success)
+            {
+                sendLog("Installation done.");
+            }
+            else
+            {
+                sendLog("Install process exited with a non clean error code.");
+                sendLog("Error.");
 
-            QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(engine);
-            QVariantMap m = {{ "title", tr("Error") },
-                             { "message", tr("Installation failed. See log...") },
-                             { "button", tr("Close") },
-                             { "timeout", 0 }};
-            appDispatcher->dispatch("showNotificationMsg", m);
-            update_installError(true);
-        }
-        else
+                QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(engine);
+                QVariantMap m = {{ "title", tr("Error") },
+                                 { "message", tr("Installation failed. See log...") },
+                                 { "button", tr("Close") },
+                                 { "timeout", 0 }};
+                appDispatcher->dispatch("showNotificationMsg", m);
+                update_installError(true);
+            }
+
+            update_installFinished(true);
+        },
+        [this](QString out)
         {
-            sendLog("Installation done.");
-        }
-
-        update_installFinished(true);
-    });
-
-    connect(proc, &QProcess::errorOccurred, this,
-            [=](QProcess::ProcessError err)
-    {
-        //read remaining bytes if any
-        if (proc->bytesAvailable())
-        {
-            QString out(proc->readAll());
             qDebug().noquote() << out;
 
             QTextStream str(out.toLatin1());
@@ -64,59 +53,13 @@ void OSInstaller::startInstallation(QString disk)
                 sendLog(line);
             }
         }
-
-        if (err == QProcess::FailedToStart)
-        {
-            sendLog("Failed to start installation process. Aborted!");
-
-            QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(engine);
-            QVariantMap m = {{ "title", tr("Error") },
-                             { "message", tr("Installation failed. See log...") },
-                             { "button", tr("Close") },
-                             { "timeout", 0 }};
-            appDispatcher->dispatch("showNotificationMsg", m);
-
-            update_installError(true);
-            update_installFinished(true);
-        }
-        else if (err == QProcess::Crashed)
-        {
-            sendLog("Installation process crashed... Aborted!");
-
-            QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(engine);
-            QVariantMap m = {{ "title", tr("Error") },
-                             { "message", tr("Installation failed. See log...") },
-                             { "button", tr("Close") },
-                             { "timeout", 0 }};
-            appDispatcher->dispatch("showNotificationMsg", m);
-
-            update_installError(true);
-            update_installFinished(true);
-        }
-    });
-
-    connect(proc, &QProcess::readyRead,
-            [=]()
-    {
-        QString out(proc->readAll());
-        qDebug().noquote() << out;
-
-        QTextStream str(out.toLatin1());
-        while (!str.atEnd())
-        {
-            QString line = str.readLine();
-            sendLog(line);
-        }
-    });
-
-    proc->start("/usr/bin/calaos_install.sh",
-                QStringList() << disk);
+    );
 }
 
 void OSInstaller::sendLog(QString line)
 {
     QString s;
-    for (int i = 0;i < line.count();i++)
+    for (int i = 0;i < line.size();i++)
     {
         if (line.at(i).isPrint() || line.at(i) == QChar(0x1B))
             s.append(line.at(i));

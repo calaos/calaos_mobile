@@ -129,6 +129,7 @@ void Application::createQmlApp()
 
 #ifdef CALAOS_DESKTOP
 
+    update_isSnapshotBoot(false);
     CalaosOsAPI::Instance()->getFsStatus(
         [this](bool success, const QJsonObject &o)
         {

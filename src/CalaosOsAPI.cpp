@@ -1,7 +1,11 @@
 #include "CalaosOsAPI.h"
 #include <QStringBuilder>
 
+#ifdef Q_OS_LINUX
 #define TOKEN_FILE  "/run/calaos/calaos-ct.token"
+#else
+#define TOKEN_FILE  "C:/temp/calaos/calaos-ct.token"
+#endif
 
 CalaosOsAPI::CalaosOsAPI(QNetworkAccessManager *nm, QObject *parent):
     QObject(parent),
@@ -55,30 +59,80 @@ void CalaosOsAPI::startInstallation(QString device, std::function<void (bool)> c
     jobs->append(new AsyncJob([this, device, callbackStdout](AsyncJob *job, const QVariant &)
                               {
                                   lastError.clear();
-                                  QString url = calaosAddr % "/system/install/start";
+                                  QString url = calaosAddr % "/api/system/install/start";
 
                                   NetworkRequest *n = new NetworkRequest(url, NetworkRequest::HttpPost, this);
                                   n->setNetManager(netManager);
                                   n->setCustomHeader("Authorization", QStringLiteral("bearer %1").arg(token));
-                                  n->setResultType(NetworkRequest::TypeJson);
+                                  n->setCustomHeader("Content-Type", "application/json");
+                                  n->setResultType(NetworkRequest::TypeRawData);
 
                                   QJsonObject d = {{ "device", device }};
                                   QJsonDocument doc(d);
                                   n->setPostData(doc.toJson(QJsonDocument::Compact));
 
-                                  //TODO: connect to readyRead signal to get data for callbackStdout
-                                  connect(n, &NetworkRequest::dataReadyRead, this, [callbackStdout](const QByteArray &data)
+                                  connect(n, &NetworkRequest::dataReadyRead, this,
+                                          [callbackStdout](const QByteArray &data)
                                           {
                                               callbackStdout(QString::fromUtf8(data));
                                           });
 
-                                  connect(n, &NetworkRequest::finishedJson, this, [this, n, job](int success, const QJsonDocument &jdoc)
+                                  connect(n, &NetworkRequest::finishedData, this,
+                                          [n, job](int success, const QByteArray &)
+                                          {
+                                              n->deleteLater();
+
+                                              if (success == NetworkRequest::RequestSuccess)
+                                                  job->emitSuccess();
+                                              else
+                                                  job->emitFailed();
+                                          });
+
+                                  if (!n->start())
+                                  {
+                                      delete n;
+                                      lastError = "Failed to start network request";
+                                      job->emitFailed();
+                                  }
+                              }));
+
+    jobs->append(new AsyncJob([this, device, callbackStdout](AsyncJob *job, const QVariant &)
+                              {
+                                  lastError.clear();
+                                  QString url = calaosAddr % "/api/system/install/status";
+
+                                  NetworkRequest *n = new NetworkRequest(url, NetworkRequest::HttpGet, this);
+                                  n->setNetManager(netManager);
+                                  n->setCustomHeader("Authorization", QStringLiteral("bearer %1").arg(token));
+                                  n->setCustomHeader("Content-Type", "application/json");
+                                  n->setResultType(NetworkRequest::TypeJson);
+
+                                  connect(n, &NetworkRequest::finishedJson, this,
+                                          [this, n, job](int success, const QJsonDocument &jdoc)
                                           {
                                               n->deleteLater();
 
                                               if (success == NetworkRequest::RequestSuccess)
                                               {
-                                                  job->emitSuccess();
+                                                  QJsonObject jobj = jdoc.object();
+                                                  if (jobj["error"].toBool())
+                                                  {
+                                                      checkErrors(jdoc, n);
+                                                      job->emitFailed();
+                                                  }
+                                                  else
+                                                  {
+                                                      auto code = jobj["exit_code"].toInt();
+
+                                                      if (code != 0)
+                                                      {
+                                                          auto e = QStringLiteral("Installation failed with exit code:%1").arg(code);
+                                                          lastError.append(e);
+                                                          job->emitFailed();
+                                                      }
+
+                                                      job->emitSuccess();
+                                                  }
                                               }
                                               else
                                               {
@@ -132,6 +186,7 @@ void CalaosOsAPI::doPost(QString apiPath, const QByteArray &postData, std::funct
                                   NetworkRequest *n = new NetworkRequest(url, NetworkRequest::HttpPost, this);
                                   n->setNetManager(netManager);
                                   n->setCustomHeader("Authorization", QStringLiteral("bearer %1").arg(token));
+                                  n->setCustomHeader("Content-Type", "application/json");
                                   n->setResultType(NetworkRequest::TypeJson);
                                   n->setPostData(postData);
 
@@ -202,8 +257,9 @@ void CalaosOsAPI::doGet(QString apiPath, std::function<void (bool, const QJsonOb
                                                       QJsonParseError err;
                                                       QJsonDocument doc;
 
-                                                      doc = QJsonDocument::fromJson(jobj["out"].toString().toUtf8(), &err);
-                                                      if (err.error == QJsonParseError::NoError)
+                                                      doc = QJsonDocument::fromJson(jobj["output"].toString().toUtf8(), &err);
+                                                      auto o = doc.object();
+                                                      if (err.error != QJsonParseError::NoError)
                                                       {
                                                           auto e = "JSON parse error " + err.errorString() + " at offset: " + QString::number(err.offset);
                                                           lastError.append(e);
@@ -211,7 +267,7 @@ void CalaosOsAPI::doGet(QString apiPath, std::function<void (bool, const QJsonOb
                                                       }
                                                       else
                                                       {
-                                                          job->emitSuccess(doc.object());
+                                                          job->emitSuccess(o);
                                                       }
                                                   }
                                               }

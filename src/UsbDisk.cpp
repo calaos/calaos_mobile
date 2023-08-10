@@ -1,8 +1,7 @@
 #include "UsbDisk.h"
+#include "CalaosOsAPI.h"
 
-#ifdef Q_OS_LINUX
 #include "3rd_party/drivelist/src/drivelist.hpp"
-#endif
 
 UsbDiskModel::UsbDiskModel(QQmlApplicationEngine *eng, QObject *parent):
     QAbstractTableModel(parent),
@@ -13,42 +12,48 @@ UsbDiskModel::UsbDiskModel(QQmlApplicationEngine *eng, QObject *parent):
 
 void UsbDiskModel::loadModel()
 {
-#ifdef Q_OS_LINUX
-    QVector<UsbDisk *> disks;
-    auto lst = Drivelist::ListStorageDevices();
-
-    for (auto &i: lst)
-    {
-        QStringList mountpoints;
-        for (auto &s: i.mountpoints)
+    CalaosOsAPI::Instance()->listInstallDevices(
+        [this](bool success, const QJsonObject &obj)
         {
-            mountpoints.append(QString::fromStdString(s));
+            if (!success) return;
+
+            QVector<UsbDisk *> disks;
+            auto lst = Drivelist::ListStorageDevices(obj);
+
+            for (auto &i: lst)
+            {
+                QStringList mountpoints;
+                for (auto &s: i.mountpoints)
+                {
+                    mountpoints.append(QString::fromStdString(s));
+                }
+
+                if (i.size == 0)
+                    continue;
+
+                auto d = new UsbDisk();
+
+                d->set_physicalDevice(QString::fromStdString(i.device));
+                d->set_name(QString::fromStdString(i.description));
+                d->set_isRemovable(i.isRemovable);
+                d->set_isSystem(i.isSystem);
+                d->set_size(i.size);
+                d->set_sizeHuman(UsbDisk::sizeHuman(i.size));
+                d->set_volumes(mountpoints);
+                d->set_isUsb(i.isUSB);
+                d->set_isSD(i.isCard);
+
+                disks.append(d);
+            }
+
+            beginResetModel();
+            qDeleteAll(m_items);
+            m_items.clear();
+            m_items.append(disks);
+            endResetModel();
         }
+    );
 
-        if (i.size == 0)
-            continue;
-
-        auto d = new UsbDisk();
-
-        d->set_physicalDevice(QString::fromStdString(i.device));
-        d->set_name(QString::fromStdString(i.description));
-        d->set_isRemovable(i.isRemovable);
-        d->set_isSystem(i.isSystem);
-        d->set_size(i.size);
-        d->set_sizeHuman(UsbDisk::sizeHuman(i.size));
-        d->set_volumes(mountpoints);
-        d->set_isUsb(i.isUSB);
-        d->set_isSD(i.isCard);
-
-        disks.append(d);
-    }
-
-    beginResetModel();
-    qDeleteAll(m_items);
-    m_items.clear();
-    m_items.append(disks);
-    endResetModel();
-#endif
 }
 
 const UsbDisk *UsbDiskModel::itemAt(int rowidx) const

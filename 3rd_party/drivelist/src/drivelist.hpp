@@ -22,6 +22,8 @@
 #include <vector>
 #include <cstdint>
 
+#include <QJsonObject>
+
 namespace Drivelist {
 
 struct MountPoint {
@@ -56,7 +58,7 @@ struct DeviceDescriptor {
   bool isUASNull;
 };
 
-std::vector<DeviceDescriptor> ListStorageDevices();
+std::vector<DeviceDescriptor> ListStorageDevices(const QJsonObject &output);
 //v8::Local<v8::Object> PackDriveDescriptor(const DeviceDescriptor *instance);
 
 }  // namespace Drivelist

@@ -89,6 +89,7 @@ private:
     QMap<QString, QString> headers;
 
     QFile *dlFile = nullptr;
+    QByteArray dataRead;
 
     bool delNm = false;
 

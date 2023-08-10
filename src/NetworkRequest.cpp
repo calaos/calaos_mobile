@@ -89,13 +89,17 @@ bool NetworkRequest::start()
 
     connect(reply, &QNetworkReply::sslErrors, this, &NetworkRequest::nmSslErrors);
 
+    dataRead.clear();
+
     if (resType == TypeJson)
     {
         connect(reply, &QNetworkReply::finished,
                 this, &NetworkRequest::nmFinishedJson);
         connect(reply, &QNetworkReply::readyRead, this, [this]()
                 {
-                    emit dataReadyRead(reply->readAll());
+                    auto d = reply->readAll();
+                    emit dataReadyRead(d);
+                    dataRead.append(d);
                 });
     }
     else if (resType == TypeRawData)
@@ -104,7 +108,9 @@ bool NetworkRequest::start()
                 this, &NetworkRequest::nmFinishedData);
         connect(reply, &QNetworkReply::readyRead, this, [this]()
                 {
-                    emit dataReadyRead(reply->readAll());
+                    auto d = reply->readAll();
+                    emit dataReadyRead(d);
+                    dataRead.append(d);
                 });
     }
     else if (resType == TypeFile)
@@ -179,7 +185,7 @@ void NetworkRequest::nmFinishedJson()
     {
         lastError = reply->errorString();
         qDebug() << "Error in" << reply->url() << ":" << reply->errorString();
-        QString data(reply->readAll());
+        QString data(dataRead);
         if (!data.isEmpty())
             qDebug().noquote() << "Request body: " << data;
         jdoc = QJsonDocument::fromJson(data.toUtf8(), &err);
@@ -191,10 +197,9 @@ void NetworkRequest::nmFinishedJson()
         return;
     }
 
-    QByteArray res = reply->readAll();
-    jdoc = QJsonDocument::fromJson(res, &err);
+    jdoc = QJsonDocument::fromJson(dataRead, &err);
 
-    if (res.isEmpty())
+    if (dataRead.isEmpty())
     {
         //do not treat empty result as error
         err.error = QJsonParseError::NoError;
@@ -207,7 +212,7 @@ void NetworkRequest::nmFinishedJson()
         const int maxlen = 100;
         int start = err.offset - maxlen;
         if (start < 0) start = 0;
-        qWarning() << res.mid(start, err.offset + maxlen);
+        qWarning() << dataRead.mid(start, err.offset + maxlen);
         QString s;
         for (int i = start;i < err.offset + maxlen;i++)
             s += (i == err.offset?"^":"-");
@@ -228,7 +233,7 @@ void NetworkRequest::nmFinishedData()
     {
         lastError = reply->errorString();
         qDebug() << "Error in" << reply->url() << ":" << reply->errorString();
-        QString data(reply->readAll());
+        QString data(dataRead);
         if (!data.isEmpty())
             qDebug().noquote() << "Request body: " << data;
         emit finishedData(RequestHttpError, QByteArray());
@@ -240,7 +245,7 @@ void NetworkRequest::nmFinishedData()
     }
 
     reply->deleteLater();
-    emit finishedData(RequestSuccess, reply->readAll());
+    emit finishedData(RequestSuccess, dataRead);
 
     reply = nullptr;
 }

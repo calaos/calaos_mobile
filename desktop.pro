@@ -21,6 +21,8 @@ QT += webenginequick
 DEFINES += HAVE_WEBENGINE
 }
 
+DEFINES += QT_MESSAGELOGCONTEXT
+
 linux {
 QT_CONFIG -= no-pkg-config
 CONFIG += link_pkgconfig
@@ -62,10 +64,8 @@ HEADERS += src/HardwareUtils_desktop.h \
     src/NetworkRequest.h \
     src/version.h
 
-linux {
-    SOURCES += 3rd_party/drivelist_linux/linuxdrivelist.cpp
-    HEADERS += 3rd_party/drivelist/src/drivelist.hpp
-}
+SOURCES += 3rd_party/drivelist_linux/linuxdrivelist.cpp
+HEADERS += 3rd_party/drivelist/src/drivelist.hpp
 
 RESOURCES += qml_desktop.qrc \
     img_desktop.qrc \

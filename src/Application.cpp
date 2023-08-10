@@ -125,7 +125,8 @@ void Application::createQmlApp()
     update_appVersion(PKG_VERSION_STR);
 
     update_hasInstall(QFile::exists("/.calaos-live") ||
-                      QFile::exists("/run/calaos/calaos-live"));
+                      QFile::exists("/run/calaos/calaos-live") ||
+                      QFile::exists("C:/temp/calaos/calaos-live"));
 
 #ifdef CALAOS_DESKTOP
 

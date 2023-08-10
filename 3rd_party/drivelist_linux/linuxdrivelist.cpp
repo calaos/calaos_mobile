@@ -43,25 +43,35 @@ namespace Drivelist
         }
     }
 
-    std::vector<Drivelist::DeviceDescriptor> ListStorageDevices()
+    std::vector<Drivelist::DeviceDescriptor> ListStorageDevices(const QJsonObject &output)
     {
         std::vector<DeviceDescriptor> deviceList;
 
-        QProcess p;
-        QStringList args = { "--bytes", "--json", "--paths", "--output-all" };
-        p.start("lsblk", args);
-        p.waitForFinished(2000);
-        QByteArray output = p.readAll();
+        QJsonArray a;
 
-        if (p.exitStatus() != QProcess::NormalExit || p.exitCode() || output.isEmpty())
+        if (output.isEmpty())
         {
-            qDebug() << "Error executing lsblk";
-            return deviceList;
+            QProcess p;
+            QStringList args = { "--bytes", "--json", "--paths", "--output-all" };
+            p.start("lsblk", args);
+            p.waitForFinished(2000);
+            auto output = p.readAll();
+
+            if (p.exitStatus() != QProcess::NormalExit || p.exitCode() || output.isEmpty())
+            {
+                qDebug() << "Error executing lsblk";
+                return deviceList;
+            }
+
+            QJsonDocument d = QJsonDocument::fromJson(output);
+            a = d.object()["blockdevices"].toArray();
+        }
+        else
+        {
+            a = output["blockdevices"].toArray();
         }
 
-        QJsonDocument d = QJsonDocument::fromJson(output);
-        QJsonArray a = d.object()["blockdevices"].toArray();
-        for (auto i : a)
+        for (auto i : qAsConst(a))
         {
             DeviceDescriptor d;
             QJsonObject bdev = i.toObject();
@@ -132,7 +142,7 @@ namespace Drivelist
             if (d.isSystem && subsystems.contains("nvme"))
             {
                 bool isMounted = false;
-                for (std::string mp : d.mountpoints)
+                for (const auto &mp : d.mountpoints)
                 {
                     if (!QByteArray::fromStdString(mp).startsWith("/media/")) {
                         isMounted = true;

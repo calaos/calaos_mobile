@@ -20,19 +20,22 @@ public:
 
     void rebootMachine(std::function<void(bool success)> callback);
     void restartApp(std::function<void(bool success)> callback);
-    void getFsStatus(std::function<void(bool success, const QJsonObject &res)> callback);
+    void getFsStatus(std::function<void(bool success, const QJsonValue &res)> callback);
 
     void rollbackSnapshot(std::function<void(bool success)> callback);
 
-    void listInstallDevices(std::function<void(bool success, const QJsonObject &res)> callback);
+    void listInstallDevices(std::function<void(bool success, const QJsonValue &res)> callback);
     void startInstallation(QString device,
         std::function<void(bool success)> callbackFinished,
         std::function<void(QString out)> callbackStdout);
 
+    void getNetworkInterfaces(std::function<void(bool success, const QJsonValue &res)> callback);
+    void getSystemInfo(std::function<void(bool success, const QJsonValue &res)> callback);
+
 private:
     void checkErrors(const QJsonDocument &jdoc, NetworkRequest *n = nullptr);
     void doPost(QString apiPath, const QByteArray &postData, std::function<void(bool success)> callback);
-    void doGet(QString apiPath, std::function<void(bool success, const QJsonObject &res)> callback);
+    void doGet(QString apiPath, std::function<void(bool success, const QJsonValue &res)> callback);
 
     QNetworkAccessManager *netManager;
 

@@ -13,12 +13,12 @@ UsbDiskModel::UsbDiskModel(QQmlApplicationEngine *eng, QObject *parent):
 void UsbDiskModel::loadModel()
 {
     CalaosOsAPI::Instance()->listInstallDevices(
-        [this](bool success, const QJsonObject &obj)
+        [this](bool success, const QJsonValue &obj)
         {
             if (!success) return;
 
             QVector<UsbDisk *> disks;
-            auto lst = Drivelist::ListStorageDevices(obj);
+            auto lst = Drivelist::ListStorageDevices(obj.toObject());
 
             for (auto &i: lst)
             {

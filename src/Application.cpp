@@ -132,7 +132,7 @@ void Application::createQmlApp()
 
     update_isSnapshotBoot(false);
     CalaosOsAPI::Instance()->getFsStatus(
-        [this](bool success, const QJsonObject &o)
+        [this](bool success, const QJsonValue &o)
         {
             if (!success)
             {
@@ -165,6 +165,11 @@ void Application::createQmlApp()
 
             update_isSnapshotBoot(false);
         });
+
+    update_uptime(0);
+    update_cpuUsage(0);
+    update_memoryUsage(0);
+    updateSystemInfo();
 #else
     update_isSnapshotBoot(false);
 #endif
@@ -243,8 +248,6 @@ void Application::createQmlApp()
 
     controlPanelModel = new ControlPanelModel(this);
     engine.rootContext()->setContextProperty("controlPanelModel", controlPanelModel);
-
-    update_machineName(Machine::getHostname());
 
     //network info timer
     updateNetworkInfo();
@@ -627,15 +630,9 @@ void Application::rollbackSnapshot()
 #endif
 }
 
-quint32 Application::getUptimeDays()
-{
-    return Machine::getMachineUptime() / 60 / 60 / 24;
-}
-
 void Application::sysInfoTimerSlot()
 {
-    update_cpuUsage(Machine::getCpuUsage());
-    update_memoryUsage(Machine::getMemoryUsage());
+    updateSystemInfo();
 }
 
 void Application::setupLanguage()
@@ -698,12 +695,47 @@ void Application::pushNotificationReceived(const QString &uuid)
 
 void Application::updateNetworkInfo()
 {
-    m_netAddresses->clear();
-    QList<NetworkInfo *> nets = Machine::getNetworkInfo();
-    for (int i = 0;i < nets.count();i++)
-    {
-        if (nets.at(i)->get_isLoopback())
-            continue;
-        m_netAddresses->append(nets.at(i));
-    }
+    CalaosOsAPI::Instance()->getNetworkInterfaces(
+        [this](bool success, const QJsonValue &data)
+        {
+            m_netAddresses->clear();
+
+            if (!success) return;
+
+            const QJsonArray &jarr = data.toArray();
+
+            for (int i = 0;i < jarr.size();i++)
+            {
+                const QJsonObject &o = jarr[i].toObject();
+
+                if (o["is_loopback"].toBool())
+                    continue;
+
+                NetworkInfo *net = new NetworkInfo();
+
+                net->update_netinterface(o["name"].toString());
+                net->update_ipv4(o["ipv4"].toString());
+                net->update_ipv6(o["ipv6"].toString());
+                net->update_mac(o["mac"].toString());
+                net->update_isLoopback(o["is_loopback"].toBool());
+
+                m_netAddresses->append(net);
+            }
+        }
+    );
+}
+
+void Application::updateSystemInfo()
+{
+    CalaosOsAPI::Instance()->getSystemInfo(
+        [this](bool success, const QJsonValue &data)
+        {
+            if (!success) return;
+
+            update_cpuUsage(data["cpu_usage"].toInt());
+            update_memoryUsage(data["mem_usage"].toInt());
+            update_machineName(data["hostname"].toString());
+            update_uptime(data["uptime"].toInt());
+        }
+    );
 }

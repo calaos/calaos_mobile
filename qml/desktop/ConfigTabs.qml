@@ -64,15 +64,35 @@ BorderImage {
                 ConfigTabLabelValue {
                     id: uptimeTxt
                     labelText: qsTr("System started since:")
-                    valueText: "-"
+
+                    property int uptime: calaosApp.uptime
+                    onUptimeChanged: uptimeTxt.valueText = formatTime(uptime)
+
+                    function formatTime(seconds) {
+                        if (seconds < 60) {
+                            return seconds + ' sec';
+                        } else if (seconds < 3600) {
+                            const minutes = Math.floor(seconds / 60);
+                            return minutes + ' min';
+                        } else if (seconds < 86400) {
+                            const hours = Math.floor(seconds / 3600);
+                            if (hours > 1) {
+                                return qsTr("%1 hours").arg(hours)
+                            } else {
+                                return qsTr("%1 hour").arg(hours)
+                            }
+                        } else {
+                            const days = Math.floor(seconds / 86400);
+                            if (days > 1) {
+                                return qsTr("%1 days").arg(days)
+                            } else {
+                                return qsTr("%1 day").arg(days)
+                            }
+                        }
+                    }
 
                     Component.onCompleted: {
-                        var days = calaosApp.getUptimeDays()
-                        if (days == 1) {
-                            uptimeTxt.valueText = qsTr("%1 day").arg(days)
-                        } else if (days > 1) {
-                            uptimeTxt.valueText = qsTr("%1 days").arg(days)
-                        }
+                        calaosApp.updateSystemInfo()
                     }
                 }
 
@@ -85,6 +105,10 @@ BorderImage {
 
                 ConfigTabLabelValue {
                     labelText: qsTr("Network:")
+
+                    Component.onCompleted: {
+                        calaosApp.updateNetworkInfo()
+                    }
                 }
 
                 Repeater {

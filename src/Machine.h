@@ -13,17 +13,7 @@ class NetworkInfo: public QObject
     QML_READONLY_PROPERTY(QString, mac)
     QML_READONLY_PROPERTY(bool, isLoopback)
 public:
-    NetworkInfo(QObject *parent = nullptr): QObject(parent) {}
-};
-
-class Machine
-{
-public:
-    static quint32 getMachineUptime();
-    static QString getHostname();
-    static QList<NetworkInfo *> getNetworkInfo();
-    static int getMemoryUsage();
-    static int getCpuUsage();
+    NetworkInfo(QObject *parent = nullptr);
 };
 
 #endif // UPTIME_H

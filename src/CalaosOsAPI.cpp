@@ -37,7 +37,7 @@ void CalaosOsAPI::restartApp(std::function<void (bool)> callback)
     doPost("/api/system/restart", {}, callback);
 }
 
-void CalaosOsAPI::getFsStatus(std::function<void (bool, const QJsonObject &)> callback)
+void CalaosOsAPI::getFsStatus(std::function<void (bool, const QJsonValue &)> callback)
 {
     doGet("/api/system/fs_status", callback);
 }
@@ -47,7 +47,7 @@ void CalaosOsAPI::rollbackSnapshot(std::function<void (bool)> callback)
     doPost("/api/system/rollback_snapshot", {}, callback);
 }
 
-void CalaosOsAPI::listInstallDevices(std::function<void (bool, const QJsonObject &)> callback)
+void CalaosOsAPI::listInstallDevices(std::function<void (bool, const QJsonValue &)> callback)
 {
     doGet("/api/system/install/list_devices", callback);
 }
@@ -162,6 +162,16 @@ void CalaosOsAPI::startInstallation(QString device, std::function<void (bool)> c
     jobs->start();
 }
 
+void CalaosOsAPI::getNetworkInterfaces(std::function<void (bool, const QJsonValue &)> callback)
+{
+    doGet("/api/network/list", callback);
+}
+
+void CalaosOsAPI::getSystemInfo(std::function<void (bool, const QJsonValue &)> callback)
+{
+    doGet("/api/system/info", callback);
+}
+
 void CalaosOsAPI::checkErrors(const QJsonDocument &jdoc, NetworkRequest *n)
 {
     QJsonObject jobj = jdoc.object();
@@ -226,7 +236,7 @@ void CalaosOsAPI::doPost(QString apiPath, const QByteArray &postData, std::funct
     jobs->start();
 }
 
-void CalaosOsAPI::doGet(QString apiPath, std::function<void (bool, const QJsonObject &)> callback)
+void CalaosOsAPI::doGet(QString apiPath, std::function<void (bool, const QJsonValue &)> callback)
 {
     AsyncJobs *jobs = new AsyncJobs(this);
 
@@ -254,21 +264,8 @@ void CalaosOsAPI::doGet(QString apiPath, std::function<void (bool, const QJsonOb
                                                   }
                                                   else
                                                   {
-                                                      QJsonParseError err;
-                                                      QJsonDocument doc;
-
-                                                      doc = QJsonDocument::fromJson(jobj["output"].toString().toUtf8(), &err);
-                                                      auto o = doc.object();
-                                                      if (err.error != QJsonParseError::NoError)
-                                                      {
-                                                          auto e = "JSON parse error " + err.errorString() + " at offset: " + QString::number(err.offset);
-                                                          lastError.append(e);
-                                                          job->emitFailed();
-                                                      }
-                                                      else
-                                                      {
-                                                          job->emitSuccess(o);
-                                                      }
+                                                      QJsonValue v = jobj["output"];
+                                                      job->emitSuccess(v);
                                                   }
                                               }
                                               else
@@ -293,7 +290,7 @@ void CalaosOsAPI::doGet(QString apiPath, std::function<void (bool, const QJsonOb
 
     connect(jobs, &AsyncJobs::finished, this, [callback](const QVariant &data)
             {
-                callback(true, data.toJsonObject());
+                callback(true, data.toJsonValue());
             });
 
     jobs->start();

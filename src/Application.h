@@ -51,6 +51,7 @@ public:
     QML_OBJMODEL_PROPERTY(NetworkInfo, netAddresses)
     QML_READONLY_PROPERTY(int, cpuUsage)
     QML_READONLY_PROPERTY(int, memoryUsage)
+    QML_READONLY_PROPERTY(int, uptime)
     QML_READONLY_PROPERTY(bool, hasWebEngine)
     QML_READONLY_PROPERTY(bool, hasInstall) //If running on live install enable installation mode
     QML_READONLY_PROPERTY(bool, isSnapshotBoot) //if system has been booted read only from a snapshot
@@ -86,11 +87,12 @@ public:
     Q_INVOKABLE void restartApp();
     Q_INVOKABLE void rollbackSnapshot();
 
-    Q_INVOKABLE quint32 getUptimeDays();
-
     QQmlApplicationEngine *getEngine() { return &engine; }
 
     Q_INVOKABLE void setLanguage(QString code);
+
+    Q_INVOKABLE void updateNetworkInfo();
+    Q_INVOKABLE void updateSystemInfo();
 
 private slots:
     void homeLoaded(const QVariantMap &homeData);
@@ -99,7 +101,6 @@ private slots:
     void calaosServerDetected();
     void sysInfoTimerSlot();
     void pushNotificationReceived(const QString &uuid);
-    void updateNetworkInfo();
 
 private:
     QQmlApplicationEngine engine;

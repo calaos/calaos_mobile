@@ -6,7 +6,7 @@ ARG USER=calaos
 
 ARG ARCH=x86_64
 ARG COMMIT=
-ARG PKGVERSION=
+ARG APP_VERSION=
 
 # Set TERM environment variable
 ENV TERM=xterm-color
@@ -38,7 +38,7 @@ RUN git clone https://github.com/calaos/calaos-build.git
 
 RUN cd calaos-build && \
     scripts/get_pkgbuilds.sh && \
-    scripts/build_pkg.sh "calaos-home" "" "$ARCH" "$COMMIT" "$PKGVERSION"
+    scripts/build_pkg.sh "calaos-home" "" "$ARCH" "$COMMIT" "$APP_VERSION"
 
 RUN sudo pacman -S --noconfirm libxinerama readline bash perl libxtst libxft texinfo libxrandr gnupg
 

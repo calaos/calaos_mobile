@@ -8,8 +8,8 @@ cleanup() {
 trap 'cleanup' TERM EXIT
 
 # check if arguments --modesetting is set
-if [ "$1" = "--modesetting" ]; then
-    echo "[*] Using modesetting driver"
+if [ "$1" = "--modsetting" ]; then
+    echo "[*] Using modsetting driver"
     
     #remove intel driver to enable modsetting
     rm -f /usr/lib/xorg/modules/drivers/intel_drv.so

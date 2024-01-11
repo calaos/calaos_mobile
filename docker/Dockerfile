@@ -34,11 +34,10 @@ USER ${USER}
 # Define entry point
 WORKDIR /src
 
-RUN git clone https://github.com/calaos/calaos-build.git
+COPY build/* /usr/bin
 
-RUN cd calaos-build && \
-    scripts/get_pkgbuilds.sh && \
-    scripts/build_pkg.sh "calaos-home" "" "$ARCH" "$COMMIT" "$APP_VERSION"
+RUN get_pkgbuilds.sh && \
+    build_pkg.sh "calaos-home" "" "$ARCH" "$COMMIT" "$APP_VERSION"
 
 RUN sudo pacman -S --noconfirm libxinerama readline bash perl libxtst libxft texinfo libxrandr gnupg
 

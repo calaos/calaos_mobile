@@ -58,7 +58,7 @@ BorderImage {
 
                 ConfigTabLabelValue {
                     labelText: qsTr("Product Version:")
-                    valueText: "-"
+                    valueText: calaosApp.appVersion
                 }
 
                 ConfigTabLabelValue {

@@ -695,6 +695,7 @@ void Application::pushNotificationReceived(const QString &uuid)
 
 void Application::updateNetworkInfo()
 {
+#ifdef CALAOS_DESKTOP
     CalaosOsAPI::Instance()->getNetworkInterfaces(
         [this](bool success, const QJsonValue &data)
         {
@@ -723,10 +724,12 @@ void Application::updateNetworkInfo()
             }
         }
     );
+#endif
 }
 
 void Application::updateSystemInfo()
 {
+#ifdef CALAOS_DESKTOP
     CalaosOsAPI::Instance()->getSystemInfo(
         [this](bool success, const QJsonValue &data)
         {
@@ -738,4 +741,5 @@ void Application::updateSystemInfo()
             update_uptime(data["uptime"].toInt());
         }
     );
+#endif
 }

@@ -662,7 +662,7 @@ void CalaosConnection::startJsonPolling()
     request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
     pollReply = accessManager->post(request, jdoc.toJson());
 
-    connect(pollReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestError(QNetworkReply::NetworkError)));
+    connect(pollReply, &QNetworkReply::errorOccurred, this, &CalaosConnection::requestError);
     connect(pollReply, &QNetworkReply::finished, this, [=]()
     {
         pollReply->deleteLater();

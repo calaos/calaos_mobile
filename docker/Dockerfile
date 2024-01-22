@@ -37,7 +37,8 @@ WORKDIR /src
 COPY build/* /usr/bin
 
 RUN get_pkgbuilds.sh && \
-    build_pkg.sh "calaos-home" "" "$ARCH" "$COMMIT" "$APP_VERSION"
+    build_pkg.sh "calaos-home" "" "$ARCH" "$COMMIT" "$APP_VERSION" && \
+    build_pkg.sh "xinput_calibrator" "" "$ARCH" "$COMMIT" "$APP_VERSION"
 
 RUN sudo pacman -S --noconfirm libxinerama readline bash perl libxtst libxft texinfo libxrandr gnupg
 
@@ -61,6 +62,7 @@ RUN pacman -Syu --noconfirm
 
 COPY --from=builder /src/pkgbuilds/calaos-home/*pkg.tar.zst* /
 COPY --from=builder /src/ratpoison/*pkg.tar.zst* /
+COPY --from=builder /src/pkgbuilds/xinput_calibrator/*pkg.tar.zst* /
 
 RUN pacman -U --noconfirm /*pkg.tar.zst*
 

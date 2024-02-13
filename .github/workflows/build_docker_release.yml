@@ -4,13 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       vincrement:
-        description: 'Package version increment (major.feature.bug)'
+        description: 'Package version increment (major.feature.patch)'
         required: true
-        default: 'minor'
+        default: 'patch'
         type: choice
         options:
           - major
           - minor
+          - patch
 
 env:
   REGISTRY_IMAGE: ghcr.io/calaos/calaos_home
@@ -31,7 +32,7 @@ jobs:
 
       - name: Calaos Action Bump Version
         id: calaos_version
-        uses: calaos/action-bump-version@1.2.2
+        uses: calaos/action-bump-version@2
         with:
           version_fragment: ${{ github.event.inputs.vincrement }}
 

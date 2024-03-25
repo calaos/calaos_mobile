@@ -390,12 +390,4 @@ Window {
     ScreenSuspend {
         id: screenSuspend
     }
-
-    Connections {
-        target: cameraModel
-
-        function onActionViewCamera() {
-            AppActions.openCameraSingleView(camModel)
-        }
-    }
 }

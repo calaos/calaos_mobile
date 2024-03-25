@@ -46,9 +46,6 @@ public:
     Q_INVOKABLE QObject *getItemModel(int idx);
     Q_INVOKABLE int cameraCount() { return rowCount(); }
 
-signals:
-    void actionViewCamera(QObject *camModel);
-
 private slots:
     void eventTouchscreenCamera(QString cameraId);
 

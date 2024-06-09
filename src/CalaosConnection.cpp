@@ -635,6 +635,23 @@ void CalaosConnection::getAudioCover(const QString &playerid)
     reqReplies.append(reqReply);
 }
 
+bool CalaosConnection::changeCredentials(QString user, QString pass)
+{
+    //Only supported for websocket
+    if (!isWebsocket()) return false;
+
+    username_temp = user;
+    password_temp = pass;
+
+    QJsonObject jroot = { { "action", "change_cred" },
+                          { "old_user", username },
+                          { "old_pw", password },
+                          { "new_user", user },
+                          { "new_pw", pass },
+                         };
+    sendWebsocket("settings", jroot, "change_creds");
+}
+
 void CalaosConnection::startJsonPolling()
 {
     if (constate != ConStateHttp)
@@ -862,9 +879,29 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
     {
         emit logEventLoaded(jroot["data"].toObject().toVariantMap());
     }
+    else if (jroot["msg"] == "settings")
+    {
+        if (jdata["action"] == "change_cred")
+        {
+            if (jdata["success"] == "true")
+            {
+                username = username_temp;
+                password = password_temp;
+                emit changeCredsSuccess();
+
+                //reconnect
+                logout();
+                login(username, password, wshost);
+            }
+            else
+            {
+                emit changeCredsFailed();
+            }
+        }
+    }
 
     //We get this marker when calling sendCommand(...) it helps disabling the net indicator
-    if (jroot["msg_id"] == "user_cmd")
+    if (jroot["msg_id"] == "user_cmd" || jroot["msg_id"] == "change_creds")
     {
         HardwareUtils::Instance()->showNetworkActivity(false);
     }

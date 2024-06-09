@@ -360,5 +360,8 @@
         <file>img/icon_config_install.png</file>
         <file>img/icon_config_network.png</file>
         <file>img/icon_config_rollback.png</file>
+        <file>img/auth_icon.svg</file>
+        <file>img/ic_locked.svg</file>
+        <file>img/ic_unlocked.svg</file>
     </qresource>
 </RCC>

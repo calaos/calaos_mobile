@@ -174,6 +174,8 @@ void Application::createQmlApp()
     update_isSnapshotBoot(false);
 #endif
 
+    update_settingsLocked(true);
+
     update_applicationStatus(Common::NotConnected);
 
     calaosConnect = new CalaosConnection(this);
@@ -200,6 +202,18 @@ void Application::createQmlApp()
             login(get_username(), get_password(), get_hostname());
         });
 #endif
+    });
+    connect(calaosConnect, &CalaosConnection::changeCredsFailed, this, [=]()
+    {
+        HardwareUtils::Instance()->showAlertMessage(tr("Credentials change failed"),
+                                                    tr("Credentials were not changed. Please try again."),
+                                                    tr("Close"));
+    });
+    connect(calaosConnect, &CalaosConnection::changeCredsSuccess, this, [=]()
+    {
+        HardwareUtils::Instance()->showAlertMessage(tr("Credentials changed"),
+                                                    tr("Credentials were successfully changed."),
+                                                    tr("Close"));
     });
 
     scenarioModel = new ScenarioModel(&engine, calaosConnect, this);
@@ -742,4 +756,66 @@ void Application::updateSystemInfo()
         }
     );
 #endif
+}
+
+bool Application::unlockSettings(QString pass)
+{
+    if (pass.isEmpty())
+        return false;
+
+    if (pass != get_password())
+        return false;
+
+    update_settingsLocked(false);
+
+    //relock after 5 minutes
+    if (!timerLockSettings)
+    {
+        timerLockSettings = new QTimer(this);
+        connect(timerLockSettings, &QTimer::timeout, this, &Application::lockSettings);
+    }
+    timerLockSettings->start(5 * 60 * 1000);
+
+    return true;
+}
+
+void Application::lockSettings()
+{
+    update_settingsLocked(true);
+}
+
+bool Application::changeUsername(QString user)
+{
+    if (get_applicationStatus() != Common::LoggedIn)
+    {
+        //save user in local config file only
+        QString u, p;
+        HardwareUtils::Instance()->loadAuthKeychain(u, p);
+        HardwareUtils::Instance()->saveAuthKeychain(user, p);
+    }
+    else if (user != get_username())
+    {
+        //save user on server
+        calaosConnect->changeCredentials(user, get_password());
+    }
+
+    return true;
+}
+
+bool Application::changePassword(QString pass)
+{
+    if (get_applicationStatus() != Common::LoggedIn)
+    {
+        //save pass in local config file only
+        QString u, p;
+        HardwareUtils::Instance()->loadAuthKeychain(u, p);
+        HardwareUtils::Instance()->saveAuthKeychain(u, pass);
+    }
+    else if (pass != get_password())
+    {
+        //save user on server
+        calaosConnect->changeCredentials(get_username(), pass);
+    }
+
+    return true;
 }

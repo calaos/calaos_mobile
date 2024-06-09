@@ -4,35 +4,35 @@
 <context>
     <name>Application</name>
     <message>
-        <location filename="../src/Application.cpp" line="141"/>
-        <location filename="../src/Application.cpp" line="275"/>
+        <location filename="../src/Application.cpp" line="189"/>
+        <location filename="../src/Application.cpp" line="336"/>
         <source>Network error</source>
         <translation>Netzwerkfehler</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="142"/>
+        <location filename="../src/Application.cpp" line="190"/>
         <source>The connection to calaos_server was lost.It will reconnect automatically when calaos_serveris available again.</source>
         <translation>Die Verbindung zu calaos_server wurde unterbrochen. Die Verbindung wird automatisch wiederhergestellt, wenn calaos_server wieder verfügbar ist.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="145"/>
-        <location filename="../src/Application.cpp" line="279"/>
-        <location filename="../src/Application.cpp" line="403"/>
+        <location filename="../src/Application.cpp" line="193"/>
+        <location filename="../src/Application.cpp" line="340"/>
+        <location filename="../src/Application.cpp" line="464"/>
         <source>Close</source>
         <translation>Schliessen</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="276"/>
+        <location filename="../src/Application.cpp" line="337"/>
         <source>No network connection found, this application requires a network connection to work.</source>
         <translation>Keine Netzwerkverbindung gefunden, diese Anwendung benötigt eine Netzwerkverbindung, um zu funktionieren.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="401"/>
+        <location filename="../src/Application.cpp" line="462"/>
         <source>Login failed</source>
         <translation>Fehlgeschlagene Anmeldung</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="402"/>
+        <location filename="../src/Application.cpp" line="463"/>
         <source>Connection failed, please check your credentials.</source>
         <translation>Verbindung fehlgeschlagen, bitte überprüfen Sie Ihre Zugangsdaten.</translation>
     </message>
@@ -331,37 +331,47 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigTabs.qml" line="72"/>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="89"/>
         <source>%1 day</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigTabs.qml" line="74"/>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="87"/>
         <source>%1 days</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigTabs.qml" line="82"/>
-        <source>Machine name:</source>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="80"/>
+        <source>%1 hours</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigTabs.qml" line="87"/>
-        <source>Network:</source>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="82"/>
+        <source>%1 hour</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigTabs.qml" line="102"/>
+        <source>Machine name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="107"/>
+        <source>Network:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="126"/>
         <source>CPU Usage:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigTabs.qml" line="109"/>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="133"/>
         <source>Memory Usage:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigTabs.qml" line="138"/>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="162"/>
         <source>Calaos is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License version 3</source>
         <translation type="unfinished"></translation>
     </message>
@@ -392,57 +402,97 @@
 <context>
     <name>ConfigUserInfoView</name>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="42"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="51"/>
+        <source>Change your credentials:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="62"/>
+        <source>Change username</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="63"/>
+        <source>Username</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="64"/>
+        <source>Enter your new username</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="72"/>
+        <source>Change password</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="73"/>
+        <source>Password</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="74"/>
+        <source>Enter your new password</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="87"/>
+        <source>Actual username:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="114"/>
         <source>Here you can configure some personal information like your email address. It is used by Calaos to send you some email. For example, the Note widget can use those addresses to send notes to your mailbox.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="120"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="192"/>
         <source>Add email</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="121"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="193"/>
         <source>Email</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="122"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="194"/>
         <source>Add a new email address to the list</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="160"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="232"/>
         <source>User information</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="187"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="259"/>
         <source>Back to config</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="194"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="266"/>
         <source>Quit</source>
         <translation type="unfinished">Beenden</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="206"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="278"/>
         <source>Remove email</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="207"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="279"/>
         <source>Remove this email &apos;%1&apos; from the list?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="209"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="281"/>
         <source>Yes, remove</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="210"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="282"/>
         <source>No</source>
         <translation type="unfinished">Nein</translation>
     </message>
@@ -968,27 +1018,27 @@ The rollback option is also available in the Control Panel (Configuration menu)<
 <context>
     <name>LoginView</name>
     <message>
-        <location filename="../qml/mobile/LoginView.qml" line="50"/>
+        <location filename="../qml/mobile/LoginView.qml" line="49"/>
         <source>Login to your home</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/mobile/LoginView.qml" line="75"/>
+        <location filename="../qml/mobile/LoginView.qml" line="74"/>
         <source>Username</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/mobile/LoginView.qml" line="86"/>
+        <location filename="../qml/mobile/LoginView.qml" line="84"/>
         <source>Password</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/mobile/LoginView.qml" line="96"/>
+        <location filename="../qml/mobile/LoginView.qml" line="93"/>
         <source>Hostname</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/mobile/LoginView.qml" line="104"/>
+        <location filename="../qml/mobile/LoginView.qml" line="100"/>
         <source>Login</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1269,23 +1319,17 @@ The rollback option is also available in the Control Panel (Configuration menu)<
 <context>
     <name>OSInstaller</name>
     <message>
-        <location filename="../src/OSInstaller.cpp" line="36"/>
-        <location filename="../src/OSInstaller.cpp" line="73"/>
-        <location filename="../src/OSInstaller.cpp" line="87"/>
+        <location filename="../src/OSInstaller.cpp" line="35"/>
         <source>Error</source>
         <translation type="unfinished">Fehler</translation>
     </message>
     <message>
-        <location filename="../src/OSInstaller.cpp" line="37"/>
-        <location filename="../src/OSInstaller.cpp" line="74"/>
-        <location filename="../src/OSInstaller.cpp" line="88"/>
+        <location filename="../src/OSInstaller.cpp" line="36"/>
         <source>Installation failed. See log...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/OSInstaller.cpp" line="38"/>
-        <location filename="../src/OSInstaller.cpp" line="75"/>
-        <location filename="../src/OSInstaller.cpp" line="89"/>
+        <location filename="../src/OSInstaller.cpp" line="37"/>
         <source>Close</source>
         <translation type="unfinished">Schliessen</translation>
     </message>
@@ -1306,7 +1350,7 @@ The rollback option is also available in the Control Panel (Configuration menu)<
 <context>
     <name>PushEventView</name>
     <message>
-        <location filename="../qml/mobile/PushEventView.qml" line="105"/>
+        <location filename="../qml/mobile/PushEventView.qml" line="103"/>
         <source>Push Notification</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1314,7 +1358,7 @@ The rollback option is also available in the Control Panel (Configuration menu)<
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../3rd_party/drivelist_linux/linuxdrivelist.cpp" line="111"/>
+        <location filename="../3rd_party/drivelist_linux/linuxdrivelist.cpp" line="121"/>
         <source>Internal SD card reader</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1402,7 +1446,7 @@ The rollback option is also available in the Control Panel (Configuration menu)<
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="132"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="127"/>
         <source>Settings</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1433,7 +1477,7 @@ The rollback option is also available in the Control Panel (Configuration menu)<
 <context>
     <name>UsbDiskModel</name>
     <message>
-        <location filename="../src/UsbDisk.cpp" line="114"/>
+        <location filename="../src/UsbDisk.cpp" line="119"/>
         <source>Removable disks</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1497,12 +1541,12 @@ The rollback option is also available in the Control Panel (Configuration menu)<
 <context>
     <name>cache</name>
     <message>
-        <location filename="../src/HardwareUtils_desktop.cpp" line="40"/>
+        <location filename="../src/HardwareUtils_desktop.cpp" line="41"/>
         <source>Set cache path to &lt;directory&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/HardwareUtils_desktop.cpp" line="41"/>
+        <location filename="../src/HardwareUtils_desktop.cpp" line="42"/>
         <source>directory</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1510,12 +1554,12 @@ The rollback option is also available in the Control Panel (Configuration menu)<
 <context>
     <name>config</name>
     <message>
-        <location filename="../src/HardwareUtils_desktop.cpp" line="36"/>
+        <location filename="../src/HardwareUtils_desktop.cpp" line="37"/>
         <source>Set config path to &lt;directory&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/HardwareUtils_desktop.cpp" line="37"/>
+        <location filename="../src/HardwareUtils_desktop.cpp" line="38"/>
         <source>directory</source>
         <translation type="unfinished"></translation>
     </message>

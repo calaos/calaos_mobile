@@ -5,6 +5,9 @@ MouseArea {
     id: thisButton
 
     property alias text: label.text
+    property bool disabled: false
+
+    enabled: !disabled
 
     signal buttonClicked()
 
@@ -17,7 +20,7 @@ MouseArea {
     Rectangle {
         id: rectBorder
         radius: 8 * calaosApp.density
-        border.color: "#3AB4D7"
+        border.color: thisButton.disabled? Theme.colorAlpha(Theme.whiteColor, 0.40) : "#3AB4D7"
         border.width: 2 * calaosApp.density
         color: "transparent"
 
@@ -67,7 +70,7 @@ MouseArea {
         id: label
         font { family: calaosFont.fontFamilyThin; pointSize: 12 }
         anchors.centerIn: parent
-        color: "#3AB4D7"
+        color: thisButton.disabled? Theme.colorAlpha(Theme.whiteColor, 0.40) : "#3AB4D7"
     }
 
     hoverEnabled: enabled

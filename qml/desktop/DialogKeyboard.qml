@@ -20,7 +20,7 @@ Dialog {
     property bool multiline: false
     property string currentText
 
-    function openKeyboard(title, subtitle, initialText, multiline, cb) {
+    function openKeyboard(title, subtitle, initialText, inputEchoMode, multiline, cb) {
         lTitle.text = title
         lSubTitle.text = subtitle
         dlg.multiline = multiline
@@ -37,6 +37,9 @@ Dialog {
         } else {
             __callback = null
         }
+
+        textInput.echoMode = inputEchoMode
+        //textInputMulti.echoMode = inputEchoMode
 
         dlg.show()
     }

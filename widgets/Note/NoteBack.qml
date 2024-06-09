@@ -49,6 +49,7 @@ Rectangle {
                 onButtonClicked: AppActions.openKeyboard(qsTr("Note"),
                                                          qsTr("Write your note to be displayed on the desktop"),
                                                          noteText,
+                                                         TextInput.Normal,
                                                          true,
                                                          ActionTypes.changeNoteText,
                                                          { uuid: widgetModel.uuid })

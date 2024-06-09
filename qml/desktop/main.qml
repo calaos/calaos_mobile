@@ -343,6 +343,7 @@ Window {
                 dialogKeyboard.openKeyboard(qsTr("Keyboard"),
                                             qsTr("Change text for '%1'").arg(io.ioName),
                                             io.stateString,
+                                            TextInput.Normal,
                                             false,
                                             function (txt) {
                                                 io.sendStringValue(txt)
@@ -353,15 +354,26 @@ Window {
             type: ActionTypes.openKeyboard
 
             onDispatched: (filtertype, message) => {
+                //check if message.returnAction is of type function
+                let retFunc
+                if (typeof message.returnAction === "function") {
+                    retFunc = message.returnAction
+                } else {
+                    retFunc = function (txt) {
+                        AppDispatcher.dispatch(message.returnAction,
+                                               { text: txt,
+                                                 returnPayload: message.returnPayload
+                        })
+                    }
+                }
+
                 dialogKeyboard.openKeyboard(message.title,
                                             message.subtitle,
                                             message.initialText,
+                                            message.inputEchoMode,
                                             message.multiline,
-                                            function (txt) {
-                                                AppDispatcher.dispatch(message.returnAction,
-                                                                       { text: txt,
-                                                                         returnPayload: message.returnPayload })
-                                            })
+                                            retFunc
+                                            )
             }
         }
 

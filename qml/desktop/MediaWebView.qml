@@ -165,6 +165,7 @@ Item {
                 onBtClicked: AppActions.openKeyboard(qsTr("URL"),
                                                      qsTr("Enter the url to navigate to"),
                                                      "",
+                                                     TextInput.Normal,
                                                      false,
                                                      ActionTypes.webGoToUrl)
             }

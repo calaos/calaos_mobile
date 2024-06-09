@@ -41,10 +41,10 @@ QtObject {
     function openCameraSingleView(model) {
         AppDispatcher.dispatch(ActionTypes.openCameraSingleView, { camModel: model });
     }
-	
-	function openEventLog() {
-		AppDispatcher.dispatch(ActionTypes.openEventLog);
-	}
+
+    function openEventLog() {
+        AppDispatcher.dispatch(ActionTypes.openEventLog);
+    }
 
     function openEventPushViewer(text, picurl) {
         AppDispatcher.dispatch(ActionTypes.openEventPushViewer,
@@ -57,11 +57,12 @@ QtObject {
                                { notifUuid: uuid });
     }
 
-    function openKeyboard(kTitle, kSubtitle, txt, kMultiline, kReturnAction, kReturnPayload) {
+    function openKeyboard(kTitle, kSubtitle, txt, echoMode, kMultiline, kReturnAction, kReturnPayload) {
         AppDispatcher.dispatch(ActionTypes.openKeyboard,
                                { title: kTitle,
                                  subtitle: kSubtitle,
                                  initialText: txt,
+                                 inputEchoMode: echoMode,
                                  multiline: kMultiline,
                                  returnAction: kReturnAction,
                                  returnPayload: kReturnPayload });

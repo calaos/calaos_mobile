@@ -56,6 +56,8 @@ public:
     QML_READONLY_PROPERTY(bool, hasInstall) //If running on live install enable installation mode
     QML_READONLY_PROPERTY(bool, isSnapshotBoot) //if system has been booted read only from a snapshot
 
+    QML_READONLY_PROPERTY(bool, settingsLocked)
+
     QML_READONLY_PROPERTY(QString, appVersion)
 
 public:
@@ -94,6 +96,12 @@ public:
     Q_INVOKABLE void updateNetworkInfo();
     Q_INVOKABLE void updateSystemInfo();
 
+    Q_INVOKABLE bool unlockSettings(QString pass);
+    Q_INVOKABLE void lockSettings();
+
+    Q_INVOKABLE bool changeUsername(QString user);
+    Q_INVOKABLE bool changePassword(QString pass);
+
 private slots:
     void homeLoaded(const QVariantMap &homeData);
     void loginFailed();
@@ -126,6 +134,8 @@ private:
     QTranslator translator;
 
     bool startedWithOptHandled = false;
+
+    QTimer *timerLockSettings = nullptr;
 
     void loadSettings();
     void saveSettings();

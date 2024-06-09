@@ -28,6 +28,8 @@ public:
 
     QString getNotifPictureUrl(const QString &pic_uid);
 
+    bool changeCredentials(QString user, QString pass);
+
 private:
     QNetworkAccessManager *accessManager;
 
@@ -38,6 +40,9 @@ private:
     QString username, password;
     QString wshost, httphost;
     QString uuidPolling;
+
+    //used when changing credentials
+    QString username_temp, password_temp;
 
     int constate = ConStateUnknown;
 
@@ -92,6 +97,8 @@ signals:
     void eventTouchscreenCamera(QString camid);
     void logEventLoaded(const QVariantMap &data);
     void audioCoverDownloaded(const QString &camid, const QByteArray &data);
+    void changeCredsSuccess();
+    void changeCredsFailed();
 
 public slots:
     void login(QString user, QString pass, QString host);

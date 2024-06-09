@@ -26,6 +26,15 @@ Item {
         opacity: 0.6
     }
 
+    AppListener {
+        Filter {
+            type: ActionTypes.changeLogin
+            onDispatched: (filtertype, message) => {
+                calaosApp.changeLogin()
+            }
+        }
+    }
+
     ColumnLayout {
 
         anchors {
@@ -35,6 +44,110 @@ Item {
         }
 
         spacing: Units.dp(10)
+
+        RowLayout {
+            Image {
+                width: Units.dp(32)
+                height: Units.dp(32)
+                sourceSize: Qt.size(width, height)
+                source: calaosApp.getPictureSized("auth_icon")
+            }
+
+            Text {
+                Layout.fillWidth: true
+                font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pixelSize: Units.dp(18) }
+                color: Theme.whiteColor
+                text: qsTr("Change your credentials:")
+            }
+
+            Item { Layout.fillWidth: true; height: 1 }
+
+            ItemButtonAction {
+                iconSource: calaosApp.settingsLocked? "qrc:/img/ic_locked.svg": "qrc:/img/ic_unlocked.svg"
+
+                onButtonClicked: {
+                    if (calaosApp.settingsLocked) {
+                        AppActions.openKeyboard(qsTr("Locked"),
+                                                qsTr("Enter your password to unlock settings"),
+                                                "",
+                                                TextInput.Password,
+                                                false,
+                                                function(txt) {
+                                                    if (!calaosApp.unlockSettings(txt)) {
+                                                        AppActions.showNotificationMsg(qsTr("Unlock failed"), qsTr("The password you entered is wrong. Please try again."), qsTr("Close"))
+                                                    }
+                                                }
+                        )
+                    } else {
+                        calaosApp.lockSettings()
+                    }
+                }
+            }
+        }
+
+        RowLayout {
+
+            Item { Layout.fillWidth: true; height: 1 }
+
+            CalaosButton {
+                text: qsTr("Change username")
+                onButtonClicked: AppActions.openKeyboard(qsTr("Username"),
+                                                         qsTr("Enter your new username"),
+                                                         "",
+                                                         TextInput.Normal,
+                                                         false,
+                                                         function(txt) {
+                                                             if (!calaosApp.changeUsername(txt))
+                                                                 AppActions.showNotificationMsg(qsTr("Username change failed"), qsTr("The username was not changed. Please try again."), qsTr("Close"))
+                                                         })
+                hoverEnabled: false
+                disabled: calaosApp.settingsLocked
+            }
+
+            CalaosButton {
+                text: qsTr("Change password")
+                onButtonClicked: AppActions.openKeyboard(qsTr("Password"),
+                                                         qsTr("Enter your new password"),
+                                                         "",
+                                                         TextInput.PasswordEchoOnEdit,
+                                                         false,
+                                                         function(txt) {
+                                                             if (!calaosApp.changePassword(txt))
+                                                                 AppActions.showNotificationMsg(qsTr("Password change failed"), qsTr("The password was not changed. Please try again."), qsTr("Close"))
+                                                         })
+                hoverEnabled: false
+                disabled: calaosApp.settingsLocked
+            }
+        }
+
+        RowLayout {
+            Text {
+                Layout.fillWidth: true
+                font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pixelSize: Units.dp(18) }
+                color: Theme.whiteColor
+                text: qsTr("Actual username:")
+            }
+
+            Item { Layout.fillWidth: true; height: 1 }
+
+            Text {
+                Layout.fillWidth: true
+                font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pixelSize: Units.dp(18) }
+                color: Theme.blueColor
+                text: calaosApp.username
+            }
+        }
+
+        Item { Layout.preferredHeight: Units.dp(10); width: 1 }
+
+        Rectangle {
+            Layout.preferredHeight: 2
+            Layout.fillWidth: true
+
+            color: Theme.colorAlpha(Theme.whiteColor, 0.34)
+        }
+
+        Item { Layout.preferredHeight: Units.dp(10); width: 1 }
 
         Text {
             font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pixelSize: Units.dp(15) }
@@ -121,6 +234,7 @@ Item {
                 onButtonClicked: AppActions.openKeyboard(qsTr("Email"),
                                                          qsTr("Add a new email address to the list"),
                                                          "",
+                                                         TextInput.Normal,
                                                          false,
                                                          ActionTypes.addUserInfoEmail)
                 hoverEnabled: false

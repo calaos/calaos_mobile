@@ -97,7 +97,7 @@ signals:
     void eventTouchscreenCamera(QString camid);
     void logEventLoaded(const QVariantMap &data);
     void audioCoverDownloaded(const QString &camid, const QByteArray &data);
-    void changeCredsSuccess();
+    void changeCredsSuccess(QString uname, QString pass);
     void changeCredsFailed();
 
 public slots:

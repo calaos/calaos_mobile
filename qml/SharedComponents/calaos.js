@@ -1,4 +1,5 @@
 .pragma library
+.import QtQuick as QtQuick
 
 function getRoomTypeIcon(room) {
     var rname;
@@ -32,3 +33,28 @@ function getRoomTypeIcon(room) {
 
     return rname;
 }
+
+function singleshotTimer(interval, callback) {
+    var component = Qt.createComponent("SingleShotTimer.qml")
+    if (component.status === QtQuick.Component.Ready || component.status === QtQuick.Component.Error) {
+        singleshotTimerCreated(component, interval, callback)
+    } else {
+        component.statusChanged.connect(function() {
+            singleshotTimerCreated(component, interval, callback)
+        })
+    }
+}
+
+function singleshotTimerCreated(component, interval, callback) {
+    if (component.status === QtQuick.Component.Ready) {
+        var obj = component.createObject(null, { "interval": interval })
+        obj.triggered.connect( function () {
+            callback();
+            obj.destroy();
+        } );
+        obj.start();
+    } else if (component.status === QtQuick.Component.Error) {
+        console.log("Error loading component SingleShotTimer.qml:", component.errorString());
+    }
+}
+

@@ -26,15 +26,6 @@ Item {
         opacity: 0.6
     }
 
-    AppListener {
-        Filter {
-            type: ActionTypes.changeLogin
-            onDispatched: (filtertype, message) => {
-                calaosApp.changeLogin()
-            }
-        }
-    }
-
     ColumnLayout {
 
         anchors {
@@ -109,11 +100,25 @@ Item {
                 onButtonClicked: AppActions.openKeyboard(qsTr("Password"),
                                                          qsTr("Enter your new password"),
                                                          "",
-                                                         TextInput.PasswordEchoOnEdit,
+                                                         TextInput.Password,
                                                          false,
-                                                         function(txt) {
-                                                             if (!calaosApp.changePassword(txt))
-                                                                 AppActions.showNotificationMsg(qsTr("Password change failed"), qsTr("The password was not changed. Please try again."), qsTr("Close"))
+                                                         function(pass1) {
+                                                             Calaos.singleshotTimer(200, function() {
+                                                                 AppActions.openKeyboard(qsTr("Password"),
+                                                                                     qsTr("Enter your new password again to validate it"),
+                                                                                     "",
+                                                                                     TextInput.Password,
+                                                                                     false,
+                                                                                     function(pass2) {
+                                                                                         if (pass1 !== pass2) {
+                                                                                             AppActions.showNotificationMsg(qsTr("Password change failed"), qsTr("The two passwords you entered are not the same. Please try again."), qsTr("Close"))
+                                                                                             return
+                                                                                         }
+
+                                                                                         if (!calaosApp.changePassword(pass2))
+                                                                                             AppActions.showNotificationMsg(qsTr("Password change failed"), qsTr("The password was not changed. Please try again."), qsTr("Close"))
+                                                                                     })
+                                                             })
                                                          })
                 hoverEnabled: false
                 disabled: calaosApp.settingsLocked

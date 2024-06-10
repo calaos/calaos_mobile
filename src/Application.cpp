@@ -174,7 +174,7 @@ void Application::createQmlApp()
     update_isSnapshotBoot(false);
 #endif
 
-    update_settingsLocked(true);
+    update_settingsLocked(false);
 
     update_applicationStatus(Common::NotConnected);
 
@@ -186,6 +186,7 @@ void Application::createQmlApp()
     connect(calaosConnect, &CalaosConnection::disconnected, this, [=]()
     {
         update_applicationStatus(Common::NotConnected);
+        update_settingsLocked(false);
 
 #ifdef CALAOS_DESKTOP
         HardwareUtils::Instance()->showAlertMessage(tr("Network error"),
@@ -209,11 +210,18 @@ void Application::createQmlApp()
                                                     tr("Credentials were not changed. Please try again."),
                                                     tr("Close"));
     });
-    connect(calaosConnect, &CalaosConnection::changeCredsSuccess, this, [=]()
+    connect(calaosConnect, &CalaosConnection::changeCredsSuccess, this, [=](QString username, QString password)
     {
-        HardwareUtils::Instance()->showAlertMessage(tr("Credentials changed"),
-                                                    tr("Credentials were successfully changed."),
-                                                    tr("Close"));
+        update_username(username);
+        update_password(password);
+        HardwareUtils::Instance()->saveAuthKeychain(get_username(), get_password());
+
+        QTimer::singleShot(1000, []()
+        {
+            HardwareUtils::Instance()->showAlertMessage(tr("Credentials changed"),
+                                                        tr("Credentials were successfully changed."),
+                                                        tr("Close"));
+        });
     });
 
     scenarioModel = new ScenarioModel(&engine, calaosConnect, this);
@@ -392,6 +400,7 @@ void Application::resetAllData()
 
 void Application::homeLoaded(const QVariantMap &homeData)
 {
+    update_settingsLocked(true);
     homeModel->load(homeData);
     audioModel->load(homeData);
     favHomeModel->load(homeData);
@@ -456,6 +465,7 @@ void Application::homeLoaded(const QVariantMap &homeData)
 
 void Application::loginFailed()
 {
+    update_settingsLocked(false);
     homeModel->clear();
     audioModel->clear();
     scenarioModel->clear();

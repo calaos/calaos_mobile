@@ -887,7 +887,7 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
             {
                 username = username_temp;
                 password = password_temp;
-                emit changeCredsSuccess();
+                emit changeCredsSuccess(username, password);
 
                 //reconnect
                 logout();

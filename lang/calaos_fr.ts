@@ -4,35 +4,57 @@
 <context>
     <name>Application</name>
     <message>
-        <location filename="../src/Application.cpp" line="189"/>
-        <location filename="../src/Application.cpp" line="336"/>
+        <location filename="../src/Application.cpp" line="192"/>
+        <location filename="../src/Application.cpp" line="358"/>
         <source>Network error</source>
         <translation>Erreur réseau</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="190"/>
+        <location filename="../src/Application.cpp" line="193"/>
         <source>The connection to calaos_server was lost.It will reconnect automatically when calaos_serveris available again.</source>
         <translation>La connection avec calaos_server a été perdu. Elle va être retentée lorsque calaos_server sera de nouveau disponible.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="193"/>
-        <location filename="../src/Application.cpp" line="340"/>
-        <location filename="../src/Application.cpp" line="464"/>
+        <location filename="../src/Application.cpp" line="196"/>
+        <location filename="../src/Application.cpp" line="211"/>
+        <location filename="../src/Application.cpp" line="223"/>
+        <location filename="../src/Application.cpp" line="362"/>
+        <location filename="../src/Application.cpp" line="488"/>
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="337"/>
+        <location filename="../src/Application.cpp" line="209"/>
+        <source>Credentials change failed</source>
+        <translation>Échec de la modification des informations d&apos;identification</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="210"/>
+        <source>Credentials were not changed. Please try again.</source>
+        <translation>Les informations d&apos;identification n&apos;ont pas été modifiées. Veuillez réessayer.</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="221"/>
+        <source>Credentials changed</source>
+        <translation>Modification des informations d&apos;identification</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="222"/>
+        <source>Credentials were successfully changed.</source>
+        <translation>Les informations d&apos;identification ont été modifiées avec succès.</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="359"/>
         <source>No network connection found, this application requires a network connection to work.</source>
         <translation>Aucune connection réseau trouvée, cette application demande une connection au réseau pour fonctionner.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="462"/>
+        <location filename="../src/Application.cpp" line="486"/>
         <source>Login failed</source>
         <translation>Authentification échoué</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="463"/>
+        <location filename="../src/Application.cpp" line="487"/>
         <source>Connection failed, please check your credentials.</source>
         <translation>Connection échouée, veuillez vérifier vos identifiants.</translation>
     </message>
@@ -407,92 +429,152 @@
         <translation>Modifiez vos informations d&apos;identification :</translation>
     </message>
     <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="61"/>
+        <source>Locked</source>
+        <translation>Verrouillé</translation>
+    </message>
+    <message>
         <location filename="../qml/desktop/ConfigUserInfoView.qml" line="62"/>
+        <source>Enter your password to unlock settings</source>
+        <translation>Entrez votre mot de passe pour déverrouiller les paramètres</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="68"/>
+        <source>Unlock failed</source>
+        <translation>Échec du déverrouillage</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="68"/>
+        <source>The password you entered is wrong. Please try again.</source>
+        <translation>Le mot de passe que vous avez saisi est erroné. Veuillez réessayer.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="68"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="92"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="114"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="119"/>
+        <source>Close</source>
+        <translation>Fermer</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="84"/>
         <source>Change username</source>
         <translation>Changer de nom d&apos;utilisateur</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="63"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="85"/>
         <source>Username</source>
         <translation>Nom d&apos;utilisateur</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="64"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="86"/>
         <source>Enter your new username</source>
         <translation>Entrez votre nouveau nom d&apos;utilisateur</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="72"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="92"/>
+        <source>Username change failed</source>
+        <translation>Le changement de nom d&apos;utilisateur a échoué</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="92"/>
+        <source>The username was not changed. Please try again.</source>
+        <translation>Le nom d&apos;utilisateur n&apos;a pas été modifié. Veuillez réessayer.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="99"/>
         <source>Change password</source>
         <translation>Modifier le mot de passe</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="73"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="100"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="107"/>
         <source>Password</source>
         <translation>Mot de passe</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="74"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="101"/>
         <source>Enter your new password</source>
         <translation>Entrez votre nouveau mot de passe</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="87"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="108"/>
+        <source>Enter your new password again to validate it</source>
+        <translation>Saisissez à nouveau votre nouveau mot de passe pour le valider</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="114"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="119"/>
+        <source>Password change failed</source>
+        <translation>Le changement de mot de passe a échoué</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="114"/>
+        <source>The two passwords you entered are not the same. Please try again.</source>
+        <translation>Les deux mots de passe que vous avez introduits ne sont pas les mêmes. Veuillez réessayer.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="119"/>
+        <source>The password was not changed. Please try again.</source>
+        <translation>Le mot de passe n&apos;a pas été modifié. Veuillez réessayer.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="133"/>
         <source>Actual username:</source>
         <translation>Nom d&apos;utilisateur actuel :</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="114"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="160"/>
         <source>Here you can configure some personal information like your email address. It is used by Calaos to send you some email. For example, the Note widget can use those addresses to send notes to your mailbox.</source>
         <translation>Ici, vous pouvez configurer quelques informations personnelles comme votre adresse email. Ca sera utilisé par Calaos pour vous envoyer un mail. Par exemple, le widget Note utilisera ces adresses pour vous envoyer les notes dans votre boite.</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="192"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="238"/>
         <source>Add email</source>
         <translation>Ajouter un email</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="193"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="239"/>
         <source>Email</source>
         <translation>Email</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="194"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="240"/>
         <source>Add a new email address to the list</source>
         <translation>Ajouter uns nouvelle adresse email à la liste</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="232"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="279"/>
         <source>User information</source>
         <translation>Informations utilisateur</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="259"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="306"/>
         <source>Back to config</source>
         <translation>Retour à la config</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="266"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="313"/>
         <source>Quit</source>
         <translation>Quitter</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="278"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="325"/>
         <source>Remove email</source>
         <translation>Supprimer l&apos;adresse</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="279"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="326"/>
         <source>Remove this email &apos;%1&apos; from the list?</source>
         <translation>Supprimer l&apos;adresse &apos;%1&apos; de la liste?</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="281"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="328"/>
         <source>Yes, remove</source>
         <translation>Oui, supprimer</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="282"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="329"/>
         <source>No</source>
         <translation>Non</translation>
     </message>
@@ -655,27 +737,27 @@
 <context>
     <name>DialogKeyboard</name>
     <message>
-        <location filename="../qml/desktop/DialogKeyboard.qml" line="67"/>
+        <location filename="../qml/desktop/DialogKeyboard.qml" line="70"/>
         <source>Title</source>
         <translation>Titre</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogKeyboard.qml" line="88"/>
+        <location filename="../qml/desktop/DialogKeyboard.qml" line="91"/>
         <source>Sub Title</source>
         <translation>Sous titre</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogKeyboard.qml" line="222"/>
+        <location filename="../qml/desktop/DialogKeyboard.qml" line="225"/>
         <source>Clear current text</source>
         <translation>Effacer tout le texte</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogKeyboard.qml" line="233"/>
+        <location filename="../qml/desktop/DialogKeyboard.qml" line="236"/>
         <source>Valid</source>
         <translation>Valider</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogKeyboard.qml" line="247"/>
+        <location filename="../qml/desktop/DialogKeyboard.qml" line="250"/>
         <source>Quit</source>
         <translation>Quitter</translation>
     </message>
@@ -1270,17 +1352,17 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
         <translation>Entrez l&apos;URL ou naviguer</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MediaWebView.qml" line="173"/>
+        <location filename="../qml/desktop/MediaWebView.qml" line="174"/>
         <source>Keyboard</source>
         <translation>Clavier</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MediaWebView.qml" line="180"/>
+        <location filename="../qml/desktop/MediaWebView.qml" line="181"/>
         <source>Back to media</source>
         <translation>Retour aux média</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MediaWebView.qml" line="187"/>
+        <location filename="../qml/desktop/MediaWebView.qml" line="188"/>
         <source>Quit</source>
         <translation>Quitter</translation>
     </message>
@@ -1327,23 +1409,23 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
         <translation>Ecrivez votre note qui sera affichée sur le bureau</translation>
     </message>
     <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="60"/>
+        <location filename="../widgets/Note/NoteBack.qml" line="61"/>
         <source>Send by mail</source>
         <translation>Envoyer par mail</translation>
     </message>
     <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="90"/>
-        <location filename="../widgets/Note/NoteBack.qml" line="106"/>
+        <location filename="../widgets/Note/NoteBack.qml" line="91"/>
+        <location filename="../widgets/Note/NoteBack.qml" line="107"/>
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
     <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="103"/>
+        <location filename="../widgets/Note/NoteBack.qml" line="104"/>
         <source>No Emails</source>
         <translation>Aucune adresses</translation>
     </message>
     <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="104"/>
+        <location filename="../widgets/Note/NoteBack.qml" line="105"/>
         <source>No emails are configured. Please go to the Configuration panel and add at least one email address</source>
         <translation>Aucune adresses email n&apos;est configuré. Veuillez aller dans le panneau de configuration et ajoutez en au moins une</translation>
     </message>

@@ -1,0 +1,6 @@
+github.com/BurntSushi/toml v1.4.0 h1:kuoIxZQy2WRRk1pttg9asf+WVv6tWQuBNVmK8+nqPr0=
+github.com/BurntSushi/toml v1.4.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
+github.com/EYERCORD/deepl-sdk-go v0.0.0-20240304164143-3702161b5c06 h1:TIc3J3SU0s/Wk2vZH+r61YmWk4we13fJhN4Uc+TwO6I=
+github.com/EYERCORD/deepl-sdk-go v0.0.0-20240304164143-3702161b5c06/go.mod h1:FsSrqPdfAy/dL9Vj4lN+0wWkIDpttQivANlf+mwBBoE=
+github.com/cluttrdev/deepl-go v0.5.0 h1:6HZSTwauES6oump5OLD4W6JvA6nXHODFlHYsOz5K1sU=
+github.com/cluttrdev/deepl-go v0.5.0/go.mod h1:0w9pjJXy9OahbWY/D6KoOQwhLT0229H1hGnYd4eRbmg=

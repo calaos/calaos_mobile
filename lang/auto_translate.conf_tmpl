@@ -1,0 +1,5 @@
+[deepl]
+api_key = "YOUR_DEEPL_API_KEY"
+
+[openai]
+api_key = "YOUR_OPENAI_API_KEY"

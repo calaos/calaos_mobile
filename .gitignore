@@ -11,3 +11,6 @@ qrc_qml_mobile.cpp
 qrc_qml_shared.cpp
 desktop.pro.user*
 mobile.pro.user*
+lang/auto_translate.exe
+lang/auto_translate
+lang/auto_translate.conf

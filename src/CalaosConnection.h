@@ -28,7 +28,7 @@ public:
 
     QString getNotifPictureUrl(const QString &pic_uid);
 
-    bool changeCredentials(QString user, QString pass);
+    void changeCredentials(QString user, QString pass);
 
 private:
     QNetworkAccessManager *accessManager;

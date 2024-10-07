@@ -635,10 +635,10 @@ void CalaosConnection::getAudioCover(const QString &playerid)
     reqReplies.append(reqReply);
 }
 
-bool CalaosConnection::changeCredentials(QString user, QString pass)
+void CalaosConnection::changeCredentials(QString user, QString pass)
 {
     //Only supported for websocket
-    if (!isWebsocket()) return false;
+    if (!isWebsocket()) return;
 
     username_temp = user;
     password_temp = pass;

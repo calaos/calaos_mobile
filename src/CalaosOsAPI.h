@@ -32,6 +32,8 @@ public:
     void getNetworkInterfaces(std::function<void(bool success, const QJsonValue &res)> callback);
     void getSystemInfo(std::function<void(bool success, const QJsonValue &res)> callback);
 
+    void configureNetwork(const QJsonObject &networkConfig, std::function<void(bool success)> callback);
+
 private:
     void checkErrors(const QJsonDocument &jdoc, NetworkRequest *n = nullptr);
     void doPost(QString apiPath, const QByteArray &postData, std::function<void(bool success)> callback);

@@ -102,6 +102,8 @@ public:
     Q_INVOKABLE bool changeUsername(QString user);
     Q_INVOKABLE bool changePassword(QString pass);
 
+    Q_INVOKABLE void updateNetwork(QString intfName, bool dhcp, QString ipv4, QString netmask, QString gateway, QString dns, QString dnsSearch);
+
 private slots:
     void homeLoaded(const QVariantMap &homeData);
     void loginFailed();

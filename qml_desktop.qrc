@@ -58,5 +58,6 @@
         <file>qml/desktop/ConfigUpdateView.qml</file>
         <file>qml/desktop/ConfigInstallView.qml</file>
         <file>qml/desktop/DialogRecoveryBoot.qml</file>
+        <file>qml/desktop/DialogNetInterface.qml</file>
     </qresource>
 </RCC>

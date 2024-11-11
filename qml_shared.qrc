@@ -33,5 +33,6 @@
         <file>qml/SharedComponents/IOHeater.qml</file>
         <file>qml/SharedComponents/IOAnalogStyled.qml</file>
         <file>qml/SharedComponents/SingleShotTimer.qml</file>
+        <file>qml/SharedComponents/CalaosCombo.qml</file>
     </qresource>
 </RCC>

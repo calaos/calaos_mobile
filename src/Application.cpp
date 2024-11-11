@@ -848,3 +848,52 @@ bool Application::changePassword(QString pass)
 
     return true;
 }
+
+void Application::updateNetwork(QString intfName, bool dhcp, QString ipv4, QString netmask, QString gateway, QString dns, QString dnsSearch)
+{
+    //Find the network interface
+    NetworkInfo *net = nullptr;
+
+    for (int i = 0;i < m_netAddresses->size();i++)
+    {
+        if (m_netAddresses->at(i)->get_netinterface() == intfName)
+        {
+            net = m_netAddresses->at(i);
+            break;
+        }
+    }
+
+    if (!net)
+    {
+        qWarning() << "Network interface not found: " << intfName;
+        return;
+    }
+
+    net->update_isDHCP(dhcp);
+    net->update_ipv4(ipv4);
+    net->update_netmask(netmask);
+    net->update_gateway(gateway);
+    net->update_dnsServers(dns);
+    net->update_searchDomains(dnsSearch);
+
+    //Update the network
+    CalaosOsAPI::Instance()->configureNetwork(net->toJson(),
+                                              [this](bool success)
+                                              {
+                                                  if (!success)
+                                                  {
+                                                      QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(&engine);
+                                                      QVariantMap m = {{ "title", "Error" },
+                                                                       { "message", "Failed to configure network. An error occured. Please check logs" },
+                                                                       { "button", "Close" }};
+                                                      appDispatcher->dispatch("showNotificationMsg", m);
+                                                  }
+                                                  else
+                                                  {
+                                                      QTimer::singleShot(1000, this, [this]()
+                                                                         {
+                                                                             updateNetworkInfo();
+                                                                         });
+                                                  }
+                                              });
+}

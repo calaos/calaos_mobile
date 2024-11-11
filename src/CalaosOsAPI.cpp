@@ -172,6 +172,13 @@ void CalaosOsAPI::getSystemInfo(std::function<void (bool, const QJsonValue &)> c
     doGet("/api/system/info", callback);
 }
 
+void CalaosOsAPI::configureNetwork(const QJsonObject &networkConfig, std::function<void (bool)> callback)
+{
+    QByteArray data = QJsonDocument(networkConfig).toJson(QJsonDocument::Compact);
+    qDebug() << "Configure network:" << QString(data);
+    doPost(QStringLiteral("/api/network/%1").arg(networkConfig["name"].toString()), data, callback);
+}
+
 void CalaosOsAPI::checkErrors(const QJsonDocument &jdoc, NetworkRequest *n)
 {
     QJsonObject jobj = jdoc.object();

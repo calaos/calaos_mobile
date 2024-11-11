@@ -22,6 +22,10 @@ public:
     NetworkInfo(QObject *parent = nullptr);
 
     void setIPv4CIDR(QString cidr);
+    QJsonObject toJson() const;
+
+private:
+    int netmaskToCidr(const QString& netmask) const;
 };
 
 #endif // UPTIME_H

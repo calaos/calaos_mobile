@@ -107,7 +107,7 @@ Item {
                                 Layout.alignment: Qt.AlignVCenter
                                 imageSource: "button_empty"
                                 iconSource: "qrc:/img/ic_pen.svg"
-                                onButtonClicked: {}
+                                onButtonClicked: dialogNetInterface.show(index)
                             }
                         }
 
@@ -151,7 +151,10 @@ Item {
 
             ScrollBar { listObject: list }
         }
+    }
 
+    DialogNetInterface {
+        id: dialogNetInterface
     }
 
     ConfigTabs {

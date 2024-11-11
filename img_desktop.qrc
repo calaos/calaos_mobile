@@ -363,5 +363,6 @@
         <file>img/auth_icon.svg</file>
         <file>img/ic_locked.svg</file>
         <file>img/ic_unlocked.svg</file>
+        <file>img/ic_pen.svg</file>
     </qresource>
 </RCC>

@@ -40,32 +40,116 @@ Item {
             bottom: footer.top; bottomMargin: Units.dp(20)
         }
 
-        ColumnLayout {
-
+        Item {
             anchors {
-                left: parent.left; leftMargin: Units.dp(60)
-                right: parent.right; rightMargin: Units.dp(60)
-                verticalCenter: parent.verticalCenter
+                fill: parent
+                topMargin: Units.dp(2)
+                bottomMargin: Units.dp(2)
             }
 
-            spacing: Units.dp(10)
+            clip: true
 
-            Text {
-                font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pixelSize: Units.dp(15) }
-                color: Theme.colorAlpha(Theme.whiteColor, 0.7)
-                text: qsTr("TODO: Network")
-                wrapMode: Text.WordWrap
+            ListView {
+                id: list
+                anchors {
+                    fill: parent
+                    topMargin: Units.dp(3)
+                    bottomMargin: Units.dp(3)
+                    leftMargin: Units.dp(5)
+                    rightMargin: Units.dp(5)
+                }
 
-                Layout.fillWidth: true
+                model: calaosApp.netAddresses
+
+                spacing: Units.dp(10)
+
+                delegate: ItemBase {
+                    height: col.implicitHeight + Units.dp(12)
+
+                    ColumnLayout {
+                        id: col
+                        anchors {
+                            leftMargin: Units.dp(5)
+                            rightMargin: Units.dp(5)
+                            topMargin: Units.dp(6)
+                            left: parent.left
+                            right: parent.right
+                            top: parent.top
+                            bottomMargin: Units.dp(6)
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+
+                            Text {
+                                Layout.alignment: Qt.AlignVCenter
+                                font { family: calaosFont.fontFamily; weight: Font.Medium; pointSize: 14 }
+                                color: Theme.colorAlpha(Theme.whiteColor, 0.7)
+                                text: netinterface
+                            }
+
+                            Text {
+                                Layout.alignment: Qt.AlignVCenter
+                                Layout.fillWidth: true
+                                font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 12 }
+                                color: Theme.colorAlpha(Theme.whiteColor, 0.5)
+                                text: qsTr("(%1)").arg(isDHCP?"DHCP":"Static")
+                            }
+
+                            Text {
+                                Layout.alignment: Qt.AlignVCenter
+                                font { family: calaosFont.fontFamily; weight: Font.Light; pointSize: 12 }
+                                color: (netstate == "online" || netstate == "online") ? Theme.greenColor: Theme.redColor
+                                text: netstate
+                            }
+
+                            ItemButtonAction {
+                                Layout.alignment: Qt.AlignVCenter
+                                imageSource: "button_empty"
+                                iconSource: "qrc:/img/ic_pen.svg"
+                                onButtonClicked: {}
+                            }
+                        }
+
+                        ConfigTabLabelValue {
+                            labelText: "IP address:"
+                            valueText: ipv4
+                            small: true
+                            visible: ipv4 !== ""
+                        }
+
+                        ConfigTabLabelValue {
+                            labelText: "MAC address:"
+                            valueText: mac
+                            small: true
+                            visible: mac !== ""
+                        }
+
+                        ConfigTabLabelValue {
+                            labelText: "Gateway:"
+                            valueText: gateway
+                            small: true
+                            visible: gateway !== ""
+                        }
+
+                        ConfigTabLabelValue {
+                            labelText: "DNS:"
+                            valueText: dnsServers
+                            small: true
+                            visible: dnsServers !== ""
+                        }
+
+                        ConfigTabLabelValue {
+                            labelText: "DNS Search domains:"
+                            valueText: searchDomains
+                            small: true
+                            visible: searchDomains !== ""
+                        }
+                    }
+                }
             }
 
-
-
-
-
-
-
-
+            ScrollBar { listObject: list }
         }
 
     }
@@ -121,6 +205,13 @@ Item {
 
             Item { //spacer
                 height: 1; Layout.fillWidth: true
+            }
+
+            FooterButton {
+                label: qsTr("Refresh")
+                icon: "qrc:/img/button_action_reload.png"
+                Layout.minimumWidth: width
+                onBtClicked: calaosApp.updateNetworkInfo()
             }
 
             FooterButton {

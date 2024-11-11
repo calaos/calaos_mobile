@@ -739,10 +739,29 @@ void Application::updateNetworkInfo()
                 NetworkInfo *net = new NetworkInfo();
 
                 net->update_netinterface(o["name"].toString());
-                net->update_ipv4(o["ipv4"].toString());
+                net->setIPv4CIDR(o["ipv4"].toString());
                 net->update_ipv6(o["ipv6"].toString());
                 net->update_mac(o["mac"].toString());
                 net->update_isLoopback(o["is_loopback"].toBool());
+                net->update_gateway(o["gateway"].toString());
+                net->update_netstate(o["state"].toString());
+                net->update_isDHCP(o["dhcp"].toBool());
+
+                //DNS
+                QJsonArray dns = o["dns_servers"].toArray();
+                QStringList dnsList;
+                for (int j = 0;j < dns.size();j++)
+                    dnsList << dns[j].toString();
+
+                net->update_dnsServers(dnsList.join(", "));
+
+                //Search domains
+                QJsonArray search = o["search_domains"].toArray();
+                QStringList searchList;
+                for (int j = 0;j < search.size();j++)
+                    searchList << search[j].toString();
+
+                net->update_searchDomains(searchList.join(", "));
 
                 m_netAddresses->append(net);
             }

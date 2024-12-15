@@ -116,7 +116,7 @@ void HardwareUtilsDesktop::showNetworkActivity(bool en)
 {
     if (qmlEngine->rootObjects().isEmpty()) return;
 
-    qInfo() << "showNetworkActivity(" << en << ")";
+    //qInfo() << "showNetworkActivity(" << en << ")";
 
     QVariant ret;
     QObject *root = qmlEngine->rootObjects().at(0);

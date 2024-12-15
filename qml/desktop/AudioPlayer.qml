@@ -342,6 +342,7 @@ Item {
             horizontalAlignment: Text.AlignHCenter
             elide: Text.ElideMiddle
             color: "#848484"
+            visible: hasModel
             anchors {
                 left: sliderVolume.left; right: sliderVolume.right
                 bottom: sliderVolume.top; bottomMargin: Units.dp(5)
@@ -360,6 +361,7 @@ Item {
             from: 0; to: 100
             value: playerModel.volume
             onValueChanged: playerModel.sendVolume(value)
+            visible: hasModel
         }
     }
 

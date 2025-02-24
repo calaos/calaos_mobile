@@ -207,7 +207,7 @@ Item {
                 color: Qt.rgba(255, 255, 255, 0.2)
                 Rectangle {
                     height: parent.height
-                    width: parent.width * (playerModel.elapsed / playerModel.duration)
+                    width: parent.width * Math.min(1, Math.max(0, playerModel.elapsed / playerModel.duration))
                     color: "#3AB4D7"
                 }
             }
@@ -282,6 +282,8 @@ Item {
                     font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 10 }
                     text: playerModel.artist === ""? "N/A": playerModel.artist
                     color: playerModel.status === Common.StatusPlay? "#3AB4D7": "#848484"
+                    Layout.fillWidth: true
+                    elide: Text.ElideRight
                 }
 
                 Text {
@@ -294,6 +296,8 @@ Item {
                     font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 10 }
                     text: playerModel.album === ""? "N/A": playerModel.album
                     color: playerModel.status === Common.StatusPlay? "#3AB4D7": "#848484"
+                    Layout.fillWidth: true
+                    elide: Text.ElideRight
                 }
 
                 Text {
@@ -306,6 +310,8 @@ Item {
                     font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 10 }
                     text: playerModel.title === ""? "N/A": playerModel.title
                     color: playerModel.status === Common.StatusPlay? "#3AB4D7": "#848484"
+                    Layout.fillWidth: true
+                    elide: Text.ElideRight
                 }
 
                 Text {
@@ -318,6 +324,8 @@ Item {
                     font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 10 }
                     text: playerModel.genre === ""? "N/A": playerModel.genre
                     color: playerModel.status === Common.StatusPlay? "#3AB4D7": "#848484"
+                    Layout.fillWidth: true
+                    elide: Text.ElideRight
                 }
 
                 Text {
@@ -330,6 +338,8 @@ Item {
                     font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 10 }
                     text: playerModel.duration === ""? "N/A": Utils.time2string_digit(playerModel.duration)
                     color: playerModel.status === Common.StatusPlay? "#3AB4D7": "#848484"
+                    Layout.fillWidth: true
+                    elide: Text.ElideRight
                 }
             }
         }

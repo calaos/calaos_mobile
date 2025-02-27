@@ -134,7 +134,9 @@ void AudioPlayer::updatePlayerState(const QVariantMap &d)
     update_status(Common::audioStatusFromString(playerData["status"].toString()));
     update_id(playerData["id"].toString());
     update_name(playerData["name"].toString());
-    update_volume(playerData["volume"].toDouble());
+    auto vol = playerData["volume"].toDouble();
+    if (get_volume() != vol)
+        update_volume(playerData["volume"].toDouble());
     update_elapsed(playerData["time_elapsed"].toDouble());
 
     QVariantMap currentTrack = playerData["current_track"].toMap();

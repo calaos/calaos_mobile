@@ -347,11 +347,12 @@ Item {
         Text {
             id: labelVol
             font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 8 }
-            text: "%1%".arg(playerModel.volume)
+            text: "%1%".arg(sliderVolume.pressed ? Math.round(sliderVolume.position * 100.0) : playerModel.volume)
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
             elide: Text.ElideMiddle
-            color: "#848484"
+            color: sliderVolume.pressed? "#3AB4D7" : "#848484"
+            font.bold: sliderVolume.pressed
             visible: hasModel
             anchors {
                 left: sliderVolume.left; right: sliderVolume.right

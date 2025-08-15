@@ -71,7 +71,7 @@ RUN rm -fr /*pkg.tar.zst*
 RUN pacman -S --noconfirm \
     xorg-server mesa \
     xf86-input-{libinput,evdev,elographics,synaptics,vmmouse} \
-    xf86-video-{amdgpu,ati,fbdev,intel,nouveau,vesa,vmware} \
+    xf86-video-{amdgpu,ati,fbdev,intel,nouveau,vesa} \
     xorg-setxkbmap virtualbox-guest-utils \
     xorg-{server,xinit,apps} xdg-user-dirs \
     ttf-{bitstream-vera,liberation,freefont,dejavu} freetype2 \

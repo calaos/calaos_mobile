@@ -5,13 +5,12 @@ import "."
 ItemBase {
     property variant modelData
 
-    Text {
+    ScrollingText {
         id: name
         color: "#3ab4d7"
         font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 12 }
         text: modelData.stateString == ""?modelData.ioName:modelData.stateString
         clip: true
-        elide: Text.ElideMiddle
         anchors {
             left: parent.left; leftMargin: 8 * calaosApp.density
             right: modelData.rw?btkb.left:parent.right

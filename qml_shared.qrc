@@ -34,5 +34,7 @@
         <file>qml/SharedComponents/IOAnalogStyled.qml</file>
         <file>qml/SharedComponents/SingleShotTimer.qml</file>
         <file>qml/SharedComponents/CalaosCombo.qml</file>
+        <file>qml/SharedComponents/ScrollingText.qml</file>
+        <file>qml/SharedComponents/SensorStatusIcon.qml</file>
     </qresource>
 </RCC>

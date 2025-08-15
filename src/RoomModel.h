@@ -163,6 +163,22 @@ class IOBase: public QObject, public QStandardItem
 
     QML_READONLY_PROPERTY(QColor, rgbColor)
 
+    //Status
+    QML_READONLY_PROPERTY(bool, hasStatusInfo)
+
+    QML_READONLY_PROPERTY(bool, hasStatusConnected)
+    QML_READONLY_PROPERTY(bool, statusConnected)
+    QML_READONLY_PROPERTY(bool, hasStatusBattLevel)
+    QML_READONLY_PROPERTY(int, statusBattLevel)
+    QML_READONLY_PROPERTY(bool, hasStatusWirelessSignal)
+    QML_READONLY_PROPERTY(int, statusWirelessSignal)
+    QML_READONLY_PROPERTY(bool, hasStatusUptime)
+    QML_READONLY_PROPERTY(qint64, statusUptime)
+    QML_READONLY_PROPERTY(bool, hasStatusIP)
+    QML_READONLY_PROPERTY(QString, statusIP)
+    QML_READONLY_PROPERTY(bool, hasStatusWifiSSID)
+    QML_READONLY_PROPERTY(QString, statusWifiSSID)
+
 public:
     IOBase(QQmlApplicationEngine *eng, CalaosConnection *con, int t);
 
@@ -211,6 +227,7 @@ private:
 private slots:
     void inputChanged(QString id, QString key, QString value);
     void outputChanged(QString id, QString key, QString value);
+    void ioStatusChanged(QString id, QVariantMap statusData);
 
     void textDialogValid(const QString &text);
 

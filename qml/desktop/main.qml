@@ -305,6 +305,8 @@ Window {
 
     DialogRecoveryBoot { id: dialogRecoveryBoot }
 
+    DialogSensorDetails { id: dialogSensorDetails }
+
     //Dispatch actions
     AppListener {
         Filter {
@@ -394,6 +396,14 @@ Window {
 
             onDispatched: (filtertype, message) => {
                 dialogRecoveryBoot.show()
+            }
+        }
+
+        Filter {
+            type: ActionTypes.showSensorDetails
+
+            onDispatched: (filtertype, message) => {
+                dialogSensorDetails.showSensor(message.sensor)
             }
         }
     }

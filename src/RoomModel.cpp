@@ -246,6 +246,14 @@ IOBase::IOBase(QQmlApplicationEngine *eng, CalaosConnection *con, int t):
     connection(con),
     ioType(t)
 {
+    if (ioType == IOInput)
+        connect(connection, &CalaosConnection::eventInputChange,
+                this, &IOBase::inputChanged);
+    else
+        connect(connection, &CalaosConnection::eventOutputChange,
+                this, &IOBase::outputChanged);
+
+    connect(connection, &CalaosConnection::eventIoStatusChange, this, &IOBase::ioStatusChanged);
 }
 
 void IOBase::load(const QVariantMap &io)
@@ -274,12 +282,11 @@ void IOBase::load(const QVariantMap &io)
     if (m_ioType == Common::AnalogOut)
         update_rw(true);
 
-    if (ioType == IOInput)
-        connect(connection, SIGNAL(eventInputChange(QString,QString,QString)),
-                this, SLOT(inputChanged(QString,QString,QString)));
-    else
-        connect(connection, SIGNAL(eventOutputChange(QString,QString,QString)),
-                this, SLOT(outputChanged(QString,QString,QString)));
+    if (io.contains("status_info"))
+    {
+        QVariantMap statusInfo = io["status_info"].toMap();
+        ioStatusChanged(ioData["id"].toString(), statusInfo);
+    }
 }
 
 void IOBase::checkFirstState()
@@ -601,6 +608,50 @@ void IOBase::outputChanged(QString id, QString key, QString value)
     {
         ioData["name"] = value;
         update_ioName(value);
+    }
+}
+
+void IOBase::ioStatusChanged(QString id, QVariantMap statusData)
+{
+    if (id != ioData["id"].toString()) return; //not for us
+
+    //If there is any status info, we can enable the status info button
+    update_hasStatusInfo(true);
+
+    if (statusData.contains("battery_level"))
+    {
+        update_hasStatusBattLevel(true);
+        update_statusBattLevel(statusData["battery_level"].toInt());
+    }
+
+    if (statusData.contains("connected"))
+    {
+        update_hasStatusConnected(true);
+        update_statusConnected(statusData["connected"].toString() == "true");
+    }
+
+    if (statusData.contains("wireless_signal"))
+    {
+        update_hasStatusWirelessSignal(true);
+        update_statusWirelessSignal(statusData["wireless_signal"].toInt());
+    }
+
+    if (statusData.contains("uptime"))
+    {
+        update_hasStatusUptime(true);
+        update_statusUptime(statusData["uptime"].toLongLong());
+    }
+
+    if (statusData.contains("ip_address"))
+    {
+        update_hasStatusIP(true);
+        update_statusIP(statusData["ip_address"].toString());
+    }
+
+    if (statusData.contains("wifi_ssid"))
+    {
+        update_hasStatusWifiSSID(true);
+        update_statusWifiSSID(statusData["wifi_ssid"].toString());
     }
 }
 

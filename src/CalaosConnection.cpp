@@ -812,6 +812,13 @@ void CalaosConnection::processEventsV3(QVariantMap msg)
     {
         emit eventTouchscreenCamera(data["id"].toString());
     }
+    else if (msg["type_str"].toString() == "io_status_changed")
+    {
+        if (data.contains("id"))
+        {
+            emit eventIoStatusChange(data["id"].toString(), data);
+        }
+    }
 
     //TODO all other event types
 }

@@ -364,5 +364,16 @@
         <file>img/ic_locked.svg</file>
         <file>img/ic_unlocked.svg</file>
         <file>img/ic_pen.svg</file>
+        <file>img/icon_sensor.png</file>
+        <file>img/icon_sensor@2x.png</file>
+        <file>img/icon_battery_25.svg</file>
+        <file>img/icon_battery_75.svg</file>
+        <file>img/icon_battery_empty.svg</file>
+        <file>img/icon_battery_full.svg</file>
+        <file>img/icon_wifi_off.svg</file>
+        <file>img/icon_wifi_25.svg</file>
+        <file>img/icon_wifi_50.svg</file>
+        <file>img/icon_wifi_75.svg</file>
+        <file>img/icon_wifi_100.svg</file>
     </qresource>
 </RCC>

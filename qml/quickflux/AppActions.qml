@@ -100,4 +100,10 @@ QtObject {
                                 showApp: showRebootApp,
                                });
     }
+
+    function showSensorDetails(sensorModel) {
+        AppDispatcher.dispatch(ActionTypes.showSensorDetails, {
+            sensor: sensorModel
+        });
+    }
 }

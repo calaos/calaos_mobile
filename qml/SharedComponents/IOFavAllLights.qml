@@ -17,7 +17,7 @@ ItemBase {
         }
     }
 
-    Text {
+    ScrollingText {
         color: icon.iconState?"#ffda5a":"#3ab4d7"
         font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 12 }
         text: lightOnModel.lights_count === 1?
@@ -26,7 +26,6 @@ ItemBase {
                   qsTr("%1 lights are on").arg(lightOnModel.lights_count):
                   qsTr("All lights are off")
         clip: true
-        elide: Text.ElideMiddle
         anchors {
             left: icon.right; leftMargin: 8 * calaosApp.density
             right: bt.left; rightMargin: 8 * calaosApp.density

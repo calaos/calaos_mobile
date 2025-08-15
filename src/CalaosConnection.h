@@ -99,6 +99,7 @@ signals:
     void audioCoverDownloaded(const QString &camid, const QByteArray &data);
     void changeCredsSuccess(QString uname, QString pass);
     void changeCredsFailed();
+    void eventIoStatusChange(QString id, QVariantMap statusData);
 
 public slots:
     void login(QString user, QString pass, QString host);

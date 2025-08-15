@@ -17,13 +17,12 @@ ItemBase {
         }
     }
 
-    Text {
+    ScrollingText {
         id: name
         color: "#3ab4d7"
         font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 12 }
         text: modelData.ioName
         clip: true
-        elide: Text.ElideMiddle
         anchors {
             left: icon.right; leftMargin: 8 * calaosApp.density
             right: iconWarning.left; rightMargin: 8 * calaosApp.density

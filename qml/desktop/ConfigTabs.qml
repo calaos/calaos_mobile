@@ -66,30 +66,7 @@ BorderImage {
                     labelText: qsTr("System started since:")
 
                     property int uptime: calaosApp.uptime
-                    onUptimeChanged: uptimeTxt.valueText = formatTime(uptime)
-
-                    function formatTime(seconds) {
-                        if (seconds < 60) {
-                            return seconds + ' sec';
-                        } else if (seconds < 3600) {
-                            const minutes = Math.floor(seconds / 60);
-                            return minutes + ' min';
-                        } else if (seconds < 86400) {
-                            const hours = Math.floor(seconds / 3600);
-                            if (hours > 1) {
-                                return qsTr("%1 hours").arg(hours)
-                            } else {
-                                return qsTr("%1 hour").arg(hours)
-                            }
-                        } else {
-                            const days = Math.floor(seconds / 86400);
-                            if (days > 1) {
-                                return qsTr("%1 days").arg(days)
-                            } else {
-                                return qsTr("%1 day").arg(days)
-                            }
-                        }
-                    }
+                    onUptimeChanged: uptimeTxt.valueText = Calaos.formatTime(uptime)
 
                     Component.onCompleted: {
                         calaosApp.updateSystemInfo()

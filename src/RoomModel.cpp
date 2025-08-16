@@ -246,6 +246,19 @@ IOBase::IOBase(QQmlApplicationEngine *eng, CalaosConnection *con, int t):
     connection(con),
     ioType(t)
 {
+    update_rw(false);
+    update_hasStatusInfo(false);
+    update_hasStatusConnected(false);
+    update_statusConnected(false);
+    update_hasStatusBattLevel(false);
+    update_statusBattLevel(0);
+    update_hasStatusWirelessSignal(false);
+    update_statusWirelessSignal(0);
+    update_hasStatusUptime(false);
+    update_statusUptime(0);
+    update_hasStatusIP(false);
+    update_hasStatusWifiSSID(false);
+
     if (ioType == IOInput)
         connect(connection, &CalaosConnection::eventInputChange,
                 this, &IOBase::inputChanged);

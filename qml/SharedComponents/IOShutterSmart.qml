@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Layouts
 import "."
 
 ItemBase {
@@ -6,64 +7,59 @@ ItemBase {
 
     height: 130 * calaosApp.density
 
-    ScrollingText {
-        id: name
-        color: !modelData.stateShutterBool?"#ffda5a":"#3ab4d7"
-        font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 12 }
-        text: modelData.ioName
-        clip: true
+    RowLayout {
+        id: row
+
         anchors {
-            left: parent.left; leftMargin: 8 * calaosApp.density
-            right: btup.left; rightMargin: 8 * calaosApp.density
+            left: parent.left; leftMargin: Units.dp(8)
+            right: parent.right; rightMargin: Units.dp(8)
             verticalCenter: parent.verticalCenter
-            verticalCenterOffset: -40 * calaosApp.density
+            verticalCenterOffset: Units.dp(-40)
         }
 
-        Behavior on color { ColorAnimation { duration: 200 } }
-    }
+        ScrollingText {
+            id: name
+            color: !modelData.stateShutterBool?"#ffda5a":"#3ab4d7"
+            font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 12 }
+            text: modelData.ioName
+            clip: true
+            Layout.fillWidth: true
 
-    ItemButtonAction {
-        id: btdown
-        anchors {
-            right: parent.right; rightMargin: 8 * calaosApp.density
-            verticalCenter: parent.verticalCenter
-            verticalCenterOffset: -40 * calaosApp.density
+            Behavior on color { ColorAnimation { duration: 200 } }
         }
-        imageSource: "button_down2"
 
-        onButtonClicked: {
-            feedbackAnim()
-            modelData.sendDown()
+        SensorStatusIcon {
+            sensor: modelData
         }
-    }
 
-    ItemButtonAction {
-        id: btstop
-        anchors {
-            right: btdown.left; rightMargin: 8 * calaosApp.density
-            verticalCenter: parent.verticalCenter
-            verticalCenterOffset: -40 * calaosApp.density
+        ItemButtonAction {
+            id: btdown
+            imageSource: "button_down2"
+
+            onButtonClicked: {
+                feedbackAnim()
+                modelData.sendDown()
+            }
         }
-        imageSource: "button_stop"
 
-        onButtonClicked: {
-            feedbackAnim()
-            modelData.sendStop()
+        ItemButtonAction {
+            id: btstop
+            imageSource: "button_stop"
+
+            onButtonClicked: {
+                feedbackAnim()
+                modelData.sendStop()
+            }
         }
-    }
 
-    ItemButtonAction {
-        id: btup
-        anchors {
-            right: btstop.left; rightMargin: 8 * calaosApp.density
-            verticalCenter: parent.verticalCenter
-            verticalCenterOffset: -40 * calaosApp.density
-        }
-        imageSource: "button_up2"
+        ItemButtonAction {
+            id: btup
+            imageSource: "button_up2"
 
-        onButtonClicked: {
-            feedbackAnim()
-            modelData.sendUp()
+            onButtonClicked: {
+                feedbackAnim()
+                modelData.sendUp()
+            }
         }
     }
 
@@ -77,7 +73,7 @@ ItemBase {
         anchors {
             left: windowBg.right; leftMargin: 8 * calaosApp.density
             right: parent.right; rightMargin: 8 * calaosApp.density
-            top: name.bottom; topMargin: 18 * calaosApp.density
+            top: row.bottom; topMargin: 18 * calaosApp.density
         }
     }
 
@@ -121,7 +117,7 @@ ItemBase {
         source: calaosApp.getPictureSized("part_shutter")
         anchors {
             left: parent.left; leftMargin: 14 * calaosApp.density
-            top: name.bottom; topMargin: 8 * calaosApp.density
+            top: row.bottom; topMargin: 8 * calaosApp.density
         }
     }
 

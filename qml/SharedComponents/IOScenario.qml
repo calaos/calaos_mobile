@@ -1,60 +1,60 @@
 import QtQuick
+import QtQuick.Layouts
 import "."
 
 ItemBase {
     property variant modelData
 
-    IconItem {
-        id: icon
-
-        source: calaosApp.getPictureSized("icon_scenario")
+    RowLayout {
 
         anchors {
-            left: parent.left; leftMargin: 8 * calaosApp.density
-            verticalCenter: parent.verticalCenter
-        }
-    }
-
-    ScrollingText {
-        id: name
-        color: "#3ab4d7"
-        font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 12 }
-        text: modelData.ioName
-        clip: true
-        anchors {
-            left: icon.right; leftMargin: 8 * calaosApp.density
-            right: btplay.left; rightMargin: 8 * calaosApp.density
+            left: parent.left; leftMargin: Units.dp(8)
+            right: parent.right; rightMargin: Units.dp(8)
             verticalCenter: parent.verticalCenter
         }
 
-        Behavior on color { ColorAnimation { duration: 100 } }
-    }
+        IconItem {
+            id: icon
 
-    function flashAnim() {
-        name.color = "#ffda5a"
-        timer.start()
-    }
+            source: calaosApp.getPictureSized("icon_scenario")
 
-    Timer {
-        id: timer
-        running: false
-        interval: 1500
-        onTriggered: name.color = "#3ab4d7"
-        repeat: false
-    }
-
-    ItemButtonAction {
-        id: btplay
-        anchors {
-            right: parent.right; rightMargin: 8 * calaosApp.density
-            verticalCenter: parent.verticalCenter
+            Layout.preferredHeight: height
+            Layout.preferredWidth: width
         }
-        imageSource: "button_play"
 
-        onButtonClicked: {
-            feedbackAnim()
-            flashAnim()
-            modelData.sendTrue()
+        ScrollingText {
+            id: name
+            color: "#3ab4d7"
+            font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 12 }
+            text: modelData.ioName
+            clip: true
+            Layout.fillWidth: true
+
+            Behavior on color { ColorAnimation { duration: 100 } }
+        }
+
+        function flashAnim() {
+            name.color = "#ffda5a"
+            timer.start()
+        }
+
+        Timer {
+            id: timer
+            running: false
+            interval: 1500
+            onTriggered: name.color = "#3ab4d7"
+            repeat: false
+        }
+
+        ItemButtonAction {
+            id: btplay
+            imageSource: "button_play"
+
+            onButtonClicked: {
+                feedbackAnim()
+                flashAnim()
+                modelData.sendTrue()
+            }
         }
     }
 }

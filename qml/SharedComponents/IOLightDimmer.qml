@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Layouts
 import QtQuick.Controls
 import "."
 
@@ -7,64 +8,60 @@ ItemBase {
 
     height: 80 * calaosApp.density
 
-    AnimatedIcon {
-        id: icon
-
-        countImage: 9
-        imageFilenameOn: "icon_light_00%1"
-        imageFilenameOff: "icon_light_off"
+    RowLayout {
 
         anchors {
-            left: parent.left; leftMargin: 8 * calaosApp.density
+            left: parent.left; leftMargin: Units.dp(8)
+            right: parent.right; rightMargin: Units.dp(8)
             verticalCenter: parent.verticalCenter
-            verticalCenterOffset: -18 * calaosApp.density
+            verticalCenterOffset: Units.dp(-18)
         }
 
-        iconState: modelData.stateInt > 0
-    }
+        AnimatedIcon {
+            id: icon
 
-    ScrollingText {
-        color: icon.iconState?"#ffda5a":"#3ab4d7"
-        font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 12 }
-        text: modelData.ioName
-        clip: true
-        anchors {
-            left: icon.right; leftMargin: 8 * calaosApp.density
-            right: btoff.left; rightMargin: 8 * calaosApp.density
-            verticalCenter: parent.verticalCenter
-            verticalCenterOffset: -18 * calaosApp.density
+            countImage: 9
+            imageFilenameOn: "icon_light_00%1"
+            imageFilenameOff: "icon_light_off"
+
+            Layout.preferredHeight: height
+            Layout.preferredWidth: width
+
+            iconState: modelData.stateInt > 0
         }
 
-        Behavior on color { ColorAnimation { duration: 200 } }
-    }
+        ScrollingText {
+            color: icon.iconState?"#ffda5a":"#3ab4d7"
+            font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 12 }
+            text: modelData.ioName
+            clip: true
+            Layout.fillWidth: true
 
-    ItemButtonAction {
-        id: bton
-        anchors {
-            right: parent.right; rightMargin: 8 * calaosApp.density
-            verticalCenter: parent.verticalCenter
-            verticalCenterOffset: -18 * calaosApp.density
+            Behavior on color { ColorAnimation { duration: 200 } }
         }
-        imageSource: "button_light_on"
 
-        onButtonClicked: {
-            feedbackAnim()
-            modelData.sendTrue()
+        SensorStatusIcon {
+            sensor: modelData
         }
-    }
 
-    ItemButtonAction {
-        id: btoff
-        anchors {
-            right: bton.left; rightMargin: 8 * calaosApp.density
-            verticalCenter: parent.verticalCenter
-            verticalCenterOffset: -18 * calaosApp.density
+        ItemButtonAction {
+            id: bton
+            imageSource: "button_light_on"
+
+            onButtonClicked: {
+                feedbackAnim()
+                modelData.sendTrue()
+            }
         }
-        imageSource: "button_light_off"
 
-        onButtonClicked: {
-            feedbackAnim()
-            modelData.sendFalse()
+        ItemButtonAction {
+            id: btoff
+            imageSource: "button_light_off"
+
+            onButtonClicked: {
+                feedbackAnim()
+                modelData.sendFalse()
+            }
         }
     }
 

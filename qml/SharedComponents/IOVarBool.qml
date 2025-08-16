@@ -1,63 +1,62 @@
 import QtQuick
+import QtQuick.Layouts
 import "."
 
 ItemBase {
     property variant modelData
 
-    IconItem {
-        id: icon
-
-        source: calaosApp.getPictureSized(modelData.stateBool?"icon_bool_on":"icon_bool_off")
+    RowLayout {
 
         anchors {
-            left: parent.left; leftMargin: 8 * calaosApp.density
+            left: parent.left; leftMargin: Units.dp(8)
+            right: parent.right; rightMargin: Units.dp(8)
             verticalCenter: parent.verticalCenter
         }
-    }
 
-    ScrollingText {
-        id: name
-        color: "#3ab4d7"
-        font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 12 }
-        text: modelData.ioName
-        clip: true
-        anchors {
-            left: icon.right; leftMargin: 8 * calaosApp.density
-            right: btmin.left
-            rightMargin: 8 * calaosApp.density
-            verticalCenter: parent.verticalCenter
-        }
-    }
+        IconItem {
+            id: icon
 
-    ItemButtonAction {
-        id: btplus
-        anchors {
-            right: parent.right; rightMargin: 8 * calaosApp.density
-            verticalCenter: parent.verticalCenter
-        }
-        imageSource: "button_check"
+            source: calaosApp.getPictureSized(modelData.stateBool?"icon_bool_on":"icon_bool_off")
 
-        onButtonClicked: {
-            feedbackAnim()
-            modelData.sendTrue()
+            Layout.preferredHeight: height
+            Layout.preferredWidth: width
         }
 
-        visible: modelData.rw
-    }
-
-    ItemButtonAction {
-        id: btmin
-        anchors {
-            right: btplus.left; rightMargin: 8 * calaosApp.density
-            verticalCenter: parent.verticalCenter
-        }
-        imageSource: "button_empty"
-
-        onButtonClicked: {
-            feedbackAnim()
-            modelData.sendFalse()
+        ScrollingText {
+            id: name
+            color: "#3ab4d7"
+            font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 12 }
+            text: modelData.ioName
+            clip: true
+            Layout.fillWidth: true
         }
 
-        visible: modelData.rw
+        SensorStatusIcon {
+            sensor: modelData
+        }
+
+        ItemButtonAction {
+            id: btplus
+            imageSource: "button_check"
+
+            onButtonClicked: {
+                feedbackAnim()
+                modelData.sendTrue()
+            }
+
+            visible: modelData.rw
+        }
+
+        ItemButtonAction {
+            id: btmin
+            imageSource: "button_empty"
+
+            onButtonClicked: {
+                feedbackAnim()
+                modelData.sendFalse()
+            }
+
+            visible: modelData.rw
+        }
     }
 }

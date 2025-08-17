@@ -36,5 +36,6 @@
         <file>qml/SharedComponents/CalaosCombo.qml</file>
         <file>qml/SharedComponents/ScrollingText.qml</file>
         <file>qml/SharedComponents/SensorStatusIcon.qml</file>
+        <file>qml/SharedComponents/IOSwitch.qml</file>
     </qresource>
 </RCC>

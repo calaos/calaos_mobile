@@ -375,5 +375,27 @@
         <file>img/icon_wifi_50.svg</file>
         <file>img/icon_wifi_75.svg</file>
         <file>img/icon_wifi_100.svg</file>
+        <file>img/down_arrow.svg</file>
+        <file>img/history.png</file>
+        <file>img/history.svg</file>
+        <file>img/history@2x.png</file>
+        <file>img/icon_camera_title@2x.png</file>
+        <file>img/icon_carbon_monoxide.svg</file>
+        <file>img/icon_date.png</file>
+        <file>img/icon_date@2x.png</file>
+        <file>img/icon_door.svg</file>
+        <file>img/icon_filter.png</file>
+        <file>img/icon_filter@2x.png</file>
+        <file>img/icon_gas.svg</file>
+        <file>img/icon_lock.svg</file>
+        <file>img/icon_motion.svg</file>
+        <file>img/icon_notif.png</file>
+        <file>img/icon_notif@2x.png</file>
+        <file>img/icon_occupancy.svg</file>
+        <file>img/icon_smoke.svg</file>
+        <file>img/icon_sound.svg</file>
+        <file>img/icon_vibration.svg</file>
+        <file>img/icon_water.svg</file>
+        <file>img/spinner.svg</file>
     </qresource>
 </RCC>

@@ -65,6 +65,17 @@ Common::IOType Common::IOTypeFromString(QString t, QString style)
     if (t == "timer") return Timer;
     if (t == "time") return Time;
     if (t == "time_range") return TimeRange;
+    if (t == "switch" && style == "door" ) return DoorSensor;
+    if (t == "switch" && style == "occupancy" ) return OccupancySensor;
+    if (t == "switch" && style == "smoke" ) return SmokeSensor;
+    if (t == "switch" && style == "water" ) return WaterLeakSensor;
+    if (t == "switch" && style == "gas" ) return GasLeakSensor;
+    if (t == "switch" && style == "carbon_monoxide" ) return CO2Sensor;
+    if (t == "switch" && style == "sound" ) return SoundSensor;
+    if (t == "switch" && style == "motion" ) return MotionSensor;
+    if (t == "switch" && style == "vibration" ) return VibrationSensor;
+    if (t == "switch" && style == "lock" ) return LockSensor;
+    if (t == "switch" && style == "garage_door" ) return GarageDoorSensor;
     if (t == "switch") return Switch;
     if (t == "switch3") return Switch3;
     if (t == "switch_long") return SwitchLong;

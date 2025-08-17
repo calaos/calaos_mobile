@@ -81,6 +81,20 @@ ListView {
                              model.ioType === Common.LightRgb? light_rgb:
                              model.ioType === Common.ShutterSmart? shutter_smart:
                              model.ioType === Common.FavoritesLightsCount? fav_all_lights:
+                             model.ioType === Common.Switch? ioswitch:
+                             model.ioType === Common.Switch3? ioswitch:
+                             model.ioType === Common.Switch_long? ioswitch:
+                             model.ioType === Common.DoorSensor? ioswitch:
+                             model.ioType === Common.OccupancySensor? ioswitch:
+                             model.ioType === Common.SmokeSensor? ioswitch:
+                             model.ioType === Common.WaterLeakSensor? ioswitch:
+                             model.ioType === Common.GasLeakSensor? ioswitch:
+                             model.ioType === Common.CO2Sensor? ioswitch:
+                             model.ioType === Common.SoundSensor? ioswitch:
+                             model.ioType === Common.MotionSensor? ioswitch:
+                             model.ioType === Common.VibrationSensor? ioswitch:
+                             model.ioType === Common.LockSensor? ioswitch:
+                             model.ioType === Common.GarageDoorSensor? ioswitch:
                              default_delegate
 
             onLoaded: {
@@ -138,4 +152,5 @@ ListView {
     Component { id: boiler; IOBoiler {} }
     Component { id: heater; IOHeater {} }
     Component { id: analogStyled; IOAnalogStyled {} }
+    Component { id: ioswitch; IOSwitch {} }
 }

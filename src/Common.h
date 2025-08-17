@@ -61,6 +61,19 @@ public:
         Outlet,
         Heater,
         Boiler,
+
+        //Special style for binary switches
+        DoorSensor,
+        OccupancySensor,
+        SmokeSensor,
+        WaterLeakSensor,
+        GasLeakSensor,
+        CO2Sensor,
+        SoundSensor,
+        MotionSensor,
+        VibrationSensor,
+        LockSensor,
+        GarageDoorSensor,
     };
     Q_ENUMS(IOType)
 

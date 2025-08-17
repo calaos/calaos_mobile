@@ -37,12 +37,12 @@ ItemBase {
         }
 
         ItemButtonAction {
-            id: btdown
-            imageSource: "button_down2"
+            id: btup
+            imageSource: "button_up2"
 
             onButtonClicked: {
                 feedbackAnim()
-                modelData.sendDown()
+                modelData.sendUp()
             }
         }
 
@@ -57,12 +57,12 @@ ItemBase {
         }
 
         ItemButtonAction {
-            id: btup
-            imageSource: "button_up2"
+            id: btdown
+            imageSource: "button_down2"
 
             onButtonClicked: {
                 feedbackAnim()
-                modelData.sendUp()
+                modelData.sendDown()
             }
         }
     }

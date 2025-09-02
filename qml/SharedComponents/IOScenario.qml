@@ -6,6 +6,7 @@ ItemBase {
     property variant modelData
 
     RowLayout {
+        id: scenario
 
         anchors {
             left: parent.left; leftMargin: Units.dp(8)
@@ -52,7 +53,7 @@ ItemBase {
 
             onButtonClicked: {
                 feedbackAnim()
-                flashAnim()
+                scenario.flashAnim()
                 modelData.sendTrue()
             }
         }

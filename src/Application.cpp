@@ -851,6 +851,7 @@ bool Application::changePassword(QString pass)
 
 void Application::updateNetwork(QString intfName, bool dhcp, QString ipv4, QString netmask, QString gateway, QString dns, QString dnsSearch)
 {
+#ifdef CALAOS_DESKTOP
     //Find the network interface
     NetworkInfo *net = nullptr;
 
@@ -896,4 +897,5 @@ void Application::updateNetwork(QString intfName, bool dhcp, QString ipv4, QStri
                                                                          });
                                                   }
                                               });
+#endif
 }

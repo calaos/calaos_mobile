@@ -221,5 +221,26 @@
         <file>img/icon_voltage.svg</file>
         <file>img/icon_watt.svg</file>
         <file>img/icon_warning.svg</file>
+        <file>img/icon_battery_25.svg</file>
+        <file>img/icon_battery_75.svg</file>
+        <file>img/icon_battery_empty.svg</file>
+        <file>img/icon_battery_full.svg</file>
+        <file>img/icon_sensor.png</file>
+        <file>img/icon_sensor@2x.png</file>
+        <file>img/icon_wifi_25.svg</file>
+        <file>img/icon_wifi_50.svg</file>
+        <file>img/icon_wifi_75.svg</file>
+        <file>img/icon_wifi_100.svg</file>
+        <file>img/icon_wifi_off.svg</file>
+        <file>img/icon_carbon_monoxide.svg</file>
+        <file>img/icon_door.svg</file>
+        <file>img/icon_gas.svg</file>
+        <file>img/icon_lock.svg</file>
+        <file>img/icon_motion.svg</file>
+        <file>img/icon_occupancy.svg</file>
+        <file>img/icon_smoke.svg</file>
+        <file>img/icon_sound.svg</file>
+        <file>img/icon_vibration.svg</file>
+        <file>img/icon_water.svg</file>
     </qresource>
 </RCC>

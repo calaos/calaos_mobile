@@ -237,6 +237,15 @@ Window {
         }
     }
 
+    property QtObject sensorDetailModel
+    Component {
+        id: sensorDetailView
+
+        SensorDetailView {
+            sensor: sensorDetailModel
+        }
+    }
+
     function openColorPicker(item, cb) {
         menuBar.menuType = Common.MenuBack
         itemColorCallback = function(c) {
@@ -361,6 +370,14 @@ Window {
                 pushEventUuid = message.notifUuid
                 stackView.push(pushEventView)
                 menuBar.menuType = Common.MenuBack
+            }
+        }
+
+        Filter {
+            type: ActionTypes.showSensorDetails
+            onDispatched: (filtertype, message) => {
+                sensorDetailModel = message.sensor
+                stackView.push(sensorDetailView)
             }
         }
     }

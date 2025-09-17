@@ -33,5 +33,6 @@
         <file>qml/quickflux/qmldir</file>
         <file>qml/mobile/PushEventView.qml</file>
         <file>qml/mobile/PullRefreshHeader.qml</file>
+        <file>qml/mobile/SensorDetailView.qml</file>
     </qresource>
 </RCC>

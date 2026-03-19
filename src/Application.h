@@ -32,6 +32,11 @@
 #include "OSInstaller.h"
 #include "UsbDisk.h"
 #include "ControlPanelModel.h"
+#include "BookmarkModel.h"
+
+#ifdef HAVE_WEBENGINE
+class QQuickWebEngineProfile;
+#endif
 
 class Application : public QAPP
 {
@@ -128,6 +133,11 @@ private:
     UsbDiskModel *usbDiskModel = nullptr;
     OSInstaller *osInstaller = nullptr;
     ControlPanelModel *controlPanelModel = nullptr;
+    BookmarkModel *bookmarkModel = nullptr;
+
+#ifdef HAVE_WEBENGINE
+    QQuickWebEngineProfile *webProfile = nullptr;
+#endif
 
     QVariantList favoritesList;
 

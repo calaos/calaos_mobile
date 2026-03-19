@@ -28,18 +28,10 @@ Item {
         opacity: 0.6
     }
 
-    WebEngineProfile {
-        id: webProfile
-        storageName: "CalaosWebProfile"
-        offTheRecord: false
-        persistentCookiesPolicy: WebEngineProfile.ForcePersistentCookies
-        httpCacheType: WebEngineProfile.DiskHttpCache
-    }
-
     WebEngineView {
         id: webView
         focus: true
-        profile: webProfile
+        profile: webEngineProfile
         anchors {
             left: parent.left
             right: parent.right

@@ -60,5 +60,10 @@
         <file>qml/desktop/DialogRecoveryBoot.qml</file>
         <file>qml/desktop/DialogNetInterface.qml</file>
         <file>qml/desktop/DialogSensorDetails.qml</file>
+        <file>qml/desktop/SpeedDialPage.qml</file>
+        <file>qml/desktop/WebBrowserMenu.qml</file>
+        <file>qml/desktop/WebBrowserMenuItem.qml</file>
+        <file>qml/desktop/DialogTabList.qml</file>
+        <file>qml/desktop/DialogBookmarks.qml</file>
     </qresource>
 </RCC>

@@ -22,6 +22,9 @@
 #include "ScreenManager.h"
 #include "UserInfoModel.h"
 #include "CalaosOsAPI.h"
+#ifdef HAVE_WEBENGINE
+#include <QQuickWebEngineProfile>
+#endif
 #elif defined (Q_OS_ANDROID) || defined (Q_OS_IOS)
 #include <QtGui/qpa/qplatformwindow.h>
 #endif
@@ -244,6 +247,17 @@ void Application::createQmlApp()
     engine.rootContext()->setContextProperty("langModel", langModel);
     eventLogModel = new EventLogModel(&engine, calaosConnect, this);
     engine.rootContext()->setContextProperty("eventLogModel", eventLogModel);
+
+    bookmarkModel = new BookmarkModel(this);
+    engine.rootContext()->setContextProperty("bookmarkModel", bookmarkModel);
+
+#ifdef HAVE_WEBENGINE
+    webProfile = new QQuickWebEngineProfile(QStringLiteral("CalaosWebProfile"), this);
+    webProfile->setOffTheRecord(false);
+    webProfile->setPersistentCookiesPolicy(QQuickWebEngineProfile::ForcePersistentCookies);
+    webProfile->setHttpCacheType(QQuickWebEngineProfile::DiskHttpCache);
+    engine.rootContext()->setContextProperty("webEngineProfile", webProfile);
+#endif
 
 #ifdef CALAOS_DESKTOP
     if (get_hasInstall())

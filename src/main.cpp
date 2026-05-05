@@ -1,6 +1,7 @@
 #include "Application.h"
 #include "Common.h"
 #include "HardwareUtils.h"
+#include <QuickFlux>
 #ifdef HAVE_WEBENGINE
 #include <QtWebEngineQuick/QtWebEngineQuick>
 #endif
@@ -35,6 +36,7 @@ int main(int argc, char *argv[])
     HardwareUtils::Instance()->platformInit(app.getEngine());
 
     //QML app creation needs to be created after platform init is done
+    registerQuickFluxQmlTypes();
     app.createQmlApp();
 
     return app.exec();

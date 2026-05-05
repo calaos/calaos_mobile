@@ -208,3 +208,50 @@ are uploaded manually to App Store Connect / TestFlight.
    [ios/ios.pri](../ios/ios.pri) — not in [calaos.pri](../calaos.pri).
 7. iOS-specific assets go into [ios/ressources.xcassets](../ios/ressources.xcassets)
    and are wired through `QMAKE_ASSET_CATALOGS`.
+
+## 9. CMake build (preferred)
+
+The CMake path is the new canonical build. It generates a self-contained
+Xcode project with both the main app and the `PushNotif` extension, and
+requires no manual Xcode-side steps.
+
+### 9.1 Prerequisites
+
+- Xcode 15+ with command-line tools.
+- Qt 6.6+ for iOS (tested with Qt 6.10): `qt-unified-installer` target `ios`.
+- Apple Developer account with team id `9WYC46992U`.
+
+### 9.2 Configure
+
+```bash
+cmake -S . -B build-ios -G Xcode \
+      -DCMAKE_SYSTEM_NAME=iOS \
+      -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 \
+      -DCMAKE_PREFIX_PATH=/path/to/Qt/6.10.0/ios \
+      -DCMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM=9WYC46992U
+```
+
+### 9.3 Build & archive to .ipa
+
+```bash
+cmake --build build-ios --config Release --target archive
+```
+
+This runs `xcodebuild archive` followed by `xcodebuild -exportArchive` using
+[ios/ExportOptions.plist](../ios/ExportOptions.plist). The signed `.ipa` lands
+in `build-ios/export/`.
+
+### 9.4 What CMake handles automatically
+
+- `PushNotif` extension target — defined in [ios/CMakeLists.txt](../ios/CMakeLists.txt),
+  embedded into the main app via `XCODE_EMBED_APP_EXTENSIONS`.
+- Signing entitlements, development team, bundle id, bitcode-off.
+- Version numbers from [VERSION](../VERSION) (single source of truth).
+- All sources, frameworks, asset catalog, launch storyboard.
+
+No manual Xcode steps needed after configure.
+
+## Legacy qmake build
+
+Sections 2–7 above document the legacy qmake path. It remains functional
+during the transition period. New development should target the CMake path.

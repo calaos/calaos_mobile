@@ -229,3 +229,53 @@ adb install -r build/outputs/apk/release/calaos_mobile-release.apk
    relies on this.
 8. Don’t hand-edit [android/google-services.json](../android/google-services.json)
    unless you regenerate it from the Firebase console.
+## 9. CMake build (preferred)
+
+The CMake path is the new canonical build. It replaces the qmake +
+`androiddeployqt` flow and requires no platform-specific path tweaks.
+
+### 9.1 Prerequisites
+
+- Android SDK + NDK (NDK r25c+ recommended).
+- Qt 6.6+ for Android (tested with Qt 6.10): install the `android_arm64_v8a`
+  target at minimum, plus the host Qt for your machine.
+- `FIREBASE_CPP_SDK_DIR` env set to the Firebase C++ SDK root.
+- KDAB [`android_openssl`](https://github.com/KDAB/android_openssl) prebuilt
+  cloned to `$HOME/Android/Sdk/android_openssl` (or pass
+  `-DANDROID_OPENSSL_DIR=/custom/path`).
+
+### 9.2 Configure (single ABI example)
+
+```bash
+export FIREBASE_CPP_SDK_DIR=/path/to/firebase_cpp_sdk
+
+cmake -S . -B build-android -G Ninja \
+      -DCMAKE_PREFIX_PATH=/path/to/Qt/6.10.0/android_arm64_v8a \
+      -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake \
+      -DANDROID_PLATFORM=android-26 \
+      -DANDROID_ABI=arm64-v8a \
+      -DQT_HOST_PATH=/path/to/Qt/6.10.0/macos
+```
+
+For multi-ABI fat APK add `-DQT_ANDROID_ABIS="armeabi-v7a;arm64-v8a;x86;x86_64"`.
+
+### 9.3 Build APK / AAB
+
+```bash
+cmake --build build-android --target apk   # unsigned debug APK
+cmake --build build-android --target aab   # unsigned AAB for Play Store signing
+```
+
+### 9.4 What CMake handles automatically
+
+- Firebase linkage via `cmake/Android.cmake` (fails fast if
+  `FIREBASE_CPP_SDK_DIR` is unset).
+- OpenSSL extra libs via KDAB's `openssl.cmake`.
+- Version name/code injected from [VERSION](../VERSION).
+- `ANDROID_PACKAGE_SOURCE_DIR` pointing at [android/](../android/) so
+  manifest, Gradle files and Java glue are all picked up as before.
+
+## Legacy qmake build
+
+Sections 2–7 above document the legacy qmake path. It remains functional
+during the transition period. New development should target the CMake path.

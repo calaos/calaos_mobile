@@ -1,0 +1,41 @@
+# cmake/CalaosHomeSources.cmake
+# Shared C++ source list for the mobile (iOS + Android) CMake build.
+# This is the mobile counterpart of calaos.pri SOURCES/HEADERS.
+# Keep in sync with calaos.pri until the desktop variant also migrates.
+# Regression check: tools/check_sources.sh diffs the two lists at CI time.
+
+set(CALAOS_SOURCES
+    src/main.cpp
+    src/HomeModel.cpp
+    src/Application.cpp
+    src/CalaosConnection.cpp
+    src/Common.cpp
+    src/RoomModel.cpp
+    src/AudioModel.cpp
+    src/FavoritesModel.cpp
+    src/HardwareUtils.cpp
+    src/CameraModel.cpp
+    src/RoomFilterModel.cpp
+    src/Machine.cpp
+    src/Lang.cpp
+    src/EventLogModel.cpp
+    src/BookmarkModel.cpp
+)
+
+set(CALAOS_HEADERS
+    src/HomeModel.h
+    src/Application.h
+    src/CalaosConnection.h
+    src/Common.h
+    src/RoomModel.h
+    src/AudioModel.h
+    src/FavoritesModel.h
+    src/HardwareUtils.h
+    src/CameraModel.h
+    src/RoomFilterModel.h
+    src/Machine.h
+    src/qqmlhelpers.h
+    src/Lang.h
+    src/EventLogModel.h
+    src/BookmarkModel.h
+)

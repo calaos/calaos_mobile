@@ -16,3 +16,10 @@ lang/auto_translate
 lang/auto_translate.conf
 build/
 PushNotif.appex/
+# CMake build directories
+build-ios/
+build-android/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+*.cmake.user

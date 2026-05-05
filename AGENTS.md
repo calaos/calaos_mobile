@@ -15,6 +15,7 @@ Detailed, LLM-oriented documentation lives under [doc/](doc):
 | Mobile (iOS + Android, common architecture) | [doc/mobile.md](doc/mobile.md) |
 | iOS specifics (build, signing, push, App Store) | [doc/ios.md](doc/ios.md) |
 | Android specifics (build, Firebase, Play Store) | [doc/android.md](doc/android.md) |
+| **CMake migration plan (mobile)** — in progress | [doc/cmake.md](doc/cmake.md) |
 
 ## Quick facts
 

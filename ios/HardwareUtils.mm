@@ -4,7 +4,6 @@
 #import "Reachability.h"
 #import "SimpleKeychain/A0SimpleKeychain.h"
 #import "SimpleKeychain/A0SimpleKeychain+KeyPair.h"
-#import "AlertPrompt.h"
 #import "../src/Common.h"
 
 #define SYSTEM_VERSION_GRATERTHAN_OR_EQUALTO(v)  ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] != NSOrderedAscending)
@@ -177,6 +176,8 @@ HardwareUtils_iOS *hwobj;
 }
 
 -(id)initWithHwObject:(HardwareUtils_iOS *)obj;
+-(void)showAlertTitle:(NSString *)title message:(NSString *)message button:(NSString *)button;
+-(void)showInputDialogTitle:(NSString *)title message:(NSString *)message cancel:(NSString *)cancel confirm:(NSString *)confirm;
 
 @end
 
@@ -210,17 +211,53 @@ HardwareUtils_iOS *hwobj;
     hwobj->emitApplicationActiveChanged(true);
 }
 
-- (void)alertView:(UIAlertView *)alertView willDismissWithButtonIndex:(NSInteger)buttonIndex
+-(UIViewController *)rootViewController
 {
-    if (buttonIndex != [alertView cancelButtonIndex])
-    {
-        QString val = QString::fromNSString([(AlertPrompt *)alertView enteredText]);
-        hwobj->emitDialogTextValid(val);
+    for (UIScene *scene in [UIApplication sharedApplication].connectedScenes.allObjects) {
+        if ([scene isKindOfClass:[UIWindowScene class]]) {
+            UIWindowScene *ws = (UIWindowScene *)scene;
+            UIViewController *rootVC = ws.windows.firstObject.rootViewController;
+            if (rootVC) return rootVC;
+        }
     }
-    else
-    {
-        hwobj->emitDialogCancel();
-    }
+    return nil;
+}
+
+-(void)showAlertTitle:(NSString *)title message:(NSString *)message button:(NSString *)button
+{
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:title
+                                                                   message:message
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertAction *ok = [UIAlertAction actionWithTitle:button
+                                                style:UIAlertActionStyleDefault
+                                              handler:nil];
+    [alert addAction:ok];
+    [[self rootViewController] presentViewController:alert animated:YES completion:nil];
+}
+
+-(void)showInputDialogTitle:(NSString *)title message:(NSString *)message cancel:(NSString *)cancel confirm:(NSString *)confirm
+{
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:title
+                                                                   message:message
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    [alert addTextFieldWithConfigurationHandler:^(UITextField *textField) {
+        textField.autocorrectionType = UITextAutocorrectionTypeNo;
+    }];
+    HardwareUtils_iOS *hw = hwobj;
+    UIAlertAction *confirmAction = [UIAlertAction actionWithTitle:confirm
+                                                           style:UIAlertActionStyleDefault
+                                                         handler:^(UIAlertAction *action) {
+        NSString *text = alert.textFields.firstObject.text ?: @"";
+        hw->emitDialogTextValid(QString::fromNSString(text));
+    }];
+    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:cancel
+                                                          style:UIAlertActionStyleCancel
+                                                        handler:^(UIAlertAction *action) {
+        hw->emitDialogCancel();
+    }];
+    [alert addAction:cancelAction];
+    [alert addAction:confirmAction];
+    [[self rootViewController] presentViewController:alert animated:YES completion:nil];
 }
 
 @end
@@ -269,14 +306,9 @@ HardwareUtils_iOS::~HardwareUtils_iOS()
 
 void HardwareUtils_iOS::showAlertMessage(QString title, QString message, QString buttontext)
 {
-    UIAlertView *errorAlert = [[UIAlertView alloc]
-                    initWithTitle:title.toNSString()
-                          message:message.toNSString()
-                         delegate:nil
-                cancelButtonTitle:buttontext.toNSString()
-                otherButtonTitles:nil];
-    [errorAlert show];
-    [errorAlert release];
+    [hwclass showAlertTitle:title.toNSString()
+                   message:message.toNSString()
+                    button:buttontext.toNSString()];
 }
 
 int HardwareUtils_iOS::getNetworkStatus()
@@ -297,7 +329,7 @@ void HardwareUtils_iOS::setConfigOption(QString key, QString value)
         NSUserDefaults *sharedDefaults = [[NSUserDefaults alloc] initWithSuiteName: @"group.fr.calaos.CalaosMobile"];
         [sharedDefaults setValue:value.toNSString() forKey:@"calaos.hostname"];
     }
-    
+
     HardwareUtils::setConfigOption(key, value);
 }
 
@@ -323,11 +355,10 @@ void HardwareUtils_iOS::inputTextDialog(const QString &title, const QString &mes
 {
     QString cancel(tr("Cancel"));
     QString valid(tr("Confirm"));
-
-    AlertPrompt *prompt = [AlertPrompt alloc];
-    prompt = [prompt initWithTitle:title.toNSString() message:message.toNSString() delegate:hwclass cancelButtonTitle:cancel.toNSString() okButtonTitle:valid.toNSString()];
-    [prompt show];
-    [prompt release];
+    [hwclass showInputDialogTitle:title.toNSString()
+                         message:message.toNSString()
+                          cancel:cancel.toNSString()
+                         confirm:valid.toNSString()];
 }
 
 void HardwareUtils_iOS::handleApplicationDidFinishLaunching(void *n)
@@ -403,7 +434,7 @@ void HardwareUtils_iOS::handleRegisterNotifFail(void *err)
     NSError *error = reinterpret_cast<NSError *>(err);
     NSLog(@"Did Fail to Register for Remote Notifications");
     NSLog(@"%@, %@", error, error.localizedDescription);
-    
+
     deviceToken.clear();
 }
 

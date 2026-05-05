@@ -5,7 +5,7 @@
 	<key>CFBundleDisplayName</key>
 	<string>CalaosHome</string>
 	<key>CFBundleExecutable</key>
-	<string>CalaosMobile</string>
+	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>

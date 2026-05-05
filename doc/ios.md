@@ -1,0 +1,210 @@
+# Calaos Home — iOS build & deploy
+
+> LLM-oriented reference for the **iOS** build of `CalaosMobile`.
+> See [mobile.md](mobile.md) for the cross-platform mobile architecture.
+
+## 1. Identifiers
+
+| Setting | Value |
+|---|---|
+| Bundle id (main app) | `fr.calaos.CalaosMobile` |
+| Bundle id (push extension) | `fr.calaos.CalaosMobile.PushNotif` |
+| Display name | `CalaosHome` |
+| Executable | `CalaosMobile` |
+| Apple Development Team id | `9WYC46992U` |
+| Keychain Sharing group | `fr.calaos.CalaosMobile` |
+| App Group | `group.fr.calaos.CalaosMobile` |
+| Min iOS | depends on Qt version (Qt 6 → iOS 14+) |
+
+These are pinned in [ios/ios.pri](../ios/ios.pri) and
+[ios/AppInfo.plist](../ios/AppInfo.plist):
+
+```qmake
+CALAOS_BUNDLE.value = fr.calaos.CalaosMobile          # PRODUCT_BUNDLE_IDENTIFIER
+CALAOSDEVELOPMENT_TEAM.value = 9WYC46992U             # DEVELOPMENT_TEAM
+PUSH_ENTITLEMENTS.value = $$PWD/pushnotifications.entitlements
+Q_ENABLE_BITCODE.value = NO
+```
+
+## 2. qmake build
+
+### 2.1 Sources & frameworks
+
+[ios/ios.pri](../ios/ios.pri) declares (excerpt):
+
+```qmake
+TARGET = CalaosMobile
+QT += gui-private
+
+LIBS += -framework SystemConfiguration -framework UserNotifications
+
+OBJECTIVE_SOURCES += ios/HardwareUtils.mm \
+                     ios/Reachability.m \
+                     ios/AlertPrompt.m \
+                     ios/SimpleKeychain/A0SimpleKeychain.m \
+                     ios/SimpleKeychain/A0SimpleKeychain+KeyPair.m
+HEADERS         += ios/HardwareUtils_iOS.h
+QMAKE_INFO_PLIST = ios/AppInfo.plist
+QMAKE_ASSET_CATALOGS = ios/ressources.xcassets
+QMAKE_BUNDLE_DATA += plugins splash   # adds PushNotif.appex + Splash.storyboard
+```
+
+The Reachability sources monitor the network through `SystemConfiguration` and
+emit `HardwareUtils::networkStatusChanged()`.
+
+### 2.2 Generating the Xcode project
+
+```bash
+qmake mobile.pro -spec macx-ios-clang CONFIG+=iphoneos    # or +iphonesimulator
+open CalaosMobile.xcodeproj
+```
+
+This regenerates the Xcode project. **Every time** `qmake` is rerun (or the
+build folder is cleaned) you must redo the manual Xcode-side steps in section 3
+because the qmake-generated project does not preserve them. (`xcodeproj` could
+script this but is incompatible with qmake's project format — see
+[ios/readme.md](../ios/readme.md).)
+
+## 3. One-time Xcode setup (after every qmake run)
+
+Open the generated project in Xcode and configure these items.
+
+### 3.1 Capabilities (main `CalaosMobile` target)
+
+- **Push Notifications** — required for APNs.
+- **Keychain Sharing** with group `fr.calaos.CalaosMobile`.
+- **App Groups** with group `group.fr.calaos.CalaosMobile`.
+
+The entitlements file [ios/pushnotifications.entitlements](../ios/pushnotifications.entitlements)
+is wired in via `CODE_SIGN_ENTITLEMENTS` (see [ios/ios.pri](../ios/ios.pri)).
+
+### 3.2 Notification Service Extension (PushNotif)
+
+The repository ships [ios/PushNotif/](../ios/PushNotif) but the **target itself**
+must be created from Xcode each time the project is regenerated. Steps from
+[ios/readme.md](../ios/readme.md):
+
+1. *File → New → Target → Notification Service Extension*.
+2. Product Name: `PushNotif`. Language: Obj-C. Team: as the main app.
+3. In the new target enable Capabilities:
+   - Keychain Sharing → group `fr.calaos.CalaosMobile`
+   - App Groups → group `group.fr.calaos.CalaosMobile`
+4. Replace the auto-generated `PushNotif/` directory inside the build folder
+   with a symlink to the source one:
+   ```bash
+   cd build-mobile-Qt_*_for_iOS-Debug
+   rm -rf PushNotif
+   ln -s ../calaos_mobile/ios/PushNotif .
+   ```
+5. In the PushNotif target → Build Settings → *Other Linker Flags*: delete every
+   Qt-specific argument (the extension must not link Qt).
+6. Build Phases → Compile Sources, add:
+   - `A0SimpleKeychain.m`
+   - `A0SimpleKeychain+KeyPair.m`
+   - (`NotificationService.m` is added automatically.)
+7. Verify that the extension's `Info.plist` is
+   [ios/PushNotif/Info.plist](../ios/PushNotif/Info.plist) and the
+   entitlements file is
+   [ios/PushNotif/PushNotif.entitlements](../ios/PushNotif/PushNotif.entitlements).
+
+The main app embeds the built `PushNotif.appex` via:
+
+```qmake
+plugins.path  = PlugIns
+plugins.files = $$PWD/PushNotif.appex
+QMAKE_BUNDLE_DATA += plugins
+```
+
+so the `.appex` must be present (built once by Xcode in the same configuration)
+before re-running the main archive.
+
+### 3.3 Launch screen
+
+[ios/Splash.storyboard](../ios/Splash.storyboard) is registered through
+`UILaunchStoryboardName` in [ios/AppInfo.plist](../ios/AppInfo.plist) and
+embedded via `QMAKE_BUNDLE_DATA += splash`.
+
+## 4. Push notification flow
+
+| Step | Code |
+|---|---|
+| Request authorization, register with APNs | [ios/HardwareUtils.mm](../ios/HardwareUtils.mm) — `application:didFinishLaunchingWithOptions:` (override of `QIOSApplicationDelegate`) |
+| Receive APNs token | `application:didRegisterForRemoteNotificationsWithDeviceToken:` → `HardwareUtils_iOS::handleRegisterNotif()` |
+| Token forwarded to QML / `CalaosConnection` | via `HardwareUtils::deviceToken` |
+| Encrypted payload received in background | `PushNotif.appex` (`ios/PushNotif/NotificationService.m`) — decrypts using keys stored in the shared keychain (`A0SimpleKeychain+KeyPair`) and rewrites the `UNNotificationContent` before display |
+| User taps notification while app is foreground | `HardwareUtils_iOS::handleStartedWithPushNotif(uuid)` → `Application::pushNotificationReceived(uuid)` → QuickFlux dispatch |
+| User taps notification while app is closed | Same path on `applicationBecomeActive`, with `startedWithNotif` flag |
+
+Background mode `remote-notification` is declared in
+[ios/AppInfo.plist](../ios/AppInfo.plist) (`UIBackgroundModes`).
+
+## 5. UI / system integration
+
+- Status bar style is `UIStatusBarStyleLightContent`,
+  `UIViewControllerBasedStatusBarAppearance = false`
+  (see [AppInfo.plist](../ios/AppInfo.plist)).
+- Orientation: portrait (+ upside-down) on iPhone, all four on iPad.
+- `LSRequiresIPhoneOS = true`.
+- `NSPhotoLibraryUsageDescription` is provided (used by some legacy media flows).
+- Native alerts go through [ios/AlertPrompt.m](../ios/AlertPrompt.m).
+- 3D Touch / Quick Actions are forwarded through
+  `application:performActionForShortcutItem:` → `handlePerformActionForShortcutItem`,
+  exposed to QML via `HardwareUtils::getStartOption()` and
+  `HardwareUtils::setQuickLinks()`.
+
+## 6. Keychain
+
+- Library: vendored [`A0SimpleKeychain`](https://github.com/auth0/SimpleKeychain) under
+  [ios/SimpleKeychain/](../ios/SimpleKeychain).
+- Used by both the main app (credentials) and the push extension (decryption keys),
+  hence the shared `fr.calaos.CalaosMobile` keychain group.
+- Old [ios/KeychainItemWrapper.m](../ios/KeychainItemWrapper.m) is kept for legacy
+  reasons; new code should use `A0SimpleKeychain`.
+
+## 7. Build & deploy commands
+
+```bash
+# 1. Regenerate Xcode project
+qmake mobile.pro -spec macx-ios-clang CONFIG+=iphoneos
+
+# 2. Open & redo manual steps (section 3)
+open CalaosMobile.xcodeproj
+
+# 3. Build & archive from Xcode (Product → Archive)
+#    or via xcodebuild:
+xcodebuild -project CalaosMobile.xcodeproj \
+           -scheme CalaosMobile \
+           -configuration Release \
+           -destination "generic/platform=iOS" \
+           -allowProvisioningUpdates archive \
+           -archivePath build/CalaosMobile.xcarchive
+
+# 4. Export to .ipa (use an export options plist)
+xcodebuild -exportArchive \
+           -archivePath build/CalaosMobile.xcarchive \
+           -exportOptionsPlist ios/ExportOptions.plist \
+           -exportPath build/export
+```
+
+There is **no GitHub Actions workflow** that publishes the iOS app — releases
+are uploaded manually to App Store Connect / TestFlight.
+
+## 8. Things an LLM should remember
+
+1. The Xcode project is **regenerated every time `qmake` runs**. Do not commit
+   manual edits to it; commit them to [ios/](../ios) sources / `.pri` /
+   entitlements / readme instead.
+2. The PushNotif extension target is **not** part of qmake — only its sources
+   are. After regeneration, recreate the target as documented (and consider
+   automating it with a script if you do this often).
+3. Bitcode is **disabled** (`ENABLE_BITCODE = NO`). Required because of the Qt
+   static libraries and Firebase-style native dependencies are not bitcode-clean.
+4. App Group + Keychain group must match between the main app and PushNotif
+   extension; otherwise the extension cannot decrypt incoming pushes.
+5. Increment `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in Xcode
+   *before* archiving; `AppInfo.plist` substitutes them via
+   `$(MARKETING_VERSION)` / `$(CURRENT_PROJECT_VERSION)`.
+6. New Obj-C / Obj-C++ sources must be declared in `OBJECTIVE_SOURCES` of
+   [ios/ios.pri](../ios/ios.pri) — not in [calaos.pri](../calaos.pri).
+7. iOS-specific assets go into [ios/ressources.xcassets](../ios/ressources.xcassets)
+   and are wired through `QMAKE_ASSET_CATALOGS`.

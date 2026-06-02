@@ -67,4 +67,13 @@ set_target_properties(PushNotif PROPERTIES
         "${CALAOS_VERSION}"
     XCODE_ATTRIBUTE_CURRENT_PROJECT_VERSION
         "${CALAOS_VERSION_CODE}"
+    # Produce a dSYM bundle in Release/archive builds so the extension's symbols
+    # can be uploaded alongside the main app's.
+    # GCC_GENERATE_DEBUGGING_SYMBOLS must be YES for the compiler to emit DWARF;
+    # without it dsymutil has nothing to process and no dSYM is created. The main
+    # app inherits YES from Qt, but this plain (non-Qt) target defaults to NO.
+    XCODE_ATTRIBUTE_GCC_GENERATE_DEBUGGING_SYMBOLS
+        "YES"
+    "XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT[variant=Release]"
+        "dwarf-with-dsym"
 )

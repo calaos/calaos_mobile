@@ -39,8 +39,25 @@ cmake -S "${SCRIPT_DIR}" -B "${BUILD_DIR}" \
     -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH \
     -DCMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM="${TEAM_ID}"
 
+# CMake's Xcode generator leaves "shadow" symlinks in the product dirs
+# (<CONFIG>-iphoneos/) pointing at the actual build products. A regular build and
+# an archive use different product locations (DerivedData vs ArchiveIntermediates),
+# so a symlink left by a previous run points at a stale location and the next build
+# fails with "unable to create directory .../CalaosHome.app/PlugIns". Remove these
+# stale symlinks before every build. (Real dirs are left alone — the build reuses them.)
+clean_stale_symlinks() {
+    local d
+    for d in "${BUILD_DIR}/${CONFIG}-iphoneos" "${BUILD_DIR}/ios/${CONFIG}-iphoneos"; do
+        [[ -d "$d" ]] || continue
+        find "$d" -maxdepth 1 -type l \
+            \( -name "*.app" -o -name "*.appex" -o -name "*.app.dSYM" -o -name "*.appex.dSYM" \) \
+            -print -delete | sed 's/^/Removed stale symlink: /'
+    done
+}
+
 echo ""
 echo "==> Building (${CONFIG})"
+clean_stale_symlinks
 cmake --build "${BUILD_DIR}" \
     --config "${CONFIG}" \
     -- -parallelizeTargets -jobs "$(sysctl -n hw.logicalcpu)"
@@ -48,16 +65,22 @@ cmake --build "${BUILD_DIR}" \
 if [[ "${ARCHIVE}" == true ]]; then
     echo ""
     echo "==> Archiving"
-    # The regular build (cmake --build) creates symlinks in Release-iphoneos/ pointing
-    # into DerivedData. xcodebuild -archive then tries to mkdir over those symlinks and
-    # fails. Remove them before running the archive target.
-    _release_dir="${BUILD_DIR}/Release-iphoneos"
-    for f in "${_release_dir}/CalaosHome.app" "${_release_dir}/CalaosHome.app.dSYM"; do
-        [[ -L "$f" ]] && rm "$f" && echo "Removed stale symlink: $f"
-    done
+    clean_stale_symlinks
     cmake --build "${BUILD_DIR}" \
         --config "${CONFIG}" \
         --target archive
+
+    # Register the archive with Xcode's Organizer by copying it into
+    # ~/Library/Developer/Xcode/Archives/<date>/. Xcode only lists archives
+    # found there; the one xcodebuild wrote into the build tree is invisible to it.
+    _src_archive="${BUILD_DIR}/CalaosMobile.xcarchive"
+    if [[ -d "${_src_archive}" ]]; then
+        _organizer_dir="${HOME}/Library/Developer/Xcode/Archives/$(date +%Y-%m-%d)"
+        _dest_archive="${_organizer_dir}/CalaosHome-$(date +%H%M%S).xcarchive"
+        mkdir -p "${_organizer_dir}"
+        cp -R "${_src_archive}" "${_dest_archive}"
+        echo "==> Archive added to Xcode Organizer: ${_dest_archive}"
+    fi
 fi
 
 echo ""

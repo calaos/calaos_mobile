@@ -66,6 +66,10 @@ set_target_properties(CalaosHome PROPERTIES
     XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY             "1,2"
     XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET         "14.0"
     XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
+    # Produce a dSYM bundle in Release/archive builds so symbols can be uploaded
+    # (App Store / crash symbolication). CMake's Xcode generator otherwise leaves
+    # this at "dwarf", which yields no dSYM.
+    "XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT[variant=Release]" "dwarf-with-dsym"
 )
 
 # ── PushNotif Notification Service Extension ──────────────────────────────────
@@ -83,6 +87,12 @@ set(_XCODEPROJ  "${CMAKE_BINARY_DIR}/CalaosHome.xcodeproj")
 set(_ARCHIVE    "${CMAKE_BINARY_DIR}/CalaosMobile.xcarchive")
 set(_EXPORT_DIR "${CMAKE_BINARY_DIR}/export")
 
+# dSYM bundles are emitted into the CMake build tree (DWARF_DSYM_FOLDER_PATH is
+# redirected per target), so xcodebuild does not collect them into the archive's
+# dSYMs/ folder. Copy them in explicitly after archiving so symbol upload works.
+set(_DSYM_APP "${CMAKE_BINARY_DIR}/Release-iphoneos/CalaosHome.app.dSYM")
+set(_DSYM_EXT "${CMAKE_BINARY_DIR}/ios/Release-iphoneos/PushNotif.appex.dSYM")
+
 add_custom_target(archive
     COMMAND xcodebuild
         -project    "${_XCODEPROJ}"
@@ -92,6 +102,11 @@ add_custom_target(archive
         -archivePath "${_ARCHIVE}"
         -allowProvisioningUpdates
         archive
+    # Populate the archive's dSYMs/ folder from the build-tree dSYMs.
+    COMMAND "${CMAKE_COMMAND}" -E copy_directory
+        "${_DSYM_APP}" "${_ARCHIVE}/dSYMs/CalaosHome.app.dSYM"
+    COMMAND "${CMAKE_COMMAND}" -E copy_directory
+        "${_DSYM_EXT}" "${_ARCHIVE}/dSYMs/PushNotif.appex.dSYM"
     COMMAND xcodebuild
         -exportArchive
         -archivePath    "${_ARCHIVE}"

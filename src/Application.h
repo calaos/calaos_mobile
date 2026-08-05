@@ -32,6 +32,7 @@
 #include "OSInstaller.h"
 #include "UsbDisk.h"
 #include "ControlPanelModel.h"
+#include "UpdateManager.h"
 #include "BookmarkModel.h"
 
 #ifdef HAVE_WEBENGINE
@@ -133,6 +134,7 @@ private:
     UsbDiskModel *usbDiskModel = nullptr;
     OSInstaller *osInstaller = nullptr;
     ControlPanelModel *controlPanelModel = nullptr;
+    UpdateManager *updateManager = nullptr;
     BookmarkModel *bookmarkModel = nullptr;
 
 #ifdef HAVE_WEBENGINE

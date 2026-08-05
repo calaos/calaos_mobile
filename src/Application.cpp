@@ -285,6 +285,12 @@ void Application::createQmlApp()
     controlPanelModel = new ControlPanelModel(this);
     engine.rootContext()->setContextProperty("controlPanelModel", controlPanelModel);
 
+    updateManager = new UpdateManager(&engine, this);
+    engine.rootContext()->setContextProperty("updateManager", updateManager);
+    engine.rootContext()->setContextProperty("updateCalaosModel", updateManager->calaosModel());
+    engine.rootContext()->setContextProperty("updateGroupsModel", updateManager->groupsModel());
+    engine.rootContext()->setContextProperty("updateProgressModel", updateManager->progressModel());
+
     //network info timer
     updateNetworkInfo();
     auto netTimer = new QTimer(this);

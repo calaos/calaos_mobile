@@ -56,8 +56,10 @@
         <file>qml/desktop/CameraCommandItem.qml</file>
         <file>qml/desktop/ConfigNetworkView.qml</file>
         <file>qml/desktop/ConfigUpdateView.qml</file>
+        <file>qml/desktop/UpdateProgressPanel.qml</file>
         <file>qml/desktop/ConfigInstallView.qml</file>
         <file>qml/desktop/DialogRecoveryBoot.qml</file>
+        <file>qml/desktop/DialogUpdateAvailable.qml</file>
         <file>qml/desktop/DialogNetInterface.qml</file>
         <file>qml/desktop/DialogSensorDetails.qml</file>
         <file>qml/desktop/SpeedDialPage.qml</file>

@@ -15,6 +15,11 @@ Dialog {
     function showDialog(showMachine, showApp) {
         rebootRadio.visible = showMachine
         restartRadio.visible = showApp
+        //pre-select the machine reboot whenever it is offered, otherwise
+        //the app restart: the checked radio drives the accept action, a
+        //hidden radio must never stay checked
+        rebootRadio.checked = showMachine
+        restartRadio.checked = !showMachine
         show()
     }
 

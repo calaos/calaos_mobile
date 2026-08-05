@@ -51,6 +51,11 @@ Window {
         }
     }
 
+    //viewId of a page on the navigation stack, "" when it declares none
+    function viewIdOf(page) {
+        return (page && page.viewId) ? page.viewId : ""
+    }
+
     function handleSubitemClick(itemId) {
         var item;
         if (itemId === "media/music") {
@@ -307,6 +312,16 @@ Window {
 
     DialogSensorDetails { id: dialogSensorDetails }
 
+    DialogUpdateAvailable {
+        id: dialogUpdateAvailable
+
+        onAccepted: {
+            //don't stack a duplicate page if the update view is already shown
+            if (rootWindow.viewIdOf(stackView.currentItem) !== "config/update")
+                rootWindow.handleSubitemClick("config/update")
+        }
+    }
+
     //Dispatch actions
     AppListener {
         Filter {
@@ -404,6 +419,14 @@ Window {
 
             onDispatched: (filtertype, message) => {
                 dialogSensorDetails.showSensor(message.sensor)
+            }
+        }
+
+        Filter {
+            type: ActionTypes.showUpdateAvailableDialog
+
+            onDispatched: (filtertype, message) => {
+                dialogUpdateAvailable.showDialog(message)
             }
         }
     }

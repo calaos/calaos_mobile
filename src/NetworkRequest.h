@@ -58,6 +58,8 @@ public:
 
     QString getLastError() { return lastError; }
 
+    int getHttpStatusCode() const { return httpStatusCode; }
+
     void setCertificate(QString path);
 
 public slots:
@@ -94,6 +96,7 @@ private:
     bool delNm = false;
 
     QString lastError;
+    int httpStatusCode = 0;
 
     QList<QSslCertificate> cacerts;
     QSslConfiguration sslConfiguration;

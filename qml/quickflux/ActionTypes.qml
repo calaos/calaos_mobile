@@ -45,5 +45,7 @@ KeyTable {
     property string showReadOnlyBootDialog
 
     property string showSensorDetails
+
+    property string showUpdateAvailableDialog
 }
 

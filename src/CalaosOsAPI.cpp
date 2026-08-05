@@ -1,5 +1,7 @@
 #include "CalaosOsAPI.h"
 #include <QStringBuilder>
+#include <QUrlQuery>
+#include <memory>
 
 #ifdef Q_OS_LINUX
 #define TOKEN_FILE  "/run/calaos/calaos-ct.token"
@@ -91,7 +93,7 @@ void CalaosOsAPI::startInstallation(QString device, std::function<void (bool)> c
                                   if (!n->start())
                                   {
                                       delete n;
-                                      lastError = "Failed to start network request";
+                                      lastError = tr("Failed to start network request");
                                       job->emitFailed();
                                   }
                               }));
@@ -144,7 +146,7 @@ void CalaosOsAPI::startInstallation(QString device, std::function<void (bool)> c
                                   if (!n->start())
                                   {
                                       delete n;
-                                      lastError = "Failed to start network request";
+                                      lastError = tr("Failed to start network request");
                                       job->emitFailed();
                                   }
                               }));
@@ -177,6 +179,68 @@ void CalaosOsAPI::configureNetwork(const QJsonObject &networkConfig, std::functi
     QByteArray data = QJsonDocument(networkConfig).toJson(QJsonDocument::Compact);
     qDebug() << "Configure network:" << QString(data);
     doPost(QStringLiteral("/api/network/%1").arg(networkConfig["name"].toString()), data, callback);
+}
+
+void CalaosOsAPI::checkUpdates(std::function<void (bool, const QJsonObject &, const QString &)> callback)
+{
+    doGetRaw("/api/update/check", [this, callback](bool success, int, const QJsonDocument &doc)
+             {
+                 callback(success, doc.object(), success ? QString() : lastError);
+             });
+}
+
+void CalaosOsAPI::getAvailableUpdates(std::function<void (bool, const QJsonObject &, const QString &)> callback)
+{
+    doGetRaw("/api/update/available", [this, callback](bool success, int, const QJsonDocument &doc)
+             {
+                 callback(success, doc.object(), success ? QString() : lastError);
+             });
+}
+
+void CalaosOsAPI::getInstalledPackages(std::function<void (bool, int, const QJsonObject &)> callback)
+{
+    doGetRaw("/api/update/installed", [callback](bool success, int httpStatus, const QJsonDocument &doc)
+             {
+                 callback(success, httpStatus, doc.object());
+             });
+}
+
+void CalaosOsAPI::upgradePackage(const QString &package, std::function<void (bool, int, const QString &)> callback)
+{
+    QUrlQuery query;
+    query.addQueryItem("package", package);
+    QString apiPath = QStringLiteral("/api/update/upgrade?") + query.toString(QUrl::FullyEncoded);
+
+    doPostRaw(apiPath, QByteArray(), [this, callback](bool success, int httpStatus, const QJsonDocument &)
+              {
+                  callback(success, httpStatus, success ? QString() : lastError);
+              });
+}
+
+void CalaosOsAPI::upgradeAll(std::function<void (bool, int, const QString &)> callback)
+{
+    doPostRaw("/api/update/upgrade-all", QByteArray(), [this, callback](bool success, int httpStatus, const QJsonDocument &)
+              {
+                  callback(success, httpStatus, success ? QString() : lastError);
+              });
+}
+
+void CalaosOsAPI::getUpdateStatus(std::function<void (bool, const QJsonObject &)> callback)
+{
+    doGetRaw("/api/update/status", [callback](bool success, int, const QJsonDocument &doc)
+             {
+                 callback(success, doc.object());
+             });
+}
+
+QString CalaosOsAPI::getToken() const
+{
+    return token;
+}
+
+QString CalaosOsAPI::getBaseAddr() const
+{
+    return calaosAddr;
 }
 
 void CalaosOsAPI::checkErrors(const QJsonDocument &jdoc, NetworkRequest *n)
@@ -225,7 +289,7 @@ void CalaosOsAPI::doPost(QString apiPath, const QByteArray &postData, std::funct
                                   if (!n->start())
                                   {
                                       delete n;
-                                      lastError = "Failed to start network request";
+                                      lastError = tr("Failed to start network request");
                                       job->emitFailed();
                                   }
                               }));
@@ -285,7 +349,7 @@ void CalaosOsAPI::doGet(QString apiPath, std::function<void (bool, const QJsonVa
                                   if (!n->start())
                                   {
                                       delete n;
-                                      lastError = "Failed to start network request";
+                                      lastError = tr("Failed to start network request");
                                       job->emitFailed();
                                   }
                               }));
@@ -298,6 +362,130 @@ void CalaosOsAPI::doGet(QString apiPath, std::function<void (bool, const QJsonVa
     connect(jobs, &AsyncJobs::finished, this, [callback](const QVariant &data)
             {
                 callback(true, data.toJsonValue());
+            });
+
+    jobs->start();
+}
+
+void CalaosOsAPI::doPostRaw(QString apiPath, const QByteArray &postData, std::function<void (bool, int, const QJsonDocument &)> callback)
+{
+    AsyncJobs *jobs = new AsyncJobs(this);
+
+    auto httpStatus = std::make_shared<int>(0);
+    auto resultDoc = std::make_shared<QJsonDocument>();
+
+    jobs->append(new AsyncJob([this, apiPath, postData, httpStatus, resultDoc](AsyncJob *job, const QVariant &)
+                              {
+                                  lastError.clear();
+                                  QString url = calaosAddr % apiPath;
+
+                                  NetworkRequest *n = new NetworkRequest(url, NetworkRequest::HttpPost, this);
+                                  n->setNetManager(netManager);
+                                  n->setCustomHeader("Authorization", QStringLiteral("bearer %1").arg(token));
+                                  n->setCustomHeader("Content-Type", "application/json");
+                                  n->setResultType(NetworkRequest::TypeJson);
+                                  n->setPostData(postData);
+
+                                  connect(n, &NetworkRequest::finishedJson, this, [this, n, job, httpStatus, resultDoc](int success, const QJsonDocument &jdoc)
+                                          {
+                                              *httpStatus = n->getHttpStatusCode();
+                                              *resultDoc = jdoc;
+
+                                              if (success == NetworkRequest::RequestSuccess)
+                                              {
+                                                  job->emitSuccess();
+                                              }
+                                              else
+                                              {
+                                                  QJsonObject jobj = jdoc.object();
+                                                  if (jobj["error"].toBool())
+                                                      lastError = jobj["msg"].toString();
+                                                  else
+                                                      lastError = n->getLastError();
+
+                                                  job->emitFailed();
+                                              }
+
+                                              n->deleteLater();
+                                          });
+
+                                  if (!n->start())
+                                  {
+                                      delete n;
+                                      lastError = tr("Failed to start network request");
+                                      job->emitFailed();
+                                  }
+                              }));
+
+    connect(jobs, &AsyncJobs::failed, this, [callback, httpStatus, resultDoc](AsyncJob *)
+            {
+                callback(false, *httpStatus, *resultDoc);
+            });
+
+    connect(jobs, &AsyncJobs::finished, this, [callback, httpStatus, resultDoc](const QVariant &)
+            {
+                callback(true, *httpStatus, *resultDoc);
+            });
+
+    jobs->start();
+}
+
+void CalaosOsAPI::doGetRaw(QString apiPath, std::function<void (bool, int, const QJsonDocument &)> callback)
+{
+    AsyncJobs *jobs = new AsyncJobs(this);
+
+    auto httpStatus = std::make_shared<int>(0);
+    auto resultDoc = std::make_shared<QJsonDocument>();
+
+    jobs->append(new AsyncJob([this, apiPath, httpStatus, resultDoc](AsyncJob *job, const QVariant &)
+                              {
+                                  lastError.clear();
+                                  QString url = calaosAddr % apiPath;
+
+                                  NetworkRequest *n = new NetworkRequest(url, NetworkRequest::HttpGet, this);
+                                  n->setNetManager(netManager);
+                                  n->setCustomHeader("Authorization", QStringLiteral("bearer %1").arg(token));
+                                  n->setResultType(NetworkRequest::TypeJson);
+
+                                  connect(n, &NetworkRequest::finishedJson, this, [this, n, job, httpStatus, resultDoc](int success, const QJsonDocument &jdoc)
+                                          {
+                                              *httpStatus = n->getHttpStatusCode();
+                                              *resultDoc = jdoc;
+
+                                              if (success == NetworkRequest::RequestSuccess)
+                                              {
+                                                  job->emitSuccess();
+                                              }
+                                              else
+                                              {
+                                                  QJsonObject jobj = jdoc.object();
+                                                  if (jobj["error"].toBool())
+                                                      lastError = jobj["msg"].toString();
+                                                  else
+                                                      lastError = n->getLastError();
+
+                                                  job->emitFailed();
+                                              }
+
+                                              n->deleteLater();
+                                          });
+
+                                  if (!n->start())
+                                  {
+                                      delete n;
+                                      lastError = tr("Failed to start network request");
+                                      job->emitFailed();
+                                  }
+                              }));
+
+    connect(jobs, &AsyncJobs::failed, this, [callback, httpStatus, resultDoc](AsyncJob *)
+            {
+                callback(false, *httpStatus, *resultDoc);
+            });
+
+    connect(jobs, &AsyncJobs::finished, this, [callback, httpStatus, resultDoc](const QVariant &)
+            {
+                callback(true, *httpStatus, *resultDoc);
             });
 
     jobs->start();

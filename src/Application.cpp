@@ -252,7 +252,10 @@ void Application::createQmlApp()
     engine.rootContext()->setContextProperty("bookmarkModel", bookmarkModel);
 
 #ifdef HAVE_WEBENGINE
-    webProfile = new QQuickWebEngineProfile(QStringLiteral("CalaosWebProfile"), this);
+    //setStorageName() instead of the storage-name constructor: the latter
+    //only exists in recent Qt and this must build on older Qt too (6.4)
+    webProfile = new QQuickWebEngineProfile(this);
+    webProfile->setStorageName(QStringLiteral("CalaosWebProfile"));
     webProfile->setOffTheRecord(false);
     webProfile->setPersistentCookiesPolicy(QQuickWebEngineProfile::ForcePersistentCookies);
     webProfile->setHttpCacheType(QQuickWebEngineProfile::DiskHttpCache);

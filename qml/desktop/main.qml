@@ -56,6 +56,13 @@ Window {
         return (page && page.viewId) ? page.viewId : ""
     }
 
+    //Show a top level section, replacing whatever section was open. The desktop
+    //is the stack root and stays there, so a section always ends up at depth 2.
+    function enterSection(sectionView) {
+        stackView.pop(null)
+        stackView.push(sectionView)
+    }
+
     function handleSubitemClick(itemId) {
         var item;
         if (itemId === "media/music") {
@@ -100,34 +107,16 @@ Window {
         menuContent: MainMenu {
             id: mainMenu
 
-            onButtonHomeClicked: {
-                console.log("currentButton", currentButton)
-                if (currentButton == 0)
-                    stackView.push(homeView)
-                else
-                    stackView.replace(desktopView, homeView)
-            }
-            onButtonMediaClicked: {
-                console.log("currentButton", currentButton)
-                if (currentButton == 0)
-                    stackView.push(mediaMenuView)
-                else
-                    stackView.replace(desktopView, mediaMenuView)
-            }
-            onButtonScenariosClicked: {
-                console.log("currentButton", currentButton)
-                if (currentButton == 0)
-                    stackView.push(scenariosView)
-                else
-                    stackView.replace(desktopView, scenariosView)
-            }
-            onButtonConfigClicked: {
-                console.log("currentButton", currentButton)
-                if (currentButton == 0)
-                    stackView.push(configPanelView)
-                else
-                    stackView.replace(desktopView, configPanelView)
-            }
+            //A section always sits at depth 2, directly above the desktop.
+            //replace(desktopView, x) used to be called when coming from another
+            //section, but desktopView is a Component and replace() only treats
+            //its first argument as a target when that target is an Item already
+            //on the stack. It was instead replacing the current page with two
+            //pages, growing the stack and leaving a stray desktop underneath.
+            onButtonHomeClicked: enterSection(homeView)
+            onButtonMediaClicked: enterSection(mediaMenuView)
+            onButtonScenariosClicked: enterSection(scenariosView)
+            onButtonConfigClicked: enterSection(configPanelView)
         }
 
         mainContent: StackViewAnim {

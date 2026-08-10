@@ -26,22 +26,22 @@
     <message>
         <location filename="../src/Application.cpp" line="212"/>
         <source>Credentials change failed</source>
-        <translation>Änderung der Anmeldeinformationen fehlgeschlagen</translation>
+        <translation>Änderung der Anmeldedaten fehlgeschlagen</translation>
     </message>
     <message>
         <location filename="../src/Application.cpp" line="213"/>
         <source>Credentials were not changed. Please try again.</source>
-        <translation>Die Anmeldeinformationen wurden nicht geändert. Bitte versuchen Sie es erneut.</translation>
+        <translation>Die Anmeldedaten wurden nicht geändert. Bitte versuchen Sie es erneut.</translation>
     </message>
     <message>
         <location filename="../src/Application.cpp" line="224"/>
         <source>Credentials changed</source>
-        <translation>Berechtigungsnachweise geändert</translation>
+        <translation>Anmeldedaten geändert</translation>
     </message>
     <message>
         <location filename="../src/Application.cpp" line="225"/>
         <source>Credentials were successfully changed.</source>
-        <translation>Die Berechtigungsnachweise wurden erfolgreich geändert.</translation>
+        <translation>Die Anmeldedaten wurden erfolgreich geändert.</translation>
     </message>
     <message>
         <location filename="../src/Application.cpp" line="382"/>
@@ -51,7 +51,7 @@
     <message>
         <location filename="../src/Application.cpp" line="509"/>
         <source>Login failed</source>
-        <translation>Fehlgeschlagene Anmeldung</translation>
+        <translation>Anmeldung fehlgeschlagen</translation>
     </message>
     <message>
         <location filename="../src/Application.cpp" line="510"/>
@@ -221,12 +221,12 @@
     <message>
         <location filename="../qml/desktop/ConfigInstallView.qml" line="185"/>
         <source>Installation</source>
-        <translation>Einrichtung</translation>
+        <translation>Installation</translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigInstallView.qml" line="212"/>
         <source>Install</source>
-        <translation>Installieren Sie</translation>
+        <translation>Installieren</translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigInstallView.qml" line="218"/>
@@ -363,7 +363,7 @@
     <message>
         <location filename="../qml/desktop/ConfigTabs.qml" line="60"/>
         <source>Product Version:</source>
-        <translation>Produkt Version:</translation>
+        <translation>Produktversion:</translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigTabs.qml" line="66"/>
@@ -389,7 +389,7 @@
     <message>
         <location filename="../qml/desktop/ConfigTabs.qml" line="79"/>
         <source>Machine name:</source>
-        <translation>Name der Maschine:</translation>
+        <translation>Gerätename:</translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigTabs.qml" line="84"/>
@@ -524,7 +524,7 @@
     <message>
         <location filename="../qml/desktop/ConfigUpdateView.qml" line="482"/>
         <source>Update your system</source>
-        <translation>Aktualisieren Sie Ihr System</translation>
+        <translation>System aktualisieren</translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigUpdateView.qml" line="509"/>
@@ -557,7 +557,7 @@
     <message>
         <location filename="../qml/desktop/ConfigUserInfoView.qml" line="61"/>
         <source>Locked</source>
-        <translation>Abgeschlossen</translation>
+        <translation>Gesperrt</translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigUserInfoView.qml" line="62"/>
@@ -605,7 +605,7 @@
     <message>
         <location filename="../qml/desktop/ConfigUserInfoView.qml" line="92"/>
         <source>The username was not changed. Please try again.</source>
-        <translation>Der Nutzername wurde nicht geändert. Bitte versuchen Sie es erneut.</translation>
+        <translation>Der Benutzername wurde nicht geändert. Bitte versuchen Sie es erneut.</translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigUserInfoView.qml" line="99"/>
@@ -647,7 +647,7 @@
     <message>
         <location filename="../qml/desktop/ConfigUserInfoView.qml" line="133"/>
         <source>Actual username:</source>
-        <translation>Aktueller Nutzername:</translation>
+        <translation>Aktueller Benutzername:</translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigUserInfoView.qml" line="160"/>
@@ -667,12 +667,12 @@
     <message>
         <location filename="../qml/desktop/ConfigUserInfoView.qml" line="240"/>
         <source>Add a new email address to the list</source>
-        <translation>Hinzufügen einer neuen E-Mail-Adresse zu der Liste</translation>
+        <translation>Eine neue E-Mail-Adresse zur Liste hinzufügen</translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigUserInfoView.qml" line="279"/>
         <source>User information</source>
-        <translation>Informationen für den Benutzer</translation>
+        <translation>Benutzerinformationen</translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigUserInfoView.qml" line="306"/>
@@ -710,7 +710,7 @@
     <message>
         <location filename="../qml/desktop/ConfigView.qml" line="104"/>
         <source>Configuration Panel</source>
-        <translation>Konfigurationstafel</translation>
+        <translation>Systemsteuerung</translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigView.qml" line="131"/>
@@ -773,7 +773,7 @@
     <message>
         <location filename="../src/ControlPanelModel.cpp" line="64"/>
         <source>Installation</source>
-        <translation>Einrichtung</translation>
+        <translation>Installation</translation>
     </message>
     <message>
         <location filename="../src/ControlPanelModel.cpp" line="65"/>
@@ -801,7 +801,7 @@
     <message>
         <location filename="../qml/desktop/DesktopView.qml" line="74"/>
         <source>Cancel</source>
-        <translation>Beenden</translation>
+        <translation>Abbrechen</translation>
     </message>
 </context>
 <context>
@@ -809,7 +809,7 @@
     <message>
         <location filename="../qml/desktop/Dialog.qml" line="43"/>
         <source>Cancel</source>
-        <translation>Beenden</translation>
+        <translation>Abbrechen</translation>
     </message>
     <message>
         <location filename="../qml/desktop/Dialog.qml" line="44"/>
@@ -833,7 +833,7 @@
     <message>
         <location filename="../qml/desktop/DialogAddWidget.qml" line="11"/>
         <source>Cancel</source>
-        <translation>Beenden</translation>
+        <translation>Abbrechen</translation>
     </message>
 </context>
 <context>
@@ -884,7 +884,7 @@
     <message>
         <location filename="../qml/desktop/DialogKeyboard.qml" line="236"/>
         <source>Valid</source>
-        <translation>Gültig</translation>
+        <translation>Bestätigen</translation>
     </message>
     <message>
         <location filename="../qml/desktop/DialogKeyboard.qml" line="250"/>
@@ -1061,12 +1061,12 @@
     <message>
         <location filename="../qml/desktop/DialogReboot.qml" line="10"/>
         <source>Yes, reboot</source>
-        <translation>Ja, Neustart</translation>
+        <translation>Ja, Gerät neu starten</translation>
     </message>
     <message>
         <location filename="../qml/desktop/DialogReboot.qml" line="10"/>
         <source>Yes, restart</source>
-        <translation>Ja, Neustart</translation>
+        <translation>Ja, App neu starten</translation>
     </message>
     <message>
         <location filename="../qml/desktop/DialogReboot.qml" line="11"/>
@@ -1089,7 +1089,7 @@
     <message>
         <location filename="../qml/desktop/DialogRecoveryBoot.qml" line="7"/>
         <source>Recovery System</source>
-        <translation>Rückgewinnungssystem</translation>
+        <translation>Wiederherstellungssystem</translation>
     </message>
     <message>
         <location filename="../qml/desktop/DialogRecoveryBoot.qml" line="8"/>
@@ -1197,7 +1197,7 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
     <message>
         <location filename="../src/EventLogModel.cpp" line="102"/>
         <source>Appliance change</source>
-        <translation>Wechsel des Geräts</translation>
+        <translation>Geräteänderung</translation>
     </message>
     <message>
         <location filename="../src/EventLogModel.cpp" line="107"/>
@@ -1218,7 +1218,7 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <location filename="../src/EventLogModel.cpp" line="164"/>
         <location filename="../src/EventLogModel.cpp" line="178"/>
         <source>On</source>
-        <translation>Auf</translation>
+        <translation>Ein</translation>
     </message>
     <message>
         <location filename="../src/EventLogModel.cpp" line="169"/>
@@ -1234,12 +1234,12 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
     <message>
         <location filename="../src/EventLogModel.cpp" line="197"/>
         <source>Open</source>
-        <translation>Öffnen</translation>
+        <translation>Geöffnet</translation>
     </message>
     <message>
         <location filename="../src/EventLogModel.cpp" line="202"/>
         <source>Closed</source>
-        <translation>Schliessen</translation>
+        <translation>Geschlossen</translation>
     </message>
     <message>
         <location filename="../src/EventLogModel.cpp" line="208"/>
@@ -1270,7 +1270,7 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
     <message>
         <location filename="../qml/mobile/FavoritesAddView.qml" line="175"/>
         <source>Item added to favorites</source>
-        <translation>Artikel zu den Favoriten hinzugefügt</translation>
+        <translation>Element zu den Favoriten hinzugefügt</translation>
     </message>
 </context>
 <context>
@@ -1288,7 +1288,7 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
     <message>
         <location filename="../qml/mobile/FavoritesEditView.qml" line="201"/>
         <source>Item removed from favorites</source>
-        <translation>Artikel aus den Favoriten entfernt</translation>
+        <translation>Element aus den Favoriten entfernt</translation>
     </message>
 </context>
 <context>
@@ -1353,12 +1353,12 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
     <message>
         <location filename="../src/RoomModel.cpp" line="523"/>
         <source>State: Opened.</source>
-        <translation>Zustand: Eröffnet.</translation>
+        <translation>Zustand: Geöffnet.</translation>
     </message>
     <message>
         <location filename="../src/RoomModel.cpp" line="525"/>
         <source>State: %1% Opened.</source>
-        <translation>Zustand: %1% Eröffnet.</translation>
+        <translation>Zustand: %1% Geöffnet.</translation>
     </message>
     <message>
         <location filename="../src/RoomModel.cpp" line="527"/>
@@ -1383,7 +1383,7 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
     <message>
         <location filename="../src/RoomModel.cpp" line="537"/>
         <source>Action: Opening...</source>
-        <translation>Aktion: Eröffnung...</translation>
+        <translation>Aktion: Öffnen...</translation>
     </message>
     <message>
         <location filename="../src/RoomModel.cpp" line="677"/>
@@ -1533,7 +1533,7 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
     <message>
         <location filename="../qml/mobile/LoginView.qml" line="100"/>
         <source>Login</source>
-        <translation>Anmeldung</translation>
+        <translation>Anmelden</translation>
     </message>
 </context>
 <context>
@@ -1561,7 +1561,7 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
     <message>
         <location filename="../qml/desktop/MainMenu.qml" line="160"/>
         <source>Shut the screen off</source>
-        <translation>Ausschalten des Bildschirms</translation>
+        <translation>Bildschirm ausschalten</translation>
     </message>
     <message>
         <location filename="../qml/desktop/MainMenu.qml" line="161"/>
@@ -1571,7 +1571,7 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
     <message>
         <location filename="../qml/desktop/MainMenu.qml" line="167"/>
         <source>Reboot the machine</source>
-        <translation>Starten Sie das Gerät neu</translation>
+        <translation>Gerät neu starten</translation>
     </message>
     <message>
         <location filename="../qml/desktop/MainMenu.qml" line="168"/>
@@ -1675,7 +1675,7 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
     <message>
         <location filename="../qml/desktop/MediaView.qml" line="72"/>
         <source>Drive all you cctv cameras</source>
-        <translation>Fahren Sie alle cctv-Kameras</translation>
+        <translation>Steuern Sie alle Überwachungskameras</translation>
     </message>
     <message>
         <location filename="../qml/desktop/MediaView.qml" line="78"/>
@@ -1726,7 +1726,7 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
     <message>
         <location filename="../qml/desktop/MediaWebView.qml" line="258"/>
         <source>Enter the url to navigate to</source>
-        <translation>Geben Sie die URL ein, um zu navigieren</translation>
+        <translation>Geben Sie die aufzurufende URL ein</translation>
     </message>
     <message>
         <location filename="../qml/desktop/MediaWebView.qml" line="227"/>
@@ -1843,12 +1843,12 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
     <message>
         <location filename="../qml/mobile/PullRefreshHeader.qml" line="31"/>
         <source>Pull to refresh...</source>
-        <translation>Zum Auffrischen ziehen...</translation>
+        <translation>Zum Aktualisieren ziehen...</translation>
     </message>
     <message>
         <location filename="../qml/mobile/PullRefreshHeader.qml" line="44"/>
         <source>Release to refresh...</source>
-        <translation>Freigabe zur Auffrischung...</translation>
+        <translation>Loslassen zum Aktualisieren...</translation>
     </message>
 </context>
 <context>
@@ -1871,7 +1871,7 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
     <message>
         <location filename="../qml/desktop/RoomDetailView.qml" line="228"/>
         <source>Back to home</source>
-        <translation>Zurück zu den Haus</translation>
+        <translation>Zurück zum Haus</translation>
     </message>
     <message>
         <location filename="../qml/desktop/RoomDetailView.qml" line="235"/>
@@ -1969,7 +1969,7 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
     <message>
         <location filename="../qml/mobile/SettingsView.qml" line="45"/>
         <source>Logout</source>
-        <translation>Abmeldung</translation>
+        <translation>Abmelden</translation>
     </message>
     <message>
         <location filename="../qml/mobile/SettingsView.qml" line="56"/>
@@ -2274,7 +2274,7 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
     <message>
         <location filename="../src/HardwareUtils_desktop.cpp" line="42"/>
         <source>directory</source>
-        <translation>verzeichnis</translation>
+        <translation>Verzeichnis</translation>
     </message>
 </context>
 <context>
@@ -2310,7 +2310,7 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
     <message>
         <location filename="../src/HardwareUtils_desktop.cpp" line="38"/>
         <source>directory</source>
-        <translation>verzeichnis</translation>
+        <translation>Verzeichnis</translation>
     </message>
 </context>
 <context>

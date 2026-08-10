@@ -4,6 +4,12 @@ name: PR CI
 # unitaires et passe qmllint. Les workflows existants (build*.yml,
 # build_docker_*.yml) ne compilent rien : ils délèguent ou fabriquent des
 # images Docker. Ce workflow-ci est le seul garde-fou de compilation.
+#
+# Les jobs tournent dans un conteneur Arch Linux, comme la release
+# (docker/Dockerfile part de archlinux:base-devel). Arch est rolling, donc on
+# compile avec le Qt 6 le plus récent — celui des livrables. Ubuntu ne fournit
+# que Qt 6.4.2, une version qu'aucune cible réelle n'utilise : y compiler ne
+# prouverait rien sur ce qui est effectivement livré.
 
 on:
   pull_request:
@@ -18,42 +24,40 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  DEBIAN_FRONTEND: noninteractive
-
 jobs:
   build-desktop:
     name: Build desktop (Qt6 / qmake)
     runs-on: ubuntu-latest
+    container: archlinux:base-devel
     steps:
+      # Avant actions/checkout : l'image de base n'a pas git, sans quoi
+      # l'action retombe sur un téléchargement d'archive REST.
+      # La liste Qt est celle de depends()/makedepends() du PKGBUILD de
+      # release (calaos/pkgbuilds/calaos-home), pour compiler exactement la
+      # configuration livrée — webengine compris, sinon les blocs
+      # HAVE_WEBENGINE de main.cpp et Application.cpp ne sont jamais compilés.
+      - name: Install toolchain
+        run: |
+          pacman -Syu --noconfirm --needed \
+            git \
+            qt6-base \
+            qt6-5compat \
+            qt6-declarative \
+            qt6-imageformats \
+            qt6-svg \
+            qt6-virtualkeyboard \
+            qt6-webchannel \
+            qt6-webengine \
+            qt6-websockets \
+            qt6-webview \
+            qt6-shadertools \
+            qt6-tools \
+            libx11 \
+            libxext
+
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Qt6 build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            build-essential \
-            pkg-config \
-            qmake6 \
-            qt6-base-dev \
-            qt6-base-dev-tools \
-            qt6-declarative-dev \
-            qt6-websockets-dev \
-            qt6-5compat-dev \
-            qt6-svg-dev \
-            qt6-l10n-tools \
-            libx11-dev \
-            libxext-dev
-
-      # qt6-l10n-tools ships /usr/lib/qt6/bin/lrelease. lang/lang.pri turns the
-      # .ts catalogues into .qm during the build and declares
-      # PRE_TARGETDEPS += compiler_updateqm_make_all, so the target is not
-      # optional: without lrelease the build stops on "Error 127".
-
-      # webenginequick n'est volontairement PAS installé : desktop.pro le
-      # protège par qtHaveModule(webenginequick) (cf. desktop.pro:19-22).
-      # L'installer ferait entrer QtWebEngine (~1 Go) dans chaque run.
       - name: Show toolchain versions
         run: |
           qmake6 -v
@@ -68,20 +72,18 @@ jobs:
   tests:
     name: Unit tests (Qt Test)
     runs-on: ubuntu-latest
+    container: archlinux:base-devel
     steps:
+      - name: Install toolchain
+        run: |
+          pacman -Syu --noconfirm --needed \
+            git \
+            qt6-base \
+            qt6-declarative \
+            qt6-websockets
+
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Install Qt6 test dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            build-essential \
-            qmake6 \
-            qt6-base-dev \
-            qt6-base-dev-tools \
-            qt6-declarative-dev \
-            qt6-websockets-dev
 
       # Build shadow : tests/tests.pro est un projet qmake autonome
       # (TEMPLATE=subdirs), il n'est inclus ni par desktop.pro ni par mobile.pro.
@@ -101,26 +103,25 @@ jobs:
   qmllint:
     name: qmllint (pragmatic)
     runs-on: ubuntu-latest
+    container: archlinux:base-devel
     steps:
+      - name: Install toolchain
+        run: |
+          pacman -Syu --noconfirm --needed \
+            git \
+            python \
+            qt6-base \
+            qt6-declarative
+
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Install qmllint
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            qmake6 \
-            qt6-base-dev \
-            qt6-declarative-dev \
-            qt6-declarative-dev-tools
 
       - name: Run qmllint
         run: |
           set -euo pipefail
-          # Sur Debian/Ubuntu, qt6-declarative-dev-tools installe
-          # /usr/lib/qt6/bin/qmllint, qui n'est PAS dans le PATH (et n'a pas de
-          # suffixe « -qt6 », contrairement à Fedora). On demande le répertoire
-          # à qmake plutôt que de coder le chemin en dur.
+          # L'exécutable n'est pas au même endroit selon la distribution
+          # (/usr/lib/qt6/bin sur Arch et Debian, suffixé « -qt6 » sur Fedora).
+          # On demande le répertoire à qmake plutôt que de le coder en dur.
           QMLLINT="$(qmake6 -query QT_HOST_BINS)/qmllint"
           if [ ! -x "$QMLLINT" ]; then
             QMLLINT="$(command -v qmllint-qt6 || command -v qmllint)"

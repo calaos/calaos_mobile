@@ -7,20 +7,19 @@
 #include <QQmlApplicationEngine>
 #include "CalaosConnection.h"
 #include "Common.h"
+#include "ModelImageProvider.h"
 #include <QQuickImageProvider>
+#include <QTimer>
 
 class AudioModel;
 
-class AudioImageProvider: public QQuickImageProvider
+//Thin specialization, all the logic lives in ModelImageProvider
+class AudioImageProvider: public ModelImageProvider
 {
 public:
-    AudioImageProvider(AudioModel *model);
-
-    virtual QImage requestImage(const QString &id, QSize *size, const QSize &requestedSize);
-    virtual QPixmap requestPixmap(const QString &id, QSize *size, const QSize &requestedSize);
-
-private:
-    AudioModel *model = nullptr;
+    explicit AudioImageProvider(const ImageCachePtr &cache):
+        ModelImageProvider(cache)
+    { }
 };
 
 class AudioModel: public QStandardItemModel
@@ -57,7 +56,10 @@ private:
 
     QQmlApplicationEngine *engine = nullptr;
     CalaosConnection *connection = nullptr;
+    //Owned by the QML engine
     AudioImageProvider *imgProvider = nullptr;
+    //Shared with the provider and with every AudioPlayer
+    ImageCachePtr imageCache;
 };
 
 class AudioPlayer: public QObject, public QStandardItem
@@ -80,10 +82,11 @@ class AudioPlayer: public QObject, public QStandardItem
     QML_WRITABLE_PROPERTY(bool, playerVisible)
 
 public:
-    AudioPlayer(CalaosConnection *con);
+    AudioPlayer(CalaosConnection *con, const ImageCachePtr &cache);
 
     void load(QVariantMap &d);
 
+    //Both are idempotent, the poll timer is created once and reused
     void startPolling();
     void stopPolling();
 
@@ -93,8 +96,6 @@ public:
     Q_INVOKABLE void sendNext();
     Q_INVOKABLE void sendPrevious();
     Q_INVOKABLE void sendVolume(int vol);
-
-    void getCurrentCoverImage(QImage &image);
 
 public slots:
     void audioChanged(QString playerid);
@@ -106,9 +107,9 @@ public slots:
 private:
     QVariantMap playerData;
     CalaosConnection *connection;
+    ImageCachePtr imageCache;
     bool loaded;
     QTimer *pollTimer = nullptr;
-    QImage currentCoverImage;
 
     void updatePlayerState(const QVariantMap &data);
 };

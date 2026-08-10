@@ -1,5 +1,8 @@
 #include "AudioModel.h"
 
+//Delay between two state queries of a visible player
+static const int AudioPollIntervalMs = 1000;
+
 AudioModel::AudioModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent):
     QStandardItemModel(parent),
     engine(eng),
@@ -18,11 +21,13 @@ AudioModel::AudioModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObjec
 
     set_playersVisible(false);
 
-    //add a special image provider for single pictures of cameras
-    imgProvider = new AudioImageProvider(this);
+    //add a special image provider for album covers
+    //The cache is shared with the items, the provider itself is owned by the engine
+    imageCache = ImageCachePtr::create();
+    imgProvider = new AudioImageProvider(imageCache);
     engine->addImageProvider(QLatin1String("audio_cover"), imgProvider);
 
-    connect(this, &AudioModel::playersVisibleChanged, this, [=](bool visible)
+    connect(this, &AudioModel::playersVisibleChanged, this, [this](bool visible)
     {
         for (int i = 0;i < rowCount();i++)
         {
@@ -44,6 +49,7 @@ AudioModel::AudioModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObjec
 void AudioModel::load(const QVariantMap &homeData)
 {
     clear();
+    imageCache->clear();
 
     if (!homeData.contains("audio"))
     {
@@ -56,7 +62,7 @@ void AudioModel::load(const QVariantMap &homeData)
     for (;it != players.end();it++)
     {
         QVariantMap r = it->toMap();
-        AudioPlayer *p = new AudioPlayer(connection);
+        AudioPlayer *p = new AudioPlayer(connection, imageCache);
         p->load(r);
         appendRow(p);
     }
@@ -69,65 +75,14 @@ QObject *AudioModel::getItemModel(int idx)
     return obj;
 }
 
-QImage AudioImageProvider::requestImage(const QString &qid, QSize *size, const QSize &requestedSize)
-{
-    QImage retimg;
-
-    if (!model)
-        return {};
-
-    QStringList sl = qid.split('/');
-    if (sl.empty()) return retimg;
-
-    const QString& id = sl.at(0);
-    AudioPlayer *player = nullptr;
-
-    if (id.toInt() < 0)
-        return retimg;
-
-    for (int i = 0;i < model->rowCount();i++)
-    {
-        AudioPlayer *p = dynamic_cast<AudioPlayer *>(model->item(i));
-        if (!p)
-        {
-            qWarning() << "AudioModel: row" << i << "is not an AudioPlayer, skipping";
-            continue;
-        }
-        if (p->get_id() == id)
-        {
-            player = p;
-            break;
-        }
-    }
-    if (!player)
-        return retimg;
-
-    player->getCurrentCoverImage(retimg);
-
-    *size = retimg.size();
-    if (requestedSize.isValid())
-        return retimg.scaled(requestedSize, Qt::KeepAspectRatio);
-
-    return retimg;
-}
-
-QPixmap AudioImageProvider::requestPixmap(const QString &id, QSize *size, const QSize &requestedSize)
-{
-    return QPixmap::fromImage(requestImage(id, size, requestedSize));
-}
-
-AudioPlayer::AudioPlayer(CalaosConnection *con):
+AudioPlayer::AudioPlayer(CalaosConnection *con, const ImageCachePtr &cache):
     QStandardItem(),
-    connection(con)
+    connection(con),
+    imageCache(cache)
 {
     loaded = false;
 
     connect(connection, &CalaosConnection::audioCoverDownloaded, this, &AudioPlayer::audioCoverDownloaded);
-}
-
-void AudioPlayer::getCurrentCoverImage(QImage &image)
-{
-    image = currentCoverImage;
 }
 
 void AudioPlayer::updatePlayerState(const QVariantMap &d)
@@ -278,21 +233,27 @@ void AudioPlayer::audioVolumeChanged(QString playerid, double volume)
 
 void AudioPlayer::startPolling()
 {
-    if (pollTimer) delete pollTimer;
-    pollTimer = new QTimer(this);
-    connect(pollTimer, &QTimer::timeout, this, [=]()
+    //The timer is created once and reused, never deleted while it may be
+    //active. Restarting it can never create a second polling chain.
+    if (!pollTimer)
     {
-        connection->queryState(QStringList(),
-                               QStringList(),
-                               QStringList() << get_id());
-    });
-    pollTimer->start(1000);
+        pollTimer = new QTimer(this);
+        connect(pollTimer, &QTimer::timeout, this, [this]()
+        {
+            connection->queryState(QStringList(),
+                                   QStringList(),
+                                   QStringList() << get_id());
+        });
+    }
+
+    if (!pollTimer->isActive())
+        pollTimer->start(AudioPollIntervalMs);
 }
 
 void AudioPlayer::stopPolling()
 {
-    delete pollTimer;
-    pollTimer = nullptr;
+    if (pollTimer)
+        pollTimer->stop();
 }
 
 void AudioPlayer::audioCoverDownloaded(QString playerid, const QByteArray &data)
@@ -300,17 +261,17 @@ void AudioPlayer::audioCoverDownloaded(QString playerid, const QByteArray &data)
     if (playerid != get_id())
         return;
 
-    currentCoverImage = QImage::fromData(data);
-    if (currentCoverImage.isNull())
+    const QImage cover = QImage::fromData(data);
+
+    //Push a copy into the cache before advertising the new url, so that the
+    //provider thread never reads a stale entry for a fresh url
+    if (imageCache)
+        imageCache->setImage(get_id(), cover);
+
+    if (cover.isNull())
         update_cover({});
     else
         update_cover(QString("image://audio_cover/%1/%2")
                      .arg(get_id())
                      .arg(QRandomGenerator::global()->generate()));
-}
-
-AudioImageProvider::AudioImageProvider(AudioModel *m):
-    QQuickImageProvider(QQuickImageProvider::Image),
-    model(m)
-{
 }

@@ -207,7 +207,7 @@ Item {
                 color: Qt.rgba(255, 255, 255, 0.2)
                 Rectangle {
                     height: parent.height
-                    width: parent.width * Math.min(1, Math.max(0, playerModel.elapsed / playerModel.duration))
+                    width: parent.width * (playerModel.duration > 0 ? Math.min(1, Math.max(0, playerModel.elapsed / playerModel.duration)) : 0)
                     color: "#3AB4D7"
                 }
             }

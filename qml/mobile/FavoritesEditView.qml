@@ -114,7 +114,7 @@ Item {
                 anchors.fill: icon
                 property int positionStarted: 0
                 property int positionEnded: 0
-                property int positionsMoved: Math.floor((positionEnded - positionStarted)/parent.height)
+                property int positionsMoved: parent.height > 0 ? Math.floor((positionEnded - positionStarted)/parent.height) : 0
                 property int newPosition: index + positionsMoved
                 property bool held: false
                 drag.axis: Drag.YAxis

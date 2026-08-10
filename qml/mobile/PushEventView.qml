@@ -82,9 +82,9 @@ Item {
                 Layout.maximumWidth: rootitem.width
                 source: event_picurl
 
-                property double ratio: sourceSize.width / sourceSize.height
+                property double ratio: sourceSize.height > 0 ? sourceSize.width / sourceSize.height : 1
                 width: parent.width
-                Layout.preferredHeight: width / ratio
+                Layout.preferredHeight: ratio > 0 ? width / ratio : 0
             }
 
             Text {

@@ -52,7 +52,7 @@ Item {
         }
         width: Math.min(parent.width - Units.dp(40), cellWidth * Math.min(columns, count))
 
-        property int columns: Math.floor((parent.width - Units.dp(40)) / cellWidth)
+        property int columns: Math.max(1, Math.floor((parent.width - Units.dp(40)) / cellWidth))
 
         cellWidth: Units.dp(180)
         cellHeight: Units.dp(110)

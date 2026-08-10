@@ -38,9 +38,9 @@ Note : T04/T05/T06 sont parallélisables entre eux (fichiers disjoints, seule co
 | ID | Titre | Taille | Bloqué par | Groupe | Statut |
 |---|---|---|---|---|---|
 | [T11](tasks/T11-parsing-sur-src.md) | Sweep parsing sûr : toInt/toDouble + null-checks | M | T04, T05, T06 | G-MODELS + G-COMMON | En revue |
-| [T13](tasks/T13-timeouts-http.md) | Timeouts HTTP + durcissement long-poll | S | T08 | G-CONN | À faire |
-| [T14](tasks/T14-reconnexion-backoff.md) | ⚠️ Machine à états de reconnexion + backoff | L | T13 | G-CONN + G-APP | À faire |
-| [T15](tasks/T15-camera-polling-imageproviders.md) | Polling caméra maîtrisé + image providers thread-safe | M | T11 | G-MODELS | À faire |
+| [T13](tasks/T13-timeouts-http.md) | Timeouts HTTP + durcissement long-poll | S | T08 | G-CONN | En revue |
+| [T14](tasks/T14-reconnexion-backoff.md) | ⚠️ Machine à états de reconnexion + backoff | L | T13 | G-CONN + G-APP | En revue |
+| [T15](tasks/T15-camera-polling-imageproviders.md) | Polling caméra maîtrisé + image providers thread-safe | M | T11 | G-MODELS | En revue |
 
 ## P3 — Découplage C++
 

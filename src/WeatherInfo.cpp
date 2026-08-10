@@ -227,6 +227,7 @@ int WeatherModel::getForecastCount()
 
 void WeatherModel::forecastDataClear()
 {
+    qDeleteAll(dataForecast);
     dataForecast.clear();
 }
 

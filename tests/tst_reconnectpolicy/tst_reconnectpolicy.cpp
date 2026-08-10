@@ -15,6 +15,7 @@
 //failure kind. That part stays a manual verification against a real server.
 
 #include <QtTest>
+#include <QSet>
 
 #include "CalaosConnection.h"
 
@@ -27,6 +28,7 @@ private slots:
     void baseDelayIsCapped_data();
     void baseDelayIsCapped();
     void jitterStaysWithinBoundsAndUnderTheCap();
+    void jitterStillSpreadsAtTheCeiling();
 
     void neverTwoAttemptsInFlight();
     void secondFailureReportDoesNotArmASecondRetry();
@@ -106,6 +108,53 @@ void TstReconnectPolicy::baseDelayIsCapped()
     QFETCH(int, expected);
 
     QCOMPARE(ReconnectPolicy::baseDelayMsForFailure(failureCount), expected);
+}
+
+//A long outage spends all of its time at the ceiling, so that is where the
+//jitter has to work. Adding to 30000 and clamping used to land half the draws
+//on exactly 30000, spreading nothing at all: measured at 49.9% over 100k
+//samples against a real client. The delay must stay a real distribution.
+void TstReconnectPolicy::jitterStillSpreadsAtTheCeiling()
+{
+    ReconnectPolicy p;
+    QVERIFY(p.isJitterEnabled());
+
+    const int cap = ReconnectPolicy::MaxDelayMs;
+    const int span = cap * ReconnectPolicy::JitterPercent / 100;
+
+    int atCap = 0;
+    int distinct = 0;
+    QSet<int> seen;
+    const int samples = 2000;
+
+    for (int i = 0; i < samples; i++)
+    {
+        p.stop();
+        //six consecutive failures put the backoff at the ceiling
+        for (int n = 1; n <= 6; n++)
+            attemptAndFail(p, ReconnectPolicy::TransientFailure,
+                           n == 1 ? ReconnectPolicy::UserRequest
+                                  : ReconnectPolicy::AutoRetry);
+
+        const int delay = p.pendingDelayMs();
+        QVERIFY2(delay <= cap, qPrintable(QStringLiteral("delay %1 over the ceiling").arg(delay)));
+        QVERIFY2(delay >= cap - span,
+                 qPrintable(QStringLiteral("delay %1 below the -20%% bound").arg(delay)));
+        if (delay == cap)
+            atCap++;
+        seen.insert(delay);
+    }
+
+    distinct = seen.size();
+
+    //With the clamp bug this was ~50%. A correct downward-only jitter puts a
+    //single draw on the exact ceiling, so well under a tenth of the samples.
+    QVERIFY2(atCap * 10 < samples,
+             qPrintable(QStringLiteral("%1 of %2 draws landed on exactly %3 ms")
+                        .arg(atCap).arg(samples).arg(cap)));
+    QVERIFY2(distinct > samples / 10,
+             qPrintable(QStringLiteral("only %1 distinct delays over %2 draws")
+                        .arg(distinct).arg(samples)));
 }
 
 void TstReconnectPolicy::jitterStaysWithinBoundsAndUnderTheCap()

@@ -198,7 +198,11 @@ void Application::createQmlApp()
         //owns the one and only reconnection timer and applies the exponential
         //backoff. The alert is only shown on the first failure of a run,
         //otherwise every retry would pop a dialog.
-        if (calaosConnect->reconnectFailureCount() == 1)
+        //Not on a credentials rejection: the connection was not lost and it
+        //will not come back on its own, so this text would be wrong twice.
+        //loginFailed() shows the right message once the policy gives up.
+        if (calaosConnect->reconnectFailureCount() == 1 &&
+            !calaosConnect->failingOnCredentials())
         {
             HardwareUtils::Instance()->showAlertMessage(tr("Network error"),
                                                         tr("The connection to calaos_server was lost. "

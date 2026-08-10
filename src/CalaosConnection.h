@@ -192,8 +192,12 @@ private:
             return base;
 
         const int span = base * JitterPercent / 100;
-        const int delay = base + QRandomGenerator::global()->bounded(-span, span + 1);
-        //Jitter must not push us over the advertised 30s ceiling.
+        //At the ceiling the jitter can only go down: adding to 30000 and then
+        //clamping would land half the draws on exactly 30000 and spread
+        //nothing, which is the regime a long outage spends all its time in and
+        //precisely where a fleet must not come back in lockstep.
+        const int high = base >= MaxDelayMs ? 1 : span + 1;
+        const int delay = base + QRandomGenerator::global()->bounded(-span, high);
         return qBound(1, delay, MaxDelayMs);
     }
 
@@ -236,6 +240,11 @@ public:
     //is the only source of truth: Application mirrors it, it never keeps a
     //second flag of its own.
     ReconnectPolicy::State connectionState() const { return reconnectPolicy.state(); }
+
+    //True while the current run of failures is the server rejecting our
+    //credentials. Telling that apart matters for what we show the user: a
+    //wrong password is not a network outage and will not fix itself.
+    bool failingOnCredentials() const { return reconnectPolicy.authFailureCount() > 0; }
     int reconnectFailureCount() const { return reconnectPolicy.failureCount(); }
 
     //Network discovery found a server: try again *now* instead of waiting for

@@ -525,9 +525,16 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
         //that is down: the first one must not be retried forever.
         const QVariant codeAttr = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute);
         const int httpCode = codeAttr.isValid() ? Common::toIntSafe(codeAttr, 0, "login http status") : 0;
+        //calaos_server answers a rejected login on /api.php with 400 and an
+        //HTML body, not 401, so the success flag below is never reached: the
+        //reply already carries a network error. Measured against a local
+        //server: bad password -> 400, good password -> 200. Without 400 here a
+        //wrong password over the HTTP transport retries forever and the login
+        //screen never comes back.
         const bool isAuth = reply->error() == QNetworkReply::AuthenticationRequiredError ||
                             reply->error() == QNetworkReply::ContentAccessDenied ||
-                            httpCode == 401 || httpCode == 403;
+                            reply->error() == QNetworkReply::ProtocolInvalidOperationError ||
+                            httpCode == 400 || httpCode == 401 || httpCode == 403;
 
         connectionLost(reply->errorString(),
                        isAuth ? ReconnectPolicy::AuthFailure : ReconnectPolicy::TransientFailure);

@@ -47,7 +47,7 @@ void HomeModel::load(const QVariantMap &homeData)
 
         room->update_roomName(r["name"].toString());
         room->update_roomType(r["type"].toString());
-        room->update_roomHits(r["hits"].toString().toInt());
+        room->update_roomHits(Common::toIntSafe(r["hits"], 0, "room.hits"));
         room->load(r, scenarioModel, RoomModel::LoadNormal);
         appendRow(room);
     }
@@ -177,6 +177,11 @@ void LightOnModel::removeLight(IOBase *io)
     for (int i = 0;i < rowCount();i++)
     {
         IOBase *cur = dynamic_cast<IOBase *>(item(i));
+        if (!cur)
+        {
+            qWarning() << "LightOnModel: row" << i << "is not an IOBase, skipping";
+            continue;
+        }
         if (cur->get_ioId() == io->get_ioId())
         {
             removeRow(i);
@@ -206,6 +211,11 @@ QObject *LightOnModel::getQmlCloneModel()
     for (int i = 0;i < rowCount();i++)
     {
         IOBase *obj = dynamic_cast<IOBase *>(item(i));
+        if (!obj)
+        {
+            qWarning() << "LightOnModel: row" << i << "is not an IOBase, skipping";
+            continue;
+        }
         IOBase *newIO = obj->cloneIO();
 
         if (!resortedModel.contains(newIO->get_room_name()))

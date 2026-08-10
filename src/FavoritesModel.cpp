@@ -169,7 +169,7 @@ void HomeFavModel::load(const QVariantMap &homeData)
         RoomItem *room = new RoomItem(engine, connection);
         room->update_roomName(r["name"].toString());
         room->update_roomType(r["type"].toString());
-        room->update_roomHits(r["hits"].toString().toInt());
+        room->update_roomHits(Common::toIntSafe(r["hits"], 0, "room.hits"));
         room->load(r, nullptr, RoomModel::LoadAll);
         appendRow(room);
     }

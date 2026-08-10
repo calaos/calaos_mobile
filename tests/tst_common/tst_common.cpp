@@ -139,6 +139,27 @@ private slots:
     void audioStatusRoundTrip_data();
     void audioStatusRoundTrip();
 
+    void parseIntFromString_data();
+    void parseIntFromString();
+
+    void parseDoubleFromString_data();
+    void parseDoubleFromString();
+
+    void parseLongLongFromString_data();
+    void parseLongLongFromString();
+
+    void parseFromVariant_data();
+    void parseFromVariant();
+
+    void parseFromJson_data();
+    void parseFromJson();
+
+    void parseUsesGivenDefault();
+    void parseWarnsOnlyOnMalformedValues();
+
+    void initTestCase();
+    void cleanupTestCase();
+
 private:
     void fillIOTypeRows();
 };
@@ -292,6 +313,231 @@ void TstCommon::audioStatusRoundTrip()
     QCOMPARE(Common::audioStatusFromString(QStringLiteral("playing")), Common::StatusPlay);
     QCOMPARE(Common::audioStatusFromString(QStringLiteral("bogus")), Common::StatusUnknown);
     QVERIFY(Common::audioStatusToString(Common::StatusUnknown).isEmpty());
+}
+
+/*
+ * Helpers de parsing défensif (T11).
+ *
+ * Contrat vérifié ici, identique pour les trois surcharges :
+ *   - une valeur lisible est rendue telle quelle (aucune régression sur les
+ *     données valides, c'est la condition pour pouvoir remplacer les parses nus
+ *     de src/ sans changer le comportement) ;
+ *   - un champ absent ou vide rend le défaut, SANS warning : une clé manquante
+ *     d'une QVariantMap est un cas normal, pas une donnée corrompue ;
+ *   - une valeur présente mais non convertible rend le défaut AVEC un warning,
+ *     au lieu du 0 silencieux de QString::toInt() / QVariant::toDouble().
+ */
+
+void TstCommon::parseIntFromString_data()
+{
+    QTest::addColumn<QString>("input");
+    QTest::addColumn<int>("expected");
+
+    QTest::newRow("entier")             << QStringLiteral("42")        << 42;
+    QTest::newRow("entier negatif")     << QStringLiteral("-7")        << -7;
+    QTest::newRow("zero")               << QStringLiteral("0")         << 0;
+    QTest::newRow("espaces autour")     << QStringLiteral("  42  ")    << 42;
+    //Les cas suivants retombent tous sur le défaut (0 ici).
+    QTest::newRow("chaine vide")        << QString()                   << 0;
+    QTest::newRow("chaine vide non nulle") << QStringLiteral("")       << 0;
+    QTest::newRow("non numerique")      << QStringLiteral("abc")       << 0;
+    QTest::newRow("booleen texte")      << QStringLiteral("true")      << 0;
+    QTest::newRow("flottant")           << QStringLiteral("3.5")       << 0;
+    QTest::newRow("suffixe parasite")   << QStringLiteral("42abc")     << 0;
+    QTest::newRow("hors bornes int")    << QStringLiteral("99999999999") << 0;
+}
+
+void TstCommon::parseIntFromString()
+{
+    QFETCH(QString, input);
+    QFETCH(int, expected);
+
+    QCOMPARE(Common::toIntSafe(input), expected);
+}
+
+void TstCommon::parseDoubleFromString_data()
+{
+    QTest::addColumn<QString>("input");
+    QTest::addColumn<double>("expected");
+
+    QTest::newRow("entier")             << QStringLiteral("42")     << 42.0;
+    QTest::newRow("flottant")           << QStringLiteral("3.5")    << 3.5;
+    QTest::newRow("flottant negatif")   << QStringLiteral("-0.25")  << -0.25;
+    QTest::newRow("espaces autour")     << QStringLiteral(" 1.5 ")  << 1.5;
+    QTest::newRow("chaine vide")        << QString()                << 0.0;
+    QTest::newRow("non numerique")      << QStringLiteral("abc")    << 0.0;
+    QTest::newRow("booleen texte")      << QStringLiteral("true")   << 0.0;
+    QTest::newRow("couleur rgb")        << QStringLiteral("#ff0000") << 0.0;
+    QTest::newRow("depassement")        << QStringLiteral("1e9999") << 0.0;
+}
+
+void TstCommon::parseDoubleFromString()
+{
+    QFETCH(QString, input);
+    QFETCH(double, expected);
+
+    QCOMPARE(Common::toDoubleSafe(input), expected);
+}
+
+void TstCommon::parseLongLongFromString_data()
+{
+    QTest::addColumn<QString>("input");
+    QTest::addColumn<qint64>("expected");
+
+    QTest::newRow("uptime")             << QStringLiteral("1234567890") << Q_INT64_C(1234567890);
+    //Valeur qui déborde d'un int mais tient dans un qint64.
+    QTest::newRow("hors bornes int")    << QStringLiteral("99999999999") << Q_INT64_C(99999999999);
+    QTest::newRow("chaine vide")        << QString()                    << Q_INT64_C(0);
+    QTest::newRow("non numerique")      << QStringLiteral("abc")        << Q_INT64_C(0);
+}
+
+void TstCommon::parseLongLongFromString()
+{
+    QFETCH(QString, input);
+    QFETCH(qint64, expected);
+
+    QCOMPARE(Common::toLongLongSafe(input), expected);
+}
+
+void TstCommon::parseFromVariant_data()
+{
+    QTest::addColumn<QVariant>("input");
+    QTest::addColumn<int>("expectedInt");
+    QTest::addColumn<double>("expectedDouble");
+
+    //Cas réel : clé absente d'une QVariantMap venant du serveur.
+    QTest::newRow("QVariant invalide") << QVariant()                        << 0   << 0.0;
+    QTest::newRow("QString nulle")     << QVariant(QString())               << 0   << 0.0;
+    QTest::newRow("QString vide")      << QVariant(QStringLiteral(""))      << 0   << 0.0;
+    QTest::newRow("int natif")         << QVariant(42)                      << 42  << 42.0;
+    QTest::newRow("double natif")      << QVariant(3.5)                     << 4   << 3.5;
+    QTest::newRow("nombre en chaine")  << QVariant(QStringLiteral("42"))    << 42  << 42.0;
+    QTest::newRow("flottant en chaine") << QVariant(QStringLiteral("3.5"))  << 0   << 3.5;
+    QTest::newRow("texte")             << QVariant(QStringLiteral("abc"))   << 0   << 0.0;
+    QTest::newRow("couleur rgb")       << QVariant(QStringLiteral("#ff0000")) << 0 << 0.0;
+    QTest::newRow("booleen natif")     << QVariant(true)                    << 1   << 1.0;
+}
+
+void TstCommon::parseFromVariant()
+{
+    QFETCH(QVariant, input);
+    QFETCH(int, expectedInt);
+    QFETCH(double, expectedDouble);
+
+    QCOMPARE(Common::toIntSafe(input), expectedInt);
+    QCOMPARE(Common::toDoubleSafe(input), expectedDouble);
+}
+
+void TstCommon::parseFromJson_data()
+{
+    QTest::addColumn<QJsonValue>("input");
+    QTest::addColumn<int>("expectedInt");
+    QTest::addColumn<double>("expectedDouble");
+
+    QTest::newRow("undefined")         << QJsonValue(QJsonValue::Undefined)      << 0  << 0.0;
+    QTest::newRow("null")              << QJsonValue(QJsonValue::Null)           << 0  << 0.0;
+    QTest::newRow("nombre entier")     << QJsonValue(42)                         << 42 << 42.0;
+    QTest::newRow("nombre negatif")    << QJsonValue(-7)                         << -7 << -7.0;
+    //Un JSON fractionnaire n'est pas un int : défaut côté int, valeur côté double.
+    QTest::newRow("nombre fractionnaire") << QJsonValue(3.5)                     << 0  << 3.5;
+    //Certains serveurs transportent les nombres en chaîne.
+    QTest::newRow("entier en chaine")  << QJsonValue(QStringLiteral("42"))       << 42 << 42.0;
+    QTest::newRow("flottant en chaine") << QJsonValue(QStringLiteral("3.5"))     << 0  << 3.5;
+    QTest::newRow("chaine vide")       << QJsonValue(QStringLiteral(""))         << 0  << 0.0;
+    QTest::newRow("texte")             << QJsonValue(QStringLiteral("abc"))      << 0  << 0.0;
+    QTest::newRow("booleen")           << QJsonValue(true)                       << 0  << 0.0;
+    QTest::newRow("objet")             << QJsonValue(QJsonObject())              << 0  << 0.0;
+}
+
+void TstCommon::parseFromJson()
+{
+    QFETCH(QJsonValue, input);
+    QFETCH(int, expectedInt);
+    QFETCH(double, expectedDouble);
+
+    QCOMPARE(Common::toIntSafe(input), expectedInt);
+    QCOMPARE(Common::toDoubleSafe(input), expectedDouble);
+}
+
+//Le défaut doit être rendu tel quel : c'est ce qui distingue un helper d'un
+//parse nu, dont le « défaut » est toujours 0 et n'est jamais choisi.
+void TstCommon::parseUsesGivenDefault()
+{
+    QCOMPARE(Common::toIntSafe(QStringLiteral("abc"), -1), -1);
+    QCOMPARE(Common::toIntSafe(QString(), -1), -1);
+    QCOMPARE(Common::toDoubleSafe(QStringLiteral("abc"), -1.5), -1.5);
+    QCOMPARE(Common::toDoubleSafe(QString(), -1.5), -1.5);
+    QCOMPARE(Common::toLongLongSafe(QStringLiteral("abc"), -1), Q_INT64_C(-1));
+
+    QCOMPARE(Common::toIntSafe(QVariant(), 100), 100);
+    QCOMPARE(Common::toIntSafe(QVariant(QStringLiteral("abc")), 100), 100);
+    QCOMPARE(Common::toDoubleSafe(QVariant(QStringLiteral("abc")), 100.0), 100.0);
+
+    QCOMPARE(Common::toIntSafe(QJsonValue(QJsonValue::Undefined), 100), 100);
+    QCOMPARE(Common::toIntSafe(QJsonValue(QStringLiteral("abc")), 100), 100);
+    QCOMPARE(Common::toDoubleSafe(QJsonValue(true), 100.0), 100.0);
+
+    //Une valeur lisible ne doit jamais faire gagner le défaut.
+    QCOMPARE(Common::toIntSafe(QStringLiteral("0"), -1), 0);
+    QCOMPARE(Common::toDoubleSafe(QVariant(0.0), -1.5), 0.0);
+}
+
+namespace {
+
+/* Les tables ci-dessus contiennent volontairement beaucoup de valeurs
+ * illisibles : sans cela le qWarning des helpers noierait la sortie de
+ * `make check`. On le compte au lieu de l'imprimer, ce qui permet en prime de
+ * vérifier le contrat « pas de bruit sur un champ absent » — aussi important
+ * que la valeur rendue, un warning par clé manquante rendrait les logs de
+ * l'application inutilisables. */
+int g_warningCount = 0;
+QtMessageHandler g_previousHandler = nullptr;
+
+void countWarnings(QtMsgType type, const QMessageLogContext &ctx, const QString &msg)
+{
+    Q_UNUSED(ctx)
+    if (type == QtWarningMsg)
+    {
+        g_warningCount++;
+        return;
+    }
+    if (g_previousHandler)
+        g_previousHandler(type, ctx, msg);
+}
+
+}
+
+void TstCommon::initTestCase()
+{
+    g_previousHandler = qInstallMessageHandler(countWarnings);
+}
+
+void TstCommon::cleanupTestCase()
+{
+    qInstallMessageHandler(g_previousHandler);
+}
+
+void TstCommon::parseWarnsOnlyOnMalformedValues()
+{
+    g_warningCount = 0;
+
+    //Champ absent ou vide : silencieux.
+    QVariantMap serverData;
+    serverData[QStringLiteral("hits")] = QStringLiteral("12");
+    Common::toIntSafe(serverData[QStringLiteral("missing")], 0, "test.missing");
+    Common::toIntSafe(serverData[QStringLiteral("hits")], 0, "test.hits");
+    Common::toIntSafe(QString(), 0, "test.emptyString");
+    Common::toDoubleSafe(QVariant(QStringLiteral("")), 0.0, "test.emptyVariant");
+    Common::toIntSafe(QJsonValue(QJsonValue::Undefined), 0, "test.undefined");
+    Common::toDoubleSafe(QJsonValue(QJsonValue::Null), 0.0, "test.null");
+    QCOMPARE(g_warningCount, 0);
+
+    //Valeur présente mais illisible : une trace par appel, quelle que soit la
+    //surcharge empruntée.
+    Common::toIntSafe(QStringLiteral("abc"), 0, "test.garbageString");
+    Common::toDoubleSafe(QVariant(QStringLiteral("abc")), 0.0, "test.garbageVariant");
+    Common::toIntSafe(QJsonValue(true), 0, "test.garbageJson");
+    QCOMPARE(g_warningCount, 3);
 }
 
 QTEST_APPLESS_MAIN(TstCommon)

@@ -25,6 +25,11 @@ CameraModel::CameraModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObj
         for (int i = 0;i < rowCount();i++)
         {
             CameraItem *obj = dynamic_cast<CameraItem *>(item(i));
+            if (!obj)
+            {
+                qWarning() << "CameraModel: row" << i << "is not a CameraItem, skipping";
+                continue;
+            }
             obj->set_cameraVisible(visible);
             if (visible)
                 obj->startCamera();
@@ -160,6 +165,11 @@ QImage CameraImageProvider::requestImage(const QString &qid, QSize *size, const 
     for (int i = 0;i < model->rowCount();i++)
     {
         CameraItem *c = dynamic_cast<CameraItem *>(model->item(i));
+        if (!c)
+        {
+            qWarning() << "CameraModel: row" << i << "is not a CameraItem, skipping";
+            continue;
+        }
         if (c->get_cameraId() == id)
         {
             cam = c;

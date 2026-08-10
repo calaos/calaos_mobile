@@ -27,6 +27,11 @@ AudioModel::AudioModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObjec
         for (int i = 0;i < rowCount();i++)
         {
             auto obj = dynamic_cast<AudioPlayer *>(item(i));
+            if (!obj)
+            {
+                qWarning() << "AudioModel: row" << i << "is not an AudioPlayer, skipping";
+                continue;
+            }
             obj->set_playerVisible(visible);
             if (visible)
                 obj->startPolling();
@@ -83,6 +88,11 @@ QImage AudioImageProvider::requestImage(const QString &qid, QSize *size, const Q
     for (int i = 0;i < model->rowCount();i++)
     {
         AudioPlayer *p = dynamic_cast<AudioPlayer *>(model->item(i));
+        if (!p)
+        {
+            qWarning() << "AudioModel: row" << i << "is not an AudioPlayer, skipping";
+            continue;
+        }
         if (p->get_id() == id)
         {
             player = p;
@@ -134,10 +144,10 @@ void AudioPlayer::updatePlayerState(const QVariantMap &d)
     update_status(Common::audioStatusFromString(playerData["status"].toString()));
     update_id(playerData["id"].toString());
     update_name(playerData["name"].toString());
-    auto vol = playerData["volume"].toDouble();
+    auto vol = Common::toDoubleSafe(playerData["volume"], 0.0, "AudioPlayer.volume");
     if (get_volume() != vol)
-        update_volume(playerData["volume"].toDouble());
-    update_elapsed(playerData["time_elapsed"].toDouble());
+        update_volume(vol);
+    update_elapsed(Common::toDoubleSafe(playerData["time_elapsed"], 0.0, "AudioPlayer.time_elapsed"));
 
     QVariantMap currentTrack = playerData["current_track"].toMap();
     update_title(currentTrack["title"].toString());
@@ -145,7 +155,7 @@ void AudioPlayer::updatePlayerState(const QVariantMap &d)
     update_artist(currentTrack["artist"].toString());
     update_genre(currentTrack["genre"].toString());
     update_year(currentTrack["year"].toString());
-    update_duration(currentTrack["duration"].toDouble());
+    update_duration(Common::toDoubleSafe(currentTrack["duration"], 0.0, "AudioPlayer.current_track.duration"));
 }
 
 void AudioPlayer::load(QVariantMap &d)

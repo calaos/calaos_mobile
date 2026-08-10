@@ -275,7 +275,7 @@ void IOBase::load(const QVariantMap &io)
     ioData = io;
 
     update_ioName(ioData["name"].toString());
-    update_ioHits(ioData["hits"].toInt());
+    update_ioHits(Common::toIntSafe(ioData["hits"], 0, "IOBase.hits"));
     update_ioStyle(ioData["io_style"].toString());
     update_ioType(Common::IOTypeFromString(ioData["gui_type"].toString(), get_ioStyle()));
     update_ioId(ioData["id"].toString());
@@ -313,6 +313,15 @@ void IOBase::checkFirstState()
     else if (get_ioType() == Common::LightDimmer ||
              get_ioType() == Common::LightRgb)
     {
+        /* Outside the v2 API the state of an RGB io is a color string
+         * ("#ff0000"), not a number: feeding it to getStateInt() already
+         * yielded 0 (so light_on was never emitted here, the rest of IOBase
+         * reads that case back through QColor) and would now make the
+         * defensive parsing warn about perfectly valid data. Behaviour
+         * unchanged, no false positive in the logs. */
+        if (get_ioType() == Common::LightRgb && !connection->isHttpApiV2())
+            return;
+
         if (getStateInt() > 0)
             emit light_on(this);
     }
@@ -412,7 +421,7 @@ bool IOBase::getStateBool()
 
 double IOBase::getStateInt()
 {
-    return ioData["state"].toDouble();
+    return Common::toDoubleSafe(ioData["state"], 0.0, "IOBase.state");
 }
 
 QString IOBase::getStateString()
@@ -424,7 +433,7 @@ int IOBase::getStateRed()
 {
     if (connection->isHttpApiV2())
     {
-        int state = ioData["state"].toInt();
+        int state = Common::toIntSafe(ioData["state"], 0, "IOBase.state(rgb)");
 
         int r;
         r = state >> 16;
@@ -442,7 +451,7 @@ int IOBase::getStateGreen()
 {
     if (connection->isHttpApiV2())
     {
-        int state = ioData["state"].toInt();
+        int state = Common::toIntSafe(ioData["state"], 0, "IOBase.state(rgb)");
 
         int g;
         g = (state >> 8) & 0x0000FF;
@@ -460,7 +469,7 @@ int IOBase::getStateBlue()
 {
     if (connection->isHttpApiV2())
     {
-        int state = ioData["state"].toInt();
+        int state = Common::toIntSafe(ioData["state"], 0, "IOBase.state(rgb)");
 
         int b;
         b = state & 0x0000FF;
@@ -512,7 +521,7 @@ int IOBase::getStateShutterPos()
     int percent = 0;
     QString status = sl.at(0);
     if (sl.count() > 1)
-        percent = sl.at(1).toInt();
+        percent = Common::toIntSafe(sl.at(1), 0, "IOBase.state(shutter percent)");
 
     if (percent < 100)
         update_stateShutterBool(true);
@@ -582,10 +591,11 @@ void IOBase::outputChanged(QString id, QString key, QString value)
         {
             if (connection->isHttpApiV2() || get_ioType() == Common::LightDimmer)
             {
-                if ((getStateInt() > 0) != (value.toDouble() > 0))
+                const double newState = Common::toDoubleSafe(value, 0.0, "IOBase.state");
+                if ((getStateInt() > 0) != (newState > 0))
                 {
                     ioData["state"] = value;
-                    if (value.toDouble() > 0)
+                    if (newState > 0)
                         emit light_on(this);
                     else
                         emit light_off(this);
@@ -635,7 +645,7 @@ void IOBase::ioStatusChanged(QString id, QVariantMap statusData)
     if (statusData.contains("battery_level"))
     {
         update_hasStatusBattLevel(true);
-        update_statusBattLevel(statusData["battery_level"].toInt());
+        update_statusBattLevel(Common::toIntSafe(statusData["battery_level"], 0, "IOBase.status.battery_level"));
     }
 
     if (statusData.contains("connected"))
@@ -647,13 +657,13 @@ void IOBase::ioStatusChanged(QString id, QVariantMap statusData)
     if (statusData.contains("wireless_signal"))
     {
         update_hasStatusWirelessSignal(true);
-        update_statusWirelessSignal(statusData["wireless_signal"].toInt());
+        update_statusWirelessSignal(Common::toIntSafe(statusData["wireless_signal"], 0, "IOBase.status.wireless_signal"));
     }
 
     if (statusData.contains("uptime"))
     {
         update_hasStatusUptime(true);
-        update_statusUptime(statusData["uptime"].toLongLong());
+        update_statusUptime(Common::toLongLongSafe(statusData["uptime"], 0, "IOBase.status.uptime"));
     }
 
     if (statusData.contains("ip_address"))
@@ -692,9 +702,21 @@ void IOBase::textDialogValid(const QString &text)
 bool ScenarioSortModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
 {
     ScenarioModel *scModel = qobject_cast<ScenarioModel *>(sourceModel());
+    if (!scModel)
+    {
+        qWarning() << "ScenarioSortModel: source model is not a ScenarioModel";
+        return false;
+    }
 
     IOBase *itemLeft = dynamic_cast<IOBase *>(scModel->itemFromIndex(left));
     IOBase *itemRight = dynamic_cast<IOBase *>(scModel->itemFromIndex(right));
+
+    /* A non-IOBase item (or an invalid index) cannot be ordered: return a
+     * stable order instead of dereferencing nullptr. QSortFilterProxyModel
+     * calls lessThan() on arbitrary pairs, including while the source model
+     * is being rebuilt. */
+    if (!itemLeft || !itemRight)
+        return itemLeft != nullptr;
 
     int l = itemLeft->get_ioHits();
     int r = itemRight->get_ioHits();
@@ -708,6 +730,12 @@ bool ScenarioSortModel::lessThan(const QModelIndex &left, const QModelIndex &rig
 QObject *ScenarioSortModel::getItemModel(int idx)
 {
     ScenarioModel *scModel = qobject_cast<ScenarioModel *>(sourceModel());
+    if (!scModel)
+    {
+        qWarning() << "ScenarioSortModel: source model is not a ScenarioModel";
+        return nullptr;
+    }
+
     IOBase *obj = dynamic_cast<IOBase *>(scModel->item(indexToSource(idx)));
     if (obj) engine->setObjectOwnership(obj, QQmlEngine::CppOwnership);
     return obj;

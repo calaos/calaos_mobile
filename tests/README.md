@@ -98,7 +98,7 @@ make check TESTARGS="-v2"               # via make
 
 | Test | Couvre | Sources de `src/` liées |
 |---|---|---|
-| `tst_common` | `Common::IOTypeToString` / `IOTypeFromString` (round-trip sur toutes les valeurs de `Common::IOType`, types stylés inclus), `Common::audioStatus*` | `Common.cpp` |
+| `tst_common` | `Common::IOTypeToString` / `IOTypeFromString` (round-trip sur toutes les valeurs de `Common::IOType`, types stylés inclus), `Common::audioStatus*`, helpers de parsing défensif `Common::toIntSafe` / `toDoubleSafe` / `toLongLongSafe` sur `QString`, `QVariant` et `QJsonValue` — valeur rendue **et** politique de warning (T11) | `Common.cpp` |
 | `tst_eventlogmodel` | `EventLogIO::resolve()` : priorité input avant output dans la résolution d'un IO d'événement (T05) | `EventLogModel.h` (gabarit header-only) |
 | `tst_homemodel` | `LightOnModel::clear()` vide bien `onCache` : pas de lumières fantômes après reconnexion (T06) | `HomeModel.cpp`, `RoomModel.cpp`, `CalaosConnection.cpp`, `HardwareUtils*` |
 | `tst_roomfiltermodel` | `RoomFilterModel::resetCache()` idempotent, partition sans doublon, `lessThan` robuste aux non-`IOBase` (T04) | `RoomFilterModel.cpp` + doublure de lien `roommodel_stub.cpp` |

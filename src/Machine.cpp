@@ -1,5 +1,6 @@
 #include "Machine.h"
 #include <QHostAddress>
+#include "Common.h"
 
 NetworkInfo::NetworkInfo(QObject *parent):
     QObject(parent)
@@ -16,7 +17,10 @@ void NetworkInfo::setIPv4CIDR(QString cidr)
     }
 
     QString ipAddress = parts[0];
-    int prefixLength = parts[1].toInt();
+    /* Default to -1 so an unreadable prefix falls into the range check below
+     * instead of silently becoming 0, which passes the check and then shifts
+     * by 32 in the netmask computation. */
+    int prefixLength = Common::toIntSafe(parts[1], -1, "network.ipv4 prefix");
     if (prefixLength < 0 || prefixLength > 32) {
         qWarning() << "invalid prefix length: " << prefixLength;
         return;

@@ -3,6 +3,7 @@
 #include <QUrlQuery>
 #include <QDebug>
 #include "HardwareUtils.h"
+#include "Common.h"
 
 //Query parameters and JSON keys that carry credentials and must never be logged
 static const QStringList &credentialKeys()
@@ -820,7 +821,7 @@ void CalaosConnection::processEventsV2(QString msg)
     {
         if (spl.count() < 4) return;
 
-        emit eventAudioVolumeChange(spl.at(1), spl.at(3).toDouble());
+        emit eventAudioVolumeChange(spl.at(1), Common::toDoubleSafe(spl.at(3), 0.0, "audio_volume event"));
     }
     else if (spl.at(0) == "audio_status")
     {
@@ -860,7 +861,7 @@ void CalaosConnection::processEventsV3(QVariantMap msg)
     }
     else if (msg["type_str"].toString() == "audio_volume_changed")
     {
-        emit eventAudioVolumeChange(data["player_id"].toString(), data["volume"].toString().toDouble());
+        emit eventAudioVolumeChange(data["player_id"].toString(), Common::toDoubleSafe(data["volume"], 0.0, "audio_volume_changed.volume"));
     }
     else if (msg["type_str"].toString() == "audio_status_changed")
     {

@@ -174,7 +174,7 @@ void EventLogItem::load(const QVariantMap &data)
         else if (io->get_ioType() == Common::LightDimmer ||
                  io->get_ioType() == Common::LightRgb)
         {
-            if (data["io_state"].toDouble() > 0)
+            if (Common::toDoubleSafe(data["io_state"], 0.0, "event.io_state") > 0)
             {
                 update_evIconSource("icon_light_on");
                 update_evActionText(tr("On"));

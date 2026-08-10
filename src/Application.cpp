@@ -801,10 +801,10 @@ void Application::updateSystemInfo()
         {
             if (!success) return;
 
-            update_cpuUsage(data["cpu_usage"].toInt());
-            update_memoryUsage(data["mem_usage"].toInt());
+            update_cpuUsage(Common::toIntSafe(data["cpu_usage"], 0, "system_info.cpu_usage"));
+            update_memoryUsage(Common::toIntSafe(data["mem_usage"], 0, "system_info.mem_usage"));
             update_machineName(data["hostname"].toString());
-            update_uptime(data["uptime"].toInt());
+            update_uptime(Common::toIntSafe(data["uptime"], 0, "system_info.uptime"));
         }
     );
 #endif

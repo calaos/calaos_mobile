@@ -14,6 +14,7 @@
 TEMPLATE = subdirs
 
 SUBDIRS += \
+    tst_camerapolling \
     tst_common \
     tst_eventlogmodel \
     tst_homemodel \

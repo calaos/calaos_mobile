@@ -36,13 +36,16 @@ ItemBase {
             sensor: modelData
         }
 
+        //buttons go from deactivate to activate, left to right: in a RowLayout
+        //the declaration order is the visual order, unlike the anchors this
+        //code used to rely on
         ItemButtonAction {
-            id: btup
-            imageSource: "button_up2"
+            id: btdown
+            imageSource: "button_down2"
 
             onButtonClicked: {
                 feedbackAnim()
-                modelData.sendUp()
+                modelData.sendDown()
             }
         }
 
@@ -57,12 +60,12 @@ ItemBase {
         }
 
         ItemButtonAction {
-            id: btdown
-            imageSource: "button_down2"
+            id: btup
+            imageSource: "button_up2"
 
             onButtonClicked: {
                 feedbackAnim()
-                modelData.sendDown()
+                modelData.sendUp()
             }
         }
     }

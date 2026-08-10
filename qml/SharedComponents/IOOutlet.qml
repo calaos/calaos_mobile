@@ -57,16 +57,9 @@ ItemBase {
             sensor: modelData
         }
 
-        ItemButtonAction {
-            id: bton
-            iconSource: "qrc:/img/ic_outlet_on.svg"
-
-            onButtonClicked: {
-                feedbackAnim()
-                modelData.sendTrue()
-            }
-        }
-
+        //buttons go from deactivate to activate, left to right: in a RowLayout
+        //the declaration order is the visual order, unlike the anchors this
+        //code used to rely on
         ItemButtonAction {
             id: btoff
             iconSource: "qrc:/img/ic_outlet_off.svg"
@@ -74,6 +67,16 @@ ItemBase {
             onButtonClicked: {
                 feedbackAnim()
                 modelData.sendFalse()
+            }
+        }
+
+        ItemButtonAction {
+            id: bton
+            iconSource: "qrc:/img/ic_outlet_on.svg"
+
+            onButtonClicked: {
+                feedbackAnim()
+                modelData.sendTrue()
             }
         }
     }

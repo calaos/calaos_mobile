@@ -47,16 +47,9 @@ ItemBase {
             sensor: modelData
         }
 
-        ItemButtonAction {
-            id: bton
-            imageSource: "button_light_on"
-
-            onButtonClicked: {
-                feedbackAnim()
-                modelData.sendTrue()
-            }
-        }
-
+        //buttons go from deactivate to activate, left to right: in a RowLayout
+        //the declaration order is the visual order, unlike the anchors this
+        //code used to rely on
         ItemButtonAction {
             id: btoff
             imageSource: "button_light_off"
@@ -64,6 +57,16 @@ ItemBase {
             onButtonClicked: {
                 feedbackAnim()
                 modelData.sendFalse()
+            }
+        }
+
+        ItemButtonAction {
+            id: bton
+            imageSource: "button_light_on"
+
+            onButtonClicked: {
+                feedbackAnim()
+                modelData.sendTrue()
             }
         }
     }

@@ -138,9 +138,11 @@ void EventLogItem::load(const QVariantMap &data)
 
     update_evTime(dt.time().toString("hh:mm:ss"));
 
-    IOBase *io = IOCache::Instance().searchInput(data["io_id"].toString());
-    if (!io)
-        IOCache::Instance().searchOutput(data["io_id"].toString());
+    QString ioId = data["io_id"].toString();
+    IOBase *io = EventLogIO::resolve<IOBase>(
+        [](const QString &i) { return IOCache::Instance().searchInput(i); },
+        [](const QString &i) { return IOCache::Instance().searchOutput(i); },
+        ioId);
     if (io)
     {
         update_evTitle(io->get_ioName());

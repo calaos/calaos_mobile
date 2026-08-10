@@ -15,9 +15,9 @@ Suivi du backlog de refactoring (robustesse, maintenabilité, bonnes pratiques).
 
 | ID | Titre | Taille | Bloqué par | Groupe | Statut |
 |---|---|---|---|---|---|
-| [T01](tasks/T01-build-cpp17.md) | Hygiène build : C++17 et globs lupdate | S | — | G-BUILD | En revue |
-| [T02](tasks/T02-harnais-qt-test.md) | Harnais Qt Test minimal | M | T01 | G-BUILD | En revue |
-| [T03](tasks/T03-ci-pr.md) | CI de PR : build + tests + qmllint | M | T01, T02 | G-BUILD | En revue |
+| [T01](tasks/T01-build-cpp17.md) | Hygiène build : C++17 et globs lupdate | S | — | G-BUILD | Terminé |
+| [T02](tasks/T02-harnais-qt-test.md) | Harnais Qt Test minimal | M | T01 | G-BUILD | Terminé |
+| [T03](tasks/T03-ci-pr.md) | CI de PR : build + tests + qmllint | M | T01, T02 | G-BUILD | Terminé |
 
 ## P1 — Bugs critiques
 

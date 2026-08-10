@@ -23,13 +23,13 @@ Suivi du backlog de refactoring (robustesse, maintenabilité, bonnes pratiques).
 
 | ID | Titre | Taille | Bloqué par | Groupe | Statut |
 |---|---|---|---|---|---|
-| [T04](tasks/T04-roomfiltermodel-resetcache.md) | RoomFilterModel : resetCache incomplet + cast non vérifié | M | T02 | G-MODELS | En revue |
-| [T05](tasks/T05-eventlogmodel-output-io.md) | EventLogModel : résolution des IO output cassée | S | T02 | G-MODELS | En revue |
-| [T06](tasks/T06-homemodel-oncache.md) | HomeModel : onCache jamais vidé (lumières fantômes) | S | T02 | G-MODELS | En revue |
-| [T07](tasks/T07-bugs-qml-enums.md) | Bundle bugs QML : enums, iconState, densité², action flux | S | T03 | G-QML-SHARED | En revue |
-| [T08](tasks/T08-calaosconnection-fixes.md) | CalaosConnection : correctifs ciblés pré-refactoring | M | T02 | G-CONN | En revue |
-| [T09](tasks/T09-weatherinfo-fuite.md) | WeatherInfo : fuite mémoire forecastDataClear | S | — | indépendant | En revue |
-| [T10](tasks/T10-gardes-nan-qml.md) | Bundle gardes NaN / division par zéro QML | S | T03 | QML (disjoint T07) | En revue |
+| [T04](tasks/T04-roomfiltermodel-resetcache.md) | RoomFilterModel : resetCache incomplet + cast non vérifié | M | T02 | G-MODELS | Terminé |
+| [T05](tasks/T05-eventlogmodel-output-io.md) | EventLogModel : résolution des IO output cassée | S | T02 | G-MODELS | Terminé |
+| [T06](tasks/T06-homemodel-oncache.md) | HomeModel : onCache jamais vidé (lumières fantômes) | S | T02 | G-MODELS | Terminé |
+| [T07](tasks/T07-bugs-qml-enums.md) | Bundle bugs QML : enums, iconState, densité², action flux | S | T03 | G-QML-SHARED | Terminé |
+| [T08](tasks/T08-calaosconnection-fixes.md) | CalaosConnection : correctifs ciblés pré-refactoring | M | T02 | G-CONN | Terminé |
+| [T09](tasks/T09-weatherinfo-fuite.md) | WeatherInfo : fuite mémoire forecastDataClear | S | — | indépendant | Terminé |
+| [T10](tasks/T10-gardes-nan-qml.md) | Bundle gardes NaN / division par zéro QML | S | T03 | QML (disjoint T07) | Terminé |
 
 Note : T04/T05/T06 sont parallélisables entre eux (fichiers disjoints, seule collision = append de `tests/tests.pro`).
 

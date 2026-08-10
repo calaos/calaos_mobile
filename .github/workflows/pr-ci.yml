@@ -1,0 +1,219 @@
+name: PR CI
+
+# CI de pull request (T03) : compile réellement le code, exécute les tests
+# unitaires et passe qmllint. Les workflows existants (build*.yml,
+# build_docker_*.yml) ne compilent rien : ils délèguent ou fabriquent des
+# images Docker. Ce workflow-ci est le seul garde-fou de compilation.
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: pr-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DEBIAN_FRONTEND: noninteractive
+
+jobs:
+  build-desktop:
+    name: Build desktop (Qt6 / qmake)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Qt6 build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            pkg-config \
+            qmake6 \
+            qt6-base-dev \
+            qt6-base-dev-tools \
+            qt6-declarative-dev \
+            qt6-websockets-dev \
+            qt6-5compat-dev \
+            qt6-svg-dev \
+            libx11-dev \
+            libxext-dev
+
+      # webenginequick n'est volontairement PAS installé : desktop.pro le
+      # protège par qtHaveModule(webenginequick) (cf. desktop.pro:19-22).
+      # L'installer ferait entrer QtWebEngine (~1 Go) dans chaque run.
+      - name: Show toolchain versions
+        run: |
+          qmake6 -v
+          g++ --version | head -n 1
+
+      - name: qmake6 desktop.pro
+        run: qmake6 desktop.pro
+
+      - name: make
+        run: make -j$(nproc)
+
+  tests:
+    name: Unit tests (Qt Test)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Qt6 test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            qmake6 \
+            qt6-base-dev \
+            qt6-base-dev-tools \
+            qt6-declarative-dev \
+            qt6-websockets-dev
+
+      # Build shadow : tests/tests.pro est un projet qmake autonome
+      # (TEMPLATE=subdirs), il n'est inclus ni par desktop.pro ni par mobile.pro.
+      - name: Build tests
+        run: |
+          mkdir -p build-tests
+          cd build-tests
+          qmake6 ../tests/tests.pro
+          make -j$(nproc)
+
+      - name: Run tests (make check)
+        env:
+          # Les binaires de test lient QtGui : pas de serveur X sur le runner.
+          QT_QPA_PLATFORM: offscreen
+        run: make -C build-tests check
+
+  qmllint:
+    name: qmllint (pragmatic)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install qmllint
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            qmake6 \
+            qt6-base-dev \
+            qt6-declarative-dev \
+            qt6-declarative-dev-tools
+
+      - name: Run qmllint
+        run: |
+          set -euo pipefail
+          # Sur Debian/Ubuntu, qt6-declarative-dev-tools installe
+          # /usr/lib/qt6/bin/qmllint, qui n'est PAS dans le PATH (et n'a pas de
+          # suffixe « -qt6 », contrairement à Fedora). On demande le répertoire
+          # à qmake plutôt que de coder le chemin en dur.
+          QMLLINT="$(qmake6 -query QT_HOST_BINS)/qmllint"
+          if [ ! -x "$QMLLINT" ]; then
+            QMLLINT="$(command -v qmllint-qt6 || command -v qmllint)"
+          fi
+          echo "qmllint: $QMLLINT"
+          "$QMLLINT" --version
+
+          mapfile -t QML_FILES < <(find qml widgets -type f -name '*.qml' | sort)
+          echo "Linting ${#QML_FILES[@]} QML files"
+
+          # Mode pragmatique : le code legacy produit des milliers de warnings
+          # (« unqualified access », imports QuickFlux non résolus…). Le code de
+          # retour de qmllint dépend de la version de Qt et des niveaux de
+          # catégories : on ne s'y fie pas, la décision est prise à partir du
+          # rapport JSON par l'étape suivante.
+          "$QMLLINT" -I qml --json qmllint-report.json "${QML_FILES[@]}" \
+            > qmllint-stdout.txt 2>&1 || true
+
+          if [ ! -s qmllint-report.json ]; then
+            echo "::error::qmllint n'a produit aucun rapport JSON"
+            cat qmllint-stdout.txt || true
+            exit 1
+          fi
+
+      - name: Evaluate qmllint report
+        run: |
+          python3 - <<'PY'
+          import collections
+          import json
+          import os
+          import sys
+
+          with open("qmllint-report.json", encoding="utf-8") as fd:
+              data = json.load(fd)
+
+          # Le schéma JSON a varié entre versions de Qt : dict {"files": [...]}
+          # aujourd'hui, liste de fichiers dans d'anciennes révisions.
+          files = data.get("files", []) if isinstance(data, dict) else data
+
+          by_type = collections.Counter()
+          by_id = collections.Counter()
+          blocking = []
+
+          for entry in files:
+              filename = entry.get("filename", "?")
+              for w in entry.get("warnings", []):
+                  wtype = str(w.get("type", "")).lower()
+                  wid = str(w.get("id", ""))
+                  by_type[wtype] += 1
+                  by_id[wid] += 1
+                  # Seules les vraies erreurs bloquent : erreur de syntaxe, ou
+                  # diagnostic de sévérité critical/error. Les warnings legacy
+                  # sont rapportés mais ne font pas échouer le job.
+                  if wtype in ("critical", "error") or wid == "syntax":
+                      blocking.append((filename, w.get("line"), w.get("column"),
+                                       wid, w.get("message", "")))
+
+          total = sum(by_type.values())
+          lines = [
+              "## qmllint",
+              "",
+              f"- Fichiers analysés : **{len(files)}**",
+              f"- Diagnostics totaux : **{total}**",
+              f"- Bloquants (syntax / critical / error) : **{len(blocking)}**",
+              "",
+              "| type | nombre |",
+              "|---|---|",
+          ]
+          for wtype, count in by_type.most_common():
+              lines.append(f"| {wtype or '(sans type)'} | {count} |")
+          lines += ["", "Top catégories :", "", "| id | nombre |", "|---|---|"]
+          for wid, count in by_id.most_common(10):
+              lines.append(f"| {wid or '(sans id)'} | {count} |")
+
+          summary = os.environ.get("GITHUB_STEP_SUMMARY")
+          if summary:
+              with open(summary, "a", encoding="utf-8") as fd:
+                  fd.write("\n".join(lines) + "\n")
+          print("\n".join(lines))
+
+          for filename, line, column, wid, message in blocking:
+              print(f"::error file={filename},line={line},col={column}::"
+                    f"[{wid}] {message}")
+
+          if blocking:
+              print(f"\n{len(blocking)} erreur(s) QML bloquante(s).")
+              sys.exit(1)
+
+          print("\nAucune erreur QML bloquante "
+                "(les warnings legacy ne font pas échouer ce job).")
+          PY
+
+      - name: Upload qmllint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qmllint-report
+          path: |
+            qmllint-report.json
+            qmllint-stdout.txt
+          if-no-files-found: warn
+          retention-days: 14

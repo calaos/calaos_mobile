@@ -42,8 +42,14 @@ jobs:
             qt6-websockets-dev \
             qt6-5compat-dev \
             qt6-svg-dev \
+            qt6-l10n-tools \
             libx11-dev \
             libxext-dev
+
+      # qt6-l10n-tools ships /usr/lib/qt6/bin/lrelease. lang/lang.pri turns the
+      # .ts catalogues into .qm during the build and declares
+      # PRE_TARGETDEPS += compiler_updateqm_make_all, so the target is not
+      # optional: without lrelease the build stops on "Error 127".
 
       # webenginequick n'est volontairement PAS installé : desktop.pro le
       # protège par qtHaveModule(webenginequick) (cf. desktop.pro:19-22).

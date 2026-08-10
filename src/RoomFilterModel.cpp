@@ -60,6 +60,16 @@ void RoomFilterModel::resetCache()
     leftCache.clear();
     rightCache.clear();
 
+    /* Those lists are rebuilt from scratch on every call. They MUST be cleared
+     * here: resetCache() is triggered by rowsInserted/rowsRemoved/modelReset and
+     * by every filter change. Without this, they would keep growing and would
+     * hold pointers to IOBase objects already destroyed by the source model
+     * (lessThan() dereferences/compares them). */
+    shutters.clear();
+    lights.clear();
+    temps.clear();
+    other.clear();
+
     /* Smart sorting of IO between left and right listview
      * Rules to follow:
      * - Group all shutter in left
@@ -76,6 +86,11 @@ void RoomFilterModel::resetCache()
     for (int i = 0;i < rmodel->rowCount();i++)
     {
         IOBase *obj = dynamic_cast<IOBase *>(rmodel->getItemModel(i));
+        if (!obj)
+        {
+            qWarning() << "Item" << i << "of source model is not an IOBase, skipping it";
+            continue;
+        }
 
         if (obj->get_ioType() == Common::Shutter ||
             obj->get_ioType() == Common::ShutterSmart)
@@ -207,6 +222,11 @@ bool RoomFilterModel::lessThan(const QModelIndex &left, const QModelIndex &right
 
     IOBase *lobj = dynamic_cast<IOBase *>(rmodel->itemFromIndex(left));
     IOBase *robj = dynamic_cast<IOBase *>(rmodel->itemFromIndex(right));
+
+    /* An invalid index or a non-IOBase item gives a null pointer here. Keep a
+     * stable and transitive order in that case: non-IOBase items sort last. */
+    if (!lobj || !robj)
+        return lobj && !robj;
 
     qDebug() << "sort '" << lobj->get_ioName() << "' < '" << robj->get_ioName() << "'";
 

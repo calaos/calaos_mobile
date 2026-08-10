@@ -222,16 +222,11 @@ void UpdateManager::maybeNotifyUpdates(const QJsonObject &pkgs)
     HardwareUtils::Instance()->setConfigOption(QStringLiteral("update_notified_hash"), hash);
 
     calaosNames.sort();
-    QString summary;
-    if (calaosNames.size() > 5)
-        summary = QStringList(calaosNames.mid(0, 5)).join(QStringLiteral(", ")) + QStringLiteral("…");
-    else
-        summary = calaosNames.join(QStringLiteral(", "));
 
     QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(engine);
     QVariantMap m = {{ "count", pkgs.count() },
                      { "calaosCount", calaosNames.count() },
-                     { "summary", summary }};
+                     { "calaosPackages", calaosNames }};
     appDispatcher->dispatch("showUpdateAvailableDialog", m);
 }
 

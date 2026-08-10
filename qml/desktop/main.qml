@@ -63,6 +63,30 @@ Window {
         stackView.push(sectionView)
     }
 
+    //Open a Configuration subpage from anywhere, the way a user would reach it:
+    //Configuration in the main menu, then the tile. handleSubitemClick() alone
+    //only pushes the page, it assumes the section was already entered, so
+    //calling it from outside leaves currentButton at 0. The footer selection
+    //and the desktop chrome both follow currentButton, and "Back to config"
+    //needs the config panel underneath.
+    function goToConfigSubitem(itemId) {
+        if (viewIdOf(stackView.currentItem) === itemId)
+            return
+
+        if (mainMenu.currentButton !== 4) {
+            enterSection(configPanelView)
+            mainMenu.currentButton = 4
+        }
+        else {
+            //already in the section but on a deeper page: entering a section
+            //always leaves its root at depth 2, so pop back down to it
+            while (stackView.depth > 2)
+                stackView.pop()
+        }
+
+        handleSubitemClick(itemId)
+    }
+
     function handleSubitemClick(itemId) {
         var item;
         if (itemId === "media/music") {
@@ -285,6 +309,19 @@ Window {
         }
     }
 
+    //Non modal update notice. Declared before the overlay layer so that a
+    //dialog, which reparents itself into that layer, still covers it.
+    UpdateToast {
+        id: updateToast
+
+        anchors {
+            top: parent.top; topMargin: Units.dp(32)
+            right: parent.right; rightMargin: Units.dp(16)
+        }
+
+        onAccepted: rootWindow.goToConfigSubitem("config/update")
+    }
+
     //This overlay is for displaying dialogs on top of everything
     OverlayLayer {
         id: dialogOverlayLayer
@@ -300,16 +337,6 @@ Window {
     DialogRecoveryBoot { id: dialogRecoveryBoot }
 
     DialogSensorDetails { id: dialogSensorDetails }
-
-    DialogUpdateAvailable {
-        id: dialogUpdateAvailable
-
-        onAccepted: {
-            //don't stack a duplicate page if the update view is already shown
-            if (rootWindow.viewIdOf(stackView.currentItem) !== "config/update")
-                rootWindow.handleSubitemClick("config/update")
-        }
-    }
 
     //Dispatch actions
     AppListener {
@@ -415,7 +442,10 @@ Window {
             type: ActionTypes.showUpdateAvailableDialog
 
             onDispatched: (filtertype, message) => {
-                dialogUpdateAvailable.showDialog(message)
+                //never surface the notice while an upgrade is already running
+                if (updateManager.isUpgrading)
+                    return
+                updateToast.showToast(message)
             }
         }
     }

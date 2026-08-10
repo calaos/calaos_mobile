@@ -15,11 +15,27 @@ static const QStringList &credentialKeys()
     return keys;
 }
 
+//Default transfer timeout for every "short" HTTP request (login, commands,
+//state queries, camera pictures, audio covers). Those are all request/reply
+//exchanges the server answers immediately, so 30s without a single byte
+//moving means the link is dead, not slow.
+static const int HTTP_TRANSFER_TIMEOUT = 30000;
+
+//The long-poll (action "poll_listen") is the one exception: the server keeps
+//the request deliberately open until an event happens, so a calm installation
+//legitimately transfers nothing for a long time. It gets its own, much larger
+//per request timeout, which QNetworkAccessManager does NOT override (the
+//manager wide value is only used as a fallback when the request carries none).
+//It still bounds a silently dead connection instead of hanging forever.
+static const int HTTP_POLL_TRANSFER_TIMEOUT = 120000;
+
 CalaosConnection::CalaosConnection(QObject *parent) :
     QObject(parent)
 {
     accessManager = new QNetworkAccessManager(this);
     accessManagerCam = new QNetworkAccessManager(this);
+    accessManager->setTransferTimeout(HTTP_TRANSFER_TIMEOUT);
+    accessManagerCam->setTransferTimeout(HTTP_TRANSFER_TIMEOUT);
     pollReply = nullptr;
     connect(accessManager, SIGNAL(sslErrors(QNetworkReply*, const QList<QSslError> &)),
             this, SLOT(sslErrors(QNetworkReply*, const QList<QSslError> &)));
@@ -734,6 +750,11 @@ void CalaosConnection::startJsonPolling()
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
+    //Long-poll: the server holds this request open until an event shows up.
+    //Setting the timeout on the request itself takes precedence over the 30s
+    //default of accessManager, which would otherwise abort a perfectly healthy
+    //poll on a quiet installation and trigger a logout/login loop.
+    request.setTransferTimeout(HTTP_POLL_TRANSFER_TIMEOUT);
     pollReply = accessManager->post(request, jdoc.toJson());
 
     connect(pollReply, &QNetworkReply::errorOccurred, this, &CalaosConnection::requestError);

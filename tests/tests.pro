@@ -14,4 +14,7 @@
 TEMPLATE = subdirs
 
 SUBDIRS += \
-    tst_common
+    tst_common \
+    tst_eventlogmodel \
+    tst_homemodel \
+    tst_roomfiltermodel

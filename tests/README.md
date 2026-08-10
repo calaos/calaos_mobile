@@ -1,0 +1,101 @@
+# Tests unitaires (Qt Test)
+
+Projet qmake **autonome** : il n'est inclus ni par `desktop.pro` ni par `mobile.pro`.
+Chaque test lie uniquement les `.cpp` de `src/` dont il a besoin.
+
+## Lancer les tests
+
+```sh
+mkdir -p /tmp/calaos_tests_build && cd /tmp/calaos_tests_build
+qmake6 <chemin_du_depot>/tests/tests.pro
+make -j$(nproc)
+make check
+```
+
+Toujours construire **hors du dépôt** : les artefacts qmake ne sont pas ignorés par `.gitignore`.
+
+Sur cette machine les outils Qt 6 sont suffixés : `qmake6`, `/usr/lib64/qt6/bin/...`.
+
+Options utiles (passées au binaire de test, pas à `make`) :
+
+```sh
+./tst_common/tst_common                 # tous les cas
+./tst_common/tst_common -v2             # verbeux
+./tst_common/tst_common ioTypeRoundTrip # une seule fonction de test
+make check TESTARGS="-v2"               # via make
+```
+
+## Ajouter un test
+
+1. Créer `tests/tst_<nom>/` avec deux fichiers.
+
+   `tests/tst_<nom>/tst_<nom>.pro` :
+
+   ```qmake
+   TEMPLATE = app
+   TARGET = tst_<nom>
+
+   include(../common.pri)
+
+   HEADERS += $$SRC_DIR/<Classe>.h
+   SOURCES += $$SRC_DIR/<Classe>.cpp \
+              tst_<nom>.cpp
+   ```
+
+   `tests/tst_<nom>/tst_<nom>.cpp` :
+
+   ```cpp
+   #include <QtTest>
+   #include "<Classe>.h"
+
+   class Tst<Nom>: public QObject
+   {
+       Q_OBJECT
+   private slots:
+       void monCas_data();   //optionnel : test piloté par les données
+       void monCas();
+   };
+
+   // ... implémentation ...
+
+   QTEST_APPLESS_MAIN(Tst<Nom>)   //ou QTEST_GUILESS_MAIN si une boucle d'événements
+   #include "tst_<nom>.moc"       //est nécessaire (signaux, QTimer, réseau)
+   ```
+
+2. Ajouter le sous-répertoire à `tests/tests.pro` :
+
+   ```qmake
+   SUBDIRS += \
+       tst_common \
+       tst_<nom>
+   ```
+
+3. Vérifier que `make check` est vert.
+
+## Conventions
+
+- Un répertoire `tst_<nom>/` par classe ou par thème testé ; le `TARGET`, le `.pro`,
+  le `.cpp` et l'entrée `SUBDIRS` portent le même nom.
+- `common.pri` fournit `QT += testlib`, `CONFIG += c++17 console testcase`,
+  `INCLUDEPATH += src/` et la variable **`$$SRC_DIR`** (= `<depot>/src`).
+  Un test ne redéfinit jamais ces valeurs, il les complète.
+- **Lier le minimum de sources.** N'ajouter un `.cpp` de `src/` que si le lien
+  échoue sans lui. Beaucoup de fichiers tirent des dépendances lourdes
+  (`HardwareUtils`, `quickflux`, QtQuick, ressources `.qrc`) : si un test ne
+  peut pas être lié sans elles, c'est en général le signe qu'il faut d'abord
+  découpler la classe testée, pas ajouter des sources.
+- Préférer les tests pilotés par les données (`_data()` + `QFETCH`) : un cas
+  échoué est identifié par son tag de ligne.
+- Quand un test couvre un enum, itérer sur `QMetaEnum` plutôt que sur une liste
+  manuelle, pour qu'une valeur ajoutée plus tard fasse échouer le test tant
+  qu'elle n'est pas couverte (cf. `enumCoverageIsComplete()` dans `tst_common`).
+- Un comportement connu comme incorrect se documente avec `QEXPECT_FAIL` et une
+  référence au ticket qui le corrigera ; le jour où il est corrigé, le test
+  passe en XPASS et force la mise à jour.
+- Nouveaux fichiers en **LF** (une partie du dépôt est en CRLF, ne pas propager).
+
+## Tests existants
+
+| Test | Couvre | Sources de `src/` liées |
+|---|---|---|
+| `tst_common` | `Common::IOTypeToString` / `IOTypeFromString` (round-trip sur toutes les valeurs de `Common::IOType`, types stylés inclus), `Common::audioStatus*` | `Common.cpp` |

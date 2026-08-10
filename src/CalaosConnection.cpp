@@ -1,7 +1,18 @@
 #include "CalaosConnection.h"
 #include <QJsonDocument>
+#include <QUrlQuery>
 #include <QDebug>
 #include "HardwareUtils.h"
+
+//Query parameters and JSON keys that carry credentials and must never be logged
+static const QStringList &credentialKeys()
+{
+    static const QStringList keys = { QStringLiteral("cn_user"),
+                                      QStringLiteral("cn_pass"),
+                                      QStringLiteral("u"),
+                                      QStringLiteral("p") };
+    return keys;
+}
 
 CalaosConnection::CalaosConnection(QObject *parent) :
     QObject(parent)
@@ -23,6 +34,48 @@ void CalaosConnection::sslErrors(QNetworkReply *reply, const QList<QSslError> &)
 void CalaosConnection::sslErrorsWebsocket(const QList<QSslError> &)
 {
     wsocket->ignoreSslErrors();
+}
+
+QString CalaosConnection::redactUrl(const QUrl &url)
+{
+    if (!url.hasQuery())
+        return url.toString();
+
+    const QList<QPair<QString, QString>> items = QUrlQuery(url).queryItems(QUrl::FullyEncoded);
+    QUrlQuery redacted;
+    bool changed = false;
+
+    for (const auto &item: items)
+    {
+        if (credentialKeys().contains(item.first))
+        {
+            redacted.addQueryItem(item.first, QStringLiteral("***"));
+            changed = true;
+        }
+        else
+        {
+            redacted.addQueryItem(item.first, item.second);
+        }
+    }
+
+    if (!changed)
+        return url.toString();
+
+    QUrl u(url);
+    u.setQuery(redacted);
+    return u.toString();
+}
+
+QByteArray CalaosConnection::redactJson(const QJsonObject &obj)
+{
+    QJsonObject o = obj;
+    for (const QString &key: credentialKeys())
+    {
+        if (o.contains(key))
+            o[key] = QStringLiteral("***");
+    }
+
+    return QJsonDocument(o).toJson();
 }
 
 void CalaosConnection::login(QString user, QString pass, QString h)
@@ -106,7 +159,7 @@ void CalaosConnection::connectHttp(QString h)
 
 void CalaosConnection::connectWebsocket(QString h)
 {
-    qDebug() << "Trying to connect with websocket to: " << h;
+    qDebug() << "Trying to connect with websocket to: " << redactUrl(QUrl(h));
 
     if (!wsocket)
     {
@@ -160,6 +213,21 @@ void CalaosConnection::onWsConnected()
     //Do login procedure
     wsocket->sendTextMessage(jdoc.toJson());
 
+    //Both timers must exist before the pong handler is connected, as the
+    //handler restarts wsPingTimeout as soon as a pong is received.
+    wsPing = new QTimer(this);
+    connect(wsPing, &QTimer::timeout, this, [=]()
+    {
+        wsocket->ping("calaos_ping");
+    });
+
+    wsPingTimeout = new QTimer(this);
+    connect(wsPingTimeout, &QTimer::timeout, this, [=]()
+    {
+        qWarning() << "Websocket connection timeout, disconnect!";
+        logout();
+    });
+
     connect(wsocket, &QWebSocket::pong, this, [=](quint64 elapsedTime, const QByteArray &payload)
     {
         if (elapsedTime > 1000)
@@ -171,19 +239,7 @@ void CalaosConnection::onWsConnected()
         wsPingTimeout->start();
     });
 
-    wsPing = new QTimer(this);
-    connect(wsPing, &QTimer::timeout, this, [=]()
-    {
-        wsocket->ping("calaos_ping");
-    });
     wsPing->start(5 * 1000); //every 5s send a ping to calaos_server
-
-    wsPingTimeout = new QTimer(this);
-    connect(wsPingTimeout, &QTimer::timeout, this, [=]()
-    {
-        qWarning() << "Websocket connection timeout, disconnect!";
-        logout();
-    });
     wsPingTimeout->start(20 * 1000); //20s timeout
 
     QTimer::singleShot(100, this, [=]()
@@ -271,7 +327,7 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
     reply->deleteLater();
     if (reply->error() != QNetworkReply::NoError)
     {
-        qDebug() << "Error in " << reply->url() << ":" << reply->errorString();
+        qDebug() << "Error in " << redactUrl(reply->url()) << ":" << reply->errorString();
         constate = ConStateUnknown;
         emit loginFailed();
         return;
@@ -337,7 +393,7 @@ void CalaosConnection::requestFinished()
 
     if (reqReply->error() != QNetworkReply::NoError)
     {
-        qDebug() << "Error in " << reqReply->url() << ":" << reqReply->errorString();
+        qDebug() << "Error in " << redactUrl(reqReply->url()) << ":" << reqReply->errorString();
         return;
     }
 
@@ -420,7 +476,7 @@ void CalaosConnection::requestCamFinished(QNetworkReply *reqReply, const QString
 
     if (reqReply->error() != QNetworkReply::NoError)
     {
-        qDebug() << "Error in " << reqReply->url() << ":" << reqReply->errorString();
+        qDebug() << "Error in " << redactUrl(reqReply->url()) << ":" << reqReply->errorString();
         emit cameraPictureFailed(camid);
         return;
     }
@@ -444,7 +500,7 @@ void CalaosConnection::requestAudioCoverFinished(QNetworkReply *reqReply, const 
 
     if (reqReply->error() != QNetworkReply::NoError)
     {
-        qDebug() << "Error in " << reqReply->url() << ":" << reqReply->errorString();
+        qDebug() << "Error in " << redactUrl(reqReply->url()) << ":" << reqReply->errorString();
         return;
     }
 
@@ -489,7 +545,7 @@ void CalaosConnection::sendHttp(const QString &msg, QJsonObject &data, bool igno
 
     QJsonDocument doc(data);
 #ifdef QT_DEBUG
-    qDebug().noquote() << "SEND: " << doc.toJson();
+    qDebug().noquote() << "SEND: " << redactJson(data);
 #endif
 
     QUrl url(httphost);
@@ -685,7 +741,7 @@ void CalaosConnection::startJsonPolling()
         pollReply->deleteLater();
         if (pollReply->error() != QNetworkReply::NoError)
         {
-            qDebug() << "Error in " << pollReply->url() << ":" << pollReply->errorString();
+            qDebug() << "Error in " << redactUrl(pollReply->url()) << ":" << pollReply->errorString();
             logout();
             return;
         }
@@ -768,6 +824,12 @@ void CalaosConnection::processEventsV2(QString msg)
     }
     else if (spl.at(0) == "audio_status")
     {
+        if (spl.count() < 3)
+        {
+            qWarning() << "Malformed audio_status event: " << msg;
+            return;
+        }
+
         emit eventAudioStatusChange(spl.at(1), spl.at(2));
     }
     else if (spl.at(0) == "audio")
@@ -830,7 +892,17 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
 
     if (err.error != QJsonParseError::NoError)
     {
-        qWarning() << "JSON parse error " << err.errorString();
+        qWarning() << "JSON parse error at " << err.offset << " : " << err.errorString();
+
+        if (constate == ConStateUnknown)
+            emit loginFailed();
+
+        return;
+    }
+
+    if (!jdoc.isObject())
+    {
+        qWarning() << "Invalid websocket frame, a JSON object was expected";
 
         if (constate == ConStateUnknown)
             emit loginFailed();

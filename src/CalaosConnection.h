@@ -67,6 +67,13 @@ private:
     void processEventsV2(QString msg);
     void processEventsV3(QVariantMap msg);
 
+    //Replaces the value of credential carrying query parameters (cn_user,
+    //cn_pass, u, p) by "***" so URLs can be safely printed in logs.
+    //Only used for logging, the URLs actually sent are left untouched.
+    static QString redactUrl(const QUrl &url);
+    //Same idea for the JSON payloads that are dumped in debug builds.
+    static QByteArray redactJson(const QJsonObject &obj);
+
 signals:
     void homeLoaded(const QVariantMap &home);
     void disconnected();

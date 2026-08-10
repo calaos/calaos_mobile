@@ -16,7 +16,7 @@
     <message>
         <location filename="../src/Application.cpp" line="196"/>
         <source>The connection to calaos_server was lost. It will reconnect automatically when calaos_server is available again.</source>
-        <translation>La connection avec calaos_server a été perdu. Elle va être retentée lorsque calaos_server sera de nouveau disponible.</translation>
+        <translation>La connexion avec calaos_server a été perdue. Elle sera rétablie automatiquement dès que calaos_server sera de nouveau disponible.</translation>
     </message>
     <message>
         <location filename="../src/Application.cpp" line="199"/>
@@ -30,37 +30,37 @@
     <message>
         <location filename="../src/Application.cpp" line="212"/>
         <source>Credentials change failed</source>
-        <translation>Échec de la modification des informations d&apos;identification</translation>
+        <translation>Échec de la modification des identifiants</translation>
     </message>
     <message>
         <location filename="../src/Application.cpp" line="213"/>
         <source>Credentials were not changed. Please try again.</source>
-        <translation>Les informations d&apos;identification n&apos;ont pas été modifiées. Veuillez réessayer.</translation>
+        <translation>Les identifiants n&apos;ont pas été modifiés. Veuillez réessayer.</translation>
     </message>
     <message>
         <location filename="../src/Application.cpp" line="224"/>
         <source>Credentials changed</source>
-        <translation>Modification des informations d&apos;identification</translation>
+        <translation>Identifiants modifiés</translation>
     </message>
     <message>
         <location filename="../src/Application.cpp" line="225"/>
         <source>Credentials were successfully changed.</source>
-        <translation>Les informations d&apos;identification ont été modifiées avec succès.</translation>
+        <translation>Les identifiants ont été modifiés avec succès.</translation>
     </message>
     <message>
         <location filename="../src/Application.cpp" line="382"/>
         <source>No network connection found, this application requires a network connection to work.</source>
-        <translation>Aucune connection réseau trouvée, cette application demande une connection au réseau pour fonctionner.</translation>
+        <translation>Aucune connexion réseau trouvée, cette application nécessite une connexion réseau pour fonctionner.</translation>
     </message>
     <message>
         <location filename="../src/Application.cpp" line="509"/>
         <source>Login failed</source>
-        <translation>Authentification échoué</translation>
+        <translation>Échec de l&apos;authentification</translation>
     </message>
     <message>
         <location filename="../src/Application.cpp" line="510"/>
         <source>Connection failed, please check your credentials.</source>
-        <translation>Connection échouée, veuillez vérifier vos identifiants.</translation>
+        <translation>Échec de la connexion, veuillez vérifier vos identifiants.</translation>
     </message>
 </context>
 <context>
@@ -68,7 +68,7 @@
     <message>
         <location filename="../qml/desktop/AudioPlayer.qml" line="42"/>
         <source>No audio zone</source>
-        <translation>Aucune zone</translation>
+        <translation>Aucune zone audio</translation>
     </message>
     <message>
         <location filename="../qml/desktop/AudioPlayer.qml" line="193"/>
@@ -163,7 +163,7 @@
     <message>
         <location filename="../qml/desktop/CameraListView.qml" line="196"/>
         <source>Back to media</source>
-        <translation>Retour aux média</translation>
+        <translation>Retour aux médias</translation>
     </message>
     <message>
         <location filename="../qml/desktop/CameraListView.qml" line="203"/>
@@ -194,7 +194,7 @@
     <message>
         <location filename="../qml/mobile/ColorPickerRGBView.qml" line="137"/>
         <source>Set color</source>
-        <translation>Mettre une couleur</translation>
+        <translation>Définir la couleur</translation>
     </message>
 </context>
 <context>
@@ -202,7 +202,7 @@
     <message>
         <location filename="../qml/mobile/ColorPickerView.qml" line="144"/>
         <source>Set color</source>
-        <translation>Mettre une couleur</translation>
+        <translation>Définir la couleur</translation>
     </message>
 </context>
 <context>
@@ -244,7 +244,7 @@
     <message>
         <location filename="../qml/desktop/ConfigInstallView.qml" line="218"/>
         <source>No destination disk selected</source>
-        <translation>Aucun disque de destination selectionné</translation>
+        <translation>Aucun disque de destination sélectionné</translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigInstallView.qml" line="218"/>
@@ -272,7 +272,7 @@
     <message>
         <location filename="../qml/desktop/ConfigL18nView.qml" line="56"/>
         <source>Choose the desired language for the user interface from the list below:</source>
-        <translation>Choisir une langue pour l&apos;interface utilisateur depuis la liste ci dessous:</translation>
+        <translation>Choisir une langue pour l&apos;interface utilisateur dans la liste ci-dessous:</translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigL18nView.qml" line="86"/>
@@ -282,7 +282,7 @@
     <message>
         <location filename="../qml/desktop/ConfigL18nView.qml" line="97"/>
         <source>If your language is not listed here or if you found some mistake in the translation, please contact the Calaos development team to help us improve the software.</source>
-        <translation>Si votre langue n&apos;est pas dans la liste ou que vous avez trouvé des problemes de traduction, veuillez contacter l&apos;équipe de développement de Calaos afin de nous aider à améliorer le logiciel.</translation>
+        <translation>Si votre langue n&apos;est pas dans la liste ou que vous avez trouvé des problèmes de traduction, veuillez contacter l&apos;équipe de développement de Calaos afin de nous aider à améliorer le logiciel.</translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigL18nView.qml" line="133"/>
@@ -333,7 +333,7 @@
     <message>
         <location filename="../qml/desktop/ConfigScreenView.qml" line="55"/>
         <source>Turn off screen after some time</source>
-        <translation>Eteindre l&apos;écran après un certain temps</translation>
+        <translation>Éteindre l&apos;écran après un certain temps</translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigScreenView.qml" line="73"/>
@@ -560,7 +560,7 @@
     <message>
         <location filename="../qml/desktop/ConfigUserInfoView.qml" line="51"/>
         <source>Change your credentials:</source>
-        <translation>Modifiez vos informations d&apos;identification :</translation>
+        <translation>Modifiez vos identifiants:</translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigUserInfoView.qml" line="61"/>
@@ -645,7 +645,7 @@
     <message>
         <location filename="../qml/desktop/ConfigUserInfoView.qml" line="114"/>
         <source>The two passwords you entered are not the same. Please try again.</source>
-        <translation>Les deux mots de passe que vous avez introduits ne sont pas les mêmes. Veuillez réessayer.</translation>
+        <translation>Les deux mots de passe que vous avez saisis ne sont pas les mêmes. Veuillez réessayer.</translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigUserInfoView.qml" line="119"/>
@@ -683,7 +683,7 @@
     <message>
         <location filename="../qml/desktop/ConfigUserInfoView.qml" line="240"/>
         <source>Add a new email address to the list</source>
-        <translation>Ajouter uns nouvelle adresse email à la liste</translation>
+        <translation>Ajouter une nouvelle adresse email à la liste</translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigUserInfoView.qml" line="279"/>
@@ -767,7 +767,7 @@
     <message>
         <location filename="../src/ControlPanelModel.cpp" line="27"/>
         <source>Screen saver</source>
-        <translation>Ecran de veille</translation>
+        <translation>Écran de veille</translation>
     </message>
     <message>
         <location filename="../src/ControlPanelModel.cpp" line="28"/>
@@ -1113,12 +1113,12 @@
     <message>
         <location filename="../qml/desktop/DialogReboot.qml" line="10"/>
         <source>Yes, reboot</source>
-        <translation>Oui, redémarrage</translation>
+        <translation>Oui, redémarrer la machine</translation>
     </message>
     <message>
         <location filename="../qml/desktop/DialogReboot.qml" line="10"/>
         <source>Yes, restart</source>
-        <translation>Oui, relancer</translation>
+        <translation>Oui, relancer l&apos;application</translation>
     </message>
     <message>
         <location filename="../qml/desktop/DialogReboot.qml" line="11"/>
@@ -1275,7 +1275,7 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     <message>
         <location filename="../src/EventLogModel.cpp" line="127"/>
         <source>Unknown event!</source>
-        <translation>Evenement inconnu!</translation>
+        <translation>Événement inconnu!</translation>
     </message>
     <message>
         <location filename="../src/EventLogModel.cpp" line="135"/>
@@ -1292,7 +1292,7 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
         <location filename="../src/EventLogModel.cpp" line="169"/>
         <location filename="../src/EventLogModel.cpp" line="183"/>
         <source>Off</source>
-        <translation>Eteint</translation>
+        <translation>Éteint</translation>
     </message>
     <message>
         <location filename="../src/EventLogModel.cpp" line="189"/>
@@ -1316,7 +1316,7 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     <message>
         <location filename="../src/EventLogModel.cpp" line="208"/>
         <source>Started</source>
-        <translation>Démarrage</translation>
+        <translation>Démarré</translation>
     </message>
 </context>
 <context>
@@ -1329,7 +1329,7 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     <message>
         <location filename="../qml/mobile/EventLogView.qml" line="64"/>
         <source>Event log</source>
-        <translation>Historique d&apos;événement</translation>
+        <translation>Historique des événements</translation>
     </message>
 </context>
 <context>
@@ -1337,12 +1337,12 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     <message>
         <location filename="../qml/mobile/FavoritesAddView.qml" line="101"/>
         <source>Add a favorite</source>
-        <translation>Ajouter un favoris</translation>
+        <translation>Ajouter un favori</translation>
     </message>
     <message>
         <location filename="../qml/mobile/FavoritesAddView.qml" line="175"/>
         <source>Item added to favorites</source>
-        <translation>Elément ajouté aux favoris</translation>
+        <translation>Élément ajouté aux favoris</translation>
     </message>
 </context>
 <context>
@@ -1350,17 +1350,17 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     <message>
         <location filename="../qml/mobile/FavoritesEditView.qml" line="31"/>
         <source>No favorites yet.&lt;br&gt;Go to &lt;b&gt;Config&lt;/b&gt; to add some.</source>
-        <translation>Aucun favoris pour l&apos;instant.&lt;br&gt;Aller dans &lt;b&gt;Config&lt;/b&gt; pour en ajouter.</translation>
+        <translation>Aucun favori pour l&apos;instant.&lt;br&gt;Allez dans &lt;b&gt;Config&lt;/b&gt; pour en ajouter.</translation>
     </message>
     <message>
         <location filename="../qml/mobile/FavoritesEditView.qml" line="43"/>
         <source>Edit favorites list</source>
-        <translation>Editer la liste de favoris</translation>
+        <translation>Éditer la liste des favoris</translation>
     </message>
     <message>
         <location filename="../qml/mobile/FavoritesEditView.qml" line="201"/>
         <source>Item removed from favorites</source>
-        <translation>Elément supprimé des favoris</translation>
+        <translation>Élément supprimé des favoris</translation>
     </message>
 </context>
 <context>
@@ -1368,7 +1368,7 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     <message>
         <location filename="../qml/mobile/FavoritesListView.qml" line="26"/>
         <source>No favorites yet.&lt;br&gt;Go to &lt;b&gt;Config&lt;/b&gt; to add some.</source>
-        <translation>Aucun favoris pour l&apos;instant.&lt;br&gt;Aller dans &lt;b&gt;Config&lt;/b&gt; pour en ajouter.</translation>
+        <translation>Aucun favori pour l&apos;instant.&lt;br&gt;Allez dans &lt;b&gt;Config&lt;/b&gt; pour en ajouter.</translation>
     </message>
     <message>
         <location filename="../qml/mobile/FavoritesListView.qml" line="39"/>
@@ -1381,7 +1381,7 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     <message>
         <location filename="../src/FavoritesModel.cpp" line="132"/>
         <source>All lights On</source>
-        <translation>Tous les lumières allumées</translation>
+        <translation>Toutes les lumières allumées</translation>
     </message>
     <message>
         <location filename="../src/FavoritesModel.cpp" line="153"/>
@@ -1394,7 +1394,7 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     <message>
         <location filename="../qml/desktop/HomeView.qml" line="224"/>
         <source>My Home</source>
-        <translation>Ma Maison</translation>
+        <translation>Ma maison</translation>
     </message>
     <message>
         <location filename="../qml/desktop/HomeView.qml" line="251"/>
@@ -1621,12 +1621,12 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     <message>
         <location filename="../qml/desktop/MainMenu.qml" line="146"/>
         <source>Add new widgets</source>
-        <translation>Ajouter des nouveaux widgets</translation>
+        <translation>Ajouter de nouveaux widgets</translation>
     </message>
     <message>
         <location filename="../qml/desktop/MainMenu.qml" line="147"/>
         <source>Add new widgets on the desktop</source>
-        <translation>Ajouter des nouveaux widgets sur le bureau</translation>
+        <translation>Ajouter de nouveaux widgets sur le bureau</translation>
     </message>
     <message>
         <location filename="../qml/desktop/MainMenu.qml" line="153"/>
@@ -1641,7 +1641,7 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     <message>
         <location filename="../qml/desktop/MainMenu.qml" line="160"/>
         <source>Shut the screen off</source>
-        <translation>Eteindre l&apos;écran</translation>
+        <translation>Éteindre l&apos;écran</translation>
     </message>
     <message>
         <location filename="../qml/desktop/MainMenu.qml" line="161"/>
@@ -1671,12 +1671,12 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     <message>
         <location filename="../qml/desktop/MainMenu.qml" line="297"/>
         <source>My Home</source>
-        <translation>Ma Maison</translation>
+        <translation>Ma maison</translation>
     </message>
     <message>
         <location filename="../qml/desktop/MainMenu.qml" line="309"/>
         <source>Media</source>
-        <translation>Média</translation>
+        <translation>Médias</translation>
     </message>
     <message>
         <location filename="../qml/desktop/MainMenu.qml" line="321"/>
@@ -1704,7 +1704,7 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     <message>
         <location filename="../qml/mobile/MainMenuBar.qml" line="106"/>
         <source>Media</source>
-        <translation>Média</translation>
+        <translation>Médias</translation>
     </message>
     <message>
         <location filename="../qml/mobile/MainMenuBar.qml" line="120"/>
@@ -1732,7 +1732,7 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     <message>
         <location filename="../qml/mobile/MediaMenuView.qml" line="42"/>
         <source>Media</source>
-        <translation>Média</translation>
+        <translation>Médias</translation>
     </message>
 </context>
 <context>
@@ -1763,7 +1763,7 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     <message>
         <location filename="../qml/desktop/MediaView.qml" line="72"/>
         <source>Control all your CCTV cameras</source>
-        <translation>Controlez toutes vos caméras</translation>
+        <translation>Contrôlez toutes vos caméras</translation>
     </message>
     <message>
         <location filename="../qml/desktop/MediaView.qml" line="78"/>
@@ -1788,7 +1788,7 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     <message>
         <location filename="../qml/desktop/MediaView.qml" line="112"/>
         <source>Media</source>
-        <translation>Média</translation>
+        <translation>Médias</translation>
     </message>
     <message>
         <location filename="../qml/desktop/MediaView.qml" line="139"/>
@@ -1832,7 +1832,7 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     <message>
         <location filename="../qml/desktop/MediaWebView.qml" line="234"/>
         <source>Back to media</source>
-        <translation>Retour aux média</translation>
+        <translation>Retour aux médias</translation>
     </message>
     <message>
         <location filename="../qml/desktop/MediaWebView.qml" line="241"/>
@@ -1877,7 +1877,7 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     <message>
         <location filename="../qml/desktop/MusicListView.qml" line="192"/>
         <source>Back to media</source>
-        <translation>Retour aux média</translation>
+        <translation>Retour aux médias</translation>
     </message>
     <message>
         <location filename="../qml/desktop/MusicListView.qml" line="199"/>
@@ -1926,7 +1926,7 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     <message>
         <location filename="../src/OSInstaller.cpp" line="36"/>
         <source>Installation failed. See log...</source>
-        <translation>L&apos;installation à échoué. Voir le log...</translation>
+        <translation>L&apos;installation a échoué. Voir le journal...</translation>
     </message>
     <message>
         <location filename="../src/OSInstaller.cpp" line="37"/>
@@ -1939,12 +1939,12 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     <message>
         <location filename="../qml/mobile/PullRefreshHeader.qml" line="31"/>
         <source>Pull to refresh...</source>
-        <translation>Tirer pour raffraichir...</translation>
+        <translation>Tirer pour rafraîchir...</translation>
     </message>
     <message>
         <location filename="../qml/mobile/PullRefreshHeader.qml" line="44"/>
         <source>Release to refresh...</source>
-        <translation>Lacher pour raffraichir...</translation>
+        <translation>Lâcher pour rafraîchir...</translation>
     </message>
 </context>
 <context>
@@ -2050,7 +2050,7 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     <message>
         <location filename="../qml/mobile/SettingsView.qml" line="27"/>
         <source>Event log:</source>
-        <translation>Historique d&apos;événement:</translation>
+        <translation>Historique des événements:</translation>
     </message>
     <message>
         <location filename="../qml/mobile/SettingsView.qml" line="32"/>
@@ -2060,7 +2060,7 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     <message>
         <location filename="../qml/mobile/SettingsView.qml" line="40"/>
         <source>Connection:</source>
-        <translation>Connection:</translation>
+        <translation>Connexion:</translation>
     </message>
     <message>
         <location filename="../qml/mobile/SettingsView.qml" line="45"/>
@@ -2080,12 +2080,12 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     <message>
         <location filename="../qml/mobile/SettingsView.qml" line="70"/>
         <source>Add a favorite</source>
-        <translation>Ajouter un favoris</translation>
+        <translation>Ajouter un favori</translation>
     </message>
     <message>
         <location filename="../qml/mobile/SettingsView.qml" line="82"/>
         <source>Edit favorites list</source>
-        <translation>Editer la liste de favoris</translation>
+        <translation>Éditer la liste des favoris</translation>
     </message>
     <message>
         <location filename="../qml/mobile/SettingsView.qml" line="90"/>
@@ -2132,7 +2132,7 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
     <message>
         <location filename="../qml/desktop/SpotifyView.qml" line="142"/>
         <source>Back to media</source>
-        <translation>Retour aux média</translation>
+        <translation>Retour aux médias</translation>
     </message>
     <message>
         <location filename="../qml/desktop/SpotifyView.qml" line="149"/>

@@ -37,9 +37,8 @@ Note : T04/T05/T06 sont parallélisables entre eux (fichiers disjoints, seule co
 
 | ID | Titre | Taille | Bloqué par | Groupe | Statut |
 |---|---|---|---|---|---|
-| [T11](tasks/T11-parsing-sur-src.md) | Sweep parsing sûr : toInt/toDouble + null-checks | M | T04, T05, T06 | G-MODELS + G-COMMON | À faire |
-| [T12](tasks/T12-tls-tofu.md) | ⚠️ TLS TOFU : pinning d'empreinte certificat | L | T08, T02 | G-CONN + G-APP | À faire |
-| [T13](tasks/T13-timeouts-http.md) | Timeouts HTTP + durcissement long-poll | S | T12 | G-CONN | À faire |
+| [T11](tasks/T11-parsing-sur-src.md) | Sweep parsing sûr : toInt/toDouble + null-checks | M | T04, T05, T06 | G-MODELS + G-COMMON | En revue |
+| [T13](tasks/T13-timeouts-http.md) | Timeouts HTTP + durcissement long-poll | S | T08 | G-CONN | À faire |
 | [T14](tasks/T14-reconnexion-backoff.md) | ⚠️ Machine à états de reconnexion + backoff | L | T13 | G-CONN + G-APP | À faire |
 | [T15](tasks/T15-camera-polling-imageproviders.md) | Polling caméra maîtrisé + image providers thread-safe | M | T11 | G-MODELS | À faire |
 
@@ -84,7 +83,7 @@ P1   G-MODELS          G-CONN    G-QML        MISC
      T04 ‖ T05 ‖ T06    T08       T07 ‖ T10    T09
 
 P2   G-MODELS          G-CONN(+APP)
-     T11 → T15          T12 → T13 → T14        (2 lanes en parallèle)
+     T11 → T15          T13 → T14              (2 lanes en parallèle)
 
 P3   G-MODELS/COMMON      G-CONN     MISC
      T16 ────────┐        T17 ──┐    T19 ‖ T20
@@ -104,7 +103,6 @@ P5   T29 → T30
 
 | Ticket | Risque | Vérification |
 |---|---|---|
-| **T12 TOFU** | Nouveau dialog à la 1ʳᵉ connexion ; blocage si le flux accept/retry est cassé | Serveur auto-signé : dialog une seule fois, accepter → connecté ; relance app → direct ; cert régénéré → dialog mismatch ; refus → déconnecté proprement ; demo.calaos.fr (cert valide) → aucun dialog ; caméras https + WS passent le contrôle. |
 | **T14 Backoff** | Délais de reconnexion modifiés ; suppression du logout sur erreur transitoire | Coupure serveur 2 min → séquence 1/2/4/8…30 s sans chevauchement, un seul login à la reprise ; mode avion mobile ; suspend/resume desktop ; mauvais mot de passe → pas de retry infini. |
 | **T13 Timeouts** | Un long-poll légitime pourrait être tué si mal calibré | 30 min sur serveur calme : aucun cycle logout/login parasite. |
 | **T15 Caméras** | Cadence de rafraîchissement modifiée | Multi-caméras 10 min + navigation rapide : débit stable, pas de gel. |
@@ -115,6 +113,7 @@ P5   T29 → T30
 
 Explicitement exclus de ce backlog, à traiter dans une phase dédiée :
 
+- **TLS TOFU / pinning d'empreinte certificat** (ex-T12, spec conservée dans `docs/tasks/T12-tls-tofu.md`) — écarté par Raoul le 2026-08-10 : verrouiller le certificat est trop risqué pour le parc installé, un renouvellement côté serveur couperait les clients. `ignoreSslErrors` reste donc en place. T13 et T14 n'en dépendaient pas sur le fond : ils n'étaient sérialisés derrière lui que parce que les trois touchent `CalaosConnection.cpp` (groupe G-CONN). T13 est repositionné derrière T08.
 - **Migration CMake** (qmake est déprécié pour Qt6) — préalable recommandé au split transport complet de CalaosConnection.
 - **Android** : `targetSdkVersion 29` (bloque les mises à jour Play Store, minimum requis 34), **OpenSSL 1.0.2r embarqué (EOL 2019, critique)**, toolchain Gradle 2021 + `jcenter()` mort, credentials en clair dans QSettings (chantier Keystore).
 - **iOS** : APIs UIKit dépréciées (`UIAlertView`…), `KeychainItemWrapper` mort à supprimer, étapes Xcode manuelles non scriptables.

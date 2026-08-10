@@ -255,7 +255,7 @@ Item {
 
         onGoToUrl: {
             AppActions.openKeyboard(qsTr("URL"),
-                                    qsTr("Enter the url to navigate to"),
+                                    qsTr("Enter the URL to open"),
                                     "",
                                     TextInput.Normal,
                                     false,

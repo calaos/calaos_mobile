@@ -15,7 +15,7 @@ Item {
 
     Text {
         id: titleText
-        text: qsTr("New Tab")
+        text: qsTr("New tab")
         anchors {
             top: parent.top
             topMargin: Units.dp(40)

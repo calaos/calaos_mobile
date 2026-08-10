@@ -17,7 +17,7 @@ Dialog {
     title: qsTr("Tabs")
     text: qsTr("Manage your open tabs")
     hasActions: true
-    positiveButtonText: tabModel && tabModel.count < maxTabs ? qsTr("New Tab") : ""
+    positiveButtonText: tabModel && tabModel.count < maxTabs ? qsTr("New tab") : ""
     positiveButtonEnabled: tabModel ? tabModel.count < maxTabs : true
     negativeButtonText: qsTr("Close")
 
@@ -95,7 +95,7 @@ Dialog {
 
                     Text {
                         width: parent.width
-                        text: model.title || qsTr("New Tab")
+                        text: model.title || qsTr("New tab")
                         font.pixelSize: Units.dp(14)
                         font.family: calaosFont.fontFamily
                         font.weight: Font.Light

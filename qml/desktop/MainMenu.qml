@@ -143,7 +143,7 @@ Item {
             model: ListModel {
                 ListElement {
                     iconSource: "IconWidget.qml"
-                    title: qsTr("Add new Widgets")
+                    title: qsTr("Add new widgets")
                     description: qsTr("Add new widgets on the desktop")
                     moreText: ""
                     action: "widgets_add"

@@ -233,7 +233,7 @@ Dialog {
                 }
 
                 FooterButton {
-                    label: qsTr("Valid")
+                    label: qsTr("Confirm")
                     icon: "qrc:/img/button_action_valid.png"
                     Layout.minimumWidth: width
                     onBtClicked: {

@@ -101,7 +101,7 @@ Item {
             font.family: calaosFont.fontFamilyLight
             font.weight: Font.ExtraLight
             color: "#e7e7e7"
-            text: qsTr("Configuration Panel")
+            text: qsTr("Configuration panel")
         }
     }
 

@@ -193,8 +193,8 @@ void Application::createQmlApp()
 
 #ifdef CALAOS_DESKTOP
         HardwareUtils::Instance()->showAlertMessage(tr("Network error"),
-                                                    tr("The connection to calaos_server was lost."
-                                                       "It will reconnect automatically when calaos_server"
+                                                    tr("The connection to calaos_server was lost. "
+                                                       "It will reconnect automatically when calaos_server "
                                                        "is available again."),
                                                     tr("Close"));
 

@@ -10,8 +10,12 @@
         <translation>Netzwerkfehler</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="196"/>
         <source>The connection to calaos_server was lost.It will reconnect automatically when calaos_serveris available again.</source>
+        <translation type="vanished">Die Verbindung zu calaos_server wurde unterbrochen. Die Verbindung wird automatisch wiederhergestellt, wenn calaos_server wieder verfügbar ist.</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="196"/>
+        <source>The connection to calaos_server was lost. It will reconnect automatically when calaos_server is available again.</source>
         <translation>Die Verbindung zu calaos_server wurde unterbrochen. Die Verbindung wird automatisch wiederhergestellt, wenn calaos_server wieder verfügbar ist.</translation>
     </message>
     <message>
@@ -214,8 +218,12 @@
         <translation>Wählen Sie einen Zieldatenträger und klicken Sie auf Installieren, um das Installationsskript zu starten</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigInstallView.qml" line="81"/>
         <source>WARNING: All data from the destination disk are going to be lost!</source>
+        <translation type="vanished">WARNUNG: Alle Daten auf dem Ziellaufwerk gehen verloren!</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigInstallView.qml" line="81"/>
+        <source>WARNING: All data on the destination disk will be lost!</source>
         <translation>WARNUNG: Alle Daten auf dem Ziellaufwerk gehen verloren!</translation>
     </message>
     <message>
@@ -366,9 +374,8 @@
         <translation>Produktversion:</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigTabs.qml" line="66"/>
         <source>System started since:</source>
-        <translation>System gestartet seit:</translation>
+        <translation type="vanished">System gestartet seit:</translation>
     </message>
     <message>
         <source>%1 day</source>
@@ -385,6 +392,11 @@
     <message>
         <source>%1 hour</source>
         <translation type="vanished">%1 Stunde</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="66"/>
+        <source>Running since:</source>
+        <translation>In Betrieb seit:</translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigTabs.qml" line="79"/>
@@ -646,13 +658,21 @@
     </message>
     <message>
         <location filename="../qml/desktop/ConfigUserInfoView.qml" line="133"/>
-        <source>Actual username:</source>
+        <source>Current username:</source>
         <translation>Aktueller Benutzername:</translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigUserInfoView.qml" line="160"/>
-        <source>Here you can configure some personal information like your email address. It is used by Calaos to send you some email. For example, the Note widget can use those addresses to send notes to your mailbox.</source>
+        <source>Here you can configure some personal information like your email address. It is used by Calaos to send you emails. For example, the Note widget can use those addresses to send notes to your mailbox.</source>
         <translation>Hier können Sie einige persönliche Informationen wie Ihre E-Mail-Adresse konfigurieren. Sie wird von Calaos verwendet, um Ihnen einige E-Mails zu senden. Zum Beispiel kann das Notiz-Widget diese Adressen verwenden, um Notizen an Ihre Mailbox zu senden.</translation>
+    </message>
+    <message>
+        <source>Actual username:</source>
+        <translation type="vanished">Aktueller Benutzername:</translation>
+    </message>
+    <message>
+        <source>Here you can configure some personal information like your email address. It is used by Calaos to send you some email. For example, the Note widget can use those addresses to send notes to your mailbox.</source>
+        <translation type="vanished">Hier können Sie einige persönliche Informationen wie Ihre E-Mail-Adresse konfigurieren. Sie wird von Calaos verwendet, um Ihnen einige E-Mails zu senden. Zum Beispiel kann das Notiz-Widget diese Adressen verwenden, um Notizen an Ihre Mailbox zu senden.</translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigUserInfoView.qml" line="238"/>
@@ -708,8 +728,12 @@
 <context>
     <name>ConfigView</name>
     <message>
-        <location filename="../qml/desktop/ConfigView.qml" line="104"/>
         <source>Configuration Panel</source>
+        <translation type="vanished">Systemsteuerung</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigView.qml" line="104"/>
+        <source>Configuration panel</source>
         <translation>Systemsteuerung</translation>
     </message>
     <message>
@@ -850,8 +874,12 @@
     </message>
     <message>
         <location filename="../qml/desktop/DialogBookmarks.qml" line="15"/>
-        <source>Add Bookmark</source>
+        <source>Add bookmark</source>
         <translation>Lesezeichen hinzufügen</translation>
+    </message>
+    <message>
+        <source>Add Bookmark</source>
+        <translation type="vanished">Lesezeichen hinzufügen</translation>
     </message>
     <message>
         <location filename="../qml/desktop/DialogBookmarks.qml" line="16"/>
@@ -883,8 +911,12 @@
     </message>
     <message>
         <location filename="../qml/desktop/DialogKeyboard.qml" line="236"/>
-        <source>Valid</source>
+        <source>Confirm</source>
         <translation>Bestätigen</translation>
+    </message>
+    <message>
+        <source>Valid</source>
+        <translation type="vanished">Bestätigen</translation>
     </message>
     <message>
         <location filename="../qml/desktop/DialogKeyboard.qml" line="250"/>
@@ -1092,10 +1124,22 @@
         <translation>Wiederherstellungssystem</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogRecoveryBoot.qml" line="8"/>
         <source>The system is booted from a previous snapshot. That means the system is read only and all data will not be saved on the disk.
 
 You have the ability to rollback to this snapshot as the primary boot system. This rollback procedure will set this snapshot as the current read write system and reboot.
+
+The rollback option is also available in the Control Panel (Configuration menu)</source>
+        <translation type="vanished">Das System wird von einem früheren Snapshot gebootet. Das bedeutet, dass das System schreibgeschützt ist und alle Daten nicht auf der Festplatte gespeichert werden.
+
+Sie haben die Möglichkeit, zu diesem Snapshot als primäres Boot-System zurückzukehren. Bei diesem Rollback-Verfahren wird dieser Snapshot als aktuelles System mit Lese- und Schreibzugriff festgelegt und neu gestartet.
+
+Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfügbar</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogRecoveryBoot.qml" line="8"/>
+        <source>The system is booted from a previous snapshot. That means the system is read-only and no data will be saved on the disk.
+
+You have the ability to rollback to this snapshot as the primary boot system. This rollback procedure will set this snapshot as the current read-write system and reboot.
 
 The rollback option is also available in the Control Panel (Configuration menu)</source>
         <translation>Das System wird von einem früheren Snapshot gebootet. Das bedeutet, dass das System schreibgeschützt ist und alle Daten nicht auf der Festplatte gespeichert werden.
@@ -1183,8 +1227,12 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
     <message>
         <location filename="../qml/desktop/DialogTabList.qml" line="20"/>
         <location filename="../qml/desktop/DialogTabList.qml" line="98"/>
-        <source>New Tab</source>
+        <source>New tab</source>
         <translation>Neuer Tab</translation>
+    </message>
+    <message>
+        <source>New Tab</source>
+        <translation type="vanished">Neuer Tab</translation>
     </message>
     <message>
         <location filename="../qml/desktop/DialogTabList.qml" line="22"/>
@@ -1233,8 +1281,12 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
     </message>
     <message>
         <location filename="../src/EventLogModel.cpp" line="197"/>
-        <source>Open</source>
+        <source>Opened</source>
         <translation>Geöffnet</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation type="vanished">Geöffnet</translation>
     </message>
     <message>
         <location filename="../src/EventLogModel.cpp" line="202"/>
@@ -1372,8 +1424,12 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
     </message>
     <message>
         <location filename="../src/RoomModel.cpp" line="533"/>
+        <source>Action: Stopped.</source>
+        <translation>Aktion: Gestoppt.</translation>
+    </message>
+    <message>
         <source>Action: stopped.</source>
-        <translation>Aktion: gestoppt.</translation>
+        <translation type="vanished">Aktion: gestoppt.</translation>
     </message>
     <message>
         <location filename="../src/RoomModel.cpp" line="535"/>
@@ -1539,8 +1595,12 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
 <context>
     <name>MainMenu</name>
     <message>
-        <location filename="../qml/desktop/MainMenu.qml" line="146"/>
         <source>Add new Widgets</source>
+        <translation type="vanished">Neue Widgets hinzufügen</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/MainMenu.qml" line="146"/>
+        <source>Add new widgets</source>
         <translation>Neue Widgets hinzufügen</translation>
     </message>
     <message>
@@ -1663,9 +1723,8 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <translation>Deine Musik</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MediaView.qml" line="65"/>
         <source>Access you media library</source>
-        <translation>Zugriff auf Ihre Mediathek</translation>
+        <translation type="vanished">Zugriff auf Ihre Mediathek</translation>
     </message>
     <message>
         <location filename="../qml/desktop/MediaView.qml" line="71"/>
@@ -1673,8 +1732,17 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <translation>CCTV</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MediaView.qml" line="72"/>
         <source>Drive all you cctv cameras</source>
+        <translation type="vanished">Steuern Sie alle Überwachungskameras</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/MediaView.qml" line="65"/>
+        <source>Access your media library</source>
+        <translation>Zugriff auf Ihre Mediathek</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/MediaView.qml" line="72"/>
+        <source>Control all your CCTV cameras</source>
         <translation>Steuern Sie alle Überwachungskameras</translation>
     </message>
     <message>
@@ -1724,9 +1792,8 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <translation>URL</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MediaWebView.qml" line="258"/>
         <source>Enter the url to navigate to</source>
-        <translation>Geben Sie die aufzurufende URL ein</translation>
+        <translation type="vanished">Geben Sie die aufzurufende URL ein</translation>
     </message>
     <message>
         <location filename="../qml/desktop/MediaWebView.qml" line="227"/>
@@ -1747,6 +1814,11 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <location filename="../qml/desktop/MediaWebView.qml" line="241"/>
         <source>Quit</source>
         <translation>Beenden</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/MediaWebView.qml" line="258"/>
+        <source>Enter the URL to open</source>
+        <translation>Geben Sie die aufzurufende URL ein</translation>
     </message>
     <message>
         <location filename="../qml/desktop/MediaWebView.qml" line="279"/>
@@ -2005,8 +2077,12 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
 <context>
     <name>SpeedDialPage</name>
     <message>
-        <location filename="../qml/desktop/SpeedDialPage.qml" line="18"/>
         <source>New Tab</source>
+        <translation type="vanished">Neuer Tab</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/SpeedDialPage.qml" line="18"/>
+        <source>New tab</source>
         <translation>Neuer Tab</translation>
     </message>
     <message>

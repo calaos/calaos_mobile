@@ -194,7 +194,7 @@ void EventLogItem::load(const QVariantMap &data)
             if (data["io_state"].toString() == "true")
             {
                 update_evIconSource("icon_shutter_on");
-                update_evActionText(tr("Open"));
+                update_evActionText(tr("Opened"));
             }
             else
             {

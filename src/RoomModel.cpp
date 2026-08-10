@@ -530,7 +530,7 @@ int IOBase::getStateShutterPos()
         update_stateShutterTxt(tr("State: Closed."));
 
     if (status == "stop" || status == "")
-        update_stateShutterTxtAction(tr("Action: stopped."));
+        update_stateShutterTxtAction(tr("Action: Stopped."));
     else if (status == "down")
         update_stateShutterTxtAction(tr("Action: Closing..."));
     else if (status == "up")

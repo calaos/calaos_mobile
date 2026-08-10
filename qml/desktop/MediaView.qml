@@ -62,14 +62,14 @@ Item {
         model: ListModel {
             ListElement {
                 title: qsTr("Your Music")
-                subtitle: qsTr("Access you media library")
+                subtitle: qsTr("Access your media library")
                 itemDisabled: false
                 iconSource: "MediaIconMusic.qml"
                 clickId: "media/music"
             }
             ListElement {
                 title: qsTr("CCTV")
-                subtitle: qsTr("Drive all you cctv cameras")
+                subtitle: qsTr("Control all your CCTV cameras")
                 itemDisabled: false
                 iconSource: "MediaIconCamera.qml"
                 clickId: "media/camera"

@@ -10,8 +10,8 @@ Window {
     id: rootWindow
     visible: true
 
-    width: Units.dp(1024) * calaosApp.density
-    height: Units.dp(768) * calaosApp.density
+    width: Units.dp(1024)
+    height: Units.dp(768)
 
     property QtObject roomModel
     property string currentRoomName

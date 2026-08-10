@@ -53,7 +53,7 @@ QtObject {
     }
 
     function openEventPushViewerUuid(uuid) {
-        AppDispatcher.dispatch(ActionTypes.openEventPushViewer,
+        AppDispatcher.dispatch(ActionTypes.openEventPushViewerUuid,
                                { notifUuid: uuid });
     }
 

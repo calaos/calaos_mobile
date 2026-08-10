@@ -23,7 +23,7 @@ ItemBase {
         }
 
         ScrollingText {
-            color: icon.iconState?"#ffda5a":"#3ab4d7"
+            color: modelData.stateBool?"#ffda5a":"#3ab4d7"
             font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 12 }
             text: modelData.ioName
             clip: true

@@ -83,7 +83,7 @@ ListView {
                              model.ioType === Common.FavoritesLightsCount? fav_all_lights:
                              model.ioType === Common.Switch? ioswitch:
                              model.ioType === Common.Switch3? ioswitch:
-                             model.ioType === Common.Switch_long? ioswitch:
+                             model.ioType === Common.SwitchLong? ioswitch:
                              model.ioType === Common.DoorSensor? ioswitch:
                              model.ioType === Common.OccupancySensor? ioswitch:
                              model.ioType === Common.SmokeSensor? ioswitch:

@@ -26,6 +26,8 @@ void HomeModel::load(const QVariantMap &homeData)
     clear();
     scenarioModel->clear();
     IOCache::Instance().clearCache();
+    //LightOnModel::clear() (declared LightOnModel*, see HomeModel.h) also
+    //empties onCache, fixing the T06 "ghost lights after reconnect" bug.
     lightOnModel->clear();
 
     if (!homeData.contains("home"))
@@ -152,6 +154,12 @@ QObject *LightOnModel::getItemModel(int idx)
     IOBase *obj = dynamic_cast<IOBase *>(item(idx));
     if (obj) engine->setObjectOwnership(obj, QQmlEngine::CppOwnership);
     return obj;
+}
+
+void LightOnModel::clear()
+{
+    QStandardItemModel::clear();
+    onCache.clear();
 }
 
 void LightOnModel::addLight(IOBase *io)

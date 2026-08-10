@@ -7,7 +7,7 @@ TARGET.path = $$PREFIX/
 
 QT += qml quick network gui websockets
 
-CONFIG += c++11
+CONFIG += c++17
 
 include(3rd_party/quickflux/quickflux.pri)
 include(3rd_party/qt-qml-models/QtQmlModels.pri)

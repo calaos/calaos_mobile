@@ -1357,6 +1357,19 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
     </message>
 </context>
 <context>
+    <name>HardwareUtils_iOS</name>
+    <message>
+        <location filename="../ios/HardwareUtils.mm" line="324"/>
+        <source>Cancel</source>
+        <translation>Abbrechen</translation>
+    </message>
+    <message>
+        <location filename="../ios/HardwareUtils.mm" line="325"/>
+        <source>Confirm</source>
+        <translation>Bestätigen</translation>
+    </message>
+</context>
+<context>
     <name>HomeFavModel</name>
     <message>
         <location filename="../src/FavoritesModel.cpp" line="132"/>

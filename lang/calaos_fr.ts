@@ -1377,6 +1377,19 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     </message>
 </context>
 <context>
+    <name>HardwareUtils_iOS</name>
+    <message>
+        <location filename="../ios/HardwareUtils.mm" line="324"/>
+        <source>Cancel</source>
+        <translation>Annuler</translation>
+    </message>
+    <message>
+        <location filename="../ios/HardwareUtils.mm" line="325"/>
+        <source>Confirm</source>
+        <translation>Valider</translation>
+    </message>
+</context>
+<context>
     <name>HomeFavModel</name>
     <message>
         <location filename="../src/FavoritesModel.cpp" line="132"/>

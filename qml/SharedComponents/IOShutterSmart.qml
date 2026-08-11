@@ -5,7 +5,7 @@ import "."
 ItemBase {
     property variant modelData
 
-    height: 130 * calaosApp.density
+    height: Units.dp(130)
 
     RowLayout {
         id: row
@@ -74,9 +74,9 @@ ItemBase {
         clip: true
         elide: Text.ElideMiddle
         anchors {
-            left: windowBg.right; leftMargin: 8 * calaosApp.density
-            right: parent.right; rightMargin: 8 * calaosApp.density
-            top: row.bottom; topMargin: 18 * calaosApp.density
+            left: windowBg.right; leftMargin: Units.dp(8)
+            right: parent.right; rightMargin: Units.dp(8)
+            top: row.bottom; topMargin: Units.dp(18)
         }
     }
 
@@ -88,9 +88,9 @@ ItemBase {
         clip: true
         elide: Text.ElideMiddle
         anchors {
-            left: windowBg.right; leftMargin: 8 * calaosApp.density
-            right: parent.right; rightMargin: 8 * calaosApp.density
-            top: stateTxt.bottom; topMargin: 8 * calaosApp.density
+            left: windowBg.right; leftMargin: Units.dp(8)
+            right: parent.right; rightMargin: Units.dp(8)
+            top: stateTxt.bottom; topMargin: Units.dp(8)
         }
     }
 
@@ -98,7 +98,7 @@ ItemBase {
 
     Item {
         anchors {
-            horizontalCenterOffset: 7 * calaosApp.density
+            horizontalCenterOffset: Units.dp(7)
             centerIn: windowBg
         }
         clip: true
@@ -119,8 +119,8 @@ ItemBase {
         id: windowBg
         source: calaosApp.getPictureSized("part_shutter")
         anchors {
-            left: parent.left; leftMargin: 14 * calaosApp.density
-            top: row.bottom; topMargin: 8 * calaosApp.density
+            left: parent.left; leftMargin: Units.dp(14)
+            top: row.bottom; topMargin: Units.dp(8)
         }
     }
 

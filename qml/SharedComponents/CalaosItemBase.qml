@@ -11,7 +11,7 @@ MouseArea {
 
     signal buttonClicked()
 
-    height: 50 * calaosApp.density
+    height: Units.dp(50)
 
     property alias __rectBorder: rectBorder
     property alias __inBorder: inBorder
@@ -19,9 +19,9 @@ MouseArea {
 
     Rectangle {
         id: rectBorder
-        radius: 8 * calaosApp.density
+        radius: Units.dp(8)
         border.color: thisButton.disabled? Theme.colorAlpha(Theme.whiteColor, 0.40) : "#3AB4D7"
-        border.width: 2 * calaosApp.density
+        border.width: Units.dp(2)
         color: "transparent"
 
         anchors {
@@ -36,12 +36,12 @@ MouseArea {
 
     Rectangle {
         id: inBorder
-        radius: 4 * calaosApp.density
+        radius: Units.dp(4)
         color: "#3AB4D7"
 
         anchors {
             fill: rectBorder
-            margins: 4 * calaosApp.density
+            margins: Units.dp(4)
         }
 
         opacity: 0

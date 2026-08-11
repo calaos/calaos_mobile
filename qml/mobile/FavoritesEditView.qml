@@ -19,7 +19,7 @@ Item {
         width: parent.width
         height: parent.height - header.height
 
-        spacing: 5 * calaosApp.density
+        spacing: Units.dp(5)
 
         delegate: default_delegate
     }
@@ -51,32 +51,33 @@ Item {
             property variant modelData
 
             source: calaosApp.getPictureSized("back_items_home")
-            border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
-            border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
+            border.left: Units.dp(5); border.top: Units.dp(5)
+            border.right: Units.dp(5); border.bottom: Units.dp(5)
 
-            width: parent.width - 10 * calaosApp.density
-            height: 40 * calaosApp.density
+            width: parent.width - Units.dp(10)
+            height: Units.dp(40)
 
             Item {
                 id: icon
 
-                width: 20 * calaosApp.density
-                height: (5 * 1 + 4 * 2) * calaosApp.density
+                width: Units.dp(20)
+                //5 bars of 1dp separated by 4 gaps of 2dp, each rounded like the bars themselves
+                height: Units.dp(1) * 5 + Units.dp(2) * 4
 
                 Column {
-                    spacing: 2 * calaosApp.density
+                    spacing: Units.dp(2)
                     Repeater {
                         model: 5
                         delegate: Rectangle {
                             color: "#C7C7C7"
-                            width: 20 * calaosApp.density
-                            height: 1 * calaosApp.density
+                            width: Units.dp(20)
+                            height: Units.dp(1)
                         }
                     }
                 }
 
                 anchors {
-                    left: parent.left; leftMargin: 8 * calaosApp.density
+                    left: parent.left; leftMargin: Units.dp(8)
                     verticalCenter: parent.verticalCenter
                 }
             }
@@ -88,8 +89,8 @@ Item {
                 clip: true
                 elide: Text.ElideMiddle
                 anchors {
-                    left: icon.right; leftMargin: 8 * calaosApp.density
-                    right: btadd.left; rightMargin: 8 * calaosApp.density
+                    left: icon.right; leftMargin: Units.dp(8)
+                    right: btadd.left; rightMargin: Units.dp(8)
                     verticalCenter: parent.verticalCenter
                 }
             }
@@ -97,7 +98,7 @@ Item {
             ItemButtonAction {
                 id: btadd
                 anchors {
-                    right: parent.right; rightMargin: 8 * calaosApp.density
+                    right: parent.right; rightMargin: Units.dp(8)
                     verticalCenter: parent.verticalCenter
                 }
                 imageSource: "button_min"
@@ -188,7 +189,7 @@ Item {
             left: parent.left; right: parent.right
             verticalCenter: parent.verticalCenter
         }
-        height: txt.implicitHeight + 36 * calaosApp.density
+        height: txt.implicitHeight + Units.dp(36)
 
         visible: opacity > 0
         opacity: 0

@@ -18,9 +18,9 @@ Item {
 
     function calcGridSize(rootWidth) {
         //calc GridView size to correctly fit the center of the parent
-        var numItem = Math.floor(rootWidth / (150 * calaosApp.density))
+        var numItem = Math.floor(rootWidth / (Units.dp(150)))
         if (numItem > lst.count) numItem = lst.count
-        lst.width = numItem * (150 * calaosApp.density)
+        lst.width = numItem * (Units.dp(150))
     }
 
     onWidthChanged: calcGridSize(width)
@@ -28,8 +28,8 @@ Item {
     GridView {
         id: lst
 
-        cellHeight: 120 * calaosApp.density
-        cellWidth: 150 * calaosApp.density
+        cellHeight: Units.dp(120)
+        cellWidth: Units.dp(150)
 
         anchors.horizontalCenter: parent.horizontalCenter
         height: parent.height - header.height
@@ -39,8 +39,8 @@ Item {
 
         delegate: Item {
 
-            height: 120 * calaosApp.density
-            width: 150 * calaosApp.density
+            height: Units.dp(120)
+            width: Units.dp(150)
 
             property string roomIconType: roomType
             onRoomIconTypeChanged: roomIcon.source = calaosApp.getPictureSizedPrefix(Calaos.getRoomTypeIcon(roomIconType), "img/rooms")
@@ -48,10 +48,10 @@ Item {
             Image {
                 id: roomIcon
                 fillMode: Image.PreserveAspectFit
-                width: parent.width - 10 * calaosApp.density
+                width: parent.width - Units.dp(10)
                 anchors {
                     centerIn: parent
-                    verticalCenterOffset: 5 * calaosApp.density
+                    verticalCenterOffset: Units.dp(5)
                 }
 
                 Behavior on opacity { PropertyAnimation { duration: 100 } }
@@ -65,9 +65,9 @@ Item {
 
                 anchors {
                     horizontalCenter: parent.horizontalCenter
-                    horizontalCenterOffset: 30 * calaosApp.density
+                    horizontalCenterOffset: Units.dp(30)
                     bottom: parent.bottom
-                    bottomMargin: 8 * calaosApp.density
+                    bottomMargin: Units.dp(8)
                 }
             }
 
@@ -78,8 +78,8 @@ Item {
                 elide: Text.ElideRight
                 anchors {
                     verticalCenter: lighticon.verticalCenter
-                    left: lighticon.right; leftMargin: 5 * calaosApp.density
-                    right: parent.right; rightMargin: 2 * calaosApp.density
+                    left: lighticon.right; leftMargin: Units.dp(5)
+                    right: parent.right; rightMargin: Units.dp(2)
                 }
                 font { family: calaosFont.fontFamily; bold: false; pointSize: 10 }
             }
@@ -130,7 +130,7 @@ Item {
                 width: parent.width
                 anchors {
                     horizontalCenter: parent.horizontalCenter
-                    top: parent.top; topMargin: 5 * calaosApp.density
+                    top: parent.top; topMargin: Units.dp(5)
                 }
             }
         }

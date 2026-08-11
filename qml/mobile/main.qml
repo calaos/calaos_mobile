@@ -10,8 +10,16 @@ Window {
     id: rootWindow
     visible: true
 
-    minimumWidth: 320 * calaosApp.density
-    minimumHeight: 480 * calaosApp.density
+    //Units.dp() is the single sizing unit; it only knows the screen density
+    //once we hand it over. Desktop's main.qml does the same.
+    Component.onCompleted: {
+        Units.cachedValue = Qt.binding(function() {
+            return calaosApp.density;
+        });
+    }
+
+    minimumWidth: Units.dp(320)
+    minimumHeight: Units.dp(480)
 
     color: "#080808"
 

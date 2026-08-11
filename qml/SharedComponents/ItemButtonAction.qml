@@ -9,8 +9,8 @@ Item {
 
     signal buttonClicked()
 
-    width: 37 * calaosApp.density
-    height: 31 * calaosApp.density
+    width: Units.dp(37)
+    height: Units.dp(31)
 
     Image {
         id: img

@@ -18,11 +18,11 @@ Item {
         model: eventLogModel
 
         y: header.height
-        x: 2 * calaosApp.density
+        x: Units.dp(2)
         width: parent.width - x
         height: parent.height - header.height
 
-        spacing: 5 * calaosApp.density
+        spacing: Units.dp(5)
 
         delegate: default_delegate
 
@@ -86,14 +86,14 @@ Item {
             z: 99
             width: listViewLog.width
             color: "black"
-            height: 45 * calaosApp.density
+            height: Units.dp(45)
 
             Image {
                 id: ic
                 source: calaosApp.getPictureSized("icon_date")
                 anchors {
                     verticalCenter: parent.verticalCenter
-                    left: parent.left; leftMargin: 10 * calaosApp.density
+                    left: parent.left; leftMargin: Units.dp(10)
                 }
             }
 
@@ -104,7 +104,7 @@ Item {
                 text: section
                 anchors {
                     left: ic.source === ""?parent.left:ic.right
-                    leftMargin: 5 * calaosApp.density
+                    leftMargin: Units.dp(5)
                     verticalCenter: parent.verticalCenter
                 }
             }
@@ -112,7 +112,7 @@ Item {
             Rectangle {
                 anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
                 color: "#333333"
-                height: 2 * calaosApp.density
+                height: Units.dp(2)
             }
         }
     }
@@ -124,10 +124,10 @@ Item {
             property variant modelData
 
             source: calaosApp.getPictureSized("back_items_home")
-            border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
-            border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
+            border.left: Units.dp(5); border.top: Units.dp(5)
+            border.right: Units.dp(5); border.bottom: Units.dp(5)
 
-            width: parent.width - 10 * calaosApp.density
+            width: parent.width - Units.dp(10)
             height: col.implicitHeight
 
             ColumnLayout {

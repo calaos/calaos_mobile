@@ -13,14 +13,14 @@ ListView {
             z: 99
             width: lst.width
             color: "#080808"
-            height: 45 * calaosApp.density
+            height: Units.dp(45)
 
             Image {
                 id: ic
                 source: calaosApp.getPictureSized("icon_room")
                 anchors {
                     verticalCenter: parent.verticalCenter
-                    left: parent.left; leftMargin: 10 * calaosApp.density
+                    left: parent.left; leftMargin: Units.dp(10)
                 }
             }
 
@@ -31,7 +31,7 @@ ListView {
                 text: section
                 anchors {
                     left: ic.source === ""?parent.left:ic.right
-                    leftMargin: 5 * calaosApp.density
+                    leftMargin: Units.dp(5)
                     verticalCenter: parent.verticalCenter
                 }
             }
@@ -39,7 +39,7 @@ ListView {
             Rectangle {
                 anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
                 color: "#333333"
-                height: 2 * calaosApp.density
+                height: Units.dp(2)
             }
         }
     }
@@ -52,7 +52,7 @@ ListView {
     width: parent.width
     height: parent.height
 
-    spacing: 10 * calaosApp.density
+    spacing: Units.dp(10)
 
     delegate: delegate
 
@@ -132,8 +132,8 @@ ListView {
             }
 
             anchors.horizontalCenter: parent.horizontalCenter
-            anchors.horizontalCenterOffset: -3 * calaosApp.density
-            width: parent.width - 10 * calaosApp.density
+            anchors.horizontalCenterOffset: -Units.dp(3)
+            width: parent.width - Units.dp(10)
         }
     }
 
@@ -144,11 +144,11 @@ ListView {
             property variant modelData
 
             source: calaosApp.getPictureSized("back_items_home")
-            border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
-            border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
+            border.left: Units.dp(5); border.top: Units.dp(5)
+            border.right: Units.dp(5); border.bottom: Units.dp(5)
 
             width: parent.width
-            height: 40 * calaosApp.density
+            height: Units.dp(40)
 
             Text {
                 color: "#3ab4d7"
@@ -157,8 +157,8 @@ ListView {
                 clip: true
                 elide: Text.ElideMiddle
                 anchors {
-                    left: parent.left; leftMargin: 8 * calaosApp.density
-                    right: parent.right; rightMargin: 8 * calaosApp.density
+                    left: parent.left; leftMargin: Units.dp(8)
+                    right: parent.right; rightMargin: Units.dp(8)
                     verticalCenter: parent.verticalCenter
                 }
             }

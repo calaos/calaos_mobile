@@ -21,7 +21,7 @@ Item {
         height: parent.height - header.height
         y: header.height
 
-        spacing: 10 * calaosApp.density
+        spacing: Units.dp(10)
 
         delegate: delegate
 
@@ -39,14 +39,14 @@ Item {
                 property variant modelData
 
                 anchors.horizontalCenter: parent.horizontalCenter
-                anchors.horizontalCenterOffset: -3 * calaosApp.density
-                width: parent.width - 16 * calaosApp.density
-                height: 200 * calaosApp.density
+                anchors.horizontalCenterOffset: -Units.dp(3)
+                width: parent.width - Units.dp(16)
+                height: Units.dp(200)
 
                 BorderImage {
                     source: calaosApp.getPictureSized("back_items_home")
-                    border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
-                    border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
+                    border.left: Units.dp(5); border.top: Units.dp(5)
+                    border.right: Units.dp(5); border.bottom: Units.dp(5)
 
                     anchors.fill: parent
                 }
@@ -57,8 +57,8 @@ Item {
                     playing: modelData.status === Common.StatusPlay
 
                     anchors {
-                        left: parent.left; leftMargin: 8 * calaosApp.density
-                        top: parent.top; topMargin: 8 * calaosApp.density
+                        left: parent.left; leftMargin: Units.dp(8)
+                        top: parent.top; topMargin: Units.dp(8)
                     }
                 }
 
@@ -70,9 +70,9 @@ Item {
                     clip: true
                     elide: Text.ElideRight
                     anchors {
-                        left: iconcover.right; leftMargin: 8 * calaosApp.density
-                        right: parent.right; rightMargin: 8 * calaosApp.density
-                        top: parent.top; topMargin: 18 * calaosApp.density
+                        left: iconcover.right; leftMargin: Units.dp(8)
+                        right: parent.right; rightMargin: Units.dp(8)
+                        top: parent.top; topMargin: Units.dp(18)
                     }
                 }
 
@@ -85,9 +85,9 @@ Item {
                     clip: true
                     elide: Text.ElideRight
                     anchors {
-                        left: iconcover.right; leftMargin: 8 * calaosApp.density
-                        right: parent.right; rightMargin: 8 * calaosApp.density
-                        top: tname.bottom; topMargin: 4 * calaosApp.density
+                        left: iconcover.right; leftMargin: Units.dp(8)
+                        right: parent.right; rightMargin: Units.dp(8)
+                        top: tname.bottom; topMargin: Units.dp(4)
                     }
                 }
 
@@ -100,9 +100,9 @@ Item {
                     clip: true
                     elide: Text.ElideRight
                     anchors {
-                        left: iconcover.right; leftMargin: 8 * calaosApp.density
-                        right: parent.right; rightMargin: 8 * calaosApp.density
-                        top: ttitle.bottom; topMargin: 4 * calaosApp.density
+                        left: iconcover.right; leftMargin: Units.dp(8)
+                        right: parent.right; rightMargin: Units.dp(8)
+                        top: ttitle.bottom; topMargin: Units.dp(4)
                     }
                 }
 
@@ -115,17 +115,17 @@ Item {
                     clip: true
                     elide: Text.ElideRight
                     anchors {
-                        left: iconcover.right; leftMargin: 8 * calaosApp.density
-                        right: parent.right; rightMargin: 8 * calaosApp.density
-                        top: tartist.bottom; topMargin: 4 * calaosApp.density
+                        left: iconcover.right; leftMargin: Units.dp(8)
+                        right: parent.right; rightMargin: Units.dp(8)
+                        top: tartist.bottom; topMargin: Units.dp(4)
                     }
                 }
 
                 RowLayout {
                     anchors {
-                        left: parent.left; leftMargin: 8 * calaosApp.density
-                        right: parent.right; rightMargin: 8 * calaosApp.density
-                        bottom: row.top; bottomMargin: 8 * calaosApp.density
+                        left: parent.left; leftMargin: Units.dp(8)
+                        right: parent.right; rightMargin: Units.dp(8)
+                        bottom: row.top; bottomMargin: Units.dp(8)
                     }
 
                     Text {
@@ -152,11 +152,11 @@ Item {
 
                     id: row
 
-                    spacing: 4 * calaosApp.density
+                    spacing: Units.dp(4)
 
                     anchors {
-                        right: parent.right; rightMargin: 8 * calaosApp.density
-                        bottom: parent.bottom; bottomMargin: 8 * calaosApp.density
+                        right: parent.right; rightMargin: Units.dp(8)
+                        bottom: parent.bottom; bottomMargin: Units.dp(8)
                     }
 
                     ItemButtonAction {

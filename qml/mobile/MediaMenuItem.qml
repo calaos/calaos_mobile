@@ -8,8 +8,8 @@ Image {
 
     signal buttonClicked()
 
-    width: 198 * calaosApp.density
-    height: 138 * calaosApp.density
+    width: Units.dp(198)
+    height: Units.dp(138)
 
     source: "qrc:/img/menu_media_item.png"
 
@@ -20,7 +20,7 @@ Image {
             left: parent.left
             right: parent.right
         }
-        height: 76 * calaosApp.density
+        height: Units.dp(76)
 
         clip: true
 
@@ -50,7 +50,7 @@ Image {
             left: parent.left
             right: parent.right
             top: parent.top
-            topMargin: 76 * calaosApp.density
+            topMargin: Units.dp(76)
             bottom: parent.bottom
         }
         elide: Text.ElideMiddle

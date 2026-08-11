@@ -20,7 +20,7 @@ Item {
         height: parent.height - header.height
         y: header.height
 
-        spacing: 10 * calaosApp.density
+        spacing: Units.dp(10)
 
         delegate: delegate
 
@@ -38,14 +38,14 @@ Item {
                 property variant modelData
 
                 anchors.horizontalCenter: parent.horizontalCenter
-                anchors.horizontalCenterOffset: -3 * calaosApp.density
-                width: parent.width - 16 * calaosApp.density
-                height: 130 * calaosApp.density
+                anchors.horizontalCenterOffset: -Units.dp(3)
+                width: parent.width - Units.dp(16)
+                height: Units.dp(130)
 
                 BorderImage {
                     source: calaosApp.getPictureSized("back_items_home")
-                    border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
-                    border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
+                    border.left: Units.dp(5); border.top: Units.dp(5)
+                    border.right: Units.dp(5); border.bottom: Units.dp(5)
 
                     anchors.fill: parent
                 }
@@ -54,14 +54,14 @@ Item {
                     id: backcam
 
                     source: calaosApp.getPictureSized("camera_back")
-                    border.left: 13 * calaosApp.density; border.top: 13 * calaosApp.density
-                    border.right: 13 * calaosApp.density; border.bottom: 13 * calaosApp.density
-                    height: 113 * calaosApp.density
-                    width: 144 * calaosApp.density
+                    border.left: Units.dp(13); border.top: Units.dp(13)
+                    border.right: Units.dp(13); border.bottom: Units.dp(13)
+                    height: Units.dp(113)
+                    width: Units.dp(144)
 
                     anchors {
-                        left: parent.left; leftMargin: 8 * calaosApp.density
-                        top: parent.top; topMargin: 8 * calaosApp.density
+                        left: parent.left; leftMargin: Units.dp(8)
+                        top: parent.top; topMargin: Units.dp(8)
                     }
 
                     Image {
@@ -70,10 +70,10 @@ Item {
                         source: modelData.url_single
 
                         anchors {
-                            left: parent.left; leftMargin: 13 * calaosApp.density
-                            top: parent.top; topMargin: 13 * calaosApp.density
-                            right: parent.right; rightMargin: 13 * calaosApp.density
-                            bottom: parent.bottom; bottomMargin: 13 * calaosApp.density
+                            left: parent.left; leftMargin: Units.dp(13)
+                            top: parent.top; topMargin: Units.dp(13)
+                            right: parent.right; rightMargin: Units.dp(13)
+                            bottom: parent.bottom; bottomMargin: Units.dp(13)
                         }
                     }
                 }
@@ -86,9 +86,9 @@ Item {
                     clip: true
                     elide: Text.ElideRight
                     anchors {
-                        left: backcam.right; leftMargin: 8 * calaosApp.density
-                        right: parent.right; rightMargin: 8 * calaosApp.density
-                        top: parent.top; topMargin: 18 * calaosApp.density
+                        left: backcam.right; leftMargin: Units.dp(8)
+                        right: parent.right; rightMargin: Units.dp(8)
+                        top: parent.top; topMargin: Units.dp(18)
                     }
                 }
 

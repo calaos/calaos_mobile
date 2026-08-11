@@ -10,26 +10,26 @@ ButtonStyle {
         property bool down: control.pressed || (control.checkable && control.checked)
         BorderImage {
             source: calaosApp.getPictureSized("back_items_home")
-            border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
-            border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
+            border.left: Units.dp(5); border.top: Units.dp(5)
+            border.right: Units.dp(5); border.bottom: Units.dp(5)
             anchors.fill: parent
             opacity: down?0:1
             Behavior on opacity { PropertyAnimation { duration: 50 } }
         }
         BorderImage {
             source: calaosApp.getPictureSized("back_items_home_glow")
-            border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
-            border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
+            border.left: Units.dp(5); border.top: Units.dp(5)
+            border.right: Units.dp(5); border.bottom: Units.dp(5)
             anchors.fill: parent
             opacity: down?1:0
             Behavior on opacity { PropertyAnimation { duration: 50 } }
         }
     }
     padding {
-            top: 12 * calaosApp.density
-            left: 12 * calaosApp.density
-            right: 12 * calaosApp.density
-            bottom: 12 * calaosApp.density
+            top: Units.dp(12)
+            left: Units.dp(12)
+            right: Units.dp(12)
+            bottom: Units.dp(12)
     }
     label: Text {
         text: control.text

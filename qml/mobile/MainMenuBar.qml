@@ -5,9 +5,9 @@ import SharedComponents
 Image {
 
     height: menuType === Common.MenuMain?
-                98 / 2 * calaosApp.density:
+                Units.dp(98 / 2):
                 calaosApp.needBackButton?
-                    48 * calaosApp.density:
+                    Units.dp(48):
                     0
 
     Behavior on height { NumberAnimation { easing.type: Easing.OutExpo; duration: 500 } }
@@ -49,14 +49,14 @@ Image {
         anchors {
             verticalCenter: parent.verticalCenter
             left: parent.left
-            leftMargin: 10 * calaosApp.density
+            leftMargin: Units.dp(10)
         }
     }
 
     Image {
         source: "qrc:/img/menu_footer_background_left.png"
 
-        width: 2 * calaosApp.density
+        width: Units.dp(2)
         height: parent.height
 
         anchors {
@@ -142,7 +142,7 @@ Image {
     Image {
         source: "qrc:/img/menu_footer_background_right.png"
 
-        width: 2 * calaosApp.density
+        width: Units.dp(2)
         height: parent.height
 
         anchors {

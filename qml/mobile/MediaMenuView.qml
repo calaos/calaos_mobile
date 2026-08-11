@@ -12,7 +12,7 @@ Item {
 
     Flow {
         id: listViewItems
-        spacing: 10 * calaosApp.density
+        spacing: Units.dp(10)
 
         MediaMenuItem {
             label: qsTr("Music")
@@ -29,12 +29,12 @@ Item {
             }
         }
 
-        width: Math.floor(parent.width / (198 * calaosApp.density)) * 198 * calaosApp.density
+        width: Math.floor(parent.width / (Units.dp(198))) * Units.dp(198)
         height: parent.height - header.height
         y: header.height
 
         anchors.centerIn: parent
-        anchors.verticalCenterOffset: 30 * calaosApp.density
+        anchors.verticalCenterOffset: Units.dp(30)
     }
 
     ViewHeader {

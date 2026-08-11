@@ -3,18 +3,18 @@ import SharedComponents
 
 Item {
 
-    width: 108 * calaosApp.density
-    height: 63 * calaosApp.density
+    width: Units.dp(108)
+    height: Units.dp(63)
 
     Image {
-        width: 108 * calaosApp.density
-        height: 108 * calaosApp.density
+        width: Units.dp(108)
+        height: Units.dp(108)
 
         source: "qrc:/img/menu_media_icon_camera_back.png"
 
         Image {
-            width: 108 * calaosApp.density
-            height: 108 * calaosApp.density
+            width: Units.dp(108)
+            height: Units.dp(108)
 
             source: "qrc:/img/menu_media_icon_camera_red.png"
 

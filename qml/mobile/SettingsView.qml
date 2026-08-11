@@ -27,10 +27,10 @@ Item {
             ListGroupHeader { width: listFlick.width; title: qsTr("Event log:") }
             Item {
                 width: listFlick.width;
-                height: 40 * calaosApp.density
+                height: Units.dp(40)
                 CalaosItemBase {
                     text: qsTr("Show log")
-                    width: 200 * calaosApp.density
+                    width: Units.dp(200)
                     height: parent.height
                     onButtonClicked: AppActions.openEventLog()
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -40,10 +40,10 @@ Item {
             ListGroupHeader { width: listFlick.width; title: qsTr("Connection:") }
             Item {
                 width: listFlick.width;
-                height: 40 * calaosApp.density
+                height: Units.dp(40)
                 CalaosItemBase {
                     text: qsTr("Logout")
-                    width: 200 * calaosApp.density
+                    width: Units.dp(200)
                     height: parent.height
                     onButtonClicked: calaosApp.logout()
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -51,10 +51,10 @@ Item {
             }
             Item {
                 width: listFlick.width;
-                height: 40 * calaosApp.density
+                height: Units.dp(40)
                 CalaosItemBase {
                     text: qsTr("Reset all data")
-                    width: 200 * calaosApp.density
+                    width: Units.dp(200)
                     height: parent.height
                     onButtonClicked: calaosApp.resetAllData()
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -65,10 +65,10 @@ Item {
 
             Item {
                 width: listFlick.width;
-                height: 40 * calaosApp.density
+                height: Units.dp(40)
                 CalaosItemBase {
                     text: qsTr("Add a favorite")
-                    width: 200 * calaosApp.density
+                    width: Units.dp(200)
                     height: parent.height
                     onButtonClicked: favoriteAddClicked()
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -77,10 +77,10 @@ Item {
 
             Item {
                 width: listFlick.width;
-                height: 40 * calaosApp.density
+                height: Units.dp(40)
                 CalaosItemBase {
                     text: qsTr("Edit favorites list")
-                    width: 200 * calaosApp.density
+                    width: Units.dp(200)
                     height: parent.height
                     anchors.horizontalCenter: parent.horizontalCenter
                     onButtonClicked: favoriteEditClicked()

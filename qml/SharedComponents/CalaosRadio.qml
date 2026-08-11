@@ -5,8 +5,8 @@ import "."
 Controls.RadioButton {
     id: control
 
-    implicitHeight: 40 * calaosApp.density
-    implicitWidth: 200 * calaosApp.density
+    implicitHeight: Units.dp(40)
+    implicitWidth: Units.dp(200)
 
     background: Rectangle {
         color: "transparent"

@@ -18,14 +18,14 @@ Item {
 
         y: header.height
         width: parent.width
-        height: 80 * calaosApp.density
+        height: Units.dp(80)
 
         delegate: Rectangle {
 
             color: ListView.isCurrentItem?Qt.rgba(0.23, 0.71, 0.84, 0.30):"transparent"
 
-            height: 80 * calaosApp.density
-            width: 100 * calaosApp.density
+            height: Units.dp(80)
+            width: Units.dp(100)
 
             property string roomIconType: roomType
             onRoomIconTypeChanged: roomIcon.source = calaosApp.getPictureSizedPrefix(Calaos.getRoomTypeIcon(roomIconType), "img/rooms")
@@ -33,10 +33,10 @@ Item {
             Image {
                 id: roomIcon
                 fillMode: Image.PreserveAspectFit
-                width: parent.width - 10 * calaosApp.density
+                width: parent.width - Units.dp(10)
                 anchors {
                     centerIn: parent
-                    verticalCenterOffset: 7 * calaosApp.density
+                    verticalCenterOffset: Units.dp(7)
                 }
 
                 Behavior on opacity { PropertyAnimation { duration: 100 } }
@@ -62,7 +62,7 @@ Item {
                 width: parent.width
                 anchors {
                     horizontalCenter: parent.horizontalCenter
-                    top: parent.top; topMargin: 2 * calaosApp.density
+                    top: parent.top; topMargin: Units.dp(2)
                 }
             }
         }
@@ -72,9 +72,9 @@ Item {
     ScrollBar { id: sc1; listObject: roomList; orientation: Qt.Horizontal }
     Rectangle {
         id: sep
-        anchors { left: parent.left; right: parent.right; top: sc1.bottom; topMargin: 1 * calaosApp.density }
+        anchors { left: parent.left; right: parent.right; top: sc1.bottom; topMargin: Units.dp(1) }
         color: "#333333"
-        height: 2 * calaosApp.density
+        height: Units.dp(2)
     }
 
     ListView {
@@ -89,7 +89,7 @@ Item {
             bottom: parent.bottom
         }
 
-        spacing: 5 * calaosApp.density
+        spacing: Units.dp(5)
 
         delegate: default_delegate
     }
@@ -109,11 +109,11 @@ Item {
             property variant modelData
 
             source: calaosApp.getPictureSized("back_items_home")
-            border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
-            border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
+            border.left: Units.dp(5); border.top: Units.dp(5)
+            border.right: Units.dp(5); border.bottom: Units.dp(5)
 
-            width: parent.width - 10 * calaosApp.density
-            height: 40 * calaosApp.density
+            width: parent.width - Units.dp(10)
+            height: Units.dp(40)
 
             Text {
                 color: "#3ab4d7"
@@ -122,8 +122,8 @@ Item {
                 clip: true
                 elide: Text.ElideMiddle
                 anchors {
-                    left: parent.left; leftMargin: 8 * calaosApp.density
-                    right: btadd.left; rightMargin: 8 * calaosApp.density
+                    left: parent.left; leftMargin: Units.dp(8)
+                    right: btadd.left; rightMargin: Units.dp(8)
                     verticalCenter: parent.verticalCenter
                 }
             }
@@ -131,7 +131,7 @@ Item {
             ItemButtonAction {
                 id: btadd
                 anchors {
-                    right: parent.right; rightMargin: 8 * calaosApp.density
+                    right: parent.right; rightMargin: Units.dp(8)
                     verticalCenter: parent.verticalCenter
                 }
                 imageSource: "button_plus"
@@ -162,7 +162,7 @@ Item {
             left: parent.left; right: parent.right
             verticalCenter: parent.verticalCenter
         }
-        height: txt.implicitHeight + 36 * calaosApp.density
+        height: txt.implicitHeight + Units.dp(36)
 
         visible: opacity > 0
         opacity: 0

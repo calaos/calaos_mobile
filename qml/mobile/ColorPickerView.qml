@@ -40,8 +40,8 @@ Item {
             id: slidersLayout
 
             anchors {
-                left: parent.left; leftMargin: 16 * calaosApp.density
-                right: parent.right; rightMargin: 16 * calaosApp.density
+                left: parent.left; leftMargin: Units.dp(16)
+                right: parent.right; rightMargin: Units.dp(16)
             }
 
             CalaosSlider {
@@ -121,29 +121,29 @@ Item {
             Rectangle {
 
                 Layout.fillWidth: true
-                Layout.preferredHeight: 100 * calaosApp.density
+                Layout.preferredHeight: Units.dp(100)
 
                 border.color: Qt.rgba(200, 200, 200, 0.1)
-                border.width: 1 * calaosApp.density
-                radius: 4 * calaosApp.density
+                border.width: Units.dp(1)
+                radius: Units.dp(4)
                 color: "transparent"
 
                 Rectangle {
                     id: colorPrev
                     anchors {
                         fill: parent
-                        margins: 4 * calaosApp.density
+                        margins: Units.dp(4)
                     }
                 }
             }
 
             //spacer
-            Item { Layout.preferredHeight: 20 * calaosApp.density; Layout.fillWidth: true }
+            Item { Layout.preferredHeight: Units.dp(20); Layout.fillWidth: true }
 
             CalaosItemBase {
                 text: qsTr("Set color")
-                Layout.preferredWidth: 200 * calaosApp.density
-                Layout.preferredHeight: 40 * calaosApp.density
+                Layout.preferredWidth: Units.dp(200)
+                Layout.preferredHeight: Units.dp(40)
                 Layout.alignment: Qt.AlignHCenter
                 onButtonClicked: itemCallback(colorPreview)
             }
@@ -153,7 +153,7 @@ Item {
         contentWidth: parent.width
         width: parent.width
         height: parent.height - header.height
-        y: header.height + 20 * calaosApp.density
+        y: header.height + Units.dp(20)
         flickableDirection: Flickable.VerticalFlick
     }
 

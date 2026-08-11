@@ -43,8 +43,8 @@ Dialog {
         id: slidersLayout
 
         anchors {
-            left: parent.left; leftMargin: 16 * calaosApp.density
-            right: parent.right; rightMargin: 16 * calaosApp.density
+            left: parent.left; leftMargin: Units.dp(16)
+            right: parent.right; rightMargin: Units.dp(16)
         }
 
         CalaosSlider {
@@ -121,18 +121,18 @@ Dialog {
         Rectangle {
 
             Layout.fillWidth: true
-            Layout.preferredHeight: 100 * calaosApp.density
+            Layout.preferredHeight: Units.dp(100)
 
             border.color: Qt.rgba(200, 200, 200, 0.1)
-            border.width: 1 * calaosApp.density
-            radius: 4 * calaosApp.density
+            border.width: Units.dp(1)
+            radius: Units.dp(4)
             color: "transparent"
 
             Rectangle {
                 id: colorPrev
                 anchors {
                     fill: parent
-                    margins: 4 * calaosApp.density
+                    margins: Units.dp(4)
                 }
             }
         }

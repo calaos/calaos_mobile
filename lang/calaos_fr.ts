@@ -4,8 +4,8 @@
 <context>
     <name>Application</name>
     <message>
-        <location filename="../src/Application.cpp" line="195"/>
-        <location filename="../src/Application.cpp" line="381"/>
+        <location filename="../src/Application.cpp" line="207"/>
+        <location filename="../src/Application.cpp" line="386"/>
         <source>Network error</source>
         <translation>Erreur réseau</translation>
     </message>
@@ -14,51 +14,51 @@
         <translation type="vanished">La connection avec calaos_server a été perdu. Elle va être retentée lorsque calaos_server sera de nouveau disponible.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="196"/>
+        <location filename="../src/Application.cpp" line="208"/>
         <source>The connection to calaos_server was lost. It will reconnect automatically when calaos_server is available again.</source>
         <translation>La connexion avec calaos_server a été perdue. Elle sera rétablie automatiquement dès que calaos_server sera de nouveau disponible.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="199"/>
-        <location filename="../src/Application.cpp" line="214"/>
-        <location filename="../src/Application.cpp" line="226"/>
-        <location filename="../src/Application.cpp" line="385"/>
-        <location filename="../src/Application.cpp" line="511"/>
+        <location filename="../src/Application.cpp" line="211"/>
+        <location filename="../src/Application.cpp" line="219"/>
+        <location filename="../src/Application.cpp" line="231"/>
+        <location filename="../src/Application.cpp" line="390"/>
+        <location filename="../src/Application.cpp" line="546"/>
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="212"/>
+        <location filename="../src/Application.cpp" line="217"/>
         <source>Credentials change failed</source>
         <translation>Échec de la modification des identifiants</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="213"/>
+        <location filename="../src/Application.cpp" line="218"/>
         <source>Credentials were not changed. Please try again.</source>
         <translation>Les identifiants n&apos;ont pas été modifiés. Veuillez réessayer.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="224"/>
+        <location filename="../src/Application.cpp" line="229"/>
         <source>Credentials changed</source>
         <translation>Identifiants modifiés</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="225"/>
+        <location filename="../src/Application.cpp" line="230"/>
         <source>Credentials were successfully changed.</source>
         <translation>Les identifiants ont été modifiés avec succès.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="382"/>
+        <location filename="../src/Application.cpp" line="387"/>
         <source>No network connection found, this application requires a network connection to work.</source>
         <translation>Aucune connexion réseau trouvée, cette application nécessite une connexion réseau pour fonctionner.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="509"/>
+        <location filename="../src/Application.cpp" line="544"/>
         <source>Login failed</source>
         <translation>Échec de l&apos;authentification</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="510"/>
+        <location filename="../src/Application.cpp" line="545"/>
         <source>Connection failed, please check your credentials.</source>
         <translation>Échec de la connexion, veuillez vérifier vos identifiants.</translation>
     </message>
@@ -66,37 +66,37 @@
 <context>
     <name>AudioPlayer</name>
     <message>
-        <location filename="../qml/desktop/AudioPlayer.qml" line="42"/>
+        <location filename="../qml/desktop/AudioPlayer.qml" line="41"/>
         <source>No audio zone</source>
         <translation>Aucune zone audio</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/AudioPlayer.qml" line="193"/>
+        <location filename="../qml/desktop/AudioPlayer.qml" line="192"/>
         <source>Elapsed:</source>
         <translation>Avancement:</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/AudioPlayer.qml" line="277"/>
+        <location filename="../qml/desktop/AudioPlayer.qml" line="276"/>
         <source>Artist:</source>
         <translation>Artiste:</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/AudioPlayer.qml" line="291"/>
+        <location filename="../qml/desktop/AudioPlayer.qml" line="290"/>
         <source>Album:</source>
         <translation>Album:</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/AudioPlayer.qml" line="305"/>
+        <location filename="../qml/desktop/AudioPlayer.qml" line="304"/>
         <source>Track:</source>
         <translation>Piste:</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/AudioPlayer.qml" line="319"/>
+        <location filename="../qml/desktop/AudioPlayer.qml" line="318"/>
         <source>Genre:</source>
         <translation>Genre:</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/AudioPlayer.qml" line="333"/>
+        <location filename="../qml/desktop/AudioPlayer.qml" line="332"/>
         <source>Duration:</source>
         <translation>Durée:</translation>
     </message>
@@ -156,22 +156,22 @@
 <context>
     <name>CameraListView</name>
     <message>
-        <location filename="../qml/desktop/CameraListView.qml" line="169"/>
+        <location filename="../qml/desktop/CameraListView.qml" line="7"/>
         <source>CCTV Camera</source>
         <translation>Caméra</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/CameraListView.qml" line="196"/>
+        <location filename="../qml/desktop/CameraListView.qml" line="11"/>
         <source>Back to media</source>
         <translation>Retour aux médias</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/CameraListView.qml" line="203"/>
+        <location filename="../qml/desktop/CameraListView.qml" line="18"/>
         <source>Quit</source>
         <translation>Quitter</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/CameraListView.qml" line="114"/>
+        <location filename="../qml/mobile/CameraListView.qml" line="113"/>
         <source>Camera</source>
         <translation>Caméra</translation>
     </message>
@@ -192,7 +192,7 @@
 <context>
     <name>ColorPickerRGBView</name>
     <message>
-        <location filename="../qml/mobile/ColorPickerRGBView.qml" line="137"/>
+        <location filename="../qml/mobile/ColorPickerRGBView.qml" line="134"/>
         <source>Set color</source>
         <translation>Définir la couleur</translation>
     </message>
@@ -200,7 +200,7 @@
 <context>
     <name>ColorPickerView</name>
     <message>
-        <location filename="../qml/mobile/ColorPickerView.qml" line="144"/>
+        <location filename="../qml/mobile/ColorPickerView.qml" line="142"/>
         <source>Set color</source>
         <translation>Définir la couleur</translation>
     </message>
@@ -883,17 +883,17 @@
 <context>
     <name>DialogBookmarks</name>
     <message>
-        <location filename="../qml/desktop/DialogBookmarks.qml" line="12"/>
+        <location filename="../qml/desktop/DialogBookmarks.qml" line="11"/>
         <source>Bookmarks</source>
         <translation>Favoris</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogBookmarks.qml" line="13"/>
+        <location filename="../qml/desktop/DialogBookmarks.qml" line="12"/>
         <source>Manage your bookmarks</source>
         <translation>Gérer vos favoris</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogBookmarks.qml" line="15"/>
+        <location filename="../qml/desktop/DialogBookmarks.qml" line="14"/>
         <source>Add bookmark</source>
         <translation>Ajouter un favori</translation>
     </message>
@@ -902,12 +902,12 @@
         <translation type="vanished">Ajouter un favori</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogBookmarks.qml" line="16"/>
+        <location filename="../qml/desktop/DialogBookmarks.qml" line="15"/>
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogBookmarks.qml" line="28"/>
+        <location filename="../qml/desktop/DialogBookmarks.qml" line="27"/>
         <source>No bookmarks yet.</source>
         <translation>Aucun favori pour le moment.</translation>
     </message>
@@ -1235,18 +1235,18 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>DialogTabList</name>
     <message>
-        <location filename="../qml/desktop/DialogTabList.qml" line="17"/>
+        <location filename="../qml/desktop/DialogTabList.qml" line="19"/>
         <source>Tabs</source>
         <translation>Onglets</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogTabList.qml" line="18"/>
+        <location filename="../qml/desktop/DialogTabList.qml" line="20"/>
         <source>Manage your open tabs</source>
         <translation>Gérer vos onglets ouverts</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogTabList.qml" line="20"/>
-        <location filename="../qml/desktop/DialogTabList.qml" line="98"/>
+        <location filename="../qml/desktop/DialogTabList.qml" line="22"/>
+        <location filename="../qml/desktop/DialogTabList.qml" line="100"/>
         <source>New tab</source>
         <translation>Nouvel onglet</translation>
     </message>
@@ -1255,7 +1255,7 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
         <translation type="vanished">Nouvel onglet</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogTabList.qml" line="22"/>
+        <location filename="../qml/desktop/DialogTabList.qml" line="24"/>
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
@@ -1263,44 +1263,44 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>EventLogItem</name>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="102"/>
+        <location filename="../src/EventLogModel.cpp" line="104"/>
         <source>Appliance change</source>
         <translation>Changement d&apos;un équipement</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="107"/>
+        <location filename="../src/EventLogModel.cpp" line="109"/>
         <source>Push Notification</source>
         <translation>Notification Push</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="127"/>
+        <location filename="../src/EventLogModel.cpp" line="129"/>
         <source>Unknown event!</source>
         <translation>Événement inconnu!</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="135"/>
+        <location filename="../src/EventLogModel.cpp" line="137"/>
         <source>Today</source>
         <translation>Aujourd&apos;hui</translation>
     </message>
     <message>
         <location filename="../src/EventLogModel.cpp" line="164"/>
-        <location filename="../src/EventLogModel.cpp" line="178"/>
+        <location filename="../src/EventLogModel.cpp" line="177"/>
         <source>On</source>
         <translation>Allumé</translation>
     </message>
     <message>
         <location filename="../src/EventLogModel.cpp" line="169"/>
-        <location filename="../src/EventLogModel.cpp" line="183"/>
+        <location filename="../src/EventLogModel.cpp" line="182"/>
         <source>Off</source>
         <translation>Éteint</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="189"/>
+        <location filename="../src/EventLogModel.cpp" line="188"/>
         <source>Temp changed</source>
         <translation>Changement de température</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="197"/>
+        <location filename="../src/EventLogModel.cpp" line="195"/>
         <source>Opened</source>
         <translation>Ouvert</translation>
     </message>
@@ -1309,12 +1309,12 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
         <translation type="vanished">Ouvert</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="202"/>
+        <location filename="../src/EventLogModel.cpp" line="200"/>
         <source>Closed</source>
         <translation>Fermé</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="208"/>
+        <location filename="../src/EventLogModel.cpp" line="206"/>
         <source>Started</source>
         <translation>Démarré</translation>
     </message>
@@ -1358,7 +1358,7 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
         <translation>Éditer la liste des favoris</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/FavoritesEditView.qml" line="201"/>
+        <location filename="../qml/mobile/FavoritesEditView.qml" line="202"/>
         <source>Item removed from favorites</source>
         <translation>Élément supprimé des favoris</translation>
     </message>
@@ -1392,12 +1392,12 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>HomeFavModel</name>
     <message>
-        <location filename="../src/FavoritesModel.cpp" line="132"/>
+        <location filename="../src/FavoritesModel.cpp" line="199"/>
         <source>All lights On</source>
         <translation>Toutes les lumières allumées</translation>
     </message>
     <message>
-        <location filename="../src/FavoritesModel.cpp" line="153"/>
+        <location filename="../src/FavoritesModel.cpp" line="220"/>
         <source>Special</source>
         <translation>Spécial</translation>
     </message>
@@ -1436,27 +1436,27 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>IOBase</name>
     <message>
-        <location filename="../src/RoomModel.cpp" line="523"/>
+        <location filename="../src/RoomModel.cpp" line="546"/>
         <source>State: Opened.</source>
         <translation>Statut: Ouvert.</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="525"/>
+        <location filename="../src/RoomModel.cpp" line="548"/>
         <source>State: %1% Opened.</source>
         <translation>Statut: %1% Ouvert.</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="527"/>
+        <location filename="../src/RoomModel.cpp" line="550"/>
         <source>State: %1% Closed.</source>
         <translation>Statut: %1% Fermé.</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="530"/>
+        <location filename="../src/RoomModel.cpp" line="553"/>
         <source>State: Closed.</source>
         <translation>Statut: Fermé.</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="533"/>
+        <location filename="../src/RoomModel.cpp" line="556"/>
         <source>Action: Stopped.</source>
         <translation>Action: Arrêté.</translation>
     </message>
@@ -1465,22 +1465,22 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
         <translation type="vanished">Action: Stoppé.</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="535"/>
+        <location filename="../src/RoomModel.cpp" line="558"/>
         <source>Action: Closing...</source>
         <translation>Action: Fermeture...</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="537"/>
+        <location filename="../src/RoomModel.cpp" line="560"/>
         <source>Action: Opening...</source>
         <translation>Action: Ouverture...</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="677"/>
+        <location filename="../src/RoomModel.cpp" line="706"/>
         <source>Change value</source>
         <translation>Changer la valeur</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="677"/>
+        <location filename="../src/RoomModel.cpp" line="706"/>
         <source>Enter new value</source>
         <translation>Entrez une nouvelle valeur</translation>
     </message>
@@ -1632,72 +1632,72 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
         <translation type="vanished">Ajouter des nouveaux widgets</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MainMenu.qml" line="146"/>
+        <location filename="../qml/desktop/MainMenu.qml" line="145"/>
         <source>Add new widgets</source>
         <translation>Ajouter de nouveaux widgets</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MainMenu.qml" line="147"/>
+        <location filename="../qml/desktop/MainMenu.qml" line="146"/>
         <source>Add new widgets on the desktop</source>
         <translation>Ajouter de nouveaux widgets sur le bureau</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MainMenu.qml" line="153"/>
+        <location filename="../qml/desktop/MainMenu.qml" line="152"/>
         <source>Widgets configuration</source>
         <translation>Configuration des widgets</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MainMenu.qml" line="154"/>
+        <location filename="../qml/desktop/MainMenu.qml" line="153"/>
         <source>Move and setup your widgets on the desktop</source>
         <translation>Déplacer et configurer vos widgets sur le bureau</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MainMenu.qml" line="160"/>
+        <location filename="../qml/desktop/MainMenu.qml" line="159"/>
         <source>Shut the screen off</source>
         <translation>Éteindre l&apos;écran</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MainMenu.qml" line="161"/>
+        <location filename="../qml/desktop/MainMenu.qml" line="160"/>
         <source>Touch the screen once to wake up the machine</source>
         <translation>Touchez l&apos;écran une fois pour allumer la machine</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MainMenu.qml" line="167"/>
+        <location filename="../qml/desktop/MainMenu.qml" line="166"/>
         <source>Reboot the machine</source>
         <translation>Redémarrer la machine</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MainMenu.qml" line="168"/>
+        <location filename="../qml/desktop/MainMenu.qml" line="167"/>
         <source>Please wait during the reboot</source>
         <translation>Veuillez patienter pendant le redémarrage</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MainMenu.qml" line="174"/>
+        <location filename="../qml/desktop/MainMenu.qml" line="173"/>
         <source>Auto: %1</source>
         <translation>Auto: %1</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MainMenu.qml" line="175"/>
+        <location filename="../qml/desktop/MainMenu.qml" line="174"/>
         <source>Auto: off</source>
         <translation>Auto: désactivé</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MainMenu.qml" line="297"/>
+        <location filename="../qml/desktop/MainMenu.qml" line="296"/>
         <source>My Home</source>
         <translation>Ma maison</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MainMenu.qml" line="309"/>
+        <location filename="../qml/desktop/MainMenu.qml" line="308"/>
         <source>Media</source>
         <translation>Médias</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MainMenu.qml" line="321"/>
+        <location filename="../qml/desktop/MainMenu.qml" line="320"/>
         <source>Scenarios</source>
         <translation>Scénarios</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MainMenu.qml" line="333"/>
+        <location filename="../qml/desktop/MainMenu.qml" line="332"/>
         <source>Configuration</source>
         <translation>Configuration</translation>
     </message>
@@ -1824,7 +1824,7 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
         <translation type="vanished">Aller...</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MediaWebView.qml" line="257"/>
+        <location filename="../qml/desktop/MediaWebView.qml" line="273"/>
         <source>URL</source>
         <translation>URL</translation>
     </message>
@@ -1833,43 +1833,43 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
         <translation type="vanished">Entrez l&apos;URL ou naviguer</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MediaWebView.qml" line="227"/>
+        <location filename="../qml/desktop/MediaWebView.qml" line="243"/>
         <source>Keyboard</source>
         <translation>Clavier</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MediaWebView.qml" line="217"/>
+        <location filename="../qml/desktop/MediaWebView.qml" line="233"/>
         <source>Menu</source>
         <translation>Menu</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MediaWebView.qml" line="234"/>
+        <location filename="../qml/desktop/MediaWebView.qml" line="250"/>
         <source>Back to media</source>
         <translation>Retour aux médias</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MediaWebView.qml" line="241"/>
+        <location filename="../qml/desktop/MediaWebView.qml" line="257"/>
         <source>Quit</source>
         <translation>Quitter</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MediaWebView.qml" line="258"/>
+        <location filename="../qml/desktop/MediaWebView.qml" line="274"/>
         <source>Enter the URL to open</source>
         <translation>Saisissez l&apos;URL à ouvrir</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MediaWebView.qml" line="279"/>
-        <location filename="../qml/desktop/MediaWebView.qml" line="324"/>
+        <location filename="../qml/desktop/MediaWebView.qml" line="295"/>
+        <location filename="../qml/desktop/MediaWebView.qml" line="340"/>
         <source>Bookmark added</source>
         <translation>Favori ajouté</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MediaWebView.qml" line="328"/>
+        <location filename="../qml/desktop/MediaWebView.qml" line="344"/>
         <source>Cannot bookmark</source>
         <translation>Impossible d&apos;ajouter aux favoris</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/MediaWebView.qml" line="329"/>
+        <location filename="../qml/desktop/MediaWebView.qml" line="345"/>
         <source>Navigate to a page first</source>
         <translation>Naviguez d&apos;abord vers une page</translation>
     </message>
@@ -1877,13 +1877,13 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>MusicListView</name>
     <message>
-        <location filename="../qml/mobile/MusicListView.qml" line="135"/>
+        <location filename="../qml/mobile/MusicListView.qml" line="134"/>
         <source>Volume:</source>
         <translation>Volume:</translation>
     </message>
     <message>
         <location filename="../qml/desktop/MusicListView.qml" line="165"/>
-        <location filename="../qml/mobile/MusicListView.qml" line="195"/>
+        <location filename="../qml/mobile/MusicListView.qml" line="194"/>
         <source>Music</source>
         <translation>Musique</translation>
     </message>
@@ -1963,7 +1963,7 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>PushEventView</name>
     <message>
-        <location filename="../qml/mobile/PushEventView.qml" line="103"/>
+        <location filename="../qml/mobile/PushEventView.qml" line="101"/>
         <source>Push Notification</source>
         <translation>Notification Push</translation>
     </message>
@@ -1978,12 +1978,12 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>RoomDetailView</name>
     <message>
-        <location filename="../qml/desktop/RoomDetailView.qml" line="228"/>
+        <location filename="../qml/desktop/RoomDetailView.qml" line="15"/>
         <source>Back to home</source>
         <translation>Retour à la maison</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/RoomDetailView.qml" line="235"/>
+        <location filename="../qml/desktop/RoomDetailView.qml" line="22"/>
         <source>Quit</source>
         <translation>Quitter</translation>
     </message>
@@ -1999,13 +1999,13 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>ScenarioView</name>
     <message>
-        <location filename="../qml/desktop/ScenarioView.qml" line="87"/>
+        <location filename="../qml/desktop/ScenarioView.qml" line="9"/>
         <location filename="../qml/mobile/ScenarioView.qml" line="26"/>
         <source>Scenarios</source>
         <translation>Scénarios</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ScenarioView.qml" line="114"/>
+        <location filename="../qml/desktop/ScenarioView.qml" line="12"/>
         <source>Quit</source>
         <translation>Quitter</translation>
     </message>
@@ -2301,34 +2301,28 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
 <context>
     <name>Utils</name>
     <message>
-        <location filename="../qml/desktop/Utils.js" line="85"/>
         <source>hour</source>
-        <translation>heure</translation>
+        <translation type="vanished">heure</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/Utils.js" line="88"/>
         <source>hours</source>
-        <translation>heures</translation>
+        <translation type="vanished">heures</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/Utils.js" line="91"/>
         <source>minute</source>
-        <translation>minute</translation>
+        <translation type="vanished">minute</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/Utils.js" line="94"/>
         <source>minutes</source>
-        <translation>minutes</translation>
+        <translation type="vanished">minutes</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/Utils.js" line="97"/>
         <source>second</source>
-        <translation>seconde</translation>
+        <translation type="vanished">seconde</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/Utils.js" line="100"/>
         <source>seconds</source>
-        <translation>secondes</translation>
+        <translation type="vanished">secondes</translation>
     </message>
 </context>
 <context>
@@ -2393,22 +2387,42 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
 <context>
     <name>calaos</name>
     <message>
-        <location filename="../qml/SharedComponents/calaos.js" line="70"/>
+        <location filename="../qml/SharedComponents/calaos.js" line="89"/>
         <source>%1 hours</source>
         <translation>%1 heures</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/calaos.js" line="72"/>
+        <location filename="../qml/SharedComponents/calaos.js" line="89"/>
         <source>%1 hour</source>
         <translation>%1 heure</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/calaos.js" line="77"/>
+        <location filename="../qml/SharedComponents/calaos.js" line="91"/>
+        <source>%1 minute</source>
+        <translation>%1 minute</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/calaos.js" line="91"/>
+        <source>%1 minutes</source>
+        <translation>%1 minutes</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/calaos.js" line="92"/>
+        <source>%1 second</source>
+        <translation>%1 seconde</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/calaos.js" line="92"/>
+        <source>%1 seconds</source>
+        <translation>%1 secondes</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/calaos.js" line="87"/>
         <source>%1 days</source>
         <translation>%1 jours</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/calaos.js" line="79"/>
+        <location filename="../qml/SharedComponents/calaos.js" line="87"/>
         <source>%1 day</source>
         <translation>%1 jour</translation>
     </message>
@@ -2429,12 +2443,12 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
 <context>
     <name>main</name>
     <message>
-        <location filename="../qml/desktop/main.qml" line="376"/>
+        <location filename="../qml/desktop/main.qml" line="374"/>
         <source>Keyboard</source>
         <translation>Clavier</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/main.qml" line="377"/>
+        <location filename="../qml/desktop/main.qml" line="375"/>
         <source>Change text for &apos;%1&apos;</source>
         <translation>Changer le texte pour &apos;%1&apos;</translation>
     </message>

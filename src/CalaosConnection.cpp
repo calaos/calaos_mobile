@@ -4,12 +4,15 @@
 #include <QDebug>
 #include "HardwareUtils.h"
 #include "Common.h"
+#include "JsonKeys.h"
 
 //Query parameters and JSON keys that carry credentials and must never be logged
 static const QStringList &credentialKeys()
 {
-    static const QStringList keys = { QStringLiteral("cn_user"),
-                                      QStringLiteral("cn_pass"),
+    //"u" and "p" are not JSON keys but the short query parameters of the
+    //legacy v1 camera url, so they stay literals here (see JsonKeys.h).
+    static const QStringList keys = { JsonKeys::CnUser,
+                                      JsonKeys::CnPass,
                                       QStringLiteral("u"),
                                       QStringLiteral("p") };
     return keys;
@@ -320,9 +323,9 @@ void CalaosConnection::startConnection(QString user, QString pass, QString h, Re
 void CalaosConnection::connectHttp(QString h)
 {
     QJsonObject jroot;
-    jroot["cn_user"] = username;
-    jroot["cn_pass"] = password;
-    jroot["action"] = QStringLiteral("get_home");
+    jroot[JsonKeys::CnUser] = username;
+    jroot[JsonKeys::CnPass] = password;
+    jroot[JsonKeys::Action] = QStringLiteral("get_home");
     QJsonDocument jdoc(jroot);
 
     //UniqueConnection: even if two paths ever managed to reach connectHttp()
@@ -395,10 +398,10 @@ void CalaosConnection::onWsConnected()
     connect(wsocket, &QWebSocket::textMessageReceived, this, &CalaosConnection::onWsTextMessageReceived);
 
     QJsonObject jroot, jdata;
-    jroot["msg"] = QStringLiteral("login");
-    jdata["cn_user"] = username;
-    jdata["cn_pass"] = password;
-    jroot["data"] = jdata;
+    jroot[JsonKeys::Msg] = QStringLiteral("login");
+    jdata[JsonKeys::CnUser] = username;
+    jdata[JsonKeys::CnPass] = password;
+    jroot[JsonKeys::Data] = jdata;
     QJsonDocument jdoc(jroot);
 
     //Do login procedure
@@ -448,8 +451,8 @@ void CalaosConnection::onWsConnected()
 
         //Send the push device token to register the mobile device to calaos_server for push notif
         sendWebsocket(QStringLiteral("register_push"),
-                      {{ "token", HardwareUtils::Instance()->getDeviceToken() },
-                       { "hardware", hw }});
+                      {{ JsonKeys::Token, HardwareUtils::Instance()->getDeviceToken() },
+                       { JsonKeys::Hardware, hw }});
     });
 }
 
@@ -560,8 +563,8 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
 
     //The HTTP API reports a rejected login with an explicit success flag
     //rather than an HTTP error code.
-    if (jroot.contains("success") &&
-        jroot["success"].toString() != "true")
+    if (jroot.contains(JsonKeys::Success) &&
+        jroot[JsonKeys::Success].toString() != "true")
     {
         connectionLost(QStringLiteral("server rejected the credentials"),
                        ReconnectPolicy::AuthFailure);
@@ -585,8 +588,8 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
 
         //Send the push device token to register the mobile device to calaos_server for push notif
         QJsonObject o = {
-            { "token", HardwareUtils::Instance()->getDeviceToken() },
-            { "hardware", hw }
+            { JsonKeys::Token, HardwareUtils::Instance()->getDeviceToken() },
+            { JsonKeys::Hardware, hw }
         };
         sendHttp(QStringLiteral("register_push"), o);
     }
@@ -718,10 +721,10 @@ void CalaosConnection::sendWebsocket(const QString &msg, const QJsonObject &data
 {
     if (!isWebsocket()) return;
 
-    QJsonObject o = {{ "msg", msg },
-                     { "data", data }};
+    QJsonObject o = {{ JsonKeys::Msg, msg },
+                     { JsonKeys::Data, data }};
     if (!client_id.isEmpty())
-        o["msg_id"] = client_id;
+        o[JsonKeys::MsgId] = client_id;
 
     QJsonDocument doc(o);
 #ifdef QT_DEBUG
@@ -736,7 +739,7 @@ void CalaosConnection::sendHttp(const QString &msg, QJsonObject &data, bool igno
     if (!isHttp()) return;
 
     if (!msg.isEmpty())
-        data["action"] = msg;
+        data[JsonKeys::Action] = msg;
 
     QJsonDocument doc(data);
 #ifdef QT_DEBUG
@@ -763,15 +766,15 @@ void CalaosConnection::sendCommand(QString id, QString value, QString type, QStr
     QJsonObject jroot;
     if (isHttp())
     {
-        jroot["cn_user"] = username;
-        jroot["cn_pass"] = password;
-        jroot["type"] = type;
+        jroot[JsonKeys::CnUser] = username;
+        jroot[JsonKeys::CnPass] = password;
+        jroot[JsonKeys::Type] = type;
     }
     if (type == "audio" && isHttpApiV2())
-        jroot["player_id"] = id;
+        jroot[JsonKeys::PlayerId] = id;
     else
-        jroot["id"] = id;
-    jroot["value"] = value;
+        jroot[JsonKeys::Id] = id;
+    jroot[JsonKeys::Value] = value;
 
     if (isWebsocket())
         sendWebsocket(action, jroot, "user_cmd");
@@ -785,8 +788,8 @@ void CalaosConnection::sendJson(QString action, QJsonObject &jsonData)
         sendWebsocket(action, jsonData, "user_cmd_json");
     else
     {
-        jsonData["cn_user"] = username;
-        jsonData["cn_pass"] = password;
+        jsonData[JsonKeys::CnUser] = username;
+        jsonData[JsonKeys::CnPass] = password;
 
         sendHttp(action, jsonData);
     }
@@ -799,22 +802,22 @@ void CalaosConnection::queryState(QStringList inputs, QStringList outputs, QStri
     QJsonObject jroot;
     if (isHttp())
     {
-        jroot["cn_user"] = username;
-        jroot["cn_pass"] = password;
+        jroot[JsonKeys::CnUser] = username;
+        jroot[JsonKeys::CnPass] = password;
     }
 
     if (isHttpApiV2())
     {
-        jroot["inputs"] = QJsonValue::fromVariant(inputs);
-        jroot["outputs"] = QJsonValue::fromVariant(outputs);
-        jroot["audio_players"] = QJsonValue::fromVariant(audio_players);
+        jroot[JsonKeys::Inputs] = QJsonValue::fromVariant(inputs);
+        jroot[JsonKeys::Outputs] = QJsonValue::fromVariant(outputs);
+        jroot[JsonKeys::AudioPlayers] = QJsonValue::fromVariant(audio_players);
     }
     else
     {
         QStringList io = inputs;
         io.append(outputs);
         io.append(audio_players);
-        jroot["items"] = QJsonValue::fromVariant(io);
+        jroot[JsonKeys::Items] = QJsonValue::fromVariant(io);
     }
 
     if (isWebsocket())
@@ -827,21 +830,21 @@ void CalaosConnection::getCameraPicture(const QString &camid, QString urlSuffix)
 {
     QString u = httphost;
     QJsonObject jroot;
-    jroot["cn_user"] = username;
-    jroot["cn_pass"] = password;
-    jroot["action"] = QString("camera");
+    jroot[JsonKeys::CnUser] = username;
+    jroot[JsonKeys::CnPass] = password;
+    jroot[JsonKeys::Action] = QString("camera");
     if (!urlSuffix.isEmpty()) //v1 camera api
     {
-        jroot["action"] = QStringLiteral("get_camera_pic");
+        jroot[JsonKeys::Action] = QStringLiteral("get_camera_pic");
         u = QStringLiteral("%1%2&u=%3&p=%4")
             .arg(httphost.left(httphost.length() - 8)) // "/api.php" is 9
             .arg(urlSuffix)
             .arg(QString(QUrl::toPercentEncoding(username)))
             .arg(QString(QUrl::toPercentEncoding(password)));
     }
-    jroot["type"] = QString("get_picture");
-    jroot["id"] = camid;
-    jroot["camera_id"] = camid;
+    jroot[JsonKeys::Type] = QString("get_picture");
+    jroot[JsonKeys::Id] = camid;
+    jroot[JsonKeys::CameraId] = camid;
     QJsonDocument jdoc(jroot);
 
 #ifdef QT_DEBUG
@@ -864,11 +867,11 @@ void CalaosConnection::getAudioCover(const QString &playerid)
 {
     QString u = httphost;
     QJsonObject jroot;
-    jroot["cn_user"] = username;
-    jroot["cn_pass"] = password;
-    jroot["action"] = QString("audio");
-    jroot["audio_action"] = QString("get_cover");
-    jroot["id"] = playerid;
+    jroot[JsonKeys::CnUser] = username;
+    jroot[JsonKeys::CnPass] = password;
+    jroot[JsonKeys::Action] = QString("audio");
+    jroot[JsonKeys::AudioAction] = QString("get_cover");
+    jroot[JsonKeys::Id] = playerid;
     QJsonDocument jdoc(jroot);
 
 #ifdef QT_DEBUG
@@ -894,11 +897,11 @@ void CalaosConnection::changeCredentials(QString user, QString pass)
     username_temp = user;
     password_temp = pass;
 
-    QJsonObject jroot = { { "action", "change_cred" },
-                          { "old_user", username },
-                          { "old_pw", password },
-                          { "new_user", user },
-                          { "new_pw", pass },
+    QJsonObject jroot = { { JsonKeys::Action, "change_cred" },
+                          { JsonKeys::OldUser, username },
+                          { JsonKeys::OldPw, password },
+                          { JsonKeys::NewUser, user },
+                          { JsonKeys::NewPw, pass },
                          };
     sendWebsocket("settings", jroot, "change_creds");
 }
@@ -936,15 +939,15 @@ void CalaosConnection::startJsonPolling()
         qDebug() << "Start polling...";
 
     QJsonObject jroot;
-    jroot["cn_user"] = username;
-    jroot["cn_pass"] = password;
-    jroot["action"] = QString("poll_listen");
+    jroot[JsonKeys::CnUser] = username;
+    jroot[JsonKeys::CnPass] = password;
+    jroot[JsonKeys::Action] = QString("poll_listen");
     if (uuidPolling.isEmpty())
-        jroot["type"] = QString("register");
+        jroot[JsonKeys::Type] = QString("register");
     else
     {
-        jroot["type"] = QString("get");
-        jroot["uuid"] = uuidPolling;
+        jroot[JsonKeys::Type] = QString("get");
+        jroot[JsonKeys::Uuid] = uuidPolling;
     }
     QJsonDocument jdoc(jroot);
 
@@ -999,15 +1002,15 @@ void CalaosConnection::startJsonPolling()
         }
         QVariantMap jroot = jdoc.object().toVariantMap();
 
-        if (jroot.contains("uuid") && uuidPolling.isEmpty())
+        if (jroot.contains(JsonKeys::Uuid) && uuidPolling.isEmpty())
         {
             reconnectPolicy.pollSucceeded();
-            uuidPolling = jroot["uuid"].toString();
+            uuidPolling = jroot[JsonKeys::Uuid].toString();
             startJsonPolling();
             return;
         }
 
-        if (jroot["success"].toString() != "true")
+        if (jroot[JsonKeys::Success].toString() != "true")
         {
             qDebug() << "Failed to get events";
             handlePollFailure(QStringLiteral("poll answer reports a failure"));
@@ -1016,7 +1019,7 @@ void CalaosConnection::startJsonPolling()
 
         reconnectPolicy.pollSucceeded();
 
-        QVariantList events = jroot["events"].toList();
+        QVariantList events = jroot[JsonKeys::Events].toList();
         foreach (QVariant v, events)
         {
             if (isHttpApiV2())
@@ -1126,15 +1129,15 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
     }
 
     QJsonObject jroot = jdoc.object();
-    QJsonObject jdata = jroot["data"].toObject();
+    QJsonObject jdata = jroot[JsonKeys::Data].toObject();
 
 #ifdef QT_DEBUG
     //qDebug() << "RECV:" << message;
 #endif
 
-    if (jroot["msg"] == "login")
+    if (jroot[JsonKeys::Msg] == "login")
     {
-        if (jdata["success"] == "true")
+        if (jdata[JsonKeys::Success] == "true")
         {
             if (constate != ConStateWebsocket)
             {
@@ -1155,30 +1158,30 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
                            ReconnectPolicy::AuthFailure);
         }
     }
-    else if (jroot["msg"] == "get_home")
+    else if (jroot[JsonKeys::Msg] == "get_home")
     {
-        emitHomeLoaded(jroot["data"].toObject().toVariantMap());
+        emitHomeLoaded(jroot[JsonKeys::Data].toObject().toVariantMap());
         HardwareUtils::Instance()->showNetworkActivity(false);
     }
-    else if (jroot["msg"] == "event")
+    else if (jroot[JsonKeys::Msg] == "event")
     {
-        processEventsV3(jroot["data"].toObject().toVariantMap());
+        processEventsV3(jroot[JsonKeys::Data].toObject().toVariantMap());
     }
-    else if (jroot["msg"] == "get_state")
+    else if (jroot[JsonKeys::Msg] == "get_state")
     {
         //emit event for specific input/output change
         dispatchEvents(CalaosEventDecoder::decodeStateMap(jdata.toVariantMap(),
                                                           CalaosEventDecoder::StrictString));
     }
-    else if (jroot["msg"] == "eventlog")
+    else if (jroot[JsonKeys::Msg] == "eventlog")
     {
-        emit logEventLoaded(jroot["data"].toObject().toVariantMap());
+        emit logEventLoaded(jroot[JsonKeys::Data].toObject().toVariantMap());
     }
-    else if (jroot["msg"] == "settings")
+    else if (jroot[JsonKeys::Msg] == "settings")
     {
-        if (jdata["action"] == "change_cred")
+        if (jdata[JsonKeys::Action] == "change_cred")
         {
-            if (jdata["success"] == "true")
+            if (jdata[JsonKeys::Success] == "true")
             {
                 username = username_temp;
                 password = password_temp;
@@ -1196,7 +1199,7 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
     }
 
     //We get this marker when calling sendCommand(...) it helps disabling the net indicator
-    if (jroot["msg_id"] == "user_cmd" || jroot["msg_id"] == "change_creds")
+    if (jroot[JsonKeys::MsgId] == "user_cmd" || jroot[JsonKeys::MsgId] == "change_creds")
     {
         HardwareUtils::Instance()->showNetworkActivity(false);
     }

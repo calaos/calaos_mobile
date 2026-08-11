@@ -1,6 +1,7 @@
 #include "EventLogModel.h"
 #include "RoomModel.h"
 #include "IOTypeRegistry.h"
+#include "JsonKeys.h"
 
 
 EventLogModel::EventLogModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent):
@@ -37,8 +38,8 @@ void EventLogModel::load(int page, int per_page)
     if (loading) return;
     loading = true;
 
-    QJsonObject d = {{ "page", page },
-                     { "per_page", per_page }};
+    QJsonObject d = {{ JsonKeys::Page, page },
+                     { JsonKeys::PerPage, per_page }};
     connection->sendJson("eventlog", d);
 }
 
@@ -52,14 +53,14 @@ void EventLogModel::loadMore()
 
 void EventLogModel::logEventLoaded(const QVariantMap &data)
 {
-    if (!data.contains("events"))
+    if (!data.contains(JsonKeys::Events))
         return;
 
     if (needClear)
         clear();
     needClear = false;
 
-    QVariantList events = data["events"].toList();
+    QVariantList events = data[JsonKeys::Events].toList();
     for (int i = 0;i < events.count();i++)
     {
         EventLogItem *it = new EventLogItem(engine, connection);
@@ -97,28 +98,28 @@ EventLogItem::EventLogItem(QQmlApplicationEngine *eng, CalaosConnection *con):
 
 void EventLogItem::load(const QVariantMap &data)
 {
-    if (data["event_type"] == "3")
+    if (data[JsonKeys::EventType] == "3")
     {
         update_evType(Common::EventIoChanged);
         update_evTitle(tr("Appliance change"));
     }
-    else if (data["event_type"] == "22")
+    else if (data[JsonKeys::EventType] == "22")
     {
         update_evType(Common::EventPush);
         update_evTitle(tr("Push Notification"));
         update_evIconSource("icon_notif");
 
-        QVariantMap e = data["event_raw"].toMap();
-        update_evNotifText(e["message"].toString());
+        QVariantMap e = data[JsonKeys::EventRaw].toMap();
+        update_evNotifText(e[JsonKeys::Message].toString());
 
-        if (e["pic_uid"].toString() == "")
+        if (e[JsonKeys::PicUid].toString() == "")
         {
             update_evPictureUrl(QString());
             update_evHasPicture(false);
         }
         else
         {
-            update_evPictureUrl(connection->getNotifPictureUrl(e["pic_uid"].toString()));
+            update_evPictureUrl(connection->getNotifPictureUrl(e[JsonKeys::PicUid].toString()));
             update_evHasPicture(true);
         }
     }
@@ -128,7 +129,7 @@ void EventLogItem::load(const QVariantMap &data)
         update_evTitle(tr("Unknown event!"));
     }
 
-    QDateTime dt = QDateTime::fromString(data["created_at"].toString(),
+    QDateTime dt = QDateTime::fromString(data[JsonKeys::CreatedAt].toString(),
             "yyyy-MM-dd hh:mm:ss");
     dt = QDateTime(dt.date(), dt.time(), Qt::UTC).toLocalTime();
 
@@ -139,7 +140,7 @@ void EventLogItem::load(const QVariantMap &data)
 
     update_evTime(dt.time().toString("hh:mm:ss"));
 
-    QString ioId = data["io_id"].toString();
+    QString ioId = data[JsonKeys::IoId].toString();
     IOBase *io = EventLogIO::resolve<IOBase>(
         [](const QString &i) { return IOCache::Instance().searchInput(i); },
         [](const QString &i) { return IOCache::Instance().searchOutput(i); },
@@ -157,7 +158,7 @@ void EventLogItem::load(const QVariantMap &data)
         {
             const QString style = IOTypeRegistry::styleName(io->get_ioType());
 
-            if (data["io_state"].toString() == "true")
+            if (data[JsonKeys::IoState].toString() == "true")
             {
                 update_evIconSource(QStringLiteral("icon_%1_on").arg(style));
                 update_evActionText(tr("On"));
@@ -170,7 +171,7 @@ void EventLogItem::load(const QVariantMap &data)
         }
         else if (IOTypeRegistry::isDimmableLight(io->get_ioType()))
         {
-            if (Common::toDoubleSafe(data["io_state"], 0.0, "event.io_state") > 0)
+            if (Common::toDoubleSafe(data[JsonKeys::IoState], 0.0, "event.io_state") > 0)
             {
                 update_evIconSource("icon_light_on");
                 update_evActionText(tr("On"));
@@ -188,7 +189,7 @@ void EventLogItem::load(const QVariantMap &data)
         }
         else if (IOTypeRegistry::category(io->get_ioType()) == IOTypeRegistry::Category::Shutter)
         {
-            if (data["io_state"].toString() == "true")
+            if (data[JsonKeys::IoState].toString() == "true")
             {
                 update_evIconSource("icon_shutter_on");
                 update_evActionText(tr("Opened"));
@@ -215,7 +216,7 @@ void EventLogItem::load(const QVariantMap &data)
 void EventLogItem::load(const QString &uuid)
 {
     update_loading(true);
-    QJsonObject d = {{ "uuid", uuid }};
+    QJsonObject d = {{ JsonKeys::Uuid, uuid }};
     connection->sendJson("eventlog", d);
 
     connect(connection, &CalaosConnection::logEventLoaded,
@@ -224,7 +225,7 @@ void EventLogItem::load(const QString &uuid)
 
 void EventLogItem::logEventLoaded(const QVariantMap &data)
 {
-    if (data.contains("events"))
+    if (data.contains(JsonKeys::Events))
         return;
 
     disconnect(connection, &CalaosConnection::logEventLoaded,

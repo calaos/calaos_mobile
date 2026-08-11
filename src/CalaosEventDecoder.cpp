@@ -1,5 +1,6 @@
 #include "CalaosEventDecoder.h"
 #include "Common.h"
+#include "JsonKeys.h"
 
 #include <QUrl>
 #include <QDebug>
@@ -137,18 +138,18 @@ QList<DecodedEvent> CalaosEventDecoder::decodeEventV3(const QVariantMap &msg)
 {
     QList<DecodedEvent> events;
 
-    const QString typeStr = msg["type_str"].toString();
-    const QVariantMap data = msg["data"].toMap();
+    const QString typeStr = msg[JsonKeys::TypeStr].toString();
+    const QVariantMap data = msg[JsonKeys::Data].toMap();
 
     if (typeStr == "io_changed")
     {
         //One frame carries every state of the IO that changed. Each of them is
         //reported as an input *and* as an output change: the client does not
         //know on which side the id lives, the models sort it out.
-        const QString id = data["id"].toString();
+        const QString id = data[JsonKeys::Id].toString();
         for (auto it = data.constBegin();it != data.constEnd();it++)
         {
-            if (it.key() == "id") continue;
+            if (it.key() == JsonKeys::Id) continue;
             events << makeIoChange(DecodedEvent::InputChange, id, it.key(), it.value().toString());
             events << makeIoChange(DecodedEvent::OutputChange, id, it.key(), it.value().toString());
         }
@@ -156,33 +157,33 @@ QList<DecodedEvent> CalaosEventDecoder::decodeEventV3(const QVariantMap &msg)
     else if (typeStr == "audio_volume_changed")
     {
         DecodedEvent ev = makeEvent(DecodedEvent::AudioVolumeChange);
-        ev.id = data["player_id"].toString();
-        ev.number = Common::toDoubleSafe(data["volume"], 0.0, "audio_volume_changed.volume");
+        ev.id = data[JsonKeys::PlayerId].toString();
+        ev.number = Common::toDoubleSafe(data[JsonKeys::Volume], 0.0, "audio_volume_changed.volume");
         events << ev;
     }
     else if (typeStr == "audio_status_changed")
     {
         DecodedEvent ev = makeEvent(DecodedEvent::AudioStatusChange);
-        ev.id = data["player_id"].toString();
-        ev.state = data["state"].toString();
+        ev.id = data[JsonKeys::PlayerId].toString();
+        ev.state = data[JsonKeys::State].toString();
         events << ev;
     }
     else if (typeStr == "audio_song_changed")
     {
         DecodedEvent ev = makeEvent(DecodedEvent::AudioSongChange);
-        ev.id = data["player_id"].toString();
+        ev.id = data[JsonKeys::PlayerId].toString();
         events << ev;
     }
     else if (typeStr == "touchscreen_camera_request")
     {
         DecodedEvent ev = makeEvent(DecodedEvent::TouchscreenCamera);
-        ev.id = data["id"].toString();
+        ev.id = data[JsonKeys::Id].toString();
         events << ev;
     }
     else if (typeStr == "io_status_changed")
     {
-        if (data.contains("id"))
-            events << makeMapEvent(DecodedEvent::IoStatusChange, data["id"].toString(), data);
+        if (data.contains(JsonKeys::Id))
+            events << makeMapEvent(DecodedEvent::IoStatusChange, data[JsonKeys::Id].toString(), data);
         else
             events << makeUnknown(DecodedEvent::Malformed, typeStr);
     }
@@ -211,8 +212,8 @@ QList<DecodedEvent> CalaosEventDecoder::decodeStateMap(const QVariantMap &states
 
         if (isScalar)
         {
-            const QVariantMap m = { { "id", it.key() },
-                                    { "state", it.value().toString() }};
+            const QVariantMap m = { { JsonKeys::Id, it.key() },
+                                    { JsonKeys::State, it.value().toString() }};
             events << makeMapEvent(DecodedEvent::InputStateChange, QString(), m);
             events << makeMapEvent(DecodedEvent::OutputStateChange, QString(), m);
         }
@@ -229,27 +230,27 @@ QList<DecodedEvent> CalaosEventDecoder::decodeQueryAnswer(const QVariantMap &ans
 {
     QList<DecodedEvent> events;
 
-    if (answer.contains("audio_players") &&
-        !answer["audio_players"].toList().isEmpty())
+    if (answer.contains(JsonKeys::AudioPlayers) &&
+        !answer[JsonKeys::AudioPlayers].toList().isEmpty())
     {
         //Audio player states come back as a whole, with no player id.
         events << makeMapEvent(DecodedEvent::AudioStateChange, QString(), answer);
     }
 
-    if (answer.contains("events") &&
-        answer.contains("total_page"))
+    if (answer.contains(JsonKeys::Events) &&
+        answer.contains(JsonKeys::TotalPage))
     {
-        events << makeMapEvent(DecodedEvent::LogEvent, QString(), answer["data"].toMap());
+        events << makeMapEvent(DecodedEvent::LogEvent, QString(), answer[JsonKeys::Data].toMap());
     }
 
     if (v == ApiV2)
     {
-        if (answer.contains("inputs") &&
-            !answer["inputs"].toList().isEmpty())
+        if (answer.contains(JsonKeys::Inputs) &&
+            !answer[JsonKeys::Inputs].toList().isEmpty())
             events << makeMapEvent(DecodedEvent::InputStateChange, QString(), answer);
 
-        if (answer.contains("outputs") &&
-            !answer["outputs"].toList().isEmpty())
+        if (answer.contains(JsonKeys::Outputs) &&
+            !answer[JsonKeys::Outputs].toList().isEmpty())
             events << makeMapEvent(DecodedEvent::OutputStateChange, QString(), answer);
     }
     else

@@ -1,6 +1,7 @@
 #include "FavoritesModel.h"
 #include "HomeModel.h"
 #include "RoomModel.h"
+#include "JsonKeys.h"
 
 FavoritesModel::FavoritesModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent):
     QStandardItemModel(parent),
@@ -182,7 +183,7 @@ void HomeFavModel::load(const QVariantMap &homeData)
 {
     clear();
 
-    if (!homeData.contains("home"))
+    if (!homeData.contains(JsonKeys::Home))
     {
         qDebug() << "no home entry";
         return;
@@ -195,10 +196,10 @@ void HomeFavModel::load(const QVariantMap &homeData)
 
     {
         QVariantMap it;
-        it["name"] = tr("All lights On");
-        it["type"] = "fav_all_lights";
-        it["gui_type"] = "fav_all_lights";
-        it["id"] = "fav_all_lights";
+        it[JsonKeys::Name] = tr("All lights On");
+        it[JsonKeys::Type] = "fav_all_lights";
+        it[JsonKeys::GuiType] = "fav_all_lights";
+        it[JsonKeys::Id] = "fav_all_lights";
         lst.append(it);
     }
 
@@ -207,35 +208,35 @@ void HomeFavModel::load(const QVariantMap &homeData)
     if (connection->isHttpApiV2())
     {
         QVariantMap items;
-        items["inputs"] = QVariantList();
-        items["outputs"] = lst;
-        r["items"] = items;
+        items[JsonKeys::Inputs] = QVariantList();
+        items[JsonKeys::Outputs] = lst;
+        r[JsonKeys::Items] = items;
     }
     else
     {
-        r["items"] = lst;
+        r[JsonKeys::Items] = lst;
     }
 
-    r["name"] = tr("Special");
-    r["type"] = "fav";
-    r["hits"] = 9999999;
+    r[JsonKeys::Name] = tr("Special");
+    r[JsonKeys::Type] = "fav";
+    r[JsonKeys::Hits] = 9999999;
 
-    room->update_roomName(r["name"].toString());
-    room->update_roomType(r["type"].toString());
-    room->update_roomHits(r["hits"].toString().toInt());
+    room->update_roomName(r[JsonKeys::Name].toString());
+    room->update_roomType(r[JsonKeys::Type].toString());
+    room->update_roomHits(r[JsonKeys::Hits].toString().toInt());
     room->load(r, nullptr, RoomModel::LoadAll);
     appendRow(room);
 
     //Add normal rooms
-    QVariantList rooms = homeData["home"].toList();
+    QVariantList rooms = homeData[JsonKeys::Home].toList();
     QVariantList::iterator it = rooms.begin();
     for (;it != rooms.end();it++)
     {
         QVariantMap r = it->toMap();
         RoomItem *room = new RoomItem(engine, connection);
-        room->update_roomName(r["name"].toString());
-        room->update_roomType(r["type"].toString());
-        room->update_roomHits(Common::toIntSafe(r["hits"], 0, "room.hits"));
+        room->update_roomName(r[JsonKeys::Name].toString());
+        room->update_roomType(r[JsonKeys::Type].toString());
+        room->update_roomHits(Common::toIntSafe(r[JsonKeys::Hits], 0, "room.hits"));
         room->load(r, nullptr, RoomModel::LoadAll);
         appendRow(room);
     }

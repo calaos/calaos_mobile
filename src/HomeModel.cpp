@@ -1,6 +1,7 @@
 #include "HomeModel.h"
 #include <QDebug>
 #include "RoomModel.h"
+#include "JsonKeys.h"
 
 HomeModel::HomeModel(QQmlApplicationEngine *eng, CalaosConnection *con, ScenarioModel *scModel, LightOnModel *lModel, QObject *parent) :
     QStandardItemModel(parent),
@@ -30,13 +31,13 @@ void HomeModel::load(const QVariantMap &homeData)
     //empties onCache, fixing the T06 "ghost lights after reconnect" bug.
     lightOnModel->clear();
 
-    if (!homeData.contains("home"))
+    if (!homeData.contains(JsonKeys::Home))
     {
         qDebug() << "no home entry";
         return;
     }
 
-    QVariantList rooms = homeData["home"].toList();
+    QVariantList rooms = homeData[JsonKeys::Home].toList();
     QVariantList::iterator it = rooms.begin();
     for (;it != rooms.end();it++)
     {
@@ -45,9 +46,9 @@ void HomeModel::load(const QVariantMap &homeData)
         connect(room, SIGNAL(sig_light_on(IOBase*)), this, SLOT(newlight_on(IOBase*)));
         connect(room, SIGNAL(sig_light_off(IOBase*)), this, SLOT(newlight_off(IOBase*)));
 
-        room->update_roomName(r["name"].toString());
-        room->update_roomType(r["type"].toString());
-        room->update_roomHits(Common::toIntSafe(r["hits"], 0, "room.hits"));
+        room->update_roomName(r[JsonKeys::Name].toString());
+        room->update_roomType(r[JsonKeys::Type].toString());
+        room->update_roomHits(Common::toIntSafe(r[JsonKeys::Hits], 0, "room.hits"));
         room->load(r, scenarioModel, RoomModel::LoadNormal);
         appendRow(room);
     }

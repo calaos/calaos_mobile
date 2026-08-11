@@ -2,6 +2,7 @@
 #include <QDebug>
 #include "HardwareUtils.h"
 #include "IOTypeRegistry.h"
+#include "JsonKeys.h"
 #include <qfappdispatcher.h>
 
 IOBase *IOCache::searchInput(QString id)
@@ -99,11 +100,11 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
     clear();
     temperatureIo = nullptr;
 
-    type = roomData["type"].toString();
-    name = roomData["name"].toString();
-    hits = roomData["hits"].toString();
+    type = roomData[JsonKeys::Type].toString();
+    name = roomData[JsonKeys::Name].toString();
+    hits = roomData[JsonKeys::Hits].toString();
 
-    QVariantMap items = roomData["items"].toMap();
+    QVariantMap items = roomData[JsonKeys::Items].toMap();
 
     QVariantList inputs;
     QVariantList outputs;
@@ -113,15 +114,15 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
      * the model configured the connection's API version flag (T18). The
      * connection now reads that flag off the get_home payload itself, before
      * handing it over - see CalaosConnection::detectHttpApiV2(). */
-    if (items.contains("inputs"))
+    if (items.contains(JsonKeys::Inputs))
     {
-        inputs = items["inputs"].toList();
-        outputs = items["outputs"].toList();
+        inputs = items[JsonKeys::Inputs].toList();
+        outputs = items[JsonKeys::Outputs].toList();
     }
     else
     {
-        inputs = roomData["items"].toList();
-        outputs = roomData["items"].toList();
+        inputs = roomData[JsonKeys::Items].toList();
+        outputs = roomData[JsonKeys::Items].toList();
     }
 
     //inputs
@@ -130,8 +131,8 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
     {
         QVariantMap r = it->toMap();
 
-        if (r["gui_type"].toString() == "")
-            r["gui_type"] = IOTypeRegistry::legacyGuiType(r["type"].toString());
+        if (r[JsonKeys::GuiType].toString() == "")
+            r[JsonKeys::GuiType] = IOTypeRegistry::legacyGuiType(r[JsonKeys::Type].toString());
 
         IOBase *io = new IOBase(engine, connection, IOBase::IOInput);
         io->load(r);
@@ -142,12 +143,12 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
         //create scenario items
         if (io->get_ioType() == Common::Scenario && scenarioModel)
         {
-            IOBase *io = IOCache::Instance().searchInput(r["id"].toString())->cloneIO();
+            IOBase *io = IOCache::Instance().searchInput(r[JsonKeys::Id].toString())->cloneIO();
             scenarioModel->appendRow(io);
         }
 
         //Hide invisible items
-        if (r["visible"] != "true")
+        if (r[JsonKeys::Visible] != "true")
             continue;
 
         /* Which types belong to a room view is a property of the type itself:
@@ -155,7 +156,7 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
          * covered by the same row as a plain switch was. */
         if (IOTypeRegistry::isRoomVisibleInput(io->get_ioType()))
         {
-            IOBase *io = IOCache::Instance().searchInput(r["id"].toString())->cloneIO();
+            IOBase *io = IOCache::Instance().searchInput(r[JsonKeys::Id].toString())->cloneIO();
             appendRow(io);
         }
 
@@ -177,8 +178,8 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
     {
         QVariantMap r = it->toMap();
 
-        if (r["gui_type"].toString() == "")
-            r["gui_type"] = IOTypeRegistry::legacyGuiType(r["type"].toString());
+        if (r[JsonKeys::GuiType].toString() == "")
+            r[JsonKeys::GuiType] = IOTypeRegistry::legacyGuiType(r[JsonKeys::Type].toString());
 
         IOBase *io = new IOBase(engine, connection, IOBase::IOOutput);
         connect(io, SIGNAL(light_on(IOBase*)), this, SIGNAL(sig_light_on(IOBase*)));
@@ -192,21 +193,21 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
         {
             /* Matched on the gui_type and not on the IOType: two of those
              * names are legacy ones with no IOType of their own. */
-            if (IOTypeRegistry::isMediaGuiType(r["gui_type"].toString()))
+            if (IOTypeRegistry::isMediaGuiType(r[JsonKeys::GuiType].toString()))
             {
-                IOBase *io = IOCache::Instance().searchOutput(r["id"].toString())->cloneIO();
+                IOBase *io = IOCache::Instance().searchOutput(r[JsonKeys::Id].toString())->cloneIO();
                 appendRow(io);
             }
         }
 
         //Hide invisible items
-        if (r["visible"] != "true")
+        if (r[JsonKeys::Visible] != "true")
             continue;
 
         //Styled lights (pump, outlet...) are covered by the "light" row.
         if (IOTypeRegistry::isRoomVisibleOutput(io->get_ioType()))
         {
-            IOBase *io = IOCache::Instance().searchOutput(r["id"].toString())->cloneIO();
+            IOBase *io = IOCache::Instance().searchOutput(r[JsonKeys::Id].toString())->cloneIO();
             appendRow(io);
         }
     }
@@ -281,32 +282,32 @@ void IOBase::load(const QVariantMap &io)
 {
     ioData = io;
 
-    update_ioName(ioData["name"].toString());
-    update_ioHits(Common::toIntSafe(ioData["hits"], 0, "IOBase.hits"));
-    update_ioStyle(ioData["io_style"].toString());
-    update_ioType(Common::IOTypeFromString(ioData["gui_type"].toString(), get_ioStyle()));
-    update_ioId(ioData["id"].toString());
-    update_unit(ioData["unit"].toString());
-    update_rw(ioData["rw"].toString() == "true");
-    update_ioStyle(ioData["io_style"].toString());
-    update_hasWarning(ioData["value_warning"].toString() == "true");
+    update_ioName(ioData[JsonKeys::Name].toString());
+    update_ioHits(Common::toIntSafe(ioData[JsonKeys::Hits], 0, "IOBase.hits"));
+    update_ioStyle(ioData[JsonKeys::IoStyle].toString());
+    update_ioType(Common::IOTypeFromString(ioData[JsonKeys::GuiType].toString(), get_ioStyle()));
+    update_ioId(ioData[JsonKeys::Id].toString());
+    update_unit(ioData[JsonKeys::Unit].toString());
+    update_rw(ioData[JsonKeys::Rw].toString() == "true");
+    update_ioStyle(ioData[JsonKeys::IoStyle].toString());
+    update_hasWarning(ioData[JsonKeys::ValueWarning].toString() == "true");
 
     if (m_ioType == Common::LightRgb)
     {
         if (connection->isHttpApiV2())
             update_rgbColor(QColor(getStateRed(), getStateGreen(), getStateBlue()));
         else
-            update_rgbColor(QColor(ioData["state"].toString()));
+            update_rgbColor(QColor(ioData[JsonKeys::State].toString()));
     }
 
     //force rw for analog_out to let us use the same qml than var_int
     if (m_ioType == Common::AnalogOut)
         update_rw(true);
 
-    if (io.contains("status_info"))
+    if (io.contains(JsonKeys::StatusInfo))
     {
-        QVariantMap statusInfo = io["status_info"].toMap();
-        ioStatusChanged(ioData["id"].toString(), statusInfo);
+        QVariantMap statusInfo = io[JsonKeys::StatusInfo].toMap();
+        ioStatusChanged(ioData[JsonKeys::Id].toString(), statusInfo);
     }
 }
 
@@ -354,7 +355,7 @@ IOBase *IOBase::cloneIO() const
 
 void IOBase::sendTrue()
 {
-    connection->sendCommand(ioData["id"].toString(),
+    connection->sendCommand(ioData[JsonKeys::Id].toString(),
             "true",
             ioType == IOOutput?"output":"input",
             "set_state");
@@ -362,7 +363,7 @@ void IOBase::sendTrue()
 
 void IOBase::sendFalse()
 {
-    connection->sendCommand(ioData["id"].toString(),
+    connection->sendCommand(ioData[JsonKeys::Id].toString(),
             "false",
             ioType == IOOutput?"output":"input",
             "set_state");
@@ -370,7 +371,7 @@ void IOBase::sendFalse()
 
 void IOBase::sendInc()
 {
-    connection->sendCommand(ioData["id"].toString(),
+    connection->sendCommand(ioData[JsonKeys::Id].toString(),
             "inc",
             ioType == IOOutput?"output":"input",
             "set_state");
@@ -378,7 +379,7 @@ void IOBase::sendInc()
 
 void IOBase::sendDec()
 {
-    connection->sendCommand(ioData["id"].toString(),
+    connection->sendCommand(ioData[JsonKeys::Id].toString(),
             "dec",
             ioType == IOOutput?"output":"input",
             "set_state");
@@ -386,7 +387,7 @@ void IOBase::sendDec()
 
 void IOBase::sendDown()
 {
-    connection->sendCommand(ioData["id"].toString(),
+    connection->sendCommand(ioData[JsonKeys::Id].toString(),
             "down",
             ioType == IOOutput?"output":"input",
             "set_state");
@@ -394,7 +395,7 @@ void IOBase::sendDown()
 
 void IOBase::sendUp()
 {
-    connection->sendCommand(ioData["id"].toString(),
+    connection->sendCommand(ioData[JsonKeys::Id].toString(),
             "up",
             ioType == IOOutput?"output":"input",
             "set_state");
@@ -402,7 +403,7 @@ void IOBase::sendUp()
 
 void IOBase::sendStop()
 {
-    connection->sendCommand(ioData["id"].toString(),
+    connection->sendCommand(ioData[JsonKeys::Id].toString(),
             "stop",
             ioType == IOOutput?"output":"input",
             "set_state");
@@ -410,7 +411,7 @@ void IOBase::sendStop()
 
 void IOBase::sendStringValue(QString value)
 {
-    connection->sendCommand(ioData["id"].toString(),
+    connection->sendCommand(ioData[JsonKeys::Id].toString(),
             value,
             ioType == IOOutput?"output":"input",
             "set_state");
@@ -418,7 +419,7 @@ void IOBase::sendStringValue(QString value)
 
 void IOBase::sendIntValue(double value)
 {
-    connection->sendCommand(ioData["id"].toString(),
+    connection->sendCommand(ioData[JsonKeys::Id].toString(),
             QString("set %1").arg(value),
             ioType == IOOutput?"output":"input",
             "set_state");
@@ -426,7 +427,7 @@ void IOBase::sendIntValue(double value)
 
 bool IOBase::getStateBool()
 {
-    if (ioData["state"].toString() == "true")
+    if (ioData[JsonKeys::State].toString() == "true")
         return true;
     else
         return false;
@@ -434,19 +435,19 @@ bool IOBase::getStateBool()
 
 double IOBase::getStateInt()
 {
-    return Common::toDoubleSafe(ioData["state"], 0.0, "IOBase.state");
+    return Common::toDoubleSafe(ioData[JsonKeys::State], 0.0, "IOBase.state");
 }
 
 QString IOBase::getStateString()
 {
-    return ioData["state"].toString();
+    return ioData[JsonKeys::State].toString();
 }
 
 int IOBase::getStateRed()
 {
     if (connection->isHttpApiV2())
     {
-        int state = Common::toIntSafe(ioData["state"], 0, "IOBase.state(rgb)");
+        int state = Common::toIntSafe(ioData[JsonKeys::State], 0, "IOBase.state(rgb)");
 
         int r;
         r = state >> 16;
@@ -455,7 +456,7 @@ int IOBase::getStateRed()
     }
     else
     {
-        QColor c(ioData["state"].toString());
+        QColor c(ioData[JsonKeys::State].toString());
         return c.red();
     }
 }
@@ -464,7 +465,7 @@ int IOBase::getStateGreen()
 {
     if (connection->isHttpApiV2())
     {
-        int state = Common::toIntSafe(ioData["state"], 0, "IOBase.state(rgb)");
+        int state = Common::toIntSafe(ioData[JsonKeys::State], 0, "IOBase.state(rgb)");
 
         int g;
         g = (state >> 8) & 0x0000FF;
@@ -473,7 +474,7 @@ int IOBase::getStateGreen()
     }
     else
     {
-        QColor c(ioData["state"].toString());
+        QColor c(ioData[JsonKeys::State].toString());
         return c.green();
     }
 }
@@ -482,7 +483,7 @@ int IOBase::getStateBlue()
 {
     if (connection->isHttpApiV2())
     {
-        int state = Common::toIntSafe(ioData["state"], 0, "IOBase.state(rgb)");
+        int state = Common::toIntSafe(ioData[JsonKeys::State], 0, "IOBase.state(rgb)");
 
         int b;
         b = state & 0x0000FF;
@@ -491,7 +492,7 @@ int IOBase::getStateBlue()
     }
     else
     {
-        QColor c(ioData["state"].toString());
+        QColor c(ioData[JsonKeys::State].toString());
         return c.blue();
     }
 }
@@ -505,7 +506,7 @@ void IOBase::sendRGB(int r, int g, int b)
                   (((quint32)(g)) << 8) +
                   ((quint32)(b));
 
-        connection->sendCommand(ioData["id"].toString(),
+        connection->sendCommand(ioData[JsonKeys::Id].toString(),
                 QString("set %1").arg(val),
                 ioType == IOOutput?"output":"input",
                 "set_state");
@@ -513,7 +514,7 @@ void IOBase::sendRGB(int r, int g, int b)
     else
     {
         QColor c(r, g, b);
-        connection->sendCommand(ioData["id"].toString(),
+        connection->sendCommand(ioData[JsonKeys::Id].toString(),
                 QString("set %1").arg(c.name(QColor::HexRgb)),
                 QString(),
                 "set_state");
@@ -527,7 +528,7 @@ void IOBase::sendColor(QColor c)
 
 int IOBase::getStateShutterPos()
 {
-    QStringList sl = ioData["state"].toString().split(' ');
+    QStringList sl = ioData[JsonKeys::State].toString().split(' ');
     if (sl.count() < 1)
         return 0;
 
@@ -563,30 +564,30 @@ int IOBase::getStateShutterPos()
 
 void IOBase::inputChanged(QString id, QString key, QString value)
 {
-    if (id != ioData["id"].toString()) return; //not for us
+    if (id != ioData[JsonKeys::Id].toString()) return; //not for us
 
-    if (key == "state")
+    if (key == JsonKeys::State)
     {
-        ioData["state"] = value;
+        ioData[JsonKeys::State] = value;
         emit stateChange();
     }
-    else if (key == "name")
+    else if (key == JsonKeys::Name)
     {
-        ioData["name"] = value;
+        ioData[JsonKeys::Name] = value;
         update_ioName(value);
     }
-    else if (key == "value_warning")
+    else if (key == JsonKeys::ValueWarning)
     {
-        ioData["value_warning"] = value;
+        ioData[JsonKeys::ValueWarning] = value;
         update_hasWarning(value == "true");
     }
 }
 
 void IOBase::outputChanged(QString id, QString key, QString value)
 {
-    if (id != ioData["id"].toString()) return; //not for us
+    if (id != ioData[JsonKeys::Id].toString()) return; //not for us
 
-    if (key == "state")
+    if (key == JsonKeys::State)
     {
         //Same reading of the type as checkFirstState(), see above: the styled
         //lights are deliberately left out of the counter.
@@ -598,7 +599,7 @@ void IOBase::outputChanged(QString id, QString key, QString value)
         {
             if (getStateBool() != (value == "true"))
             {
-                ioData["state"] = value;
+                ioData[JsonKeys::State] = value;
                 if (value == "true")
                     emit light_on(this);
                 else
@@ -612,7 +613,7 @@ void IOBase::outputChanged(QString id, QString key, QString value)
                 const double newState = Common::toDoubleSafe(value, 0.0, "IOBase.state");
                 if ((getStateInt() > 0) != (newState > 0))
                 {
-                    ioData["state"] = value;
+                    ioData[JsonKeys::State] = value;
                     if (newState > 0)
                         emit light_on(this);
                     else
@@ -621,7 +622,7 @@ void IOBase::outputChanged(QString id, QString key, QString value)
             }
         }
 
-        ioData["state"] = value;
+        ioData[JsonKeys::State] = value;
 
         if (get_ioType() == Common::LightRgb)
         {
@@ -629,7 +630,7 @@ void IOBase::outputChanged(QString id, QString key, QString value)
                 update_rgbColor(QColor(getStateRed(), getStateGreen(), getStateBlue()));
             else
             {
-                update_rgbColor(QColor(ioData["state"].toString()));
+                update_rgbColor(QColor(ioData[JsonKeys::State].toString()));
 
                 if (get_rgbColor().red() > 0 ||
                     get_rgbColor().green() > 0 ||
@@ -646,54 +647,54 @@ void IOBase::outputChanged(QString id, QString key, QString value)
 
         emit stateChange();
     }
-    else if (key == "name")
+    else if (key == JsonKeys::Name)
     {
-        ioData["name"] = value;
+        ioData[JsonKeys::Name] = value;
         update_ioName(value);
     }
 }
 
 void IOBase::ioStatusChanged(QString id, QVariantMap statusData)
 {
-    if (id != ioData["id"].toString()) return; //not for us
+    if (id != ioData[JsonKeys::Id].toString()) return; //not for us
 
     //If there is any status info, we can enable the status info button
     update_hasStatusInfo(true);
 
-    if (statusData.contains("battery_level"))
+    if (statusData.contains(JsonKeys::BatteryLevel))
     {
         update_hasStatusBattLevel(true);
-        update_statusBattLevel(Common::toIntSafe(statusData["battery_level"], 0, "IOBase.status.battery_level"));
+        update_statusBattLevel(Common::toIntSafe(statusData[JsonKeys::BatteryLevel], 0, "IOBase.status.battery_level"));
     }
 
-    if (statusData.contains("connected"))
+    if (statusData.contains(JsonKeys::Connected))
     {
         update_hasStatusConnected(true);
-        update_statusConnected(statusData["connected"].toString() == "true");
+        update_statusConnected(statusData[JsonKeys::Connected].toString() == "true");
     }
 
-    if (statusData.contains("wireless_signal"))
+    if (statusData.contains(JsonKeys::WirelessSignal))
     {
         update_hasStatusWirelessSignal(true);
-        update_statusWirelessSignal(Common::toIntSafe(statusData["wireless_signal"], 0, "IOBase.status.wireless_signal"));
+        update_statusWirelessSignal(Common::toIntSafe(statusData[JsonKeys::WirelessSignal], 0, "IOBase.status.wireless_signal"));
     }
 
-    if (statusData.contains("uptime"))
+    if (statusData.contains(JsonKeys::Uptime))
     {
         update_hasStatusUptime(true);
-        update_statusUptime(Common::toLongLongSafe(statusData["uptime"], 0, "IOBase.status.uptime"));
+        update_statusUptime(Common::toLongLongSafe(statusData[JsonKeys::Uptime], 0, "IOBase.status.uptime"));
     }
 
-    if (statusData.contains("ip_address"))
+    if (statusData.contains(JsonKeys::IpAddress))
     {
         update_hasStatusIP(true);
-        update_statusIP(statusData["ip_address"].toString());
+        update_statusIP(statusData[JsonKeys::IpAddress].toString());
     }
 
-    if (statusData.contains("wifi_ssid"))
+    if (statusData.contains(JsonKeys::WifiSsid))
     {
         update_hasStatusWifiSSID(true);
-        update_statusWifiSSID(statusData["wifi_ssid"].toString());
+        update_statusWifiSSID(statusData[JsonKeys::WifiSsid].toString());
     }
 }
 

@@ -8,6 +8,7 @@
 
 #include "CalaosEventDecoder.h"
 #include "IOConnection.h"
+#include "JsonKeys.h"
 
 //Reconnection state machine and exponential backoff (T14).
 //
@@ -246,7 +247,7 @@ public:
     //see tests/tst_httpapiversion.
     static bool detectHttpApiV2(const QVariantMap &home, bool &isV2)
     {
-        const QVariantList rooms = home.value(QStringLiteral("home")).toList();
+        const QVariantList rooms = home.value(JsonKeys::Home).toList();
         bool seenRoom = false;
 
         for (const QVariant &r: rooms)
@@ -256,7 +257,7 @@ public:
                 continue;
 
             seenRoom = true;
-            if (room.value(QStringLiteral("items")).toMap().contains(QStringLiteral("inputs")))
+            if (room.value(JsonKeys::Items).toMap().contains(JsonKeys::Inputs))
             {
                 isV2 = true;
                 return true;

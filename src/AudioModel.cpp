@@ -1,4 +1,5 @@
 #include "AudioModel.h"
+#include "JsonKeys.h"
 
 //Delay between two state queries of a visible player
 static const int AudioPollIntervalMs = 1000;
@@ -51,13 +52,13 @@ void AudioModel::load(const QVariantMap &homeData)
     clear();
     imageCache->clear();
 
-    if (!homeData.contains("audio"))
+    if (!homeData.contains(JsonKeys::Audio))
     {
         qDebug() << "no audio entry";
         return;
     }
 
-    QVariantList players = homeData["audio"].toList();
+    QVariantList players = homeData[JsonKeys::Audio].toList();
     QVariantList::iterator it = players.begin();
     for (;it != players.end();it++)
     {
@@ -96,21 +97,21 @@ void AudioPlayer::updatePlayerState(const QVariantMap &d)
     //refresh audio cover
     connection->getAudioCover(get_id());
 
-    update_status(Common::audioStatusFromString(playerData["status"].toString()));
-    update_id(playerData["id"].toString());
-    update_name(playerData["name"].toString());
-    auto vol = Common::toDoubleSafe(playerData["volume"], 0.0, "AudioPlayer.volume");
+    update_status(Common::audioStatusFromString(playerData[JsonKeys::Status].toString()));
+    update_id(playerData[JsonKeys::Id].toString());
+    update_name(playerData[JsonKeys::Name].toString());
+    auto vol = Common::toDoubleSafe(playerData[JsonKeys::Volume], 0.0, "AudioPlayer.volume");
     if (get_volume() != vol)
         update_volume(vol);
-    update_elapsed(Common::toDoubleSafe(playerData["time_elapsed"], 0.0, "AudioPlayer.time_elapsed"));
+    update_elapsed(Common::toDoubleSafe(playerData[JsonKeys::TimeElapsed], 0.0, "AudioPlayer.time_elapsed"));
 
-    QVariantMap currentTrack = playerData["current_track"].toMap();
-    update_title(currentTrack["title"].toString());
-    update_album(currentTrack["album"].toString());
-    update_artist(currentTrack["artist"].toString());
-    update_genre(currentTrack["genre"].toString());
-    update_year(currentTrack["year"].toString());
-    update_duration(Common::toDoubleSafe(currentTrack["duration"], 0.0, "AudioPlayer.current_track.duration"));
+    QVariantMap currentTrack = playerData[JsonKeys::CurrentTrack].toMap();
+    update_title(currentTrack[JsonKeys::Title].toString());
+    update_album(currentTrack[JsonKeys::Album].toString());
+    update_artist(currentTrack[JsonKeys::Artist].toString());
+    update_genre(currentTrack[JsonKeys::Genre].toString());
+    update_year(currentTrack[JsonKeys::Year].toString());
+    update_duration(Common::toDoubleSafe(currentTrack[JsonKeys::Duration], 0.0, "AudioPlayer.current_track.duration"));
 }
 
 void AudioPlayer::load(QVariantMap &d)
@@ -137,7 +138,7 @@ void AudioPlayer::load(QVariantMap &d)
 
 void AudioPlayer::sendNext()
 {
-    connection->sendCommand(playerData["id"].toString(),
+    connection->sendCommand(playerData[JsonKeys::Id].toString(),
             "next",
             "audio",
             "set_state");
@@ -145,7 +146,7 @@ void AudioPlayer::sendNext()
 
 void AudioPlayer::sendPause()
 {
-    connection->sendCommand(playerData["id"].toString(),
+    connection->sendCommand(playerData[JsonKeys::Id].toString(),
             "pause",
             "audio",
             "set_state");
@@ -153,7 +154,7 @@ void AudioPlayer::sendPause()
 
 void AudioPlayer::sendPlay()
 {
-    connection->sendCommand(playerData["id"].toString(),
+    connection->sendCommand(playerData[JsonKeys::Id].toString(),
             "play",
             "audio",
             "set_state");
@@ -161,7 +162,7 @@ void AudioPlayer::sendPlay()
 
 void AudioPlayer::sendPrevious()
 {
-    connection->sendCommand(playerData["id"].toString(),
+    connection->sendCommand(playerData[JsonKeys::Id].toString(),
             "previous",
             "audio",
             "set_state");
@@ -169,7 +170,7 @@ void AudioPlayer::sendPrevious()
 
 void AudioPlayer::sendStop()
 {
-    connection->sendCommand(playerData["id"].toString(),
+    connection->sendCommand(playerData[JsonKeys::Id].toString(),
             "stop",
             "audio",
             "set_state");
@@ -177,7 +178,7 @@ void AudioPlayer::sendStop()
 
 void AudioPlayer::sendVolume(int vol)
 {
-    connection->sendCommand(playerData["id"].toString(),
+    connection->sendCommand(playerData[JsonKeys::Id].toString(),
             QStringLiteral("volume set %1").arg(vol),
             "audio",
             "set_state");
@@ -202,12 +203,12 @@ void AudioPlayer::audioStateChanged(QString playerid, const QVariantMap &data)
     }
 
     //this is for old v1/v2
-    QVariantList players = data["audio_players"].toList();
+    QVariantList players = data[JsonKeys::AudioPlayers].toList();
     QVariantList::iterator it = players.begin();
     for (;it != players.end();it++)
     {
         QVariantMap r = it->toMap();
-        if (r["player_id"].toString() == playerData["id"].toString())
+        if (r[JsonKeys::PlayerId].toString() == playerData[JsonKeys::Id].toString())
         {
             updatePlayerState(data);
             break;
@@ -219,7 +220,7 @@ void AudioPlayer::audioStatusChanged(QString playerid, QString status)
 {
     if (playerid != get_id()) return;
 
-    playerData["volume"] = status;
+    playerData[JsonKeys::Volume] = status;
     update_status(Common::audioStatusFromString(status));
 }
 
@@ -227,7 +228,7 @@ void AudioPlayer::audioVolumeChanged(QString playerid, double volume)
 {
     if (playerid != get_id()) return;
 
-    playerData["volume"] = QString("%1").arg(volume);
+    playerData[JsonKeys::Volume] = QString("%1").arg(volume);
     update_volume(volume);
 }
 

@@ -14,7 +14,8 @@ include(../common.pri)
 HEADERS += \
     $$SRC_DIR/CalaosEventDecoder.h \
     $$SRC_DIR/Common.h \
-    $$SRC_DIR/IOTypeRegistry.h
+    $$SRC_DIR/IOTypeRegistry.h \
+    $$SRC_DIR/JsonKeys.h
 
 SOURCES += \
     $$SRC_DIR/CalaosEventDecoder.cpp \

@@ -42,6 +42,7 @@ HEADERS += \
     src/Common.h \
     src/IOTypeRegistry.h \
     src/IOConnection.h \
+    src/JsonKeys.h \
     src/RoomModel.h \
     src/AudioModel.h \
     src/FavoritesModel.h \

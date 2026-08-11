@@ -1,5 +1,6 @@
 #include "CameraModel.h"
 #include "ScreenManager.h"
+#include "JsonKeys.h"
 #include <qfappdispatcher.h>
 
 //Delay between two picture requests of a visible camera
@@ -56,13 +57,13 @@ void CameraModel::load(const QVariantMap &homeData)
     clear();
     imageCache->clear();
 
-    if (!homeData.contains("cameras"))
+    if (!homeData.contains(JsonKeys::Cameras))
     {
         qDebug() << "no camera entry";
         return;
     }
 
-    QVariantList cameras = homeData["cameras"].toList();
+    QVariantList cameras = homeData[JsonKeys::Cameras].toList();
     QVariantList::iterator it = cameras.begin();
     for (int i = 0;it != cameras.end();it++, i++)
     {
@@ -148,16 +149,16 @@ void CameraItem::load(QVariantMap &d, int countId)
         ++i;
     }
 
-    update_cameraId(cameraData["id"].toString());
-    update_hasPTZ(cameraData["ptz"].toString() == "true");
+    update_cameraId(cameraData[JsonKeys::Id].toString());
+    update_hasPTZ(cameraData[JsonKeys::Ptz].toString() == "true");
 
-    if (cameraData.contains("url_lowres"))
+    if (cameraData.contains(JsonKeys::UrlLowres))
     {
         update_cameraId(QString::number(countId));
         isV1 = true; //when url_lowres is present, assume we are talking to a V1 calaos-os
-        update_v1Url(cameraData["url_lowres"].toString());
+        update_v1Url(cameraData[JsonKeys::UrlLowres].toString());
     }
-    update_name(cameraData["name"].toString());
+    update_name(cameraData[JsonKeys::Name].toString());
     //Publish the placeholder before advertising the url, so that the provider
     //thread always finds something in the cache for this camera
     publishImage(QImage(":/img/camera_nocam.png"));

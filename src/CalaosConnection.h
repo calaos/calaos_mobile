@@ -6,6 +6,8 @@
 #include <QRandomGenerator>
 #include <QWebSocket>
 
+#include "CalaosEventDecoder.h"
+
 //Reconnection state machine and exponential backoff (T14).
 //
 //This class only *decides*: it holds no QObject, no QTimer and no network
@@ -325,6 +327,11 @@ private:
 
     void processEventsV2(QString msg);
     void processEventsV3(QVariantMap msg);
+
+    //Turns what CalaosEventDecoder decoded into the existing signals. This is
+    //all that is left here of the event handling: the protocol itself lives in
+    //CalaosEventDecoder and is unit tested without a server (T17).
+    void dispatchEvents(const QList<DecodedEvent> &events);
 
     //Replaces the value of credential carrying query parameters (cn_user,
     //cn_pass, u, p) by "***" so URLs can be safely printed in logs.

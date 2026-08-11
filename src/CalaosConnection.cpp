@@ -636,52 +636,12 @@ void CalaosConnection::requestFinished()
 
     QVariantMap jroot = jdoc.object().toVariantMap();
 
-    if (jroot.contains("audio_players") &&
-        !jroot["audio_players"].toList().isEmpty())
-    {
-        //emit event for audio player change
-        emit eventAudioStateChange({}, jroot);
-    }
-
-    if (jroot.contains("events") &&
-        jroot.contains("total_page"))
-    {
-        emit logEventLoaded(jroot["data"].toMap());
-    }
-
-    if (isHttpApiV2())
-    {
-        if (jroot.contains("inputs") &&
-            !jroot["inputs"].toList().isEmpty())
-        {
-            //emit event for specific input change
-            emit eventInputStateChange(jroot);
-        }
-
-        if (jroot.contains("outputs") &&
-            !jroot["outputs"].toList().isEmpty())
-        {
-            //emit event for output change
-            emit eventOutputStateChange(jroot);
-        }
-    }
-    else
-    {
-        for (auto it = jroot.constBegin();it != jroot.constEnd();it++)
-        {
-            if (it.value().canConvert<QString>())
-            {
-                QVariantMap m = { { "id", it.key() },
-                                  { "state", it.value().toString() }};
-                emit eventInputStateChange(m);
-                emit eventOutputStateChange(m);
-            }
-            else
-            {
-                emit eventAudioStateChange(it.key(), it.value().toMap());
-            }
-        }
-    }
+    //Audio player states, event log page and io states can all be in the same
+    //answer: the decoder reports every payload it recognises, in order.
+    dispatchEvents(CalaosEventDecoder::decodeQueryAnswer(
+                       jroot,
+                       isHttpApiV2() ? CalaosEventDecoder::ApiV2
+                                     : CalaosEventDecoder::ApiV3));
 }
 
 void CalaosConnection::requestCamFinished(QNetworkReply *reqReply, const QString &camid)
@@ -1055,6 +1015,57 @@ void CalaosConnection::startJsonPolling()
     });
 }
 
+void CalaosConnection::dispatchEvents(const QList<DecodedEvent> &events)
+{
+    for (const DecodedEvent &ev: events)
+    {
+        //No default case on purpose: adding a DecodedEvent::Type without
+        //deciding what it emits here must not compile silently.
+        switch (ev.type)
+        {
+        case DecodedEvent::InputChange:
+            emit eventInputChange(ev.id, ev.state, ev.value);
+            break;
+        case DecodedEvent::OutputChange:
+            emit eventOutputChange(ev.id, ev.state, ev.value);
+            break;
+        case DecodedEvent::AudioVolumeChange:
+            emit eventAudioVolumeChange(ev.id, ev.number);
+            break;
+        case DecodedEvent::AudioStatusChange:
+            emit eventAudioStatusChange(ev.id, ev.state);
+            break;
+        case DecodedEvent::AudioSongChange:
+            emit eventAudioChange(ev.id);
+            break;
+        case DecodedEvent::TouchscreenCamera:
+            emit eventTouchscreenCamera(ev.id);
+            break;
+        case DecodedEvent::IoStatusChange:
+            emit eventIoStatusChange(ev.id, ev.data);
+            break;
+        case DecodedEvent::InputStateChange:
+            emit eventInputStateChange(ev.data);
+            break;
+        case DecodedEvent::OutputStateChange:
+            emit eventOutputStateChange(ev.data);
+            break;
+        case DecodedEvent::AudioStateChange:
+            emit eventAudioStateChange(ev.id, ev.data);
+            break;
+        case DecodedEvent::LogEvent:
+            emit logEventLoaded(ev.data);
+            break;
+
+        case DecodedEvent::Unknown:
+        case DecodedEvent::Malformed:
+            //Event types the UI does not consume, and frames the decoder
+            //refused. Both were already dropped before T17.
+            break;
+        }
+    }
+}
+
 void CalaosConnection::processEventsV2(QString msg)
 {
     if (msg == "") return;
@@ -1063,46 +1074,7 @@ void CalaosConnection::processEventsV2(QString msg)
     qDebug().noquote() << "Received: " << msg;
 #endif
 
-    QStringList spl = msg.split(' ');
-
-    if (spl.at(0) == "output" || spl.at(0) == "input")
-    {
-        if (spl.size() < 3) return;
-
-        QString id = QUrl::fromPercentEncoding(spl.at(1).toLocal8Bit());
-        QStringList s = QUrl::fromPercentEncoding(spl.at(2).toLocal8Bit()).split(':');
-        QString val;
-        if (s.size() > 1) val = s.at(1);
-
-        if (spl.at(0) == "input")
-            emit eventInputChange(id, s.at(0), val);
-        else
-            emit eventOutputChange(id, s.at(0), val);
-    }
-    else if (spl.at(0) == "audio_volume")
-    {
-        if (spl.count() < 4) return;
-
-        emit eventAudioVolumeChange(spl.at(1), Common::toDoubleSafe(spl.at(3), 0.0, "audio_volume event"));
-    }
-    else if (spl.at(0) == "audio_status")
-    {
-        if (spl.count() < 3)
-        {
-            qWarning() << "Malformed audio_status event: " << msg;
-            return;
-        }
-
-        emit eventAudioStatusChange(spl.at(1), spl.at(2));
-    }
-    else if (spl.at(0) == "audio")
-    {
-        if (spl.count() > 2 &&
-            spl.at(2) == "songchanged")
-            emit eventAudioChange(spl.at(1));
-    }
-
-    //TODO all other event types
+    dispatchEvents(CalaosEventDecoder::decodeEventV2(msg));
 }
 
 void CalaosConnection::processEventsV3(QVariantMap msg)
@@ -1111,41 +1083,7 @@ void CalaosConnection::processEventsV3(QVariantMap msg)
     //qDebug().noquote() << "Received: " << msg["event_raw"];
 #endif
 
-    QVariantMap data = msg["data"].toMap();
-    if (msg["type_str"].toString() == "io_changed")
-    {
-        for (auto it = data.begin();it != data.end();it++)
-        {
-            if (it.key() == "id") continue;
-            emit eventInputChange(data["id"].toString(), it.key(), it.value().toString());
-            emit eventOutputChange(data["id"].toString(), it.key(), it.value().toString());
-        }
-    }
-    else if (msg["type_str"].toString() == "audio_volume_changed")
-    {
-        emit eventAudioVolumeChange(data["player_id"].toString(), Common::toDoubleSafe(data["volume"], 0.0, "audio_volume_changed.volume"));
-    }
-    else if (msg["type_str"].toString() == "audio_status_changed")
-    {
-        emit eventAudioStatusChange(data["player_id"].toString(), data["state"].toString());
-    }
-    else if (msg["type_str"].toString() == "audio_song_changed")
-    {
-        emit eventAudioChange(data["player_id"].toString());
-    }
-    else if (msg["type_str"].toString() == "touchscreen_camera_request")
-    {
-        emit eventTouchscreenCamera(data["id"].toString());
-    }
-    else if (msg["type_str"].toString() == "io_status_changed")
-    {
-        if (data.contains("id"))
-        {
-            emit eventIoStatusChange(data["id"].toString(), data);
-        }
-    }
-
-    //TODO all other event types
+    dispatchEvents(CalaosEventDecoder::decodeEventV3(msg));
 }
 
 void CalaosConnection::onWsTextMessageReceived(const QString &message)
@@ -1215,20 +1153,8 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
     else if (jroot["msg"] == "get_state")
     {
         //emit event for specific input/output change
-        for (auto it = jdata.constBegin();it != jdata.constEnd();it++)
-        {
-            if (it.value().isString())
-            {
-                QVariantMap m = { { "id", it.key() },
-                                  { "state", it.value().toString() }};
-                emit eventInputStateChange(m);
-                emit eventOutputStateChange(m);
-            }
-            else
-            {
-                emit eventAudioStateChange(it.key(), it.value().toObject().toVariantMap());
-            }
-        }
+        dispatchEvents(CalaosEventDecoder::decodeStateMap(jdata.toVariantMap(),
+                                                          CalaosEventDecoder::StrictString));
     }
     else if (jroot["msg"] == "eventlog")
     {

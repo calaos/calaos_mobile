@@ -37,5 +37,6 @@
         <file>qml/SharedComponents/ScrollingText.qml</file>
         <file>qml/SharedComponents/SensorStatusIcon.qml</file>
         <file>qml/SharedComponents/IOSwitch.qml</file>
+        <file>qml/SharedComponents/IOBinaryDevice.qml</file>
     </qresource>
 </RCC>

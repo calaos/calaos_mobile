@@ -3,10 +3,15 @@ module SharedComponents
 CalaosItemBase 1.0 CalaosItemBase.qml
 CalaosSlider 1.0 CalaosSlider.qml
 Fonts 1.0 Fonts.qml
+IOBinaryDevice 1.0 IOBinaryDevice.qml
+IOBoiler 1.0 IOBoiler.qml
 IOFavAllLights 1.0 IOFavAllLights.qml
+IOHeater 1.0 IOHeater.qml
 IOLight 1.0 IOLight.qml
 IOLightDimmer 1.0 IOLightDimmer.qml
 IOLightRGB 1.0 IOLightRGB.qml
+IOOutlet 1.0 IOOutlet.qml
+IOPump 1.0 IOPump.qml
 IOScenario 1.0 IOScenario.qml
 IOShutter 1.0 IOShutter.qml
 IOShutterSmart 1.0 IOShutterSmart.qml

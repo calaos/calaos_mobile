@@ -1,62 +1,11 @@
-import QtQuick
-import QtQuick.Layouts
 import "."
 
-ItemBase {
-    property variant modelData
+//Static heater icon swapped on state change.
+IOBinaryDevice {
+    iconOn: "icon_heater_on"
+    iconOff: "icon_heater_off"
 
-    RowLayout {
-
-        anchors {
-            left: parent.left; leftMargin: Units.dp(8)
-            right: parent.right; rightMargin: Units.dp(8)
-            verticalCenter: parent.verticalCenter
-        }
-
-        IconItem {
-            id: icon
-
-            source: calaosApp.getPictureSized(modelData.stateBool?"icon_heater_on":"icon_heater_off")
-
-            Layout.preferredHeight: height
-            Layout.preferredWidth: width
-        }
-
-        ScrollingText {
-            color: modelData.stateBool?"#ffda5a":"#3ab4d7"
-            font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 12 }
-            text: modelData.ioName
-            clip: true
-            Layout.fillWidth: true
-
-            Behavior on color { ColorAnimation { duration: 200 } }
-        }
-
-        SensorStatusIcon {
-            sensor: modelData
-        }
-
-        //buttons go from deactivate to activate, left to right: in a RowLayout
-        //the declaration order is the visual order, unlike the anchors this
-        //code used to rely on
-        ItemButtonAction {
-            id: btoff
-            iconSource: "qrc:/img/ic_outlet_off.svg"
-
-            onButtonClicked: {
-                feedbackAnim()
-                modelData.sendFalse()
-            }
-        }
-
-        ItemButtonAction {
-            id: bton
-            iconSource: "qrc:/img/ic_outlet_on.svg"
-
-            onButtonClicked: {
-                feedbackAnim()
-                modelData.sendTrue()
-            }
-        }
-    }
+    //off first then on: same deactivate to activate order as the buttons
+    buttonIconOff: "qrc:/img/ic_outlet_off.svg"
+    buttonIconOn: "qrc:/img/ic_outlet_on.svg"
 }

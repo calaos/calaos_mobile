@@ -1,6 +1,7 @@
 #include "RoomModel.h"
 #include <QDebug>
 #include "HardwareUtils.h"
+#include "IOTypeRegistry.h"
 #include <qfappdispatcher.h>
 
 IOBase *IOCache::searchInput(QString id)
@@ -128,7 +129,7 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
         QVariantMap r = it->toMap();
 
         if (r["gui_type"].toString() == "")
-            r["gui_type"] = detectOldGuiType(r["type"].toString());
+            r["gui_type"] = IOTypeRegistry::legacyGuiType(r["type"].toString());
 
         IOBase *io = new IOBase(engine, connection, IOBase::IOInput);
         io->load(r);
@@ -137,7 +138,7 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
         IOCache::Instance().addInput(io);
 
         //create scenario items
-        if (r["gui_type"] == "scenario" && scenarioModel)
+        if (io->get_ioType() == Common::Scenario && scenarioModel)
         {
             IOBase *io = IOCache::Instance().searchInput(r["id"].toString())->cloneIO();
             scenarioModel->appendRow(io);
@@ -147,17 +148,16 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
         if (r["visible"] != "true")
             continue;
 
-        if (r["gui_type"] == "temp" ||
-            r["gui_type"] == "analog_in" ||
-            r["gui_type"] == "scenario" ||
-            r["gui_type"] == "string_in" ||
-            r["gui_type"] == "switch")
+        /* Which types belong to a room view is a property of the type itself:
+         * see src/IOTypeRegistry.h. Styled switches (door, smoke...) are
+         * covered by the same row as a plain switch was. */
+        if (IOTypeRegistry::isRoomVisibleInput(io->get_ioType()))
         {
             IOBase *io = IOCache::Instance().searchInput(r["id"].toString())->cloneIO();
             appendRow(io);
         }
 
-        if (r["gui_type"] == "temp" &&
+        if (io->get_ioType() == Common::Temp &&
             !temperatureIo)
         {
             temperatureIo = io;
@@ -176,7 +176,7 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
         QVariantMap r = it->toMap();
 
         if (r["gui_type"].toString() == "")
-            r["gui_type"] = detectOldGuiType(r["type"].toString());
+            r["gui_type"] = IOTypeRegistry::legacyGuiType(r["type"].toString());
 
         IOBase *io = new IOBase(engine, connection, IOBase::IOOutput);
         connect(io, SIGNAL(light_on(IOBase*)), this, SIGNAL(sig_light_on(IOBase*)));
@@ -188,11 +188,9 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
 
         if (load_flag == RoomModel::LoadAll)
         {
-            if (r["gui_type"] == "audio_output" ||
-                r["gui_type"] == "camera_output" ||
-                r["gui_type"] == "fav_all_lights" ||
-                r["gui_type"] == "audio_player" ||
-                r["gui_type"] == "camera")
+            /* Matched on the gui_type and not on the IOType: two of those
+             * names are legacy ones with no IOType of their own. */
+            if (IOTypeRegistry::isMediaGuiType(r["gui_type"].toString()))
             {
                 IOBase *io = IOCache::Instance().searchOutput(r["id"].toString())->cloneIO();
                 appendRow(io);
@@ -203,16 +201,8 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
         if (r["visible"] != "true")
             continue;
 
-        if (r["gui_type"] == "light" ||
-            r["gui_type"] == "light_dimmer" ||
-            r["gui_type"] == "light_rgb" ||
-            r["gui_type"] == "analog_out" ||
-            r["gui_type"] == "shutter" ||
-            r["gui_type"] == "shutter_smart" ||
-            r["gui_type"] == "var_bool" ||
-            r["gui_type"] == "var_int" ||
-            r["gui_type"] == "var_string" ||
-            r["gui_type"] == "string_out")
+        //Styled lights (pump, outlet...) are covered by the "light" row.
+        if (IOTypeRegistry::isRoomVisibleOutput(io->get_ioType()))
         {
             IOBase *io = IOCache::Instance().searchOutput(r["id"].toString())->cloneIO();
             appendRow(io);
@@ -284,7 +274,7 @@ void IOBase::load(const QVariantMap &io)
     update_ioStyle(ioData["io_style"].toString());
     update_hasWarning(ioData["value_warning"].toString() == "true");
 
-    if (ioData["gui_type"].toString() == "light_rgb")
+    if (m_ioType == Common::LightRgb)
     {
         if (connection->isHttpApiV2())
             update_rgbColor(QColor(getStateRed(), getStateGreen(), getStateBlue()));
@@ -305,13 +295,15 @@ void IOBase::load(const QVariantMap &io)
 
 void IOBase::checkFirstState()
 {
-    if (get_ioType() == Common::Light)
+    /* "Is this a light, and is its state a boolean or a level?" is answered by
+     * the registry (src/IOTypeRegistry.h): the styled lights (pump, outlet,
+     * boiler, heater) are lights here too, and feed the light counter. */
+    if (IOTypeRegistry::isBinaryLight(get_ioType()))
     {
         if (getStateBool())
             emit light_on(this);
     }
-    else if (get_ioType() == Common::LightDimmer ||
-             get_ioType() == Common::LightRgb)
+    else if (IOTypeRegistry::isDimmableLight(get_ioType()))
     {
         /* Outside the v2 API the state of an RGB io is a color string
          * ("#ff0000"), not a number: feeding it to getStateInt() already
@@ -575,7 +567,8 @@ void IOBase::outputChanged(QString id, QString key, QString value)
 
     if (key == "state")
     {
-        if (get_ioType() == Common::Light)
+        //Same reading of the type as checkFirstState(), see above.
+        if (IOTypeRegistry::isBinaryLight(get_ioType()))
         {
             if (getStateBool() != (value == "true"))
             {
@@ -586,8 +579,7 @@ void IOBase::outputChanged(QString id, QString key, QString value)
                     emit light_off(this);
             }
         }
-        else if (get_ioType() == Common::LightDimmer ||
-                 get_ioType() == Common::LightRgb)
+        else if (IOTypeRegistry::isDimmableLight(get_ioType()))
         {
             if (connection->isHttpApiV2() || get_ioType() == Common::LightDimmer)
             {
@@ -739,98 +731,4 @@ QObject *ScenarioSortModel::getItemModel(int idx)
     IOBase *obj = dynamic_cast<IOBase *>(scModel->item(indexToSource(idx)));
     if (obj) engine->setObjectOwnership(obj, QQmlEngine::CppOwnership);
     return obj;
-}
-
-QString RoomModel::detectOldGuiType(QString type)
-{
-    if (type == "InputTime") return "time";
-    else if (type == "InPlageHoraire") return "time_range";
-    else if (type == "TimeRange") return "time_range";
-    else if (type == "GpioInputSwitch") return "switch";
-    else if (type == "GpioInputSwitchLongPress") return "switch_long";
-    else if (type == "GpioInputSwitchTriple") return "switch3";
-    else if (type == "OWTemp") return "temp";
-    else if (type == "WIAnalog") return "analog_in";
-    else if (type == "WagoInputAnalog") return "analog_in";
-    else if (type == "WIDigitalBP") return "switch";
-    else if (type == "WIDigital") return "switch";
-    else if (type == "WagoInputSwitch") return "switch";
-    else if (type == "WIDigitalLong") return "switch_long";
-    else if (type == "WagoInputSwitchLongPress") return "switch_long";
-    else if (type == "WIDigitalTriple") return "switch3";
-    else if (type == "WagoInputSwitchTriple") return "switch3";
-    else if (type == "WITemp") return "temp";
-    else if (type == "WagoInputTemp") return "temp";
-    else if (type == "WebInputSwitch") return "switch";
-    else if (type == "WebInputAnalog") return "analog_in";
-    else if (type == "WebInputTemp") return "temp";
-    else if (type == "WebInputString") return "string_in";
-    else if (type == "ZibaseTemp") return "temp";
-    else if (type == "ZibaseAnalogIn") return "analog_in";
-    else if (type == "ZibaseDigitalIn") return "switch";
-    else if (type == "MySensorsInputAnalog") return "analog_in";
-    else if (type == "MySensorsInputString") return "string_in";
-    else if (type == "MySensorsInputSwitch") return "switch";
-    else if (type == "MySensorsInputSwitchLongPress") return "switch_long";
-    else if (type == "MySensorsInputSwitchTriple") return "switch3";
-    else if (type == "MySensorsInputTemp") return "temp";
-    else if (type == "PingInputSwitch") return "switch";
-    else if (type == "KNXInputSwitch") return "switch";
-    else if (type == "KNXInputAnalog") return "analog_in";
-    else if (type == "KNXInputSwitchLongPress") return "switch_long";
-    else if (type == "KNXInputSwitchTriple") return "switch3";
-    else if (type == "KNXInputTemp") return "temp";
-    else if (type == "OutputFake") return "light";
-    else if (type == "GpioOutputSwitch") return "light";
-    else if (type == "GpioOutputShutter") return "shutter";
-    else if (type == "GpioOutputShutterSmart") return "shutter_smart";
-    else if (type == "WOAnalog") return "analog_out";
-    else if (type == "WagoOutputAnalog") return "analog_out";
-    else if (type == "WODali") return "light_dimmer";
-    else if (type == "WagoOutputDimmer") return "light_dimmer";
-    else if (type == "WODaliRVB") return "light_rgb";
-    else if (type == "WagoOutputDimmerRGB") return "light_rgb";
-    else if (type == "WODigital") return "light";
-    else if (type == "WagoOutputLight") return "light";
-    else if (type == "WOVolet") return "shutter";
-    else if (type == "WagoOutputShutter") return "shutter";
-    else if (type == "WOVoletSmart") return "shutter_smart";
-    else if (type == "WagoOutputShutterSmart") return "shutter_smart";
-    else if (type == "X10Output") return "light";
-    else if (type == "WebOutputString") return "string_out";
-    else if (type == "WebOutputLight") return "light";
-    else if (type == "WebOutputLightRGB") return "light_rgb";
-    else if (type == "ZibaseDigitalOut") return "light";
-    else if (type == "MySensorsOutputAnalog") return "analog_out";
-    else if (type == "MySensorsOutputDimmer") return "light_dimmer";
-    else if (type == "MySensorsOutputLight") return "light";
-    else if (type == "MySensorsOutputLightRGB") return "light_rgb";
-    else if (type == "MySensorsOutputShutter") return "shutter";
-    else if (type == "MySensorsOutputShutterSmart") return "shutter_smart";
-    else if (type == "MySensorsOutputString") return "string_out";
-    else if (type == "OLAOutputLightDimmer") return "light_dimmer";
-    else if (type == "OLAOutputLightRGB") return "light_rgb";
-    else if (type == "WOLOutputBool") return "var_bool";
-    else if (type == "KNXOutputLight") return "light";
-    else if (type == "KNXOutputAnalog") return "analog_out";
-    else if (type == "KNXOutputLightDimmer") return "light_dimmer";
-    else if (type == "KNXOutputLightRGB") return "light_rgb";
-    else if (type == "KNXOutputShutter") return "shutter";
-    else if (type == "KNXOutputShutterSmart") return "shutter_smart";
-    else if (type == "HueOutputLightRGB") return "light_rgb";
-    else if (type == "InputTimer") return "timer";
-    else if (type == "Scenario") return "scenario";
-    else if (type == "InternalInt") return "var_int";
-    else if (type == "InternalBool") return "var_bool";
-    else if (type == "InternalString") return "var_string";
-    else if (type == "AVReceiver") return "avreceiver";
-    else if (type == "slim") return "audio";
-    else if (type == "Squeezebox") return "audio";
-    else if (type == "Axis") return "camera";
-    else if (type == "Gadspot") return "camera";
-    else if (type == "Planet") return "camera";
-    else if (type == "StandardMjpeg") return "camera";
-    else if (type == "standard_mjpeg") return "camera";
-
-    return QString();
 }

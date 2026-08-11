@@ -12,6 +12,12 @@
  * La table `ioTypeCases()` est la référence unique, et `enumCoverageIsComplete()`
  * vérifie via QMetaEnum qu'elle couvre exactement l'enum déclaré dans Common.h :
  * ajouter une valeur à l'enum sans l'ajouter ici fait échouer les tests.
+ *
+ * La seconde moitié du fichier couvre src/IOTypeRegistry.cpp, à qui Common
+ * délègue depuis T16 : catégorie, « est-ce une lumière », visibilité dans une
+ * pièce et table du protocole historique. Ces tests vivent ici (et non dans un
+ * tst_iotyperegistry/) parce que les deux fichiers forment un seul contrat et
+ * sont liés ensemble.
  */
 
 #include <QtTest>
@@ -20,6 +26,7 @@
 #include <QVector>
 
 #include "Common.h"
+#include "IOTypeRegistry.h"
 
 namespace {
 
@@ -29,66 +36,60 @@ struct IOTypeCase
     const char *name;   //nom de la valeur d'enum, sert de tag de données
     const char *type;   //chaîne de type attendue/acceptée
     const char *style;  //style discriminant ("" si aucun)
-
-    /* false => IOTypeToString() rend actuellement une chaîne vide pour cette
-     * valeur : elle n'a pas de case dans le switch de Common.cpp. Le round-trip
-     * est alors impossible (cf. ioTypeRoundTrip / QEXPECT_FAIL). */
-    bool toStringSupported;
 };
 
 const QVector<IOTypeCase> &ioTypeCases()
 {
     static const QVector<IOTypeCase> cases = {
-        { Common::Unkown,               "Unkown",               "",              "",                true  },
-        { Common::Light,                "Light",                "light",         "",                true  },
-        { Common::Temp,                 "Temp",                 "temp",          "",                true  },
-        { Common::AnalogIn,             "AnalogIn",             "analog_in",     "",                true  },
-        { Common::AnalogOut,            "AnalogOut",            "analog_out",    "",                true  },
-        { Common::LightDimmer,          "LightDimmer",          "light_dimmer",  "",                true  },
-        { Common::LightRgb,             "LightRgb",             "light_rgb",     "",                true  },
-        { Common::Shutter,              "Shutter",              "shutter",       "",                true  },
-        { Common::ShutterSmart,         "ShutterSmart",         "shutter_smart", "",                true  },
-        { Common::VarBool,              "VarBool",              "var_bool",      "",                true  },
-        { Common::VarInt,               "VarInt",               "var_int",       "",                true  },
-        { Common::VarString,            "VarString",            "var_string",    "",                true  },
-        { Common::Scenario,             "Scenario",             "scenario",      "",                true  },
-        { Common::AVReceiver,           "AVReceiver",           "avreceiver",    "",                true  },
-        { Common::StringIn,             "StringIn",             "string_in",     "",                true  },
-        { Common::StringOut,            "StringOut",            "string_out",    "",                true  },
-        { Common::Timer,                "Timer",                "timer",         "",                true  },
-        { Common::Time,                 "Time",                 "time",          "",                true  },
-        { Common::TimeRange,            "TimeRange",            "time_range",    "",                true  },
-        { Common::Switch,               "Switch",               "switch",        "",                true  },
-        { Common::Switch3,              "Switch3",              "switch3",       "",                true  },
-        { Common::SwitchLong,           "SwitchLong",           "switch_long",   "",                true  },
-        { Common::AudioInput,           "AudioInput",           "audio_input",   "",                true  },
-        { Common::AudioOutput,          "AudioOutput",          "audio_output",  "",                true  },
-        { Common::CameraInput,          "CameraInput",          "camera_input",  "",                true  },
-        { Common::CameraOutput,         "CameraOutput",         "camera_output", "",                true  },
-        { Common::FavoritesLightsCount, "FavoritesLightsCount", "fav_all_lights","",                true  },
+        { Common::Unkown,               "Unkown",               "",              "" },
+        { Common::Light,                "Light",                "light",         "" },
+        { Common::Temp,                 "Temp",                 "temp",          "" },
+        { Common::AnalogIn,             "AnalogIn",             "analog_in",     "" },
+        { Common::AnalogOut,            "AnalogOut",            "analog_out",    "" },
+        { Common::LightDimmer,          "LightDimmer",          "light_dimmer",  "" },
+        { Common::LightRgb,             "LightRgb",             "light_rgb",     "" },
+        { Common::Shutter,              "Shutter",              "shutter",       "" },
+        { Common::ShutterSmart,         "ShutterSmart",         "shutter_smart", "" },
+        { Common::VarBool,              "VarBool",              "var_bool",      "" },
+        { Common::VarInt,               "VarInt",               "var_int",       "" },
+        { Common::VarString,            "VarString",            "var_string",    "" },
+        { Common::Scenario,             "Scenario",             "scenario",      "" },
+        { Common::AVReceiver,           "AVReceiver",           "avreceiver",    "" },
+        { Common::StringIn,             "StringIn",             "string_in",     "" },
+        { Common::StringOut,            "StringOut",            "string_out",    "" },
+        { Common::Timer,                "Timer",                "timer",         "" },
+        { Common::Time,                 "Time",                 "time",          "" },
+        { Common::TimeRange,            "TimeRange",            "time_range",    "" },
+        { Common::Switch,               "Switch",               "switch",        "" },
+        { Common::Switch3,              "Switch3",              "switch3",       "" },
+        { Common::SwitchLong,           "SwitchLong",           "switch_long",   "" },
+        { Common::AudioInput,           "AudioInput",           "audio_input",   "" },
+        { Common::AudioOutput,          "AudioOutput",          "audio_output",  "" },
+        { Common::CameraInput,          "CameraInput",          "camera_input",  "" },
+        { Common::CameraOutput,         "CameraOutput",         "camera_output", "" },
+        { Common::FavoritesLightsCount, "FavoritesLightsCount", "fav_all_lights","" },
 
         //Types stylés : même chaîne de type que Light, discriminés par le style.
-        { Common::Pump,                 "Pump",                 "light",         "pump",            true  },
-        { Common::Outlet,               "Outlet",               "light",         "outlet",          true  },
-        { Common::Heater,               "Heater",               "light",         "heater",          true  },
-        { Common::Boiler,               "Boiler",               "light",         "boiler",          true  },
+        { Common::Pump,                 "Pump",                 "light",         "pump" },
+        { Common::Outlet,               "Outlet",               "light",         "outlet" },
+        { Common::Heater,               "Heater",               "light",         "heater" },
+        { Common::Boiler,               "Boiler",               "light",         "boiler" },
 
-        /* Capteurs binaires : même chaîne de type que Switch, discriminés par le
-         * style. IOTypeToString() ne les gère pas (pas de case dans le switch de
-         * Common.cpp) et rend une chaîne vide : le round-trip est cassé pour eux.
-         * Voir T16 (IOTypeRegistry) — quand ce sera corrigé, passer le dernier
-         * champ à true et retirer le QEXPECT_FAIL correspondant. */
-        { Common::DoorSensor,           "DoorSensor",           "switch",        "door",            false },
-        { Common::OccupancySensor,      "OccupancySensor",      "switch",        "occupancy",       false },
-        { Common::SmokeSensor,          "SmokeSensor",          "switch",        "smoke",           false },
-        { Common::WaterLeakSensor,      "WaterLeakSensor",      "switch",        "water",           false },
-        { Common::GasLeakSensor,        "GasLeakSensor",        "switch",        "gas",             false },
-        { Common::CO2Sensor,            "CO2Sensor",            "switch",        "carbon_monoxide", false },
-        { Common::SoundSensor,          "SoundSensor",          "switch",        "sound",           false },
-        { Common::MotionSensor,         "MotionSensor",         "switch",        "motion",          false },
-        { Common::VibrationSensor,      "VibrationSensor",      "switch",        "vibration",       false },
-        { Common::LockSensor,           "LockSensor",           "switch",        "lock",            false },
-        { Common::GarageDoorSensor,     "GarageDoorSensor",     "switch",        "garage_door",     false },
+        /* Capteurs binaires : même chaîne de type que Switch, discriminés par
+         * le style, exactement comme les types stylés ci-dessus. Le registre
+         * (T16) les décrit sur la même ligne que le reste, donc IOTypeToString()
+         * rend « switch » et le round-trip est l'identité pour eux aussi. */
+        { Common::DoorSensor,           "DoorSensor",           "switch",        "door" },
+        { Common::OccupancySensor,      "OccupancySensor",      "switch",        "occupancy" },
+        { Common::SmokeSensor,          "SmokeSensor",          "switch",        "smoke" },
+        { Common::WaterLeakSensor,      "WaterLeakSensor",      "switch",        "water" },
+        { Common::GasLeakSensor,        "GasLeakSensor",        "switch",        "gas" },
+        { Common::CO2Sensor,            "CO2Sensor",            "switch",        "carbon_monoxide" },
+        { Common::SoundSensor,          "SoundSensor",          "switch",        "sound" },
+        { Common::MotionSensor,         "MotionSensor",         "switch",        "motion" },
+        { Common::VibrationSensor,      "VibrationSensor",      "switch",        "vibration" },
+        { Common::LockSensor,           "LockSensor",           "switch",        "lock" },
+        { Common::GarageDoorSensor,     "GarageDoorSensor",     "switch",        "garage_door" },
     };
 
     return cases;
@@ -136,6 +137,15 @@ private slots:
     void ioTypeFromStringUnknown_data();
     void ioTypeFromStringUnknown();
 
+    void registryCoversEveryIoType();
+    void registryProperties_data();
+    void registryProperties();
+    void registryStyleName();
+    void registryMediaGuiTypes();
+    void registryLegacyGuiType_data();
+    void registryLegacyGuiType();
+    void registryLegacyGuiTypeUnknown();
+
     void audioStatusRoundTrip_data();
     void audioStatusRoundTrip();
 
@@ -169,14 +179,12 @@ void TstCommon::fillIOTypeRows()
     QTest::addColumn<Common::IOType>("value");
     QTest::addColumn<QString>("type");
     QTest::addColumn<QString>("style");
-    QTest::addColumn<bool>("toStringSupported");
 
     for (const IOTypeCase &c: ioTypeCases())
     {
         QTest::newRow(c.name) << c.value
                               << QString::fromLatin1(c.type)
-                              << QString::fromLatin1(c.style)
-                              << c.toStringSupported;
+                              << QString::fromLatin1(c.style);
     }
 }
 
@@ -220,16 +228,6 @@ void TstCommon::ioTypeToString()
 {
     QFETCH(Common::IOType, value);
     QFETCH(QString, type);
-    QFETCH(bool, toStringSupported);
-
-    if (!toStringSupported)
-    {
-        //Comportement actuel documenté : pas de case dans le switch => chaîne vide.
-        QVERIFY2(Common::IOTypeToString(value).isEmpty(),
-                 "Cette valeur est maintenant gérée par IOTypeToString() : "
-                 "mettre toStringSupported à true dans ioTypeCases()");
-        return;
-    }
 
     QCOMPARE(Common::IOTypeToString(value), type);
 }
@@ -251,13 +249,6 @@ void TstCommon::ioTypeRoundTrip()
 {
     QFETCH(Common::IOType, value);
     QFETCH(QString, style);
-    QFETCH(bool, toStringSupported);
-
-    if (!toStringSupported)
-    {
-        QEXPECT_FAIL("", "IOTypeToString() ne gère pas les capteurs binaires stylés "
-                         "(chaîne vide) : round-trip impossible, cf. T16", Abort);
-    }
 
     QCOMPARE(Common::IOTypeFromString(Common::IOTypeToString(value), style), value);
 }
@@ -288,6 +279,318 @@ void TstCommon::ioTypeFromStringUnknown()
     QFETCH(Common::IOType, expected);
 
     QCOMPARE(Common::IOTypeFromString(type, style), expected);
+}
+
+/* ---------------------------------------------------------------------------
+ * T16 — le registre (src/IOTypeRegistry.h) derrière Common::IOType*.
+ *
+ * Il porte desormais TOUT ce que l'application derive du type d'un IO. Les
+ * colonnes ci-dessous figent ce contrat :
+ *   - categorie / isLight / dimmable : ce que RoomFilterModel, EventLogModel et
+ *     IOBase lisaient chacun de leur cote avant T16 ;
+ *   - visibleInput / visibleOutput : les trois listes de gui_type en dur de
+ *     RoomModel::load(), reprises telles quelles.
+ * ------------------------------------------------------------------------- */
+
+using Cat = IOTypeRegistry::Category;
+
+namespace {
+
+struct RegistryCase
+{
+    Common::IOType value;
+    Cat category;
+    bool isLight;
+    bool dimmable;
+    bool measurement;
+    bool visibleInput;
+    bool visibleOutput;
+};
+
+const QVector<RegistryCase> &registryCases()
+{
+    static const QVector<RegistryCase> cases = {
+    { Common::Unkown,               Cat::Other,    false, false, false, false, false },
+    { Common::Light,                Cat::Light,    true,  false, false, false, true  },
+    { Common::Pump,                 Cat::Light,    true,  false, false, false, true  },
+    { Common::Outlet,               Cat::Light,    true,  false, false, false, true  },
+    { Common::Boiler,               Cat::Light,    true,  false, false, false, true  },
+    { Common::Heater,               Cat::Light,    true,  false, false, false, true  },
+    { Common::LightDimmer,          Cat::Light,    true,  true,  false, false, true  },
+    { Common::LightRgb,             Cat::Light,    true,  true,  false, false, true  },
+    { Common::Shutter,              Cat::Shutter,  false, false, false, false, true  },
+    { Common::ShutterSmart,         Cat::Shutter,  false, false, false, false, true  },
+    { Common::Temp,                 Cat::Temp,     false, false, true,  true,  false },
+    { Common::AnalogIn,             Cat::Temp,     false, false, true,  true,  false },
+    { Common::AnalogOut,            Cat::Other,    false, false, false, false, true  },
+    { Common::VarBool,              Cat::Var,      false, false, false, false, true  },
+    { Common::VarInt,               Cat::Var,      false, false, true,  false, true  },
+    { Common::VarString,            Cat::Var,      false, false, false, false, true  },
+    { Common::Scenario,             Cat::Scenario, false, false, false, true,  false },
+    { Common::AVReceiver,           Cat::Media,    false, false, false, false, false },
+    { Common::AudioInput,           Cat::Media,    false, false, false, false, false },
+    { Common::AudioOutput,          Cat::Media,    false, false, false, false, false },
+    { Common::CameraInput,          Cat::Media,    false, false, false, false, false },
+    { Common::CameraOutput,         Cat::Media,    false, false, false, false, false },
+    { Common::StringIn,             Cat::Other,    false, false, false, true,  false },
+    { Common::StringOut,            Cat::Other,    false, false, false, false, true  },
+    { Common::Timer,                Cat::Other,    false, false, false, false, false },
+    { Common::Time,                 Cat::Other,    false, false, false, false, false },
+    { Common::TimeRange,            Cat::Other,    false, false, false, false, false },
+    { Common::Switch,               Cat::Other,    false, false, false, true,  false },
+    { Common::Switch3,              Cat::Other,    false, false, false, false, false },
+    { Common::SwitchLong,           Cat::Other,    false, false, false, false, false },
+    { Common::DoorSensor,           Cat::Sensor,   false, false, false, true,  false },
+    { Common::OccupancySensor,      Cat::Sensor,   false, false, false, true,  false },
+    { Common::SmokeSensor,          Cat::Sensor,   false, false, false, true,  false },
+    { Common::WaterLeakSensor,      Cat::Sensor,   false, false, false, true,  false },
+    { Common::GasLeakSensor,        Cat::Sensor,   false, false, false, true,  false },
+    { Common::CO2Sensor,            Cat::Sensor,   false, false, false, true,  false },
+    { Common::SoundSensor,          Cat::Sensor,   false, false, false, true,  false },
+    { Common::MotionSensor,         Cat::Sensor,   false, false, false, true,  false },
+    { Common::VibrationSensor,      Cat::Sensor,   false, false, false, true,  false },
+    { Common::LockSensor,           Cat::Sensor,   false, false, false, true,  false },
+    { Common::GarageDoorSensor,     Cat::Sensor,   false, false, false, true,  false },
+    { Common::FavoritesLightsCount, Cat::Other,    false, false, false, false, false },
+    };
+
+    return cases;
+}
+
+QString ioTypeName(Common::IOType t)
+{
+    const QMetaEnum me = ioTypeMetaEnum();
+    const char *key = me.isValid()? me.valueToKey(static_cast<int>(t)): nullptr;
+    return QString::fromLatin1(key? key: "<invalide>");
+}
+
+} //namespace
+
+/* Tout type connu de l'enum a une ligne dans le registre — sauf Unkown, qui est
+ * la reponse rendue quand rien ne correspond, pas un type que le serveur envoie. */
+void TstCommon::registryCoversEveryIoType()
+{
+    const QMetaEnum me = ioTypeMetaEnum();
+    QVERIFY(me.isValid());
+
+    for (int i = 0; i < me.keyCount(); i++)
+    {
+        const Common::IOType t = static_cast<Common::IOType>(me.value(i));
+        if (t == Common::Unkown)
+        {
+            QVERIFY(IOTypeRegistry::entry(t) == nullptr);
+            QVERIFY(IOTypeRegistry::guiType(t).isEmpty());
+            continue;
+        }
+
+        QVERIFY2(IOTypeRegistry::entry(t) != nullptr,
+                 qPrintable(QStringLiteral("%1 n'a pas de ligne dans IOTypeRegistry").arg(ioTypeName(t))));
+
+        //Aller-retour au niveau du registre lui-meme.
+        QCOMPARE(IOTypeRegistry::fromGuiType(IOTypeRegistry::guiType(t),
+                                             IOTypeRegistry::style(t)), t);
+    }
+
+    //La table de ce test couvre elle aussi tout l'enum.
+    QCOMPARE(registryCases().size(), me.keyCount());
+
+    /* Integrite de la table : un IOType par ligne, et un couple
+     * (gui_type, style) par ligne — sans quoi une ligne serait inatteignable. */
+    QSet<int> seenTypes;
+    QSet<QString> seenPairs;
+    for (const IOTypeRegistry::Entry &e: IOTypeRegistry::entries())
+    {
+        const int t = static_cast<int>(e.ioType);
+        QVERIFY2(!seenTypes.contains(t),
+                 qPrintable(QStringLiteral("%1 apparait deux fois dans le registre")
+                                .arg(ioTypeName(e.ioType))));
+        seenTypes.insert(t);
+
+        const QString pair = QString::fromLatin1(e.guiType) + QLatin1Char('/')
+                             + QString::fromLatin1(e.style);
+        QVERIFY2(!seenPairs.contains(pair),
+                 qPrintable(QStringLiteral("Couple (gui_type, style) en double : %1").arg(pair)));
+        seenPairs.insert(pair);
+    }
+
+    QCOMPARE(IOTypeRegistry::entries().size(), me.keyCount() - 1); //Unkown excepte
+}
+
+void TstCommon::registryProperties_data()
+{
+    QTest::addColumn<Common::IOType>("value");
+    QTest::addColumn<int>("category");
+    QTest::addColumn<bool>("isLight");
+    QTest::addColumn<bool>("dimmable");
+    QTest::addColumn<bool>("measurement");
+    QTest::addColumn<bool>("visibleInput");
+    QTest::addColumn<bool>("visibleOutput");
+
+    for (const RegistryCase &c: registryCases())
+    {
+        QTest::newRow(qPrintable(ioTypeName(c.value)))
+            << c.value << static_cast<int>(c.category)
+            << c.isLight << c.dimmable << c.measurement
+            << c.visibleInput << c.visibleOutput;
+    }
+}
+
+void TstCommon::registryProperties()
+{
+    QFETCH(Common::IOType, value);
+    QFETCH(int, category);
+    QFETCH(bool, isLight);
+    QFETCH(bool, dimmable);
+    QFETCH(bool, measurement);
+    QFETCH(bool, visibleInput);
+    QFETCH(bool, visibleOutput);
+
+    QCOMPARE(static_cast<int>(IOTypeRegistry::category(value)), category);
+    QCOMPARE(IOTypeRegistry::isLight(value), isLight);
+    QCOMPARE(IOTypeRegistry::isDimmableLight(value), dimmable);
+    //Une lumiere est soit booleenne soit variable, jamais les deux.
+    QCOMPARE(IOTypeRegistry::isBinaryLight(value), isLight && !dimmable);
+    QCOMPARE(IOTypeRegistry::isMeasurement(value), measurement);
+    QCOMPARE(IOTypeRegistry::isRoomVisibleInput(value), visibleInput);
+    QCOMPARE(IOTypeRegistry::isRoomVisibleOutput(value), visibleOutput);
+}
+
+//Nom de la variante visuelle : le style s'il y en a un, le gui_type sinon.
+void TstCommon::registryStyleName()
+{
+    QCOMPARE(IOTypeRegistry::styleName(Common::Light), QStringLiteral("light"));
+    QCOMPARE(IOTypeRegistry::styleName(Common::Pump), QStringLiteral("pump"));
+    QCOMPARE(IOTypeRegistry::styleName(Common::Outlet), QStringLiteral("outlet"));
+    QCOMPARE(IOTypeRegistry::styleName(Common::Boiler), QStringLiteral("boiler"));
+    QCOMPARE(IOTypeRegistry::styleName(Common::Heater), QStringLiteral("heater"));
+    QCOMPARE(IOTypeRegistry::styleName(Common::DoorSensor), QStringLiteral("door"));
+    QVERIFY(IOTypeRegistry::styleName(Common::Unkown).isEmpty());
+}
+
+/* Les endpoints media d'une piece sont reconnus sur le gui_type : deux de ces
+ * noms sont des noms historiques sans IOType. */
+void TstCommon::registryMediaGuiTypes()
+{
+    QVERIFY(IOTypeRegistry::isMediaGuiType(QStringLiteral("audio_output")));
+    QVERIFY(IOTypeRegistry::isMediaGuiType(QStringLiteral("camera_output")));
+    QVERIFY(IOTypeRegistry::isMediaGuiType(QStringLiteral("fav_all_lights")));
+    QVERIFY(IOTypeRegistry::isMediaGuiType(QStringLiteral("audio_player")));
+    QVERIFY(IOTypeRegistry::isMediaGuiType(QStringLiteral("camera")));
+
+    QVERIFY(!IOTypeRegistry::isMediaGuiType(QStringLiteral("light")));
+    QVERIFY(!IOTypeRegistry::isMediaGuiType(QString()));
+}
+
+/* Table de verite figee de l'ancien RoomModel::detectOldGuiType() : ces 88
+ * lignes sont celles du protocole historique, reprises une a une. */
+void TstCommon::registryLegacyGuiType_data()
+{
+    QTest::addColumn<QString>("protocolType");
+    QTest::addColumn<QString>("guiType");
+
+    QTest::newRow("InputTime") << QStringLiteral("InputTime") << QStringLiteral("time");
+    QTest::newRow("InPlageHoraire") << QStringLiteral("InPlageHoraire") << QStringLiteral("time_range");
+    QTest::newRow("TimeRange") << QStringLiteral("TimeRange") << QStringLiteral("time_range");
+    QTest::newRow("GpioInputSwitch") << QStringLiteral("GpioInputSwitch") << QStringLiteral("switch");
+    QTest::newRow("GpioInputSwitchLongPress") << QStringLiteral("GpioInputSwitchLongPress") << QStringLiteral("switch_long");
+    QTest::newRow("GpioInputSwitchTriple") << QStringLiteral("GpioInputSwitchTriple") << QStringLiteral("switch3");
+    QTest::newRow("OWTemp") << QStringLiteral("OWTemp") << QStringLiteral("temp");
+    QTest::newRow("WIAnalog") << QStringLiteral("WIAnalog") << QStringLiteral("analog_in");
+    QTest::newRow("WagoInputAnalog") << QStringLiteral("WagoInputAnalog") << QStringLiteral("analog_in");
+    QTest::newRow("WIDigitalBP") << QStringLiteral("WIDigitalBP") << QStringLiteral("switch");
+    QTest::newRow("WIDigital") << QStringLiteral("WIDigital") << QStringLiteral("switch");
+    QTest::newRow("WagoInputSwitch") << QStringLiteral("WagoInputSwitch") << QStringLiteral("switch");
+    QTest::newRow("WIDigitalLong") << QStringLiteral("WIDigitalLong") << QStringLiteral("switch_long");
+    QTest::newRow("WagoInputSwitchLongPress") << QStringLiteral("WagoInputSwitchLongPress") << QStringLiteral("switch_long");
+    QTest::newRow("WIDigitalTriple") << QStringLiteral("WIDigitalTriple") << QStringLiteral("switch3");
+    QTest::newRow("WagoInputSwitchTriple") << QStringLiteral("WagoInputSwitchTriple") << QStringLiteral("switch3");
+    QTest::newRow("WITemp") << QStringLiteral("WITemp") << QStringLiteral("temp");
+    QTest::newRow("WagoInputTemp") << QStringLiteral("WagoInputTemp") << QStringLiteral("temp");
+    QTest::newRow("WebInputSwitch") << QStringLiteral("WebInputSwitch") << QStringLiteral("switch");
+    QTest::newRow("WebInputAnalog") << QStringLiteral("WebInputAnalog") << QStringLiteral("analog_in");
+    QTest::newRow("WebInputTemp") << QStringLiteral("WebInputTemp") << QStringLiteral("temp");
+    QTest::newRow("WebInputString") << QStringLiteral("WebInputString") << QStringLiteral("string_in");
+    QTest::newRow("ZibaseTemp") << QStringLiteral("ZibaseTemp") << QStringLiteral("temp");
+    QTest::newRow("ZibaseAnalogIn") << QStringLiteral("ZibaseAnalogIn") << QStringLiteral("analog_in");
+    QTest::newRow("ZibaseDigitalIn") << QStringLiteral("ZibaseDigitalIn") << QStringLiteral("switch");
+    QTest::newRow("MySensorsInputAnalog") << QStringLiteral("MySensorsInputAnalog") << QStringLiteral("analog_in");
+    QTest::newRow("MySensorsInputString") << QStringLiteral("MySensorsInputString") << QStringLiteral("string_in");
+    QTest::newRow("MySensorsInputSwitch") << QStringLiteral("MySensorsInputSwitch") << QStringLiteral("switch");
+    QTest::newRow("MySensorsInputSwitchLongPress") << QStringLiteral("MySensorsInputSwitchLongPress") << QStringLiteral("switch_long");
+    QTest::newRow("MySensorsInputSwitchTriple") << QStringLiteral("MySensorsInputSwitchTriple") << QStringLiteral("switch3");
+    QTest::newRow("MySensorsInputTemp") << QStringLiteral("MySensorsInputTemp") << QStringLiteral("temp");
+    QTest::newRow("PingInputSwitch") << QStringLiteral("PingInputSwitch") << QStringLiteral("switch");
+    QTest::newRow("KNXInputSwitch") << QStringLiteral("KNXInputSwitch") << QStringLiteral("switch");
+    QTest::newRow("KNXInputAnalog") << QStringLiteral("KNXInputAnalog") << QStringLiteral("analog_in");
+    QTest::newRow("KNXInputSwitchLongPress") << QStringLiteral("KNXInputSwitchLongPress") << QStringLiteral("switch_long");
+    QTest::newRow("KNXInputSwitchTriple") << QStringLiteral("KNXInputSwitchTriple") << QStringLiteral("switch3");
+    QTest::newRow("KNXInputTemp") << QStringLiteral("KNXInputTemp") << QStringLiteral("temp");
+    QTest::newRow("OutputFake") << QStringLiteral("OutputFake") << QStringLiteral("light");
+    QTest::newRow("GpioOutputSwitch") << QStringLiteral("GpioOutputSwitch") << QStringLiteral("light");
+    QTest::newRow("GpioOutputShutter") << QStringLiteral("GpioOutputShutter") << QStringLiteral("shutter");
+    QTest::newRow("GpioOutputShutterSmart") << QStringLiteral("GpioOutputShutterSmart") << QStringLiteral("shutter_smart");
+    QTest::newRow("WOAnalog") << QStringLiteral("WOAnalog") << QStringLiteral("analog_out");
+    QTest::newRow("WagoOutputAnalog") << QStringLiteral("WagoOutputAnalog") << QStringLiteral("analog_out");
+    QTest::newRow("WODali") << QStringLiteral("WODali") << QStringLiteral("light_dimmer");
+    QTest::newRow("WagoOutputDimmer") << QStringLiteral("WagoOutputDimmer") << QStringLiteral("light_dimmer");
+    QTest::newRow("WODaliRVB") << QStringLiteral("WODaliRVB") << QStringLiteral("light_rgb");
+    QTest::newRow("WagoOutputDimmerRGB") << QStringLiteral("WagoOutputDimmerRGB") << QStringLiteral("light_rgb");
+    QTest::newRow("WODigital") << QStringLiteral("WODigital") << QStringLiteral("light");
+    QTest::newRow("WagoOutputLight") << QStringLiteral("WagoOutputLight") << QStringLiteral("light");
+    QTest::newRow("WOVolet") << QStringLiteral("WOVolet") << QStringLiteral("shutter");
+    QTest::newRow("WagoOutputShutter") << QStringLiteral("WagoOutputShutter") << QStringLiteral("shutter");
+    QTest::newRow("WOVoletSmart") << QStringLiteral("WOVoletSmart") << QStringLiteral("shutter_smart");
+    QTest::newRow("WagoOutputShutterSmart") << QStringLiteral("WagoOutputShutterSmart") << QStringLiteral("shutter_smart");
+    QTest::newRow("X10Output") << QStringLiteral("X10Output") << QStringLiteral("light");
+    QTest::newRow("WebOutputString") << QStringLiteral("WebOutputString") << QStringLiteral("string_out");
+    QTest::newRow("WebOutputLight") << QStringLiteral("WebOutputLight") << QStringLiteral("light");
+    QTest::newRow("WebOutputLightRGB") << QStringLiteral("WebOutputLightRGB") << QStringLiteral("light_rgb");
+    QTest::newRow("ZibaseDigitalOut") << QStringLiteral("ZibaseDigitalOut") << QStringLiteral("light");
+    QTest::newRow("MySensorsOutputAnalog") << QStringLiteral("MySensorsOutputAnalog") << QStringLiteral("analog_out");
+    QTest::newRow("MySensorsOutputDimmer") << QStringLiteral("MySensorsOutputDimmer") << QStringLiteral("light_dimmer");
+    QTest::newRow("MySensorsOutputLight") << QStringLiteral("MySensorsOutputLight") << QStringLiteral("light");
+    QTest::newRow("MySensorsOutputLightRGB") << QStringLiteral("MySensorsOutputLightRGB") << QStringLiteral("light_rgb");
+    QTest::newRow("MySensorsOutputShutter") << QStringLiteral("MySensorsOutputShutter") << QStringLiteral("shutter");
+    QTest::newRow("MySensorsOutputShutterSmart") << QStringLiteral("MySensorsOutputShutterSmart") << QStringLiteral("shutter_smart");
+    QTest::newRow("MySensorsOutputString") << QStringLiteral("MySensorsOutputString") << QStringLiteral("string_out");
+    QTest::newRow("OLAOutputLightDimmer") << QStringLiteral("OLAOutputLightDimmer") << QStringLiteral("light_dimmer");
+    QTest::newRow("OLAOutputLightRGB") << QStringLiteral("OLAOutputLightRGB") << QStringLiteral("light_rgb");
+    QTest::newRow("WOLOutputBool") << QStringLiteral("WOLOutputBool") << QStringLiteral("var_bool");
+    QTest::newRow("KNXOutputLight") << QStringLiteral("KNXOutputLight") << QStringLiteral("light");
+    QTest::newRow("KNXOutputAnalog") << QStringLiteral("KNXOutputAnalog") << QStringLiteral("analog_out");
+    QTest::newRow("KNXOutputLightDimmer") << QStringLiteral("KNXOutputLightDimmer") << QStringLiteral("light_dimmer");
+    QTest::newRow("KNXOutputLightRGB") << QStringLiteral("KNXOutputLightRGB") << QStringLiteral("light_rgb");
+    QTest::newRow("KNXOutputShutter") << QStringLiteral("KNXOutputShutter") << QStringLiteral("shutter");
+    QTest::newRow("KNXOutputShutterSmart") << QStringLiteral("KNXOutputShutterSmart") << QStringLiteral("shutter_smart");
+    QTest::newRow("HueOutputLightRGB") << QStringLiteral("HueOutputLightRGB") << QStringLiteral("light_rgb");
+    QTest::newRow("InputTimer") << QStringLiteral("InputTimer") << QStringLiteral("timer");
+    QTest::newRow("Scenario") << QStringLiteral("Scenario") << QStringLiteral("scenario");
+    QTest::newRow("InternalInt") << QStringLiteral("InternalInt") << QStringLiteral("var_int");
+    QTest::newRow("InternalBool") << QStringLiteral("InternalBool") << QStringLiteral("var_bool");
+    QTest::newRow("InternalString") << QStringLiteral("InternalString") << QStringLiteral("var_string");
+    QTest::newRow("AVReceiver") << QStringLiteral("AVReceiver") << QStringLiteral("avreceiver");
+    QTest::newRow("slim") << QStringLiteral("slim") << QStringLiteral("audio");
+    QTest::newRow("Squeezebox") << QStringLiteral("Squeezebox") << QStringLiteral("audio");
+    QTest::newRow("Axis") << QStringLiteral("Axis") << QStringLiteral("camera");
+    QTest::newRow("Gadspot") << QStringLiteral("Gadspot") << QStringLiteral("camera");
+    QTest::newRow("Planet") << QStringLiteral("Planet") << QStringLiteral("camera");
+    QTest::newRow("StandardMjpeg") << QStringLiteral("StandardMjpeg") << QStringLiteral("camera");
+    QTest::newRow("standard_mjpeg") << QStringLiteral("standard_mjpeg") << QStringLiteral("camera");
+}
+
+void TstCommon::registryLegacyGuiType()
+{
+    QFETCH(QString, protocolType);
+    QFETCH(QString, guiType);
+
+    QCOMPARE(IOTypeRegistry::legacyGuiType(protocolType), guiType);
+}
+
+//Un type inconnu (ou vide) ne produit pas de gui_type.
+void TstCommon::registryLegacyGuiTypeUnknown()
+{
+    QVERIFY(IOTypeRegistry::legacyGuiType(QStringLiteral("NoSuchBackendClass")).isEmpty());
+    QVERIFY(IOTypeRegistry::legacyGuiType(QString()).isEmpty());
 }
 
 void TstCommon::audioStatusRoundTrip_data()

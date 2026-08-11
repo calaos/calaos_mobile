@@ -1,5 +1,6 @@
 #include "EventLogModel.h"
 #include "RoomModel.h"
+#include "IOTypeRegistry.h"
 
 
 EventLogModel::EventLogModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent):
@@ -148,17 +149,13 @@ void EventLogItem::load(const QVariantMap &data)
         update_evTitle(io->get_ioName());
         update_evRoomName(io->get_room_name());
 
-        if (io->get_ioType() == Common::Light ||
-            io->get_ioType() == Common::Pump ||
-            io->get_ioType() == Common::Outlet ||
-            io->get_ioType() == Common::Boiler ||
-            io->get_ioType() == Common::Heater)
+        /* Lights whose state is a boolean: the plain one and the styled ones
+         * (pump, outlet, boiler, heater), which only differ by the icon they
+         * use. Both the list and the icon name come from the registry, see
+         * src/IOTypeRegistry.h. */
+        if (IOTypeRegistry::isBinaryLight(io->get_ioType()))
         {
-            QString style = "light";
-            if (io->get_ioType() == Common::Pump) style = "pump";
-            if (io->get_ioType() == Common::Outlet) style = "outlet";
-            if (io->get_ioType() == Common::Boiler) style = "boiler";
-            if (io->get_ioType() == Common::Heater) style = "heater";
+            const QString style = IOTypeRegistry::styleName(io->get_ioType());
 
             if (data["io_state"].toString() == "true")
             {
@@ -171,8 +168,7 @@ void EventLogItem::load(const QVariantMap &data)
                 update_evActionText(tr("Off"));
             }
         }
-        else if (io->get_ioType() == Common::LightDimmer ||
-                 io->get_ioType() == Common::LightRgb)
+        else if (IOTypeRegistry::isDimmableLight(io->get_ioType()))
         {
             if (Common::toDoubleSafe(data["io_state"], 0.0, "event.io_state") > 0)
             {
@@ -190,8 +186,7 @@ void EventLogItem::load(const QVariantMap &data)
             update_evIconSource("icon_temp");
             update_evActionText(tr("Temp changed"));
         }
-        else if (io->get_ioType() == Common::Shutter ||
-                 io->get_ioType() == Common::ShutterSmart)
+        else if (IOTypeRegistry::category(io->get_ioType()) == IOTypeRegistry::Category::Shutter)
         {
             if (data["io_state"].toString() == "true")
             {

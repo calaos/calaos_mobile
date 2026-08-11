@@ -47,8 +47,6 @@ void RoomModel::load(QVariantMap &, ScenarioModel *, int) {}
 void RoomModel::temperatureIoDestroyed() {}
 void RoomModel::temperatureIoChanged() {}
 
-QString RoomModel::detectOldGuiType(QString type) { return type; }
-
 //--- ScenarioModel / ScenarioSortModel ---------------------------------------
 // Jamais utilisés par le test, mais référencés par le moc de RoomModel.h.
 

@@ -125,8 +125,6 @@ private:
 
     QQmlApplicationEngine *engine;
     CalaosConnection *connection;
-
-    QString detectOldGuiType(QString type);
 };
 
 class IOBase: public QObject, public QStandardItem

@@ -2,6 +2,7 @@
 #define CAMERAMODEL_H
 
 #include <QObject>
+#include <QElapsedTimer>
 #include <QStandardItemModel>
 #include "qqmlhelpers.h"
 #include <QQmlApplicationEngine>
@@ -116,6 +117,9 @@ private:
     //running and startCamera() will not start another one.
     QTimer *pollTimer = nullptr;
     bool pollInFlight = false;
+    //When the last request went out, so that re-entering the camera view does
+    //not fire one immediately and let fast navigation raise the request rate.
+    QElapsedTimer sinceLastRequest;
 
     bool isV1 = false;
 };

@@ -24,13 +24,11 @@
  * revient exactement a ce qu'il etait avant.
  *
  * Ce que le correctif ne borne PAS, et que ces tests documentent plutot qu'ils
- * ne l'interdisent : startCamera() envoie une requete immediate quand aucune
- * chaine n'est armee, et stopCamera() desarme le timer sans memoriser la date
- * de la derniere requete. Afficher puis masquer la camera plus vite que
- * l'intervalle de polling coute donc une requete par affichage, sans plancher
- * temporel. Le debit pendant la rafale est borne par la cadence de navigation
- * (une requete par affichage), pas par l'intervalle de polling - c'est ce que
- * verifie burstBudget ci-dessous. Avant T15 c'etait bien pire : chaque
+ * l'interdisent : startCamera() respecte un plancher temporel base sur la date
+ * de la derniere requete, donc reafficher la camera plus vite que l'intervalle
+ * de polling ne declenche pas de requete immediate. Le debit pendant une rafale
+ * de navigation reste borne par l'intervalle de polling et non par la cadence
+ * de navigation - c'est ce que verifie burstBudget ci-dessous. Avant T15 chaque
  * affichage demarrait une chaine supplementaire qui survivait a la rafale, et
  * le debit restait durablement multiplie.
  *
@@ -368,7 +366,11 @@ void TstCameraPolling::rapidVisibilityTogglesDoNotMultiplyTheRate()
         //blows this bound apart as soon as a few toggles pile up.
         const double burstSecs = (burstEnd - refEnd) / 1000.0;
         const int burstCount = server->countIn(cam, refEnd, burstEnd);
-        const int burstBudget = shows + int(refRate * burstSecs) + 2;
+        //Le plancher temporel de startCamera() interdit desormais la requete
+        //immediate a l'entree : une rafale ne peut plus depasser ce que
+        //l'intervalle de polling autorise, quel que soit le rythme de
+        //navigation. Le budget ne depend donc plus du nombre d'affichages.
+        const int burstBudget = int(refRate * burstSecs) + 2;
         QVERIFY2(burstCount <= burstBudget,
                  qPrintable(QStringLiteral("%1: %2 requests during %3 shows (budget %4)")
                             .arg(cam).arg(burstCount).arg(shows).arg(burstBudget)));

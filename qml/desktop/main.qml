@@ -362,6 +362,11 @@ Window {
             type: ActionTypes.openCameraSingleView
             onDispatched: (filtertype, message) => {
                 cameraSingleModel = message.camModel
+                //handleBack() only re-enables the cameras when this is set, and
+                //nothing on the desktop ever set it: leaving the single camera
+                //view stopped every camera of the list underneath, which stayed
+                //frozen until the user left the media section and came back.
+                isSingleCameraView = true
                 stackView.push(cameraSingleView)
             }
         }

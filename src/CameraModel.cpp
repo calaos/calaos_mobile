@@ -40,11 +40,10 @@ CameraModel::CameraModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObj
                 qWarning() << "CameraModel: row" << i << "is not a CameraItem, skipping";
                 continue;
             }
+            //set_cameraVisible already starts or stops the chain through the
+            //item's own cameraVisibleChanged handler, calling it again here
+            //was one of the ways chains used to pile up.
             obj->set_cameraVisible(visible);
-            if (visible)
-                obj->startCamera();
-            else
-                obj->stopCamera();
         }
     });
 
@@ -71,6 +70,13 @@ void CameraModel::load(const QVariantMap &homeData)
         CameraItem *p = new CameraItem(connection, imageCache);
         p->load(r, i);
         appendRow(p);
+        //Fresh items default to hidden, but the model level property survives
+        //the reload. A reconnection while the camera view is open would
+        //otherwise leave every item hidden with the model still saying
+        //visible, and nothing would poll again until the user left the media
+        //section and came back.
+        if (get_cameraVisible())
+            p->set_cameraVisible(true);
     }
 }
 
@@ -312,6 +318,7 @@ void CameraItem::sendPictureRequest()
     //reply.
     pollInFlight = true;
     pollTimer->start(CameraPollWatchdogMs);
+    sinceLastRequest.start();
     connection->getCameraPicture(get_cameraId(), get_v1Url());
 }
 
@@ -331,6 +338,20 @@ void CameraItem::startCamera()
         //even if that reply never comes back.
         pollTimer->start(CameraPollWatchdogMs);
         return;
+    }
+
+    //Entering the view is not a reason to skip the poll interval. Without this,
+    //navigating in and out faster than the interval costs one request per
+    //entry: measured at 8.05 req/s per camera against 4.94 in steady state on
+    //60 ms toggles. Bounded, but it is still a rate increase.
+    if (sinceLastRequest.isValid())
+    {
+        const qint64 waited = sinceLastRequest.elapsed();
+        if (waited < CameraPollIntervalMs)
+        {
+            pollTimer->start(int(CameraPollIntervalMs - waited));
+            return;
+        }
     }
 
     qDebug() << "Start camera " << get_cameraId();

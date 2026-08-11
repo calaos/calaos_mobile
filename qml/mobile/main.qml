@@ -387,5 +387,38 @@ Window {
                 stackView.push(sensorDetailView)
             }
         }
+
+        //An io asks for a new value: on mobile we use the platform's native
+        //input dialog. IOBase used to do this itself; it is a model, it has no
+        //business knowing that dialogs exist (T31).
+        Filter {
+            type: ActionTypes.openAskTextForIo
+            onDispatched: (filtertype, message) => {
+                rootWindow.askTextIo = message.io
+                hardwareUtils.inputTextDialog(qsTr("Change value"),
+                                              qsTr("Enter new value"))
+            }
+        }
+    }
+
+    //The io waiting for the native input dialog to come back, null when no
+    //dialog is pending. Guards against a stale answer being sent to the wrong
+    //io, which the old C++ path did not do on cancel.
+    property QtObject askTextIo: null
+
+    Connections {
+        target: hardwareUtils
+
+        function onDialogTextValid(text) {
+            if (!rootWindow.askTextIo)
+                return
+            var io = rootWindow.askTextIo
+            rootWindow.askTextIo = null
+            io.sendStringValue(text)
+        }
+
+        function onDialogCanceled() {
+            rootWindow.askTextIo = null
+        }
     }
 }

@@ -1,9 +1,7 @@
 #include "RoomModel.h"
 #include <QDebug>
-#include "HardwareUtils.h"
 #include "IOTypeRegistry.h"
 #include "JsonKeys.h"
-#include <qfappdispatcher.h>
 
 IOBase *IOCache::searchInput(QString id)
 {
@@ -73,10 +71,14 @@ ScenarioModel::ScenarioModel(QQmlApplicationEngine *eng, IOConnection *con, QObj
     setItemRoleNames(roles);
 }
 
+/* setObjectOwnership() is a static member of QQmlEngine: calling it through
+ * the engine pointer only looked like it needed one, and dereferenced null in
+ * the models built without an engine (unit tests). Same in the two other
+ * getItemModel() below. */
 QObject *ScenarioModel::getItemModel(int idx)
 {
     IOBase *obj = dynamic_cast<IOBase *>(item(idx));
-    if (obj) engine->setObjectOwnership(obj, QQmlEngine::CppOwnership);
+    if (obj) QQmlEngine::setObjectOwnership(obj, QQmlEngine::CppOwnership);
     return obj;
 }
 
@@ -216,7 +218,7 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
 QObject *RoomModel::getItemModel(int idx)
 {
     IOBase *obj = dynamic_cast<IOBase *>(item(idx));
-    if (obj) engine->setObjectOwnership(obj, QQmlEngine::CppOwnership);
+    if (obj) QQmlEngine::setObjectOwnership(obj, QQmlEngine::CppOwnership);
     return obj;
 }
 
@@ -698,26 +700,6 @@ void IOBase::ioStatusChanged(QString id, QVariantMap statusData)
     }
 }
 
-void IOBase::askStateText()
-{
-#if defined(CALAOS_MOBILE)
-    connect(HardwareUtils::Instance(), &HardwareUtils::dialogTextValid,
-            this, &IOBase::textDialogValid);
-    HardwareUtils::Instance()->inputTextDialog(tr("Change value"), tr("Enter new value"));
-#else
-    QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(engine);
-    QVariantMap m = {{ "io", QVariant::fromValue(this) }};
-    appDispatcher->dispatch("openAskTextForIo", m);
-#endif
-}
-
-void IOBase::textDialogValid(const QString &text)
-{
-    disconnect(HardwareUtils::Instance(), &HardwareUtils::dialogTextValid,
-               this, &IOBase::textDialogValid);
-    sendStringValue(text);
-}
-
 bool ScenarioSortModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
 {
     ScenarioModel *scModel = qobject_cast<ScenarioModel *>(sourceModel());
@@ -756,6 +738,6 @@ QObject *ScenarioSortModel::getItemModel(int idx)
     }
 
     IOBase *obj = dynamic_cast<IOBase *>(scModel->item(indexToSource(idx)));
-    if (obj) engine->setObjectOwnership(obj, QQmlEngine::CppOwnership);
+    if (obj) QQmlEngine::setObjectOwnership(obj, QQmlEngine::CppOwnership);
     return obj;
 }

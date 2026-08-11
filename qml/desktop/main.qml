@@ -364,6 +364,10 @@ Window {
                 stackView.push(cameraSingleView)
             }
         }
+        //An io asks for a new value. The action used to be dispatched from
+        //IOBase itself; the io is a model and no longer knows that dialogs
+        //exist, so IOVarString.qml dispatches it and we answer here with the
+        //virtual keyboard, the presentation this variant has (T31).
         Filter {
             type: ActionTypes.openAskTextForIo
 

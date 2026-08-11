@@ -212,7 +212,12 @@ public:
 
     Q_INVOKABLE void sendColor(QColor c);
 
-    Q_INVOKABLE void askStateText();
+    /* Asking the user for a new value is a UI concern: IOBase used to open the
+     * dialog itself (HardwareUtils on mobile, a quickflux dispatch on desktop),
+     * which is why this model could not be linked into a test without dragging
+     * in half the application. The QML that owns the io now dispatches
+     * ActionTypes.openAskTextForIo and each variant's main.qml decides how to
+     * ask; the answer comes back through sendStringValue() above. */
 
 private:
     QVariantMap ioData;
@@ -226,8 +231,6 @@ private slots:
     void inputChanged(QString id, QString key, QString value);
     void outputChanged(QString id, QString key, QString value);
     void ioStatusChanged(QString id, QVariantMap statusData);
-
-    void textDialogValid(const QString &text);
 
 signals:
     void stateChange();

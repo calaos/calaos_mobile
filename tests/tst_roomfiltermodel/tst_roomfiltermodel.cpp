@@ -13,10 +13,10 @@
  *   - resetCache() et lessThan() survivent à un item non-IOBase dans le modèle
  *     source (les dynamic_cast n'étaient pas vérifiés avant de déréférencer).
  *
- * LIMITE : src/RoomModel.cpp n'est pas lié (il tire HardwareUtils, quickflux et
- * QtQuick). Le test lie le vrai src/RoomModel.h avec la doublure de lien
- * roommodel_stub.cpp ; voir l'en-tête de ce fichier. Seul le comportement de
- * RoomModel::getItemModel() compte pour RoomFilterModel et il y est reproduit.
+ * T31 : le vrai src/RoomModel.cpp est maintenant lié. La doublure de lien
+ * roommodel_stub.cpp a disparu — IOBase n'ouvre plus la boîte de saisie
+ * elle-même, donc RoomModel.cpp ne tire plus ni HardwareUtils ni quickflux.
+ * Ce qui est testé ici est désormais le vrai RoomModel::getItemModel().
  */
 
 #include <QtTest>
@@ -88,7 +88,8 @@ const QVector<IODef> &ioDefs()
 
 IOBase *makeIo(const IODef &def)
 {
-    //engine et connection nuls : la doublure de lien ne les déréférence pas.
+    //engine et connection nuls : RoomFilterModel n'emprunte aucun chemin
+    //d'IOBase qui les déréférence (ni envoi de commande, ni checkFirstState).
     IOBase *io = new IOBase(nullptr, nullptr, static_cast<int>(def.type));
     io->update_ioType(def.type);
     io->update_ioId(QString::fromLatin1(def.id));

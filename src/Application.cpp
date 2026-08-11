@@ -256,6 +256,11 @@ void Application::createQmlApp()
     bookmarkModel = new BookmarkModel(this);
     engine.rootContext()->setContextProperty("bookmarkModel", bookmarkModel);
 
+    //T31: asking the user to type a value is a platform concern, not a model
+    //one. IOBase no longer opens a dialog itself; qml/mobile/main.qml drives
+    //the native input dialog from here.
+    engine.rootContext()->setContextProperty("hardwareUtils", HardwareUtils::Instance());
+
 #ifdef HAVE_WEBENGINE
     //setStorageName() instead of the storage-name constructor: the latter
     //only exists in recent Qt and this must build on older Qt too (6.4)

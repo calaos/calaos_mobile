@@ -3,6 +3,7 @@ module SharedComponents
 CalaosItemBase 1.0 CalaosItemBase.qml
 CalaosSlider 1.0 CalaosSlider.qml
 Fonts 1.0 Fonts.qml
+IOAnalogStyled 1.0 IOAnalogStyled.qml
 IOBinaryDevice 1.0 IOBinaryDevice.qml
 IOBoiler 1.0 IOBoiler.qml
 IOFavAllLights 1.0 IOFavAllLights.qml
@@ -15,6 +16,7 @@ IOPump 1.0 IOPump.qml
 IOScenario 1.0 IOScenario.qml
 IOShutter 1.0 IOShutter.qml
 IOShutterSmart 1.0 IOShutterSmart.qml
+IOSwitch 1.0 IOSwitch.qml
 IOTemp 1.0 IOTemp.qml
 IOVarBool 1.0 IOVarBool.qml
 IOVarInt 1.0 IOVarInt.qml
@@ -32,3 +34,6 @@ CalaosRadio 1.0 CalaosRadio.qml
 CalaosCheck 1.0 CalaosCheck.qml
 CalaosCombo 1.0 CalaosCombo.qml
 singleton Theme 1.0 Theme.qml
+ScrollingText 1.0 ScrollingText.qml
+SensorStatusIcon 1.0 SensorStatusIcon.qml
+SingleShotTimer 1.0 SingleShotTimer.qml

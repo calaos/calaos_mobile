@@ -38,38 +38,38 @@ Note : T04/T05/T06 sont parallélisables entre eux (fichiers disjoints, seule co
 | ID | Titre | Taille | Bloqué par | Groupe | Statut |
 |---|---|---|---|---|---|
 | [T11](tasks/T11-parsing-sur-src.md) | Sweep parsing sûr : toInt/toDouble + null-checks | M | T04, T05, T06 | G-MODELS + G-COMMON | Terminé |
-| [T13](tasks/T13-timeouts-http.md) | Timeouts HTTP + durcissement long-poll | S | T08 | G-CONN | En revue |
-| [T14](tasks/T14-reconnexion-backoff.md) | ⚠️ Machine à états de reconnexion + backoff | L | T13 | G-CONN + G-APP | En revue |
-| [T15](tasks/T15-camera-polling-imageproviders.md) | Polling caméra maîtrisé + image providers thread-safe | M | T11 | G-MODELS | En revue |
+| [T13](tasks/T13-timeouts-http.md) | Timeouts HTTP + durcissement long-poll | S | T08 | G-CONN | Terminé |
+| [T14](tasks/T14-reconnexion-backoff.md) | ⚠️ Machine à états de reconnexion + backoff | L | T13 | G-CONN + G-APP | Terminé |
+| [T15](tasks/T15-camera-polling-imageproviders.md) | Polling caméra maîtrisé + image providers thread-safe | M | T11 | G-MODELS | Terminé |
 
 ## P3 — Découplage C++
 
 | ID | Titre | Taille | Bloqué par | Groupe | Statut |
 |---|---|---|---|---|---|
-| [T16](tasks/T16-iotyperegistry.md) | IOTypeRegistry : source de vérité unique des types d'IO | L | T11, T15, T02 | G-MODELS + G-COMMON | En revue |
-| [T17](tasks/T17-calaoseventdecoder.md) | Extraction du décodeur d'événements | L | T14 | G-CONN | En revue |
-| [T18](tasks/T18-decouplage-roommodel-connection.md) | Découpler RoomModel → CalaosConnection | S | T16, T17 | G-MODELS + G-CONN | En revue |
-| [T19](tasks/T19-favoritesmodel-favtypes.md) | FavoritesModel : types non-FavIO (TODO!) | M | — | indépendant | En revue |
-| [T20](tasks/T20-qqmlhelpers-garde-egalite.md) | qqmlhelpers : garde d'égalité dans les setters | S | T16 | G-COMMON | En revue |
-| [T21](tasks/T21-jsonkeys.md) | Constantes de clés JSON (sweep src/) | M | T16, T17, T18 | sweep src — sérialisé | En revue |
-| [T22](tasks/T22-connect-modernes.md) | connect() modernes : SIGNAL/SLOT → pointeurs (sweep src/) | M | T21 | sweep src — sérialisé | En revue |
+| [T16](tasks/T16-iotyperegistry.md) | IOTypeRegistry : source de vérité unique des types d'IO | L | T11, T15, T02 | G-MODELS + G-COMMON | Terminé |
+| [T17](tasks/T17-calaoseventdecoder.md) | Extraction du décodeur d'événements | L | T14 | G-CONN | Terminé |
+| [T18](tasks/T18-decouplage-roommodel-connection.md) | Découpler RoomModel → CalaosConnection | S | T16, T17 | G-MODELS + G-CONN | Terminé |
+| [T19](tasks/T19-favoritesmodel-favtypes.md) | FavoritesModel : types non-FavIO (TODO!) | M | — | indépendant | Terminé |
+| [T20](tasks/T20-qqmlhelpers-garde-egalite.md) | qqmlhelpers : garde d'égalité dans les setters | S | T16 | G-COMMON | Terminé |
+| [T21](tasks/T21-jsonkeys.md) | Constantes de clés JSON (sweep src/) | M | T16, T17, T18 | sweep src — sérialisé | Terminé |
+| [T22](tasks/T22-connect-modernes.md) | connect() modernes : SIGNAL/SLOT → pointeurs (sweep src/) | M | T21 | sweep src — sérialisé | Terminé |
 
 ## P4 — Consolidation QML
 
 | ID | Titre | Taille | Bloqué par | Groupe | Statut |
 |---|---|---|---|---|---|
-| [T23](tasks/T23-iobinarydevice.md) | Widget IO binaire générique (5 widgets fusionnés) | M | T07 | G-QML-SHARED | En revue |
-| [T24](tasks/T24-delegate-map-qmldir.md) | ItemListView : delegate map + qmldir complet | M | T23 | G-QML-SHARED | En revue |
-| [T25](tasks/T25-pagescaffold-desktop.md) | PageScaffold desktop : squelette header/footer | M | T07 | G-QML-DESKTOP | En revue |
-| [T26](tasks/T26-mediawebview-onglets.md) | MediaWebView : source de vérité unique des onglets | M | T03 | G-QML-DESKTOP | En revue |
+| [T23](tasks/T23-iobinarydevice.md) | Widget IO binaire générique (5 widgets fusionnés) | M | T07 | G-QML-SHARED | Terminé |
+| [T24](tasks/T24-delegate-map-qmldir.md) | ItemListView : delegate map + qmldir complet | M | T23 | G-QML-SHARED | Terminé |
+| [T25](tasks/T25-pagescaffold-desktop.md) | PageScaffold desktop : squelette header/footer | M | T07 | G-QML-DESKTOP | Terminé |
+| [T26](tasks/T26-mediawebview-onglets.md) | MediaWebView : source de vérité unique des onglets | M | T03 | G-QML-DESKTOP | Terminé |
 | [T27](tasks/T27-sweep-units-dp.md) | Unification sizing : Units.dp partout (sweep) | L | T10, T23-T26 | G-QML-SWEEP — sérialisé | En revue |
 
 ## P5 — Polish
 
 | ID | Titre | Taille | Bloqué par | Groupe | Statut |
 |---|---|---|---|---|---|
-| [T29](tasks/T29-imports-qml-modernes.md) | Modernisation imports QML (Qt5Compat → MultiEffect) | M | T27 | G-QML-SWEEP | En revue |
-| [T30](tasks/T30-nettoyage-final.md) | Nettoyage final : logs, placeholders, formatters | S | T29 | G-QML-SWEEP | En revue |
+| [T29](tasks/T29-imports-qml-modernes.md) | Modernisation imports QML (Qt5Compat → MultiEffect) | M | T27 | G-QML-SWEEP | Terminé |
+| [T30](tasks/T30-nettoyage-final.md) | Nettoyage final : logs, placeholders, formatters | S | T29 | G-QML-SWEEP | Terminé |
 
 ## Diagramme de parallélisation
 

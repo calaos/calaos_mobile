@@ -51,7 +51,7 @@ Note : T04/T05/T06 sont parallélisables entre eux (fichiers disjoints, seule co
 | [T18](tasks/T18-decouplage-roommodel-connection.md) | Découpler RoomModel → CalaosConnection | S | T16, T17 | G-MODELS + G-CONN | En revue |
 | [T19](tasks/T19-favoritesmodel-favtypes.md) | FavoritesModel : types non-FavIO (TODO!) | M | — | indépendant | En revue |
 | [T20](tasks/T20-qqmlhelpers-garde-egalite.md) | qqmlhelpers : garde d'égalité dans les setters | S | T16 | G-COMMON | En revue |
-| [T21](tasks/T21-jsonkeys.md) | Constantes de clés JSON (sweep src/) | M | T16, T17, T18 | sweep src — sérialisé | À faire |
+| [T21](tasks/T21-jsonkeys.md) | Constantes de clés JSON (sweep src/) | M | T16, T17, T18 | sweep src — sérialisé | En revue |
 | [T22](tasks/T22-connect-modernes.md) | connect() modernes : SIGNAL/SLOT → pointeurs (sweep src/) | M | T21 | sweep src — sérialisé | À faire |
 
 ## P4 — Consolidation QML
@@ -60,17 +60,16 @@ Note : T04/T05/T06 sont parallélisables entre eux (fichiers disjoints, seule co
 |---|---|---|---|---|---|
 | [T23](tasks/T23-iobinarydevice.md) | Widget IO binaire générique (5 widgets fusionnés) | M | T07 | G-QML-SHARED | En revue |
 | [T24](tasks/T24-delegate-map-qmldir.md) | ItemListView : delegate map + qmldir complet | M | T23 | G-QML-SHARED | En revue |
-| [T25](tasks/T25-pagescaffold-desktop.md) | PageScaffold desktop : squelette header/footer | M | T07 | G-QML-DESKTOP | À faire |
+| [T25](tasks/T25-pagescaffold-desktop.md) | PageScaffold desktop : squelette header/footer | M | T07 | G-QML-DESKTOP | En revue |
 | [T26](tasks/T26-mediawebview-onglets.md) | MediaWebView : source de vérité unique des onglets | M | T03 | G-QML-DESKTOP | En revue |
 | [T27](tasks/T27-sweep-units-dp.md) | Unification sizing : Units.dp partout (sweep) | L | T10, T23-T26 | G-QML-SWEEP — sérialisé | À faire |
-| [T28](tasks/T28-sweep-theme-couleurs.md) | Sweep couleurs : tokens Theme partout | L | T27 | G-QML-SWEEP — sérialisé | À faire |
 
 ## P5 — Polish
 
 | ID | Titre | Taille | Bloqué par | Groupe | Statut |
 |---|---|---|---|---|---|
-| [T29](tasks/T29-imports-qml-modernes.md) | Modernisation imports QML (Qt5Compat → MultiEffect) | M | T28 | G-QML-SWEEP | À faire |
-| [T30](tasks/T30-nettoyage-final.md) | Nettoyage final : logs, placeholders, formatters | S | T28, T29 | G-QML-SWEEP | À faire |
+| [T29](tasks/T29-imports-qml-modernes.md) | Modernisation imports QML (Qt5Compat → MultiEffect) | M | T27 | G-QML-SWEEP | À faire |
+| [T30](tasks/T30-nettoyage-final.md) | Nettoyage final : logs, placeholders, formatters | S | T29 | G-QML-SWEEP | À faire |
 
 ## Diagramme de parallélisation
 
@@ -94,7 +93,7 @@ P4   G-QML-SHARED      G-QML-DESKTOP
      T23 → T24          T25 ‖ T26
      puis sweeps sérialisés : T27 → T28
 
-P5   T29 → T30
+P5   T29 → T30                                (T28 abandonné)
 ```
 
 **Barrières de synchronisation** : fin de P0 (CI verte requise) · T14 avant T17 · T16+T17+T18 avant T21 · tous les tickets QML ciblés avant T27.
@@ -113,6 +112,7 @@ P5   T29 → T30
 
 Explicitement exclus de ce backlog, à traiter dans une phase dédiée :
 
+- **Sweep couleurs : tokens Theme partout** (ex-T28, spec conservée dans `docs/tasks/T28-sweep-theme-couleurs.md`) — écarté par Raoul le 2026-08-11. 328 couleurs en dur et une dérive de casse `#3ab4d7` / `#3AB4D7`, mais c'est le plus gros sweep du backlog, il figure dans la table des risques avec campagne de screenshots obligatoire, et il ne corrige aucun défaut. T29 et T30 n'en dépendaient pas sur le fond : ils traitent les imports et les logs, ils n'étaient sérialisés derrière lui que par le groupe G-QML-SWEEP. T29 passe derrière T27, T30 derrière T29.
 - **TLS TOFU / pinning d'empreinte certificat** (ex-T12, spec conservée dans `docs/tasks/T12-tls-tofu.md`) — écarté par Raoul le 2026-08-10 : verrouiller le certificat est trop risqué pour le parc installé, un renouvellement côté serveur couperait les clients. `ignoreSslErrors` reste donc en place. T13 et T14 n'en dépendaient pas sur le fond : ils n'étaient sérialisés derrière lui que parce que les trois touchent `CalaosConnection.cpp` (groupe G-CONN). T13 est repositionné derrière T08.
 - **Migration CMake** (qmake est déprécié pour Qt6) — préalable recommandé au split transport complet de CalaosConnection.
 - **Android** : `targetSdkVersion 29` (bloque les mises à jour Play Store, minimum requis 34), **OpenSSL 1.0.2r embarqué (EOL 2019, critique)**, toolchain Gradle 2021 + `jcenter()` mort, credentials en clair dans QSettings (chantier Keystore).

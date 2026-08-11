@@ -1,6 +1,6 @@
-import QtQuick 2.5
-import SharedComponents 1.0
-import WeatherInfo 1.0
+import QtQuick
+import SharedComponents
+import WeatherInfo
 
 Item {
     id: widget

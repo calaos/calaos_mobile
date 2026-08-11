@@ -1,5 +1,8 @@
 import QtQuick
 import QtQuick.Controls as Controls
+// ColorOverlay has no MultiEffect equivalent: the tint is half-transparent
+// white, i.e. a 50/50 blend towards white that keeps the source hue.
+// MultiEffect blends towards tint * luminance instead. See T29.
 import Qt5Compat.GraphicalEffects
 import QtQuick.Layouts
 import SharedComponents

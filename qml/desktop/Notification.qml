@@ -2,6 +2,9 @@ import QtQuick
 import QtQuick.Layouts
 import Calaos
 import SharedComponents
+// ColorOverlay has no MultiEffect equivalent: the tint here is #efefef, and
+// MultiEffect colorizes by source luminance rather than replacing it. See T29
+// and the note in SharedComponents/ItemButtonAction.qml.
 import Qt5Compat.GraphicalEffects
 
 Flipable {

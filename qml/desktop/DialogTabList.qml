@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import SharedComponents
-import Qt5Compat.GraphicalEffects
 
 Dialog {
     id: dialogTabList

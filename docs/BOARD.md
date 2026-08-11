@@ -71,6 +71,15 @@ Note : T04/T05/T06 sont parallélisables entre eux (fichiers disjoints, seule co
 | [T29](tasks/T29-imports-qml-modernes.md) | Modernisation imports QML (Qt5Compat → MultiEffect) | M | T27 | G-QML-SWEEP | Terminé |
 | [T30](tasks/T30-nettoyage-final.md) | Nettoyage final : logs, placeholders, formatters | S | T29 | G-QML-SWEEP | Terminé |
 
+## P6 — Suite du découplage
+
+| ID | Titre | Taille | Bloqué par | Groupe | Statut |
+|---|---|---|---|---|---|
+| [T31](tasks/T31-decouplage-iobase-dialogue.md) | Découpler IOBase → couche dialogue (askStateText) | S | T18 | G-MODELS | En revue |
+
+Ouvert après P3 : c'est le dernier couplage inverse du modèle, celui qui oblige
+encore trois tests à lier `HardwareUtils` ou une doublure de `RoomModel`.
+
 ## Diagramme de parallélisation
 
 Chaque colonne est une lane exécutable par un agent indépendant ; `→` = séquence obligatoire, `‖` = parallèle.

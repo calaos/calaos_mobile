@@ -5,6 +5,7 @@
         <file>qml/desktop/MainMenu.qml</file>
         <file>qml/desktop/MainMenuButton.qml</file>
         <file>qml/desktop/DesktopView.qml</file>
+        <file>qml/desktop/PageScaffold.qml</file>
         <file>qml/desktop/HomeView.qml</file>
         <file>qml/desktop/RoomDetailView.qml</file>
         <file>qml/desktop/FooterButton.qml</file>

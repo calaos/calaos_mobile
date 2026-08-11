@@ -3,29 +3,28 @@ import SharedComponents
 import QtQuick.Layouts
 import Calaos
 
-Item {
+PageScaffold {
+    id: page
 
     property QtObject roomItemModel
 
-    Image {
-        source: "qrc:/img/module_header_shadow.png"
-        anchors {
-            top: header.bottom
-            left: parent.left
-            right: parent.right
-        }
-        opacity: 0.6
-    }
+    title: currentRoomName
 
-    Image {
-        source: "qrc:/img/module_footer_shadow.png"
-        anchors {
-            bottom: footer.top
-            left: footer.left
-            right: footer.right
+    footerButtons: [
+        FooterButton {
+            label: qsTr("Back to home")
+            icon: "qrc:/img/button_action_back.png"
+            Layout.minimumWidth: width
+            onBtClicked: rootWindow.handleBack()
+        },
+
+        FooterButton {
+            label: qsTr("Quit")
+            icon: "qrc:/img/button_action_quit.png"
+            Layout.minimumWidth: width
+            onBtClicked: rootWindow.goToDesktop()
         }
-        opacity: 0.6
-    }
+    ]
 
     BorderImage {
 
@@ -40,8 +39,8 @@ Item {
             left: parent.left; leftMargin: Units.dp(20)
             right: parent.horizontalCenter
             rightMargin: Units.dp(160)
-            top: header.bottom; topMargin: Units.dp(20)
-            bottom: footer.top; bottomMargin: Units.dp(20)
+            top: page.header.bottom; topMargin: Units.dp(20)
+            bottom: page.footer.top; bottomMargin: Units.dp(20)
         }
 
         Item {
@@ -89,8 +88,8 @@ Item {
             right: parent.right; rightMargin: Units.dp(20)
             left: parent.horizontalCenter
             leftMargin: Units.dp(160)
-            top: header.bottom; topMargin: Units.dp(20)
-            bottom: footer.top; bottomMargin: Units.dp(20)
+            top: page.header.bottom; topMargin: Units.dp(20)
+            bottom: page.footer.top; bottomMargin: Units.dp(20)
         }
 
         Item {
@@ -139,7 +138,7 @@ Item {
             right: roomIcon.right; rightMargin: Units.dp(20)
             left: roomIcon.left; leftMargin: Units.dp(20)
             top: roomIcon.bottom; topMargin: Units.dp(40)
-            bottom: footer.top; bottomMargin: Units.dp(20)
+            bottom: page.footer.top; bottomMargin: Units.dp(20)
         }
 
         Item {
@@ -178,65 +177,7 @@ Item {
 
         anchors {
             horizontalCenter: parent.horizontalCenter
-            top: header.bottom; topMargin: Units.dp(30)
-        }
-    }
-
-    Image {
-        id: header
-        source: "qrc:/img/module_header.png"
-        anchors {
-            top: parent.top
-            left: parent.left
-            right: parent.right
-        }
-
-        Text {
-            anchors.centerIn: parent
-            elide: Text.ElideMiddle
-            font.pixelSize: Units.dp(22)
-            font.family: calaosFont.fontFamilyLight
-            font.weight: Font.ExtraLight
-            color: "#e7e7e7"
-            text: currentRoomName
-        }
-    }
-
-    Image {
-        id: footer
-        source: "qrc:/img/module_footer.png"
-        anchors {
-            bottom: parent.bottom
-            left: parent.left
-            right: parent.right
-        }
-
-        RowLayout {
-            anchors {
-                left: parent.left; leftMargin: Units.dp(20)
-                right: parent.right; rightMargin: Units.dp(20)
-                verticalCenter: parent.verticalCenter
-            }
-
-            spacing: Units.dp(5)
-
-            Item { //spacer
-                height: 1; Layout.fillWidth: true
-            }
-
-            FooterButton {
-                label: qsTr("Back to home")
-                icon: "qrc:/img/button_action_back.png"
-                Layout.minimumWidth: width
-                onBtClicked: rootWindow.handleBack()
-            }
-
-            FooterButton {
-                label: qsTr("Quit")
-                icon: "qrc:/img/button_action_quit.png"
-                Layout.minimumWidth: width
-                onBtClicked: rootWindow.goToDesktop()
-            }
+            top: page.header.bottom; topMargin: Units.dp(30)
         }
     }
 }

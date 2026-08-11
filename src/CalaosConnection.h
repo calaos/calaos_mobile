@@ -7,6 +7,7 @@
 #include <QWebSocket>
 
 #include "CalaosEventDecoder.h"
+#include "IOConnection.h"
 
 //Reconnection state machine and exponential backoff (T14).
 //
@@ -213,7 +214,9 @@ private:
     bool m_jitterEnabled = true;
 };
 
-class CalaosConnection : public QObject
+//QObject first, as Q_OBJECT requires; IOConnection is the read-only view the
+//IO models are given, see src/IOConnection.h.
+class CalaosConnection : public QObject, public IOConnection
 {
     Q_OBJECT
 public:
@@ -227,8 +230,46 @@ public:
         ConStateWebsocket,
     };
 
-    void updateHttpApiV2(bool en) { isV2HttpApi = en; }
-    bool isHttpApiV2() { return isV2HttpApi; }
+    //IOConnection: this object carries the io signals itself.
+    QObject *eventSource() override { return this; }
+    bool isHttpApiV2() const override { return isV2HttpApi; }
+
+    //Reads the API version off a "get_home" payload. This is the criterion
+    //RoomModel::load() used to apply room by room before writing the answer
+    //back into this class through updateHttpApiV2() (T18): in the v2 shape a
+    //room carries its items as a map with separate "inputs"/"outputs" lists,
+    //before that "items" was a single flat list. It is decided once for the
+    //whole payload - a single answer never mixes both shapes.
+    //Returns false when the payload says nothing at all (no room: demo mode,
+    //an empty home), in which case the current value must be kept.
+    //Static and header-only on purpose: unit testable without the transport,
+    //see tests/tst_httpapiversion.
+    static bool detectHttpApiV2(const QVariantMap &home, bool &isV2)
+    {
+        const QVariantList rooms = home.value(QStringLiteral("home")).toList();
+        bool seenRoom = false;
+
+        for (const QVariant &r: rooms)
+        {
+            const QVariantMap room = r.toMap();
+            if (room.isEmpty())
+                continue;
+
+            seenRoom = true;
+            if (room.value(QStringLiteral("items")).toMap().contains(QStringLiteral("inputs")))
+            {
+                isV2 = true;
+                return true;
+            }
+        }
+
+        if (!seenRoom)
+            return false;
+
+        isV2 = false;
+        return true;
+    }
+
     bool isWebsocket() { return wsocket && constate == ConStateWebsocket; }
     bool isHttp() { return constate == ConStateHttp; }
 
@@ -284,6 +325,14 @@ private:
     QWebSocket *wsocket = nullptr;
 
     bool isV2HttpApi = true;
+    //Private since T18: the flag belongs to the transport and is set from the
+    //payload the transport itself received (emitHomeLoaded), never pushed in
+    //from a model.
+    void updateHttpApiV2(bool en) { isV2HttpApi = en; }
+    //detectHttpApiV2() on the incoming home, then emit homeLoaded(). Every
+    //emitter of homeLoaded goes through here so the flag is always up to date
+    //before any model reads the payload.
+    void emitHomeLoaded(const QVariantMap &home);
 
     QTimer *wsPingTimeout = nullptr;
     QTimer *wsPing = nullptr;
@@ -382,7 +431,8 @@ signals:
 public slots:
     void login(QString user, QString pass, QString host);
     void logout();
-    void sendCommand(QString id, QString value, QString type = QString(), QString action = QString());
+    //IOConnection, with the default arguments the rest of the app relies on.
+    void sendCommand(QString id, QString value, QString type = QString(), QString action = QString()) override;
     void queryState(QStringList inputs, QStringList outputs, QStringList audio_players);
     void getCameraPicture(const QString &camid, QString urlSuffix = QString());
     void getAudioCover(const QString &playerid);

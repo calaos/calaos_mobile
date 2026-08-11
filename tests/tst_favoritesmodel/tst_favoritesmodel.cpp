@@ -19,6 +19,13 @@
  * real IOBase objects (engine is nullptr: nothing here goes through QML, and
  * FavoritesModel only dereferences the engine in getItemModel(), which the
  * tests do not call - they check the same dynamic_cast<IOBase *> it does).
+ *
+ * T18: IOBase takes the src/IOConnection.h interface instead of a
+ * CalaosConnection *, so this test provides its own FakeConnection and links
+ * neither CalaosConnection.cpp nor CalaosEventDecoder.cpp any more.
+ * FavoritesModel itself still takes a CalaosConnection * (src/FavoritesModel.h,
+ * outside the T18 perimeter) but never dereferences it - only HomeFavModel
+ * does, and it is not exercised here - so nullptr is passed for it.
  */
 
 #include <QtTest>
@@ -27,14 +34,33 @@
 
 #include "FavoritesModel.h"
 #include "RoomModel.h"
+#include "IOConnection.h"
 #include "Common.h"
+
+//Everything an IOBase asks of a connection (src/IOConnection.h): send a
+//command, tell the API version, carry the three io event signals. No socket,
+//no network, no state.
+class FakeConnection: public QObject, public IOConnection
+{
+    Q_OBJECT
+
+public:
+    QObject *eventSource() override { return this; }
+    bool isHttpApiV2() const override { return true; }
+    void sendCommand(QString, QString, QString, QString) override {}
+
+signals:
+    void eventInputChange(QString id, QString key, QString value);
+    void eventOutputChange(QString id, QString key, QString value);
+    void eventIoStatusChange(QString id, QVariantMap statusData);
+};
 
 namespace
 {
 
 //Creates an output IO and registers it in the cache, the way RoomModel::load()
 //does for every item of the home.
-IOBase *addCachedOutput(CalaosConnection *con, const QString &ioId, const QString &guiType)
+IOBase *addCachedOutput(IOConnection *con, const QString &ioId, const QString &guiType)
 {
     IOBase *io = new IOBase(nullptr, con, IOBase::IOOutput);
 
@@ -81,12 +107,12 @@ private slots:
     void clearAlsoDropsKeptFavorites();
 
 private:
-    CalaosConnection *connection = nullptr;
+    FakeConnection *connection = nullptr;
 };
 
 void TstFavoritesModel::init()
 {
-    connection = new CalaosConnection();
+    connection = new FakeConnection();
     IOCache::Instance().clearCache();
 }
 
@@ -103,7 +129,7 @@ void TstFavoritesModel::favIoIsSavedAsBefore()
 {
     addCachedOutput(connection, QStringLiteral("io_light"), QStringLiteral("light"));
 
-    FavoritesModel model(nullptr, connection);
+    FavoritesModel model(nullptr, nullptr);
 
     QVERIFY(model.addFavorite(QStringLiteral("io_light"), Common::FavIO));
     QCOMPARE(model.rowCount(), 1);
@@ -127,7 +153,7 @@ void TstFavoritesModel::allLightsCountFavoriteIsRebuilt()
 {
     addCachedOutput(connection, QStringLiteral("fav_all_lights"), QStringLiteral("fav_all_lights"));
 
-    FavoritesModel model(nullptr, connection);
+    FavoritesModel model(nullptr, nullptr);
 
     QVariantList favList;
     favList.append(favEntry(QStringLiteral("fav_all_lights"), Common::FavLightsCount));
@@ -151,7 +177,7 @@ void TstFavoritesModel::audioAndCameraFavoritesAreSaved()
     addCachedOutput(connection, QStringLiteral("io_player"), QStringLiteral("audio_output"));
     addCachedOutput(connection, QStringLiteral("io_cam"), QStringLiteral("camera_output"));
 
-    FavoritesModel model(nullptr, connection);
+    FavoritesModel model(nullptr, nullptr);
 
     QVariantList favList;
     favList.append(favEntry(QStringLiteral("io_player"), Common::FavAudio));
@@ -173,7 +199,7 @@ void TstFavoritesModel::unsupportedFavoriteIsKeptAtItsPlace()
     addCachedOutput(connection, QStringLiteral("io_light1"), QStringLiteral("light"));
     addCachedOutput(connection, QStringLiteral("io_light2"), QStringLiteral("light"));
 
-    FavoritesModel model(nullptr, connection);
+    FavoritesModel model(nullptr, nullptr);
 
     QVariantMap shutters = favEntry(QStringLiteral("all_shutters"), Common::FavShutterCount);
     shutters["extra_data"] = QStringLiteral("kept as is");
@@ -204,7 +230,7 @@ void TstFavoritesModel::unsupportedFavoriteIsKeptAtItsPlace()
 //kept the same way rather than silently deleted.
 void TstFavoritesModel::unknownFavoriteTypeIsKept()
 {
-    FavoritesModel model(nullptr, connection);
+    FavoritesModel model(nullptr, nullptr);
 
     QVariantList favList;
     favList.append(favEntry(QStringLiteral("something"), 4242));
@@ -219,7 +245,7 @@ void TstFavoritesModel::unknownFavoriteTypeIsKept()
 //Application).
 void TstFavoritesModel::clearAlsoDropsKeptFavorites()
 {
-    FavoritesModel model(nullptr, connection);
+    FavoritesModel model(nullptr, nullptr);
 
     QVariantList favList;
     favList.append(favEntry(QStringLiteral("all_shutters"), Common::FavShutterCount));

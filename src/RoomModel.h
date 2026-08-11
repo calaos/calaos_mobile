@@ -6,7 +6,7 @@
 #include "qqmlhelpers.h"
 #include <QQmlApplicationEngine>
 #include "Common.h"
-#include "CalaosConnection.h"
+#include "IOConnection.h"
 
 class IOBase;
 
@@ -62,7 +62,7 @@ class ScenarioModel: public QStandardItemModel
 {
     Q_OBJECT
 public:
-    explicit ScenarioModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent = 0);
+    explicit ScenarioModel(QQmlApplicationEngine *eng, IOConnection *con, QObject *parent = 0);
 
     enum
     {
@@ -77,14 +77,14 @@ private:
     QString name, type;
 
     QQmlApplicationEngine *engine;
-    CalaosConnection *connection;
+    IOConnection *connection;
 };
 
 class RoomModel: public QStandardItemModel
 {
     Q_OBJECT
 public:
-    explicit RoomModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent = 0);
+    explicit RoomModel(QQmlApplicationEngine *eng, IOConnection *con, QObject *parent = 0);
 
     enum
     {
@@ -124,7 +124,7 @@ private:
     IOBase *temperatureIo = nullptr;
 
     QQmlApplicationEngine *engine;
-    CalaosConnection *connection;
+    IOConnection *connection;
 };
 
 class IOBase: public QObject, public QStandardItem
@@ -178,7 +178,7 @@ class IOBase: public QObject, public QStandardItem
     QML_READONLY_PROPERTY(QString, statusWifiSSID)
 
 public:
-    IOBase(QQmlApplicationEngine *eng, CalaosConnection *con, int t);
+    IOBase(QQmlApplicationEngine *eng, IOConnection *con, int t);
 
     enum {
         IOInput, IOOutput
@@ -217,7 +217,7 @@ public:
 private:
     QVariantMap ioData;
     QQmlApplicationEngine *engine;
-    CalaosConnection *connection;
+    IOConnection *connection;
     int ioType;
 
     void sendRGB(int r, int g, int b);

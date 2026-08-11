@@ -22,7 +22,7 @@
 
 //--- RoomModel ---------------------------------------------------------------
 
-RoomModel::RoomModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent):
+RoomModel::RoomModel(QQmlApplicationEngine *eng, IOConnection *con, QObject *parent):
     QStandardItemModel(parent),
     engine(eng),
     connection(con)
@@ -50,7 +50,7 @@ void RoomModel::temperatureIoChanged() {}
 //--- ScenarioModel / ScenarioSortModel ---------------------------------------
 // Jamais utilisés par le test, mais référencés par le moc de RoomModel.h.
 
-ScenarioModel::ScenarioModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent):
+ScenarioModel::ScenarioModel(QQmlApplicationEngine *eng, IOConnection *con, QObject *parent):
     QStandardItemModel(parent),
     engine(eng),
     connection(con)
@@ -82,7 +82,7 @@ void IOCache::clearCache() { inputCache.clear(); outputCache.clear(); }
 
 //--- IOBase ------------------------------------------------------------------
 
-IOBase::IOBase(QQmlApplicationEngine *eng, CalaosConnection *con, int t):
+IOBase::IOBase(QQmlApplicationEngine *eng, IOConnection *con, int t):
     QStandardItem(),
     engine(eng),
     connection(con),

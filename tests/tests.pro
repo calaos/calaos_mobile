@@ -20,5 +20,7 @@ SUBDIRS += \
     tst_eventlogmodel \
     tst_favoritesmodel \
     tst_homemodel \
+    tst_httpapiversion \
+    tst_qqmlhelpers \
     tst_reconnectpolicy \
     tst_roomfiltermodel

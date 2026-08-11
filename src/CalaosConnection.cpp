@@ -280,7 +280,7 @@ void CalaosConnection::startConnection(QString user, QString pass, QString h, Re
             reconnectPolicy.attemptSucceeded();
             emitStateChanged();
             HardwareUtils::Instance()->showNetworkActivity(false);
-            emit homeLoaded({});
+            emitHomeLoaded(QVariantMap());
         });
 
         return;
@@ -594,7 +594,21 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
     //start polling
     startJsonPolling();
 
-    emit homeLoaded(jroot);
+    emitHomeLoaded(jroot);
+}
+
+void CalaosConnection::emitHomeLoaded(const QVariantMap &home)
+{
+    /* The API version is read here, off the payload this class just received,
+     * and no longer written back into this class by RoomModel::load() while it
+     * parses rooms (T18). Doing it before the signal also means every consumer
+     * of homeLoaded() - not only the first model to parse a room - sees the
+     * right value. */
+    bool v2 = isV2HttpApi;
+    if (detectHttpApiV2(home, v2))
+        updateHttpApiV2(v2);
+
+    emit homeLoaded(home);
 }
 
 void CalaosConnection::requestFinished()
@@ -1143,7 +1157,7 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
     }
     else if (jroot["msg"] == "get_home")
     {
-        emit homeLoaded(jroot["data"].toObject().toVariantMap());
+        emitHomeLoaded(jroot["data"].toObject().toVariantMap());
         HardwareUtils::Instance()->showNetworkActivity(false);
     }
     else if (jroot["msg"] == "event")

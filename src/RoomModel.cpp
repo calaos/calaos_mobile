@@ -60,7 +60,7 @@ void IOCache::clearCache()
     outputCache.clear();
 }
 
-ScenarioModel::ScenarioModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent):
+ScenarioModel::ScenarioModel(QQmlApplicationEngine *eng, IOConnection *con, QObject *parent):
     QStandardItemModel(parent),
     engine(eng),
     connection(con)
@@ -79,7 +79,7 @@ QObject *ScenarioModel::getItemModel(int idx)
     return obj;
 }
 
-RoomModel::RoomModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent) :
+RoomModel::RoomModel(QQmlApplicationEngine *eng, IOConnection *con, QObject *parent) :
     QStandardItemModel(parent),
     engine(eng),
     connection(con)
@@ -108,16 +108,18 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
     QVariantList inputs;
     QVariantList outputs;
 
-    //Support old protocol and new one
+    /* Support old protocol and new one. Reading the shape here is fine; what
+     * this used to also do was push the answer back into the transport, i.e.
+     * the model configured the connection's API version flag (T18). The
+     * connection now reads that flag off the get_home payload itself, before
+     * handing it over - see CalaosConnection::detectHttpApiV2(). */
     if (items.contains("inputs"))
     {
-        connection->updateHttpApiV2(true);
         inputs = items["inputs"].toList();
         outputs = items["outputs"].toList();
     }
     else
     {
-        connection->updateHttpApiV2(false);
         inputs = roomData["items"].toList();
         outputs = roomData["items"].toList();
     }
@@ -231,7 +233,7 @@ void RoomModel::temperatureIoChanged()
     emit temp_changed_sig(temperatureIo->getStateInt());
 }
 
-IOBase::IOBase(QQmlApplicationEngine *eng, CalaosConnection *con, int t):
+IOBase::IOBase(QQmlApplicationEngine *eng, IOConnection *con, int t):
     QStandardItem(),
     engine(eng),
     connection(con),
@@ -250,14 +252,29 @@ IOBase::IOBase(QQmlApplicationEngine *eng, CalaosConnection *con, int t):
     update_hasStatusIP(false);
     update_hasStatusWifiSSID(false);
 
-    if (ioType == IOInput)
-        connect(connection, &CalaosConnection::eventInputChange,
-                this, &IOBase::inputChanged);
-    else
-        connect(connection, &CalaosConnection::eventOutputChange,
-                this, &IOBase::outputChanged);
+    /* IOConnection is a plain interface, so the io signals are reached by name
+     * on the QObject that carries them instead of by member pointer (T18: an
+     * IO no longer knows the concrete transport class). A wrong signature would
+     * otherwise leave an io that never updates, silently: check and shout. */
+    QObject *events = connection ? connection->eventSource() : nullptr;
+    if (events)
+    {
+        bool ok;
+        if (ioType == IOInput)
+            ok = connect(events, SIGNAL(eventInputChange(QString,QString,QString)),
+                         this, SLOT(inputChanged(QString,QString,QString)));
+        else
+            ok = connect(events, SIGNAL(eventOutputChange(QString,QString,QString)),
+                         this, SLOT(outputChanged(QString,QString,QString)));
 
-    connect(connection, &CalaosConnection::eventIoStatusChange, this, &IOBase::ioStatusChanged);
+        ok = connect(events, SIGNAL(eventIoStatusChange(QString,QVariantMap)),
+                     this, SLOT(ioStatusChanged(QString,QVariantMap))) && ok;
+
+        if (!ok)
+            qWarning() << "IOBase: the connection object" << events
+                       << "does not expose the expected IOConnection signals,"
+                       << "this io will not receive any update";
+    }
 }
 
 void IOBase::load(const QVariantMap &io)

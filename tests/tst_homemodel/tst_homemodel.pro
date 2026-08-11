@@ -10,10 +10,16 @@ include(../common.pri)
 # IOBase is defined in src/RoomModel.cpp, which in turn only compiles
 # IOBase::askStateText() against HardwareUtils (CALAOS_MOBILE, chosen here)
 # or quickflux (~20 more files, the other branch) - HardwareUtils is the
-# smaller of the two. CalaosConnection.cpp is needed for IOBase's constructor
-# and its other Q_INVOKABLE slots. This is far more than "lier le minimum de
-# sources" (tests/README.md); see tst_homemodel.cpp's header comment and the
-# T06 report for why it could not be reduced further.
+# smaller of the two.
+#
+# T18: src/CalaosConnection.cpp and src/CalaosEventDecoder.cpp are NOT linked
+# any more. IOBase used to take a CalaosConnection *, so its constructor alone
+# dragged the whole transport (QNetworkAccessManager, QWebSocket, the
+# reconnection policy, the event decoder) into a test that never opens a
+# socket. It now takes the src/IOConnection.h interface and the test provides
+# its own FakeConnection. For the same reason src/CalaosConnection.h must NOT
+# be listed in HEADERS: moc'ing it would pull CalaosConnection's metaobject,
+# and with it CalaosConnection.cpp, straight back in.
 DEFINES += CALAOS_MOBILE
 QT += widgets
 
@@ -26,7 +32,7 @@ INCLUDEPATH += $$PWD/../../3rd_party/quickflux/src
 HEADERS += \
     $$SRC_DIR/HomeModel.h \
     $$SRC_DIR/RoomModel.h \
-    $$SRC_DIR/CalaosConnection.h \
+    $$SRC_DIR/IOConnection.h \
     $$SRC_DIR/HardwareUtils.h \
     $$SRC_DIR/Common.h \
     $$SRC_DIR/IOTypeRegistry.h
@@ -34,8 +40,6 @@ HEADERS += \
 SOURCES += \
     $$SRC_DIR/HomeModel.cpp \
     $$SRC_DIR/RoomModel.cpp \
-    $$SRC_DIR/CalaosConnection.cpp \
-    $$SRC_DIR/CalaosEventDecoder.cpp \
     $$SRC_DIR/HardwareUtils.cpp \
     $$SRC_DIR/Common.cpp \
     $$SRC_DIR/IOTypeRegistry.cpp \

@@ -22,25 +22,47 @@
  * Q_INVOKABLE/slots (addLight, removeLight, getItemModel, askStateText...),
  * donc referencees inconditionnellement par la table de dispatch generee par
  * moc, meme quand ce test ne les appelle pas - impossible de les faire
- * elaguer par l'editeur de liens. RoomModel.cpp entraine donc
- * CalaosConnection.cpp (utilise par le constructeur d'IOBase) et, via
+ * elaguer par l'editeur de liens. RoomModel.cpp entraine donc, via
  * IOBase::askStateText(), soit HardwareUtils (+QtWidgets), soit quickflux
  * (~20 fichiers) ; ce test choisit HardwareUtils (DEFINES += CALAOS_MOBILE
  * dans le .pro), le plus leger des deux. Aucun de ces objets ne fait d'appel
  * reseau ou d'E/S ici : on ne fait que les construire.
+ *
+ * T18 : IOBase ne prend plus un CalaosConnection * mais l'interface
+ * IOConnection (src/IOConnection.h). Ce test fournit donc sa propre doublure
+ * FakeConnection et ne lie plus ni CalaosConnection.cpp ni
+ * CalaosEventDecoder.cpp - voir tst_homemodel.pro.
  */
 
 #include <QtTest>
 
 #include "HomeModel.h"
 #include "RoomModel.h"
-#include "CalaosConnection.h"
+#include "IOConnection.h"
+
+//La seule chose qu'un IOBase attend d'une connexion (src/IOConnection.h) :
+//envoyer une commande, connaitre la version d'API, et porter les trois signaux
+//d'evenement. Aucune socket, aucun reseau, aucun etat.
+class FakeConnection: public QObject, public IOConnection
+{
+    Q_OBJECT
+
+public:
+    QObject *eventSource() override { return this; }
+    bool isHttpApiV2() const override { return true; }
+    void sendCommand(QString, QString, QString, QString) override {}
+
+signals:
+    void eventInputChange(QString id, QString key, QString value);
+    void eventOutputChange(QString id, QString key, QString value);
+    void eventIoStatusChange(QString id, QVariantMap statusData);
+};
 
 namespace {
 
 //Construit un IOBase "lumiere allumee" minimal, comme le ferait RoomModel en
 //parsant la reponse JSON du serveur (cf. RoomModel::load()).
-IOBase *makeLight(CalaosConnection *con, const QString &ioId, const QString &roomName)
+IOBase *makeLight(IOConnection *con, const QString &ioId, const QString &roomName)
 {
     IOBase *io = new IOBase(nullptr, con, IOBase::IOOutput);
 
@@ -73,12 +95,12 @@ private slots:
     void ghostLightsAfterReconnect();
 
 private:
-    CalaosConnection *connection = nullptr;
+    FakeConnection *connection = nullptr;
 };
 
 void TstHomeModel::init()
 {
-    connection = new CalaosConnection();
+    connection = new FakeConnection();
 }
 
 void TstHomeModel::cleanup()
@@ -91,7 +113,10 @@ void TstHomeModel::cleanup()
 //les lignes (comportement herite de QStandardItemModel avant le correctif).
 void TstHomeModel::clearAlsoEmptiesCache()
 {
-    LightOnModel model(nullptr, connection);
+    //LightOnModel prend encore un CalaosConnection * (src/HomeModel.h, hors
+    //perimetre T18), mais ne le dereference jamais : il ne fait que le
+    //transmettre a un clone. nullptr suffit ici.
+    LightOnModel model(nullptr, nullptr);
 
     IOBase *salon = makeLight(connection, QStringLiteral("io_salon_1"), QStringLiteral("Salon"));
     IOBase *cuisine = makeLight(connection, QStringLiteral("io_cuisine_1"), QStringLiteral("Cuisine"));
@@ -119,7 +144,10 @@ void TstHomeModel::clearAlsoEmptiesCache()
 //apres chaque cycle (pas 0, pas double).
 void TstHomeModel::ghostLightsAfterReconnect()
 {
-    LightOnModel model(nullptr, connection);
+    //LightOnModel prend encore un CalaosConnection * (src/HomeModel.h, hors
+    //perimetre T18), mais ne le dereference jamais : il ne fait que le
+    //transmettre a un clone. nullptr suffit ici.
+    LightOnModel model(nullptr, nullptr);
 
     auto lightCycle = [&]()
     {

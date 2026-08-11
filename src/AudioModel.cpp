@@ -220,7 +220,7 @@ void AudioPlayer::audioStatusChanged(QString playerid, QString status)
 {
     if (playerid != get_id()) return;
 
-    playerData[JsonKeys::Volume] = status;
+    playerData[JsonKeys::Status] = status;
     update_status(Common::audioStatusFromString(status));
 }
 

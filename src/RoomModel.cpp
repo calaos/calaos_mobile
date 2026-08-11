@@ -167,8 +167,8 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
             emit temp_changed_sig(io->getStateInt());
             emit has_temp_sig(true);
 
-            connect(temperatureIo, SIGNAL(destroyed()), this, SLOT(temperatureIoDestroyed()));
-            connect(temperatureIo, SIGNAL(stateChange()), this, SLOT(temperatureIoChanged()));
+            connect(temperatureIo, &IOBase::destroyed, this, &RoomModel::temperatureIoDestroyed);
+            connect(temperatureIo, &IOBase::stateChange, this, &RoomModel::temperatureIoChanged);
         }
     }
 
@@ -182,8 +182,8 @@ void RoomModel::load(QVariantMap &roomData, ScenarioModel *scenarioModel, int lo
             r[JsonKeys::GuiType] = IOTypeRegistry::legacyGuiType(r[JsonKeys::Type].toString());
 
         IOBase *io = new IOBase(engine, connection, IOBase::IOOutput);
-        connect(io, SIGNAL(light_on(IOBase*)), this, SIGNAL(sig_light_on(IOBase*)));
-        connect(io, SIGNAL(light_off(IOBase*)), this, SIGNAL(sig_light_off(IOBase*)));
+        connect(io, &IOBase::light_on, this, &RoomModel::sig_light_on);
+        connect(io, &IOBase::light_off, this, &RoomModel::sig_light_off);
         io->load(r);
         io->update_room_name(name);
         io->checkFirstState();
@@ -222,8 +222,8 @@ QObject *RoomModel::getItemModel(int idx)
 
 void RoomModel::temperatureIoDestroyed()
 {
-    disconnect(temperatureIo, SIGNAL(destroyed()), this, SLOT(temperatureIoDestroyed()));
-    disconnect(temperatureIo, SIGNAL(stateChange()), this, SLOT(temperatureIoChanged()));
+    disconnect(temperatureIo, &IOBase::destroyed, this, &RoomModel::temperatureIoDestroyed);
+    disconnect(temperatureIo, &IOBase::stateChange, this, &RoomModel::temperatureIoChanged);
 
     temperatureIo = nullptr;
     emit has_temp_sig(false);
@@ -701,8 +701,8 @@ void IOBase::ioStatusChanged(QString id, QVariantMap statusData)
 void IOBase::askStateText()
 {
 #if defined(CALAOS_MOBILE)
-    connect(HardwareUtils::Instance(), SIGNAL(dialogTextValid(QString)),
-            this, SLOT(textDialogValid(QString)));
+    connect(HardwareUtils::Instance(), &HardwareUtils::dialogTextValid,
+            this, &IOBase::textDialogValid);
     HardwareUtils::Instance()->inputTextDialog(tr("Change value"), tr("Enter new value"));
 #else
     QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(engine);
@@ -713,8 +713,8 @@ void IOBase::askStateText()
 
 void IOBase::textDialogValid(const QString &text)
 {
-    disconnect(HardwareUtils::Instance(), SIGNAL(dialogTextValid(QString)),
-               this, SLOT(textDialogValid(QString)));
+    disconnect(HardwareUtils::Instance(), &HardwareUtils::dialogTextValid,
+               this, &IOBase::textDialogValid);
     sendStringValue(text);
 }
 

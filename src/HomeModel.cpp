@@ -43,8 +43,8 @@ void HomeModel::load(const QVariantMap &homeData)
     {
         QVariantMap r = it->toMap();
         RoomItem *room = new RoomItem(engine, connection);
-        connect(room, SIGNAL(sig_light_on(IOBase*)), this, SLOT(newlight_on(IOBase*)));
-        connect(room, SIGNAL(sig_light_off(IOBase*)), this, SLOT(newlight_off(IOBase*)));
+        connect(room, &RoomItem::sig_light_on, this, &HomeModel::newlight_on);
+        connect(room, &RoomItem::sig_light_off, this, &HomeModel::newlight_off);
 
         room->update_roomName(r[JsonKeys::Name].toString());
         room->update_roomType(r[JsonKeys::Type].toString());
@@ -87,19 +87,19 @@ RoomItem::RoomItem(QQmlApplicationEngine *eng, CalaosConnection *con):
     update_current_temperature(0);
 
     room = new RoomModel(engine, connection, this);
-    connect(room, SIGNAL(sig_light_on(IOBase*)), this, SLOT(newlight_on(IOBase*)));
-    connect(room, SIGNAL(sig_light_off(IOBase*)), this, SLOT(newlight_off(IOBase*)));
-    connect(room, SIGNAL(has_temp_sig(bool)), this, SLOT(has_temperature_slot(bool)));
-    connect(room, SIGNAL(temp_changed_sig(double)), this, SLOT(temperature_slot(double)));
+    connect(room, &RoomModel::sig_light_on, this, &RoomItem::newlight_on);
+    connect(room, &RoomModel::sig_light_off, this, &RoomItem::newlight_off);
+    connect(room, &RoomModel::has_temp_sig, this, &RoomItem::has_temperature_slot);
+    connect(room, &RoomModel::temp_changed_sig, this, &RoomItem::temperature_slot);
     engine->setObjectOwnership(room, QQmlEngine::CppOwnership);
 }
 
 RoomItem::~RoomItem()
 {
-    disconnect(room, SIGNAL(sig_light_on(IOBase*)), this, SLOT(newlight_on(IOBase*)));
-    disconnect(room, SIGNAL(sig_light_off(IOBase*)), this, SLOT(newlight_off(IOBase*)));
-    disconnect(room, SIGNAL(has_temp_sig(bool)), this, SLOT(has_temperature_slot(bool)));
-    disconnect(room, SIGNAL(temp_changed_sig(double)), this, SLOT(temperature_slot(double)));
+    disconnect(room, &RoomModel::sig_light_on, this, &RoomItem::newlight_on);
+    disconnect(room, &RoomModel::sig_light_off, this, &RoomItem::newlight_off);
+    disconnect(room, &RoomModel::has_temp_sig, this, &RoomItem::has_temperature_slot);
+    disconnect(room, &RoomModel::temp_changed_sig, this, &RoomItem::temperature_slot);
 }
 
 QObject *RoomItem::getRoomModel() const

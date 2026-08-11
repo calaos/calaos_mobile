@@ -83,8 +83,8 @@ void HardwareUtilsDesktop::platformInit(QQmlApplicationEngine *e)
     connect(timer, &QTimer::timeout, this, &HardwareUtilsDesktop::calaosDiscover);
     calaosDiscover();
     timer->start(5000);
-    connect(udpSocket, SIGNAL(readyRead()),
-            this, SLOT(readPendingDatagrams()));
+    connect(udpSocket, &QUdpSocket::readyRead,
+            this, &HardwareUtilsDesktop::readPendingDatagrams);
 
     QString h = getConfigOption("calaos_server_host");
     if (h != "")

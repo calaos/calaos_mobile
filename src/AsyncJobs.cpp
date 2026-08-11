@@ -54,8 +54,8 @@ void AsyncJobs::dequeueStartJob(const QVariant &data)
     }
 
     currentJob = jobs.dequeue();
-    connect(currentJob, SIGNAL(done(QVariant)), this, SLOT(jobDone(QVariant)));
-    connect(currentJob, SIGNAL(error()), this, SLOT(jobFailed()));
+    connect(currentJob, &AsyncJob::done, this, &AsyncJobs::jobDone);
+    connect(currentJob, &AsyncJob::error, this, &AsyncJobs::jobFailed);
     currentJob->start(data);
 }
 

@@ -59,10 +59,10 @@ void Application::createQmlApp()
 
     engine.addImportPath("qrc:/qml/");
 
-    connect(HardwareUtils::Instance(), SIGNAL(networkStatusChanged()),
-            this, SLOT(networkStatusChanged()));
-    connect(HardwareUtils::Instance(), SIGNAL(calaosServerDetected()),
-            this, SLOT(calaosServerDetected()));
+    connect(HardwareUtils::Instance(), &HardwareUtils::networkStatusChanged,
+            this, &Application::networkStatusChanged);
+    connect(HardwareUtils::Instance(), &HardwareUtils::calaosServerDetected,
+            this, &Application::calaosServerDetected);
 
     connect(HardwareUtils::Instance(), &HardwareUtils::applicationWillResignActive, this, [=]()
     {
@@ -182,12 +182,12 @@ void Application::createQmlApp()
     update_applicationStatus(Common::NotConnected);
 
     calaosConnect = new CalaosConnection(this);
-    connect(calaosConnect, SIGNAL(homeLoaded(QVariantMap)),
-            this, SLOT(homeLoaded(QVariantMap)));
-    connect(calaosConnect, SIGNAL(loginFailed()),
-            this, SLOT(loginFailed()));
-    connect(calaosConnect, SIGNAL(connectionStateChanged(int)),
-            this, SLOT(connectionStateChanged(int)));
+    connect(calaosConnect, &CalaosConnection::homeLoaded,
+            this, &Application::homeLoaded);
+    connect(calaosConnect, &CalaosConnection::loginFailed,
+            this, &Application::loginFailed);
+    connect(calaosConnect, &CalaosConnection::connectionStateChanged,
+            this, &Application::connectionStateChanged);
     connect(calaosConnect, &CalaosConnection::disconnected, this, [=]()
     {
         update_applicationStatus(Common::NotConnected);
@@ -307,7 +307,7 @@ void Application::createQmlApp()
 
     //sys info timer
     sysInfoTimer = new QTimer();
-    connect(sysInfoTimer, SIGNAL(timeout()), this, SLOT(sysInfoTimerSlot()));
+    connect(sysInfoTimer, &QTimer::timeout, this, &Application::sysInfoTimerSlot);
     sysInfoTimer->start(5000);
     sysInfoTimerSlot();
 

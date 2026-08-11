@@ -46,10 +46,10 @@ CalaosConnection::CalaosConnection(QObject *parent) :
     accessManager->setTransferTimeout(HTTP_TRANSFER_TIMEOUT);
     accessManagerCam->setTransferTimeout(HTTP_TRANSFER_TIMEOUT);
     pollReply = nullptr;
-    connect(accessManager, SIGNAL(sslErrors(QNetworkReply*, const QList<QSslError> &)),
-            this, SLOT(sslErrors(QNetworkReply*, const QList<QSslError> &)));
-    connect(accessManagerCam, SIGNAL(sslErrors(QNetworkReply*, const QList<QSslError> &)),
-            this, SLOT(sslErrors(QNetworkReply*, const QList<QSslError> &)));
+    connect(accessManager, &QNetworkAccessManager::sslErrors,
+            this, &CalaosConnection::sslErrors);
+    connect(accessManagerCam, &QNetworkAccessManager::sslErrors,
+            this, &CalaosConnection::sslErrors);
 }
 
 void CalaosConnection::sslErrors(QNetworkReply *reply, const QList<QSslError> &)
@@ -154,8 +154,8 @@ void CalaosConnection::resetTransport()
     //The login handler is hooked on the manager, not on the reply: unhook it
     //before aborting anything, otherwise the abort of the *previous* attempt
     //would be reported as a failure of the *next* one.
-    disconnect(accessManager, SIGNAL(finished(QNetworkReply*)),
-               this, SLOT(loginFinished(QNetworkReply*)));
+    disconnect(accessManager, &QNetworkAccessManager::finished,
+               this, &CalaosConnection::loginFinished);
 
     closeWebsocket();
 
@@ -330,8 +330,8 @@ void CalaosConnection::connectHttp(QString h)
 
     //UniqueConnection: even if two paths ever managed to reach connectHttp()
     //for the same attempt, the answer must be handled exactly once.
-    connect(accessManager, SIGNAL(finished(QNetworkReply*)),
-            this, SLOT(loginFinished(QNetworkReply*)), Qt::UniqueConnection);
+    connect(accessManager, &QNetworkAccessManager::finished,
+            this, &CalaosConnection::loginFinished, Qt::UniqueConnection);
 
     QUrl url(h);
     QNetworkRequest request(url);
@@ -347,11 +347,14 @@ void CalaosConnection::connectWebsocket(QString h)
     if (!wsocket)
     {
         wsocket = new QWebSocket();
-        connect(wsocket, SIGNAL(sslErrors(QList<QSslError>)),
-                this, SLOT(sslErrorsWebsocket(QList<QSslError>)));
+        connect(wsocket, &QWebSocket::sslErrors,
+                this, &CalaosConnection::sslErrorsWebsocket);
         connect(wsocket, &QWebSocket::connected, this, &CalaosConnection::onWsConnected);
         connect(wsocket, &QWebSocket::disconnected, this, &CalaosConnection::onWsDisconnected);
-        connect(wsocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(onWsError()));
+        //errorOccurred(), not the error() overload: error() is both a getter and
+        //a signal on QWebSocket (so &QWebSocket::error is ambiguous) and the
+        //signal is deprecated since Qt 6.5. Same signal, current name.
+        connect(wsocket, &QWebSocket::errorOccurred, this, &CalaosConnection::onWsError);
     }
 
     wsocket->open(h);
@@ -516,8 +519,8 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
 {
     HardwareUtils::Instance()->showNetworkActivity(false);
 
-    disconnect(accessManager, SIGNAL(finished(QNetworkReply*)),
-               this, SLOT(loginFinished(QNetworkReply*)));
+    disconnect(accessManager, &QNetworkAccessManager::finished,
+               this, &CalaosConnection::loginFinished);
 
     reply->deleteLater();
     if (reply->error() != QNetworkReply::NoError)
@@ -752,9 +755,12 @@ void CalaosConnection::sendHttp(const QString &msg, QJsonObject &data, bool igno
     request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
     QNetworkReply *reqReply = accessManager->post(request, doc.toJson());
 
-    connect(reqReply, SIGNAL(finished()), this, SLOT(requestFinished()));
+    connect(reqReply, &QNetworkReply::finished, this, &CalaosConnection::requestFinished);
     if (!ignoreErrors)
-        connect(reqReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestError(QNetworkReply::NetworkError)));
+        //QNetworkReply has no error(NetworkError) signal since Qt 6 (only the
+        //error() getter), so the old string based connect never resolved: this
+        //connection was silently dead. errorOccurred() is the Qt 6 name.
+        connect(reqReply, &QNetworkReply::errorOccurred, this, &CalaosConnection::requestError);
 
     reqReplies.append(reqReply);
 }
@@ -858,7 +864,7 @@ void CalaosConnection::getCameraPicture(const QString &camid, QString urlSuffix)
     QNetworkReply *reqReply = accessManagerCam->post(request, jdoc.toJson());
 
     connect(reqReply, &QNetworkReply::finished, this, [=]() { requestCamFinished(reqReply, camid); });
-//    connect(reqReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestError(QNetworkReply::NetworkError)));
+//    connect(reqReply, &QNetworkReply::errorOccurred, this, &CalaosConnection::requestError);
 
     reqReplies.append(reqReply);
 }
@@ -922,7 +928,7 @@ void CalaosConnection::handlePollFailure(const QString &reason)
     qWarning() << "Long-poll failure " << reconnectPolicy.pollFailureCount()
                << "/" << ReconnectPolicy::MaxPollFailures << ": " << reason
                << " - retrying without dropping the session";
-    QTimer::singleShot(POLL_RETRY_DELAY, this, SLOT(startJsonPolling()));
+    QTimer::singleShot(POLL_RETRY_DELAY, this, &CalaosConnection::startJsonPolling);
 }
 
 void CalaosConnection::startJsonPolling()
@@ -1028,7 +1034,7 @@ void CalaosConnection::startJsonPolling()
                 processEventsV3(v.toMap());
         }
 
-        QTimer::singleShot(200, this, SLOT(startJsonPolling()));
+        QTimer::singleShot(200, this, &CalaosConnection::startJsonPolling);
     });
 }
 

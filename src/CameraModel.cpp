@@ -126,10 +126,10 @@ CameraItem::CameraItem(CalaosConnection *con, const ImageCachePtr &cache):
     pollTimer->setSingleShot(true);
     connect(pollTimer, &QTimer::timeout, this, &CameraItem::sendPictureRequest);
 
-    connect(connection, SIGNAL(cameraPictureDownloaded(QString,QByteArray)),
-            this, SLOT(cameraPictureDownloaded(QString,QByteArray)));
-    connect(connection, SIGNAL(cameraPictureFailed(QString)),
-            this, SLOT(cameraPictureFailed(QString)));
+    connect(connection, &CalaosConnection::cameraPictureDownloaded,
+            this, &CameraItem::cameraPictureDownloaded);
+    connect(connection, &CalaosConnection::cameraPictureFailed,
+            this, &CameraItem::cameraPictureFailed);
 
     connect(this, &CameraItem::cameraVisibleChanged, this, [this](bool visible)
     {

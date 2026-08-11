@@ -63,8 +63,8 @@ void WeatherModel::refreshWeather()
 
     QNetworkReply *rep = accessManager->get(QNetworkRequest(url));
 
-    connect(rep, SIGNAL(finished()),
-            this, SLOT(handleWeatherNetworkData()));
+    connect(rep, &QNetworkReply::finished,
+            this, &WeatherModel::handleWeatherNetworkData);
 }
 
 void WeatherModel::handleWeatherNetworkData()
@@ -101,8 +101,8 @@ void WeatherModel::handleWeatherNetworkData()
 
     QNetworkReply *rep = accessManager->get(QNetworkRequest(url));
 
-    connect(rep, SIGNAL(finished()),
-            this, SLOT(handleForecastNetworkData()));
+    connect(rep, &QNetworkReply::finished,
+            this, &WeatherModel::handleForecastNetworkData);
 }
 
 void WeatherModel::handleForecastNetworkData()

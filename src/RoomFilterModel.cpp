@@ -45,9 +45,9 @@ RoomFilterModel::RoomFilterModel(QObject *parent):
             qWarning() << "Source model (" << source << ") is not a RoomModel, aborting!";
         setSourceModel(rmodel);
 
-        connect(rmodel, SIGNAL(rowsInserted(QModelIndex,int,int)), this, SLOT(resetCache()));
-        connect(rmodel, SIGNAL(rowsRemoved(QModelIndex,int,int)), this, SLOT(resetCache()));
-        connect(rmodel, SIGNAL(modelReset()), this, SLOT(resetCache()));
+        connect(rmodel, &RoomModel::rowsInserted, this, &RoomFilterModel::resetCache);
+        connect(rmodel, &RoomModel::rowsRemoved, this, &RoomFilterModel::resetCache);
+        connect(rmodel, &RoomModel::modelReset, this, &RoomFilterModel::resetCache);
 
         resetCache();
         invalidate();

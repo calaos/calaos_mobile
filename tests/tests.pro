@@ -14,9 +14,11 @@
 TEMPLATE = subdirs
 
 SUBDIRS += \
+    tst_calaoseventdecoder \
     tst_camerapolling \
     tst_common \
     tst_eventlogmodel \
+    tst_favoritesmodel \
     tst_homemodel \
     tst_reconnectpolicy \
     tst_roomfiltermodel

@@ -10,11 +10,13 @@ include(../common.pri)
 # Ne PAS ajouter $$SRC_DIR/RoomModel.cpp ici.
 HEADERS += \
     $$SRC_DIR/Common.h \
+    $$SRC_DIR/IOTypeRegistry.h \
     $$SRC_DIR/RoomFilterModel.h \
     $$SRC_DIR/RoomModel.h
 
 SOURCES += \
     $$SRC_DIR/Common.cpp \
+    $$SRC_DIR/IOTypeRegistry.cpp \
     $$SRC_DIR/RoomFilterModel.cpp \
     roommodel_stub.cpp \
     tst_roomfiltermodel.cpp

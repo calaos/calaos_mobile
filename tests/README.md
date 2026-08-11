@@ -98,7 +98,9 @@ make check TESTARGS="-v2"               # via make
 
 | Test | Couvre | Sources de `src/` liées |
 |---|---|---|
+| `tst_calaoseventdecoder` | `CalaosEventDecoder` : décodage pur des événements v2 (chaînes séparées par des espaces, percent-encodées) et v3 (objets JSON), des cartes `get_state` et des réponses de requête HTTP ; trames réelles des deux API, troncatures, types d'événements inconnus et charges utiles hors format, aucune ne devant faire crasher ni atteindre les modèles (T17) | `CalaosEventDecoder.cpp`, `Common.cpp` (+ `IOTypeRegistry.cpp`) |
 | `tst_common` | `Common::IOTypeToString` / `IOTypeFromString` (round-trip sur toutes les valeurs de `Common::IOType`, types stylés inclus), `Common::audioStatus*`, helpers de parsing défensif `Common::toIntSafe` / `toDoubleSafe` / `toLongLongSafe` sur `QString`, `QVariant` et `QJsonValue` — valeur rendue **et** politique de warning (T11) | `Common.cpp` |
+| `tst_common` (suite) | `IOTypeRegistry` (T16) : couverture de l'enum, catégorie / `isLight` / `isDimmableLight` / `isMeasurement`, visibilité d'un IO dans une pièce, `styleName`, gui_types média, et table de vérité figée des 88 types du protocole historique (ex-`RoomModel::detectOldGuiType`) | `IOTypeRegistry.cpp` |
 | `tst_eventlogmodel` | `EventLogIO::resolve()` : priorité input avant output dans la résolution d'un IO d'événement (T05) | `EventLogModel.h` (gabarit header-only) |
 | `tst_homemodel` | `LightOnModel::clear()` vide bien `onCache` : pas de lumières fantômes après reconnexion (T06) | `HomeModel.cpp`, `RoomModel.cpp`, `CalaosConnection.cpp`, `HardwareUtils*` |
 | `tst_reconnectpolicy` | `ReconnectPolicy` (déclarée *header-only* dans `CalaosConnection.h`) : séquence de backoff 1/2/4/8/16/30/30 s et son plafond, bornes du jitter ±20 %, garde anti-double-login, inertie du second rapport d'échec, abandon borné sur credentials refusés vs retry infini sur erreur transitoire, tolérance du long-poll (T14) | aucune (header seul) |

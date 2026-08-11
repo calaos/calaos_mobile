@@ -28,12 +28,15 @@ HEADERS += \
     $$SRC_DIR/RoomModel.h \
     $$SRC_DIR/CalaosConnection.h \
     $$SRC_DIR/HardwareUtils.h \
-    $$SRC_DIR/Common.h
+    $$SRC_DIR/Common.h \
+    $$SRC_DIR/IOTypeRegistry.h
 
 SOURCES += \
     $$SRC_DIR/HomeModel.cpp \
     $$SRC_DIR/RoomModel.cpp \
     $$SRC_DIR/CalaosConnection.cpp \
+    $$SRC_DIR/CalaosEventDecoder.cpp \
     $$SRC_DIR/HardwareUtils.cpp \
     $$SRC_DIR/Common.cpp \
+    $$SRC_DIR/IOTypeRegistry.cpp \
     tst_homemodel.cpp

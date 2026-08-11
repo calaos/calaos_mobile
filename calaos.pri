@@ -16,7 +16,9 @@ SOURCES += src/main.cpp \
     src/HomeModel.cpp \
     src/Application.cpp \
     src/CalaosConnection.cpp \
+    src/CalaosEventDecoder.cpp \
     src/Common.cpp \
+    src/IOTypeRegistry.cpp \
     src/RoomModel.cpp \
     src/AudioModel.cpp \
     src/FavoritesModel.cpp \
@@ -36,7 +38,9 @@ HEADERS += \
     src/HomeModel.h \
     src/Application.h \
     src/CalaosConnection.h \
+    src/CalaosEventDecoder.h \
     src/Common.h \
+    src/IOTypeRegistry.h \
     src/RoomModel.h \
     src/AudioModel.h \
     src/FavoritesModel.h \

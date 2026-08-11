@@ -22,6 +22,21 @@ QObject *FavoritesModel::getItemModel(int idx)
     return obj;
 }
 
+bool FavoritesModel::isKnownFavoriteType(int type)
+{
+    switch (type)
+    {
+    case Common::FavIO:
+    case Common::FavLightsCount:
+    case Common::FavShutterCount:
+    case Common::FavAudio:
+    case Common::FavCamera:
+        return true;
+    default:
+        return false;
+    }
+}
+
 QVariantList FavoritesModel::save()
 {
     QVariantList lst;
@@ -31,18 +46,25 @@ QVariantList FavoritesModel::save()
         QStandardItem *it = dynamic_cast<QStandardItem *>(item(i));
         if (!it) continue;
 
-        int type = it->data(RoleType).toInt();
-        if (type == Common::FavIO)
-        {
-            QVariantMap vmap;
-            vmap["id"] = it->data(RoleId).toString();
-            vmap["type"] = type;
-            lst.append(vmap);
-        }
-        else
-        {
-            qDebug() << "TODO!";
-        }
+        //Every favorite is saved the same way, whatever its type: the type
+        //itself plus the id of the IO it points at (the camera, the audio
+        //player, the all lights counter, ...). Anything else needed to
+        //display it is rebuilt from the IO cache at load time.
+        QVariantMap vmap;
+        vmap["id"] = it->data(RoleId).toString();
+        vmap["type"] = it->data(RoleType).toInt();
+        lst.append(vmap);
+    }
+
+    //Put back the favorites that could not be rebuilt, at the place they were
+    //read from, exactly as they were read. They are user data for a favorite
+    //type this build does not know how to display (yet): dropping them here
+    //would delete them from the settings on the next save.
+    for (int i = 0;i < unsupportedFavorites.size();i++)
+    {
+        int pos = unsupportedFavorites.at(i).first;
+        if (pos < 0 || pos > lst.size()) pos = lst.size();
+        lst.insert(pos, unsupportedFavorites.at(i).second);
     }
 
     return lst;
@@ -53,36 +75,80 @@ void FavoritesModel::load(QVariantList favList)
     loaded = false;
     clear();
 
+    int position = 0;
     foreach (QVariant var, favList)
     {
         QVariantMap vmap = var.toMap();
 
-        if (!addFavorite(vmap["id"].toString(), vmap["type"].toInt()))
+        if (!addFavorite(vmap, position))
             qDebug() << "Failed to add IO: " << vmap["id"].toString();
+
+        position++;
     }
     loaded = true;
 }
 
+void FavoritesModel::clear()
+{
+    unsupportedFavorites.clear();
+    QStandardItemModel::clear();
+}
+
 bool FavoritesModel::addFavorite(QString ioid, int type)
 {
-    if (type == Common::FavIO)
+    QVariantMap fav;
+    fav["id"] = ioid;
+    fav["type"] = type;
+
+    //Appended after everything the model already holds.
+    return addFavorite(fav, rowCount() + unsupportedFavorites.size());
+}
+
+bool FavoritesModel::addFavorite(const QVariantMap &fav, int position)
+{
+    QString ioid = fav["id"].toString();
+    //"type" is written by save() and only travels through QSettings, so it is
+    //always an int this program wrote itself.
+    int type = fav["type"].toInt();
+
+    if (isKnownFavoriteType(type))
     {
+        //All favorite types point at an IO of the home: FavIO at a regular
+        //input/output, FavLightsCount at the "fav_all_lights" pseudo output
+        //built by HomeFavModel::load(), FavAudio/FavCamera at the audio
+        //player or the camera output. So the row is always rebuilt the same
+        //way, from the IO cache.
         IOBase *io = IOCache::Instance().searchInput(ioid);
         if (!io) io = IOCache::Instance().searchOutput(ioid);
-        if (!io) return false;
 
-        IOBase *newIO = io->cloneIO();
-        newIO->setData(ioid, RoleId);
-        newIO->setData(type, RoleType);
-        newIO->setData(newIO->get_ioType(), RoleIOType);
-        newIO->setData(newIO->get_ioName(), RoleName);
-        appendRow(newIO);
+        if (io)
+        {
+            IOBase *newIO = io->cloneIO();
+            newIO->setData(ioid, RoleId);
+            //RoleType holds the favorite type, the IO type is exposed
+            //separately as RoleIOType: that is the role the QML delegates
+            //(ItemListView) switch on to pick IOFavAllLights & co.
+            newIO->setData(type, RoleType);
+            newIO->setData(newIO->get_ioType(), RoleIOType);
+            newIO->setData(newIO->get_ioName(), RoleName);
+            appendRow(newIO);
+
+            return true;
+        }
+
+        //A FavIO whose IO is missing has always been dropped here, and stays
+        //dropped: its id is an IO id, so a missing IO means the item is gone
+        //from the home and the favorite is stale.
+        if (type == Common::FavIO)
+            return false;
     }
-    else
-    {
-        qDebug() << "TODO!";
-        return false;
-    }
+
+    //Unknown favorite type, or a non FavIO favorite whose data is not an IO
+    //id this build resolves. Keep it out of the rows (nothing could be shown
+    //for it) but keep it in the saved list.
+    qWarning() << "FavoritesModel: unsupported favorite of type" << type
+               << "id" << ioid << ", not displayed but kept in the saved list";
+    unsupportedFavorites.append(qMakePair(position, fav));
 
     return true;
 }

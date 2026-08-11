@@ -57,15 +57,35 @@ public:
     void delItemFavorite(int idx);
     void moveFavorite(int idx, int newidx);
 
+    //Hides the (non virtual) QStandardItemModel::clear() on purpose, the same
+    //way LightOnModel does for its own cache: the favorites that could not be
+    //rebuilt are kept outside of the rows, and dropping the rows without
+    //dropping them would leave save() writing entries the model no longer
+    //holds. Every caller (Application, load()) uses a FavoritesModel *.
+    void clear();
+
     bool isLoaded() { return loaded; }
 
 private:
+    //Rebuilds one favorite from its saved map. position is the index the entry
+    //had in the saved list, it is only used to put back the favorites that
+    //could not be rebuilt where they were.
+    bool addFavorite(const QVariantMap &fav, int position);
+
+    static bool isKnownFavoriteType(int type);
+
     QString name, type;
 
     QQmlApplicationEngine *engine;
     CalaosConnection *connection;
 
     bool loaded = false;
+
+    //Favorites read from the saved list that this build cannot turn into a
+    //row (unknown Common::FavoriteType, or a non FavIO favorite whose data
+    //does not resolve to a known IO). They are not shown, but save() writes
+    //them back untouched instead of deleting them.
+    QList<QPair<int, QVariantMap>> unsupportedFavorites;
 };
 
 #endif // FAVORITESMODEL_H

@@ -2,7 +2,6 @@
     <qresource prefix="/">
         <file>qml/mobile/main.qml</file>
         <file>qml/mobile/LoginView.qml</file>
-        <file>qml/mobile/StyleButtonDefault.qml</file>
         <file>qml/mobile/RoomListView.qml</file>
         <file>qml/mobile/MainMenuBar.qml</file>
         <file>qml/mobile/MainMenuButton.qml</file>

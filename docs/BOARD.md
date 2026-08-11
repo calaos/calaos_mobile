@@ -46,10 +46,10 @@ Note : T04/T05/T06 sont parallélisables entre eux (fichiers disjoints, seule co
 
 | ID | Titre | Taille | Bloqué par | Groupe | Statut |
 |---|---|---|---|---|---|
-| [T16](tasks/T16-iotyperegistry.md) | IOTypeRegistry : source de vérité unique des types d'IO | L | T11, T15, T02 | G-MODELS + G-COMMON | À faire |
-| [T17](tasks/T17-calaoseventdecoder.md) | Extraction du décodeur d'événements | L | T14 | G-CONN | À faire |
+| [T16](tasks/T16-iotyperegistry.md) | IOTypeRegistry : source de vérité unique des types d'IO | L | T11, T15, T02 | G-MODELS + G-COMMON | En revue |
+| [T17](tasks/T17-calaoseventdecoder.md) | Extraction du décodeur d'événements | L | T14 | G-CONN | En revue |
 | [T18](tasks/T18-decouplage-roommodel-connection.md) | Découpler RoomModel → CalaosConnection | S | T16, T17 | G-MODELS + G-CONN | À faire |
-| [T19](tasks/T19-favoritesmodel-favtypes.md) | FavoritesModel : types non-FavIO (TODO!) | M | — | indépendant | À faire |
+| [T19](tasks/T19-favoritesmodel-favtypes.md) | FavoritesModel : types non-FavIO (TODO!) | M | — | indépendant | En revue |
 | [T20](tasks/T20-qqmlhelpers-garde-egalite.md) | qqmlhelpers : garde d'égalité dans les setters | S | T16 | G-COMMON | À faire |
 | [T21](tasks/T21-jsonkeys.md) | Constantes de clés JSON (sweep src/) | M | T16, T17, T18 | sweep src — sérialisé | À faire |
 | [T22](tasks/T22-connect-modernes.md) | connect() modernes : SIGNAL/SLOT → pointeurs (sweep src/) | M | T21 | sweep src — sérialisé | À faire |
@@ -58,10 +58,10 @@ Note : T04/T05/T06 sont parallélisables entre eux (fichiers disjoints, seule co
 
 | ID | Titre | Taille | Bloqué par | Groupe | Statut |
 |---|---|---|---|---|---|
-| [T23](tasks/T23-iobinarydevice.md) | Widget IO binaire générique (5 widgets fusionnés) | M | T07 | G-QML-SHARED | À faire |
+| [T23](tasks/T23-iobinarydevice.md) | Widget IO binaire générique (5 widgets fusionnés) | M | T07 | G-QML-SHARED | En revue |
 | [T24](tasks/T24-delegate-map-qmldir.md) | ItemListView : delegate map + qmldir complet | M | T23 | G-QML-SHARED | À faire |
 | [T25](tasks/T25-pagescaffold-desktop.md) | PageScaffold desktop : squelette header/footer | M | T07 | G-QML-DESKTOP | À faire |
-| [T26](tasks/T26-mediawebview-onglets.md) | MediaWebView : source de vérité unique des onglets | M | T03 | G-QML-DESKTOP | À faire |
+| [T26](tasks/T26-mediawebview-onglets.md) | MediaWebView : source de vérité unique des onglets | M | T03 | G-QML-DESKTOP | En revue |
 | [T27](tasks/T27-sweep-units-dp.md) | Unification sizing : Units.dp partout (sweep) | L | T10, T23-T26 | G-QML-SWEEP — sérialisé | À faire |
 | [T28](tasks/T28-sweep-theme-couleurs.md) | Sweep couleurs : tokens Theme partout | L | T27 | G-QML-SWEEP — sérialisé | À faire |
 

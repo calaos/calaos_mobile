@@ -8,7 +8,10 @@ Dialog {
 
     property var tabModel: null
     property int activeTabIndex: 0
-    property int maxTabs: 10
+
+    // Owned by MediaWebView, which is the only place declaring the limit.
+    // Required so this dialog can never fall back on a stale default of its own.
+    required property int maxTabs
 
     signal tabSelected(int index)
     signal tabClosed(int index)
@@ -40,7 +43,7 @@ Dialog {
                 anchors.fill: parent
                 anchors.margins: Units.dp(2)
                 color: "transparent"
-                border.color: "#3AB4D7"
+                border.color: Theme.blueColor
                 border.width: index === dialogTabList.activeTabIndex ? Units.dp(1) : 0
                 radius: Units.dp(4)
                 opacity: index === dialogTabList.activeTabIndex ? 0.6 : 0.0
@@ -53,7 +56,7 @@ Dialog {
             Rectangle {
                 anchors.fill: parent
                 anchors.margins: Units.dp(2)
-                color: itemMouseArea.pressed ? "#3AB4D7" : "transparent"
+                color: itemMouseArea.pressed ? Theme.blueColor : "transparent"
                 opacity: itemMouseArea.pressed ? 0.15 : 0.0
                 radius: Units.dp(4)
             }
@@ -73,8 +76,8 @@ Dialog {
                     width: Units.dp(24)
                     height: Units.dp(24)
                     radius: Units.dp(12)
-                    color: index === dialogTabList.activeTabIndex ? "#3AB4D7" : "transparent"
-                    border.color: "#3AB4D7"
+                    color: index === dialogTabList.activeTabIndex ? Theme.blueColor : "transparent"
+                    border.color: Theme.blueColor
                     border.width: Units.dp(1)
                     opacity: index === dialogTabList.activeTabIndex ? 1.0 : 0.4
                     anchors.verticalCenter: parent.verticalCenter
@@ -84,7 +87,7 @@ Dialog {
                         text: (index + 1).toString()
                         font.pixelSize: Units.dp(11)
                         font.family: calaosFont.fontFamily
-                        color: index === dialogTabList.activeTabIndex ? "#171717" : "#e7e7e7"
+                        color: index === dialogTabList.activeTabIndex ? Theme.backgroundColor : Theme.whiteColor
                     }
                 }
 
@@ -99,7 +102,7 @@ Dialog {
                         font.pixelSize: Units.dp(14)
                         font.family: calaosFont.fontFamily
                         font.weight: Font.Light
-                        color: "#e7e7e7"
+                        color: Theme.whiteColor
                         elide: Text.ElideRight
                         maximumLineCount: 1
                     }
@@ -110,7 +113,7 @@ Dialog {
                         font.pixelSize: Units.dp(11)
                         font.family: calaosFont.fontFamily
                         font.weight: Font.ExtraLight
-                        color: "#e7e7e7"
+                        color: Theme.whiteColor
                         opacity: 0.4
                         elide: Text.ElideMiddle
                         maximumLineCount: 1
@@ -168,7 +171,7 @@ Dialog {
                     rightMargin: Units.dp(12)
                 }
                 height: Units.dp(1)
-                color: "#3AB4D7"
+                color: Theme.blueColor
                 opacity: 0.1
                 visible: index < (tabModel ? tabModel.count - 1 : 0)
             }

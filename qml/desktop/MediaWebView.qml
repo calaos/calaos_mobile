@@ -12,20 +12,32 @@ Item {
     property bool hideMainMenu: true
 
     // ── Tab state ──────────────────────────────────────────────────
+    // Single source of truth: one row of tabListModel per tab, holding both the
+    // metadata displayed by DialogTabList and the WebEngineView instance that
+    // renders it. There is no parallel array to keep in sync, so a tab's view
+    // and its title/url can no longer drift apart.
     property int activeTabIndex: -1
-    property var tabWebViews: []   // parallel JS array of WebEngineView refs
+
+    // Owner of the tab limit. DialogTabList takes it from here (required
+    // property) so the toolbar and the dialog can never disagree.
     readonly property int maxTabs: 10
+
+    // Search engine used when the typed text is not already a URL. The query is
+    // appended percent-encoded, so any prefix ending with "=" works.
+    property string searchEngineUrl: "https://www.google.com/search?q="
 
     ListModel {
         id: tabListModel
-        // Each element: { tabId: int, title: string, url: string }
+        // Each element: { tabId: int, title: string, url: string, webView: WebEngineView }
     }
 
     property int _nextTabId: 0
 
     // ── Convenience: active WebEngineView ──────────────────────────
-    readonly property var activeWebView: (activeTabIndex >= 0 && activeTabIndex < tabWebViews.length)
-                                         ? tabWebViews[activeTabIndex] : null
+    // Depends only on activeTabIndex and tabListModel.count, both of which
+    // notify, so the binding re-evaluates on every tab add/remove/switch.
+    readonly property var activeWebView: (activeTabIndex >= 0 && activeTabIndex < tabListModel.count)
+                                         ? tabListModel.get(activeTabIndex).webView : null
 
     // ── Header / footer shadows ────────────────────────────────────
     Image {
@@ -54,7 +66,7 @@ Item {
 
         WebEngineView {
             anchors.fill: parent
-            visible: false
+            visible: false   // replaced by a binding on activeWebView in createTab()
             profile: webEngineProfile
 
             // Keep model in sync
@@ -88,7 +100,7 @@ Item {
 
     // ── Progress bar ───────────────────────────────────────────────
     Rectangle {
-        color: "#3AB4D7"
+        color: Theme.blueColor
         height: 2
         anchors {
             left: parent.left
@@ -105,9 +117,13 @@ Item {
             type: ActionTypes.webGoToUrl
             onDispatched: (filtertype, message) => {
                 if (!root.activeWebView) return
-                var text = message.text
-                if (!text.startsWith("http://") && !text.startsWith("https://"))
-                    text = "https://google.com/search?q=" + text
+                var text = (message.text || "").trim()
+                if (text.length === 0) return
+                if (!text.startsWith("http://") && !text.startsWith("https://")) {
+                    // Percent-encode the query: spaces, '&', '#', '+' and
+                    // non-ASCII would otherwise break out of the query string.
+                    text = root.searchEngineUrl + encodeURIComponent(text)
+                }
                 root.activeWebView.url = text
             }
         }
@@ -335,76 +351,81 @@ Item {
     // ── Tab management functions ───────────────────────────────────
 
     function createTab() {
-        if (tabListModel.count >= maxTabs) return
+        if (tabListModel.count >= root.maxTabs) return
 
-        var tabId = _nextTabId++
         var wv = webViewComponent.createObject(webViewContainer, {})
+        if (!wv) {
+            // Creation can fail (out of memory, broken profile, ...). Bail out
+            // rather than appending a row that has no view behind it.
+            console.warn("MediaWebView: WebEngineView creation failed, tab not created")
+            return
+        }
+
+        var tabId = root._nextTabId++
+
+        // Tag the WebEngineView for debugging/testing purposes only; the model
+        // row below is what actually identifies the tab.
+        wv.objectName = "tab_" + tabId
         wv.url = "about:blank"
 
-        // Tag the WebEngineView with its tabId for model sync
-        wv.objectName = "tab_" + tabId
+        // Visibility is derived from the single source of truth rather than
+        // toggled by hand on every switch/close, so exactly one view is visible
+        // at any time. Installed here (and not as a binding inside the
+        // Component) to avoid reaching for the outer `root` id from a nested
+        // component.
+        wv.visible = Qt.binding(function() { return root.activeWebView === wv })
 
-        tabWebViews.push(wv)
-        tabListModel.append({ "tabId": tabId, "title": "", "url": "about:blank" })
+        // Metadata and view enter the model in one single append: there is no
+        // window during which the two could be out of sync.
+        tabListModel.append({ "tabId": tabId,
+                              "title": "",
+                              "url": "about:blank",
+                              "webView": wv })
 
-        switchToTab(tabListModel.count - 1)
+        root.switchToTab(tabListModel.count - 1)
     }
 
     function switchToTab(index) {
         if (index < 0 || index >= tabListModel.count) return
 
-        // Hide current active tab
-        if (activeTabIndex >= 0 && activeTabIndex < tabWebViews.length) {
-            tabWebViews[activeTabIndex].visible = false
-        }
+        root.activeTabIndex = index
 
-        activeTabIndex = index
-
-        // Show new active tab
-        tabWebViews[activeTabIndex].visible = true
-        tabWebViews[activeTabIndex].forceActiveFocus()
+        var wv = tabListModel.get(index).webView
+        if (wv)
+            wv.forceActiveFocus()
     }
 
     function closeTab(index) {
         if (index < 0 || index >= tabListModel.count) return
         if (tabListModel.count <= 1) return // never close the last tab
 
-        var wv = tabWebViews[index]
+        // Work out the tab that takes over *before* mutating the model, so no
+        // index has to be patched up after the fact.
+        var newIndex = root.activeTabIndex
+        if (index < newIndex)
+            newIndex--                                     // rows shifted down
+        else if (index === newIndex && index === tabListModel.count - 1)
+            newIndex--                                     // closed the last one
 
-        // Remove from JS array
-        tabWebViews.splice(index, 1)
+        var wv = tabListModel.get(index).webView
 
-        // Remove from ListModel
+        // The view reference lives in the row being removed, so metadata and
+        // view always disappear together.
         tabListModel.remove(index)
 
-        // Destroy the WebEngineView
-        wv.destroy()
+        // A WebEngineView holds a render process: release it explicitly rather
+        // than waiting for the container to be torn down.
+        if (wv)
+            wv.destroy()
 
-        // Adjust active index
-        if (activeTabIndex >= tabListModel.count) {
-            activeTabIndex = tabListModel.count - 1
-        } else if (index < activeTabIndex) {
-            activeTabIndex--
-        } else if (index === activeTabIndex) {
-            // If we closed the active tab, clamp and show the new one at same index
-            if (activeTabIndex >= tabListModel.count)
-                activeTabIndex = tabListModel.count - 1
-        }
-
-        // Ensure one tab is visible
-        if (activeTabIndex >= 0 && activeTabIndex < tabWebViews.length) {
-            tabWebViews[activeTabIndex].visible = true
-            tabWebViews[activeTabIndex].forceActiveFocus()
-        }
+        root.switchToTab(Math.max(0, Math.min(newIndex, tabListModel.count - 1)))
     }
 
     function updateTabModel(wv) {
-        for (var i = 0; i < tabWebViews.length; i++) {
-            if (tabWebViews[i] === wv) {
-                tabListModel.set(i, {
-                    "title": wv.title || "",
-                    "url":   wv.url.toString()
-                })
+        for (var i = 0; i < tabListModel.count; i++) {
+            if (tabListModel.get(i).webView === wv) {
+                tabListModel.setProperty(i, "title", wv.title || "")
+                tabListModel.setProperty(i, "url", wv.url.toString())
                 return
             }
         }

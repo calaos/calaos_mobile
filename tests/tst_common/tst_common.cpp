@@ -141,6 +141,7 @@ private slots:
     void registryProperties_data();
     void registryProperties();
     void registryStyleName();
+    void onlyRealLightsAreCounted();
     void registryMediaGuiTypes();
     void registryLegacyGuiType_data();
     void registryLegacyGuiType();
@@ -453,6 +454,44 @@ void TstCommon::registryProperties()
     QCOMPARE(IOTypeRegistry::isMeasurement(value), measurement);
     QCOMPARE(IOTypeRegistry::isRoomVisibleInput(value), visibleInput);
     QCOMPARE(IOTypeRegistry::isRoomVisibleOutput(value), visibleOutput);
+}
+
+/* Le compteur de lumieres ne doit compter que de vraies lumieres. Pompe, prise,
+ * chaudiere et radiateur arrivent en gui_type "light" avec un style et se
+ * dessinent comme une lumiere, mais les compter afficherait des lumieres
+ * allumees alors qu'aucune ne l'est. Regle posee par Raoul le 2026-08-11 apres
+ * que T16 les ait fait entrer dans le compteur ; la spec du ticket affirmait
+ * l'inverse. Pilote par la table pour qu'un type ajoute plus tard doive etre
+ * classe explicitement. */
+void TstCommon::onlyRealLightsAreCounted()
+{
+    const QSet<Common::IOType> expected = {
+        Common::Light, Common::LightDimmer, Common::LightRgb
+    };
+
+    for (const IOTypeRegistry::Entry &e: IOTypeRegistry::entries())
+    {
+        const bool shouldCount = expected.contains(e.ioType);
+        QVERIFY2(IOTypeRegistry::countsAsLight(e.ioType) == shouldCount,
+                 qPrintable(QStringLiteral("%1 : countsAsLight vaut %2, attendu %3")
+                                .arg(ioTypeName(e.ioType))
+                                .arg(IOTypeRegistry::countsAsLight(e.ioType))
+                                .arg(shouldCount)));
+
+        //Tout ce qui compte est une lumiere, l'inverse est faux.
+        if (IOTypeRegistry::countsAsLight(e.ioType))
+            QVERIFY(IOTypeRegistry::isLight(e.ioType));
+    }
+
+    //Les quatre styles restent des lumieres pour le regroupement et le rendu :
+    //seule leur participation au compteur change.
+    for (Common::IOType t: { Common::Pump, Common::Outlet,
+                             Common::Boiler, Common::Heater })
+    {
+        QVERIFY(IOTypeRegistry::isLight(t));
+        QVERIFY(IOTypeRegistry::isBinaryLight(t));
+        QVERIFY(!IOTypeRegistry::countsAsLight(t));
+    }
 }
 
 //Nom de la variante visuelle : le style s'il y en a un, le gui_type sinon.

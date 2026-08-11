@@ -19,60 +19,61 @@ using Entry = IOTypeRegistry::Entry;
 const QVector<Entry> &table()
 {
     static const QVector<Entry> t = {
-        //Lights. The four styled ones are lights in every respect (they are
-        //sent as gui_type "light"); only their QML delegate differs.
-        { Common::Light,                "light",         "",                Category::Light,    true,  false, false, true  },
-        { Common::Pump,                 "light",         "pump",            Category::Light,    true,  false, false, true  },
-        { Common::Outlet,               "light",         "outlet",          Category::Light,    true,  false, false, true  },
-        { Common::Boiler,               "light",         "boiler",          Category::Light,    true,  false, false, true  },
-        { Common::Heater,               "light",         "heater",          Category::Light,    true,  false, false, true  },
-        { Common::LightDimmer,          "light_dimmer",  "",                Category::Light,    true,  true,  false, true  },
-        { Common::LightRgb,             "light_rgb",     "",                Category::Light,    true,  true,  false, true  },
+        //Lights. The four styled ones travel as gui_type "light" and render
+        //like a light, but they are appliances: countsAsLight is false for
+        //them, so the light counter and "all lights off" leave them alone.
+        { Common::Light,                "light",         "",                Category::Light,    true,  true,  false, false, true  },
+        { Common::Pump,                 "light",         "pump",            Category::Light,    true, false,  false, false, true  },
+        { Common::Outlet,               "light",         "outlet",          Category::Light,    true, false,  false, false, true  },
+        { Common::Boiler,               "light",         "boiler",          Category::Light,    true, false,  false, false, true  },
+        { Common::Heater,               "light",         "heater",          Category::Light,    true, false,  false, false, true  },
+        { Common::LightDimmer,          "light_dimmer",  "",                Category::Light,    true,  true,  true,  false, true  },
+        { Common::LightRgb,             "light_rgb",     "",                Category::Light,    true,  true,  true,  false, true  },
 
-        { Common::Shutter,              "shutter",       "",                Category::Shutter,  false, false, false, true  },
-        { Common::ShutterSmart,         "shutter_smart", "",                Category::Shutter,  false, false, false, true  },
+        { Common::Shutter,              "shutter",       "",                Category::Shutter,  false, false, false, false, true  },
+        { Common::ShutterSmart,         "shutter_smart", "",                Category::Shutter,  false, false, false, false, true  },
 
-        { Common::Temp,                 "temp",          "",                Category::Temp,     false, false, true,  false },
-        { Common::AnalogIn,             "analog_in",     "",                Category::Temp,     false, false, true,  false },
-        { Common::AnalogOut,            "analog_out",    "",                Category::Other,    false, false, false, true  },
+        { Common::Temp,                 "temp",          "",                Category::Temp,     false, false, false, true,  false },
+        { Common::AnalogIn,             "analog_in",     "",                Category::Temp,     false, false, false, true,  false },
+        { Common::AnalogOut,            "analog_out",    "",                Category::Other,    false, false, false, false, true  },
 
-        { Common::VarBool,              "var_bool",      "",                Category::Var,      false, false, false, true  },
-        { Common::VarInt,               "var_int",       "",                Category::Var,      false, false, false, true  },
-        { Common::VarString,            "var_string",    "",                Category::Var,      false, false, false, true  },
+        { Common::VarBool,              "var_bool",      "",                Category::Var,      false, false, false, false, true  },
+        { Common::VarInt,               "var_int",       "",                Category::Var,      false, false, false, false, true  },
+        { Common::VarString,            "var_string",    "",                Category::Var,      false, false, false, false, true  },
 
-        { Common::Scenario,             "scenario",      "",                Category::Scenario, false, false, true,  false },
+        { Common::Scenario,             "scenario",      "",                Category::Scenario, false, false, false, true,  false },
 
-        { Common::AVReceiver,           "avreceiver",    "",                Category::Media,    false, false, false, false },
-        { Common::AudioInput,           "audio_input",   "",                Category::Media,    false, false, false, false },
-        { Common::AudioOutput,          "audio_output",  "",                Category::Media,    false, false, false, false },
-        { Common::CameraInput,          "camera_input",  "",                Category::Media,    false, false, false, false },
-        { Common::CameraOutput,         "camera_output", "",                Category::Media,    false, false, false, false },
+        { Common::AVReceiver,           "avreceiver",    "",                Category::Media,    false, false, false, false, false },
+        { Common::AudioInput,           "audio_input",   "",                Category::Media,    false, false, false, false, false },
+        { Common::AudioOutput,          "audio_output",  "",                Category::Media,    false, false, false, false, false },
+        { Common::CameraInput,          "camera_input",  "",                Category::Media,    false, false, false, false, false },
+        { Common::CameraOutput,         "camera_output", "",                Category::Media,    false, false, false, false, false },
 
-        { Common::StringIn,             "string_in",     "",                Category::Other,    false, false, true,  false },
-        { Common::StringOut,            "string_out",    "",                Category::Other,    false, false, false, true  },
+        { Common::StringIn,             "string_in",     "",                Category::Other,    false, false, false, true,  false },
+        { Common::StringOut,            "string_out",    "",                Category::Other,    false, false, false, false, true  },
 
-        { Common::Timer,                "timer",         "",                Category::Other,    false, false, false, false },
-        { Common::Time,                 "time",          "",                Category::Other,    false, false, false, false },
-        { Common::TimeRange,            "time_range",    "",                Category::Other,    false, false, false, false },
+        { Common::Timer,                "timer",         "",                Category::Other,    false, false, false, false, false },
+        { Common::Time,                 "time",          "",                Category::Other,    false, false, false, false, false },
+        { Common::TimeRange,            "time_range",    "",                Category::Other,    false, false, false, false, false },
 
         //Switches. The styled ones are binary sensors, sent as gui_type
         //"switch" like a plain switch and shown in a room the same way.
-        { Common::Switch,               "switch",        "",                Category::Other,    false, false, true,  false },
-        { Common::DoorSensor,           "switch",        "door",            Category::Sensor,   false, false, true,  false },
-        { Common::OccupancySensor,      "switch",        "occupancy",       Category::Sensor,   false, false, true,  false },
-        { Common::SmokeSensor,          "switch",        "smoke",           Category::Sensor,   false, false, true,  false },
-        { Common::WaterLeakSensor,      "switch",        "water",           Category::Sensor,   false, false, true,  false },
-        { Common::GasLeakSensor,        "switch",        "gas",             Category::Sensor,   false, false, true,  false },
-        { Common::CO2Sensor,            "switch",        "carbon_monoxide", Category::Sensor,   false, false, true,  false },
-        { Common::SoundSensor,          "switch",        "sound",           Category::Sensor,   false, false, true,  false },
-        { Common::MotionSensor,         "switch",        "motion",          Category::Sensor,   false, false, true,  false },
-        { Common::VibrationSensor,      "switch",        "vibration",       Category::Sensor,   false, false, true,  false },
-        { Common::LockSensor,           "switch",        "lock",            Category::Sensor,   false, false, true,  false },
-        { Common::GarageDoorSensor,     "switch",        "garage_door",     Category::Sensor,   false, false, true,  false },
-        { Common::Switch3,              "switch3",       "",                Category::Other,    false, false, false, false },
-        { Common::SwitchLong,           "switch_long",   "",                Category::Other,    false, false, false, false },
+        { Common::Switch,               "switch",        "",                Category::Other,    false, false, false, true,  false },
+        { Common::DoorSensor,           "switch",        "door",            Category::Sensor,   false, false, false, true,  false },
+        { Common::OccupancySensor,      "switch",        "occupancy",       Category::Sensor,   false, false, false, true,  false },
+        { Common::SmokeSensor,          "switch",        "smoke",           Category::Sensor,   false, false, false, true,  false },
+        { Common::WaterLeakSensor,      "switch",        "water",           Category::Sensor,   false, false, false, true,  false },
+        { Common::GasLeakSensor,        "switch",        "gas",             Category::Sensor,   false, false, false, true,  false },
+        { Common::CO2Sensor,            "switch",        "carbon_monoxide", Category::Sensor,   false, false, false, true,  false },
+        { Common::SoundSensor,          "switch",        "sound",           Category::Sensor,   false, false, false, true,  false },
+        { Common::MotionSensor,         "switch",        "motion",          Category::Sensor,   false, false, false, true,  false },
+        { Common::VibrationSensor,      "switch",        "vibration",       Category::Sensor,   false, false, false, true,  false },
+        { Common::LockSensor,           "switch",        "lock",            Category::Sensor,   false, false, false, true,  false },
+        { Common::GarageDoorSensor,     "switch",        "garage_door",     Category::Sensor,   false, false, false, true,  false },
+        { Common::Switch3,              "switch3",       "",                Category::Other,    false, false, false, false, false },
+        { Common::SwitchLong,           "switch_long",   "",                Category::Other,    false, false, false, false, false },
 
-        { Common::FavoritesLightsCount, "fav_all_lights","",                Category::Other,    false, false, false, false },
+        { Common::FavoritesLightsCount, "fav_all_lights","",                Category::Other,    false, false, false, false, false },
     };
 
     return t;
@@ -299,6 +300,12 @@ bool IOTypeRegistry::isBinaryLight(Common::IOType t)
 {
     const Entry *e = entry(t);
     return e && e->isLight && !e->dimmable;
+}
+
+bool IOTypeRegistry::countsAsLight(Common::IOType t)
+{
+    const Entry *e = entry(t);
+    return e && e->countsAsLight;
 }
 
 bool IOTypeRegistry::isMeasurement(Common::IOType t)

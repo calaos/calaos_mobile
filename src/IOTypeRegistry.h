@@ -45,7 +45,14 @@ public:
         const char *guiType;
         const char *style;          //empty when the gui type alone identifies the IO
         Category category;
-        bool isLight;               //feeds LightOnModel and the light counter
+        bool isLight;               //belongs to the light category: grouping,
+                                    //ordering, on/off rendering
+        bool countsAsLight;         //feeds LightOnModel and the light counter.
+                                    //Narrower than isLight: a pump, an outlet,
+                                    //a boiler and a heater are sent as styled
+                                    //lights and render like one, but they are
+                                    //appliances and must not be counted as
+                                    //lights, nor switched off by "all lights off"
         bool dimmable;              //state is a level/color, not a boolean
         bool roomVisibleInput;      //listed in a room when read as an input
         bool roomVisibleOutput;     //listed in a room when read as an output
@@ -83,6 +90,12 @@ public:
 
     //Light whose state is a boolean (Light and the four styled lights).
     static bool isBinaryLight(Common::IOType t);
+
+    /* Counted by LightOnModel and switched off by "all lights off". Only real
+     * lights: Light, LightDimmer and LightRgb. A pump, an outlet, a boiler and
+     * a heater travel as styled lights and render like one, but counting them
+     * would tell the user that lights are on when none is. */
+    static bool countsAsLight(Common::IOType t);
 
     /* Numeric reading displayed as a value: temperature, analog input and
      * integer variable. Groups them on the same side of a room view. */

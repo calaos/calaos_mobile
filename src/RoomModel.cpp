@@ -295,9 +295,13 @@ void IOBase::load(const QVariantMap &io)
 
 void IOBase::checkFirstState()
 {
-    /* "Is this a light, and is its state a boolean or a level?" is answered by
-     * the registry (src/IOTypeRegistry.h): the styled lights (pump, outlet,
-     * boiler, heater) are lights here too, and feed the light counter. */
+    /* Only real lights are counted. A pump, an outlet, a boiler and a heater
+     * travel as styled lights and render like one, but reporting them would
+     * tell the user that lights are on when none is. isBinaryLight and
+     * isDimmableLight below answer a different question: how the state reads. */
+    if (!IOTypeRegistry::countsAsLight(get_ioType()))
+        return;
+
     if (IOTypeRegistry::isBinaryLight(get_ioType()))
     {
         if (getStateBool())
@@ -567,8 +571,13 @@ void IOBase::outputChanged(QString id, QString key, QString value)
 
     if (key == "state")
     {
-        //Same reading of the type as checkFirstState(), see above.
-        if (IOTypeRegistry::isBinaryLight(get_ioType()))
+        //Same reading of the type as checkFirstState(), see above: the styled
+        //lights are deliberately left out of the counter.
+        if (!IOTypeRegistry::countsAsLight(get_ioType()))
+        {
+            //nothing to report, the unconditional state update below applies
+        }
+        else if (IOTypeRegistry::isBinaryLight(get_ioType()))
         {
             if (getStateBool() != (value == "true"))
             {

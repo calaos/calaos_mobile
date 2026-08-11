@@ -61,11 +61,6 @@ int HardwareUtils::getNetworkStatus()
     return ConnectedWWAN;
 }
 
-void HardwareUtils::showNetworkActivity(bool en)
-{
-    Q_UNUSED(en)
-}
-
 void HardwareUtils::emitApplicationActiveChanged(bool active)
 {
     if (active)

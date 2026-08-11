@@ -25,11 +25,6 @@ Window {
         notif.showMessage(title, message, timeout)
     }
 
-    //this is called by HardwareUtils
-    function showNetworkActivity(en) {
-        //TODO
-    }
-
     function goToDesktop() {
         mainMenu.unselectAll()
         stackView.pop(null)
@@ -197,7 +192,6 @@ Window {
 
             onRoomClicked: (idx, room_name, room_type) => {
                 //get room model
-                console.debug("model: " + homeModel)
                 roomModel = homeModel.getRoomModel(idx)
                 currentRoomName = room_name
                 currentRoomType = room_type
@@ -377,7 +371,6 @@ Window {
 
             onDispatched: (filtertype, message) => {
                 io = message.io
-                console.log("todo keyboard for item:" + io + " - " + io.ioName)
                 dialogKeyboard.openKeyboard(qsTr("Keyboard"),
                                             qsTr("Change text for '%1'").arg(io.ioName),
                                             io.stateString,

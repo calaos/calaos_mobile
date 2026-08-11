@@ -50,7 +50,9 @@ Item {
                 return "IconSun.qml"
             }
 
-            console.log("Unknown weather icon code: " + c)
+            //Not a stray trace: the provider sent a condition code this widget
+            //has no icon for, and the user sees an empty slot. Worth a warning.
+            console.warn("Weather: no icon for condition code " + c)
             return ""
         }
 

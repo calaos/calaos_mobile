@@ -66,7 +66,7 @@ BorderImage {
                     labelText: qsTr("Running since:")
 
                     property int uptime: calaosApp.uptime
-                    onUptimeChanged: uptimeTxt.valueText = Calaos.formatTime(uptime)
+                    onUptimeChanged: uptimeTxt.valueText = CalaosJs.formatDuration(uptime, CalaosJs.Duration.Short)
 
                     Component.onCompleted: {
                         calaosApp.updateSystemInfo()

@@ -81,7 +81,6 @@ ItemBase {
         from: 0; to: 100
         value: modelData.stateInt
         onValueChanged: {
-            console.log("slider value changed")
             if (value !== modelData.stateInt) {
                 feedbackAnim()
                 modelData.sendIntValue(Math.round(value))

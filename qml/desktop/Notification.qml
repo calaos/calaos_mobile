@@ -107,7 +107,8 @@ Flipable {
 
                 Text {
                     id: titleitem
-                    text: "Test title"
+                    //Filled in by showMessage(); the banner is never shown empty.
+                    text: ""
 
                     Layout.preferredWidth: Units.dp(200)
                     Layout.maximumWidth: Units.dp(200)
@@ -120,7 +121,8 @@ Flipable {
 
                 Text {
                     id: msgitem
-                    text: "Message lorem ipsum blabla blabla jhlkjsdlk jlk jdflkdjsf lkjsdlk fjlskdjf l kjdslfkj ldskjflskdjflkjds flkjd slfj dfdf."
+                    //Filled in by showMessage(); the banner is never shown empty.
+                    text: ""
 
                     width: col.width
                     Layout.preferredWidth: Units.dp(200)

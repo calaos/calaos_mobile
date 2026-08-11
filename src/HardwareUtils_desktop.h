@@ -16,8 +16,6 @@ public:
 
     virtual void showAlertMessage(QString title, QString message, QString buttontext);
 
-    virtual void showNetworkActivity(bool en);
-
     virtual void saveAuthKeychain(const QString &email, const QString &pass);
     virtual void loadAuthKeychain(QString &email, QString &pass);
     virtual QString getServerHost();

@@ -26,8 +26,6 @@ Item {
     property alias colorPreview: colorPrev.color
 
     function updatePreview() {
-        console.log("hue:" + slider_hue.value/ 255.0 + " s:" + slider_saturation.value/ 100.0 + " l:" + slider_lumi.value/ 100.0)
-
         colorPreview = Qt.hsla(slider_hue.value / 255.0,
                                slider_saturation.value / 100.0,
                                slider_lumi.value / 100.0, 1)

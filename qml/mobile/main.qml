@@ -127,7 +127,6 @@ Window {
 
             onRoomClicked: {
                 //get room model
-                console.debug("model: " + homeModel)
                 roomModel = homeModel.getRoomModel(idx)
                 currentRoomName = room_name
                 stackView.push(roomDetailView)

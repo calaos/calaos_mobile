@@ -4,7 +4,6 @@ import QtQuick.Layouts
 import Calaos
 import QuickFlux
 import "../quickflux"
-import "Utils.js" as Utils
 
 Item {
     id: root
@@ -196,7 +195,7 @@ Item {
                 }
                 Text {
                     font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 8 }
-                    text: playerModel.elapsed === ""? "N/A": Utils.time2string_digit(playerModel.elapsed)
+                    text: playerModel.elapsed === ""? "N/A": CalaosJs.formatDuration(playerModel.elapsed, CalaosJs.Duration.Clock)
                     color: "#848484"
                 }
             }
@@ -336,7 +335,7 @@ Item {
                 }
                 Text {
                     font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 10 }
-                    text: playerModel.duration === ""? "N/A": Utils.time2string_digit(playerModel.duration)
+                    text: playerModel.duration === ""? "N/A": CalaosJs.formatDuration(playerModel.duration, CalaosJs.Duration.Clock)
                     color: playerModel.status === Common.StatusPlay? "#3AB4D7": "#848484"
                     Layout.fillWidth: true
                     elide: Text.ElideRight

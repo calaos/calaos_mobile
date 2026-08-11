@@ -32,7 +32,6 @@ Item {
             Item {
 
                 Component.onCompleted: {
-                    console.log("component loaded")
                     modelData = Qt.binding(function() { return cameraModel.getItemModel(model.index) })
                 }
                 property variant modelData

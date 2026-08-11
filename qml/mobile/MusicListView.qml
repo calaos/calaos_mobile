@@ -33,7 +33,6 @@ Item {
             Item {
 
                 Component.onCompleted: {
-                    console.log("component loaded")
                     modelData = Qt.binding(function() { return audioModel.getItemModel(model.index) })
                 }
                 property variant modelData

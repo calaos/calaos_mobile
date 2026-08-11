@@ -112,19 +112,6 @@ void HardwareUtilsDesktop::showAlertMessage(QString title, QString message, QStr
     appDispatcher->dispatch("showNotificationMsg", m);
 }
 
-void HardwareUtilsDesktop::showNetworkActivity(bool en)
-{
-    if (qmlEngine->rootObjects().isEmpty()) return;
-
-    //qInfo() << "showNetworkActivity(" << en << ")";
-
-    QVariant ret;
-    QObject *root = qmlEngine->rootObjects().at(0);
-    QMetaObject::invokeMethod(root, "showNetworkActivity",
-                              Q_RETURN_ARG(QVariant, ret),
-                              Q_ARG(QVariant, en));
-}
-
 void HardwareUtilsDesktop::loadAuthKeychain(QString &email, QString &pass)
 {
     email = getConfigOption("cn_user");

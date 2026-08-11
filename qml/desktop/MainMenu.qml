@@ -3,7 +3,6 @@ import SharedComponents
 import QtQuick.Layouts
 import QuickFlux
 import "../quickflux"
-import "Utils.js" as Utils
 
 Item {
     id: menu
@@ -171,7 +170,7 @@ Item {
                 }
 
                 property string dpmsText: screenManager.dpmsEnabled?
-                                              qsTr("Auto: %1").arg(Utils.timeToString(screenManager.dpmsTime / 1000)):
+                                              qsTr("Auto: %1").arg(CalaosJs.formatDuration(screenManager.dpmsTime / 1000, CalaosJs.Duration.Long)):
                                               qsTr("Auto: off")
                 onDpmsTextChanged: setProperty(2, "moreText", dpmsText)
             }

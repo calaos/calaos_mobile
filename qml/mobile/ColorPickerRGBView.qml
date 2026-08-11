@@ -21,14 +21,11 @@ Item {
         slider_red.value = itemColor.rgbColor.r * 255
         slider_green.value = itemColor.rgbColor.g * 255
         slider_blue.value = itemColor.rgbColor.b * 255
-        console.log("update sliders: r:" + slider_red.value + " g:" + slider_green.value + " b:" + slider_blue.value)
     }
 
     property alias colorPreview: colorPrev.color
 
     function updatePreview() {
-
-        console.log("r:" + slider_red.value + " g:" + slider_green.value + " b:" + slider_blue.value)
         colorPreview = Qt.rgba(slider_red.value / 255.0, slider_green.value / 255.0, slider_blue.value / 255.0, 1)
     }
 

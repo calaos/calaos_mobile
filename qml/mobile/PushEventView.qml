@@ -23,8 +23,6 @@ Item {
             return;
         }
 
-        console.debug("Loading event: " + event_uuid)
-
         loading = true
 
         event_haspic = false

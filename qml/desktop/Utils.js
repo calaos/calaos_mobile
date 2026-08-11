@@ -1,55 +1,7 @@
-function rootObject() {
-    var next = parent
-    while (next && next.parent)
-        next = next.parent
-    return next
-}
-
-function visualRoot() {
-    var root = rootObject()
-    if(root.hasOwnProperty("privateWindow"))
-        return root.privateWindow
-    return root;
-}
-
-function findParent(child, propertyName) {
-    if (!child)
-        return null
-    var next = child.parent
-    while (next && !next.hasOwnProperty(propertyName))
-        next = next.parent
-    return next
-}
-
-function sceneX(item) {
-    // Binding may cause that this function is evaluated even when item is undefined,
-    // but in that case the Binding isn't active however so we can safely return 0
-    var x = 0
-    if (item) {
-        x = item.x
-        var p = item.parent
-        while (p) {
-            x += p.x
-            p = p.parent
-        }
-    }
-    return x
-}
-
-function sceneY(item) {
-    // Binding may cause that this function is evaluated even when item is undefined,
-    // but in that case the Binding isn't active however so we can safely return 0
-    var y = 0
-    if (item) {
-        y = item.y
-        var p = item.parent
-        while (p) {
-            y += p.y
-            p = p.parent
-        }
-    }
-    return y
-}
+//Parent-chain helpers for the two views that reparent themselves onto an
+//overlay layer. The reflection helpers that had no call site (rootObject,
+//visualRoot, findParent, sceneX, sceneY) and the duration formatters (now
+//SharedComponents/calaos.js formatDuration) were removed in T30.
 
 function findRoot(o) {
     while (o.parent) {
@@ -73,45 +25,4 @@ function findRootChild(obj, objectName) {
         childs.splice(0, 1);
     }
     return null;
-}
-
-function timeToString(s) {
-    var hours = Math.floor((s %= 86400) / 3600);
-    var min = Math.floor((s %= 3600) / 60);
-    var sec = s % 60;
-    var res = "";
-
-    if (hours == 1) {
-        res += hours + " " + qsTr("hour") + " ";
-    }
-    if (hours > 1) {
-        res += hours + " " + qsTr("hours") + " ";
-    }
-    if (min == 1) {
-        res += min + " " + qsTr("minute") + " ";
-    }
-    if (min > 1) {
-        res += min + " " + qsTr("minutes") + " ";
-    }
-    if (sec == 1) {
-        res += sec + " " + qsTr("second") + " ";
-    }
-    if (sec > 1) {
-        res += sec + " " + qsTr("seconds") + " ";
-    }
-
-    //trimmed
-    return res.replace(/\s*$/, '').replace(/^\s*/, '');
-}
-
-function time2string_digit(s) {
-    var sec_num = parseInt(s, 10)
-    var hours = Math.floor(sec_num / 3600)
-    var minutes = Math.floor((sec_num - (hours * 3600)) / 60)
-    var seconds = sec_num - (hours * 3600) - (minutes * 60)
-
-    if (hours < 10) { hours = "0" + hours }
-    if (minutes < 10) { minutes = "0" + minutes }
-    if (seconds < 10) { seconds = "0" + seconds }
-    return hours > 0? hours + ':' + minutes + ':' + seconds: minutes + ':' + seconds
 }

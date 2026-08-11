@@ -25,7 +25,7 @@ ItemBase 1.0 ItemBase.qml
 ItemButtonAction 1.0 ItemButtonAction.qml
 IconItem 1.0 IconItem.qml
 AnimatedIcon 1.0 AnimatedIcon.qml
-Calaos 1.0 calaos.js
+CalaosJs 1.0 calaos.js
 singleton Units 1.0 Units.qml
 ScrollBar 1.0 ScrollBar.qml
 ItemListView 1.0 ItemListView.qml

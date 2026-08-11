@@ -114,7 +114,7 @@ Dialog {
             Text {
                 font { family: calaosFont.fontFamily; weight: Font.Medium; pointSize: 14 }
                 color: "#E7E7E7"
-                text: Calaos.formatTime(__internal.item.statusUptime)
+                text: CalaosJs.formatDuration(__internal.item.statusUptime, CalaosJs.Duration.Short)
                 Layout.alignment: Qt.AlignVCenter
             }
         }

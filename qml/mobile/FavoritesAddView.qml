@@ -28,7 +28,7 @@ Item {
             width: Units.dp(100)
 
             property string roomIconType: roomType
-            onRoomIconTypeChanged: roomIcon.source = calaosApp.getPictureSizedPrefix(Calaos.getRoomTypeIcon(roomIconType), "img/rooms")
+            onRoomIconTypeChanged: roomIcon.source = calaosApp.getPictureSizedPrefix(CalaosJs.getRoomTypeIcon(roomIconType), "img/rooms")
 
             Image {
                 id: roomIcon

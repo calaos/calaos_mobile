@@ -190,7 +190,6 @@ void CalaosConnection::connectionLost(const QString &reason, ReconnectPolicy::Fa
 
     qWarning() << "Calaos connection lost: " << reason;
 
-    HardwareUtils::Instance()->showNetworkActivity(false);
     resetTransport();
 
     const bool retry = reconnectPolicy.failed(kind);
@@ -223,7 +222,6 @@ void CalaosConnection::requestImmediateReconnect(QString user, QString pass, QSt
 
 void CalaosConnection::suspend()
 {
-    HardwareUtils::Instance()->showNetworkActivity(false);
     cancelReconnectTimer();
     resetTransport();
     reconnectPolicy.suspend();
@@ -261,8 +259,6 @@ void CalaosConnection::startConnection(QString user, QString pass, QString h, Re
     lastAttemptTimer.restart();
     emitStateChanged();
 
-    HardwareUtils::Instance()->showNetworkActivity(true);
-
     username = user;
     password = pass;
     lasthost = h;
@@ -282,7 +278,6 @@ void CalaosConnection::startConnection(QString user, QString pass, QString h, Re
             constate = ConStateWebsocket;
             reconnectPolicy.attemptSucceeded();
             emitStateChanged();
-            HardwareUtils::Instance()->showNetworkActivity(false);
             emitHomeLoaded(QVariantMap());
         });
 
@@ -504,8 +499,6 @@ void CalaosConnection::handleWebsocketFailure(const QString &reason)
 
 void CalaosConnection::logout()
 {
-    HardwareUtils::Instance()->showNetworkActivity(false);
-
     cancelReconnectTimer();
     resetTransport();
     //Explicit logout: no automatic reconnection is wanted any more.
@@ -517,8 +510,6 @@ void CalaosConnection::logout()
 
 void CalaosConnection::loginFinished(QNetworkReply *reply)
 {
-    HardwareUtils::Instance()->showNetworkActivity(false);
-
     disconnect(accessManager, &QNetworkAccessManager::finished,
                this, &CalaosConnection::loginFinished);
 
@@ -619,8 +610,6 @@ void CalaosConnection::emitHomeLoaded(const QVariantMap &home)
 
 void CalaosConnection::requestFinished()
 {
-    HardwareUtils::Instance()->showNetworkActivity(false);
-
     QNetworkReply *reqReply = qobject_cast<QNetworkReply*>(QObject::sender());
 
     if (!reqReply)
@@ -767,8 +756,6 @@ void CalaosConnection::sendHttp(const QString &msg, QJsonObject &data, bool igno
 
 void CalaosConnection::sendCommand(QString id, QString value, QString type, QString action)
 {
-    HardwareUtils::Instance()->showNetworkActivity(true);
-
     QJsonObject jroot;
     if (isHttp())
     {
@@ -803,8 +790,6 @@ void CalaosConnection::sendJson(QString action, QJsonObject &jsonData)
 
 void CalaosConnection::queryState(QStringList inputs, QStringList outputs, QStringList audio_players)
 {
-    HardwareUtils::Instance()->showNetworkActivity(true);
-
     QJsonObject jroot;
     if (isHttp())
     {
@@ -1167,7 +1152,6 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
     else if (jroot[JsonKeys::Msg] == "get_home")
     {
         emitHomeLoaded(jroot[JsonKeys::Data].toObject().toVariantMap());
-        HardwareUtils::Instance()->showNetworkActivity(false);
     }
     else if (jroot[JsonKeys::Msg] == "event")
     {
@@ -1202,12 +1186,6 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
                 emit changeCredsFailed();
             }
         }
-    }
-
-    //We get this marker when calling sendCommand(...) it helps disabling the net indicator
-    if (jroot[JsonKeys::MsgId] == "user_cmd" || jroot[JsonKeys::MsgId] == "change_creds")
-    {
-        HardwareUtils::Instance()->showNetworkActivity(false);
     }
 }
 

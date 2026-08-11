@@ -173,7 +173,7 @@ PageScaffold {
 
     Image {
         id: roomIcon
-        source: "qrc:/img/rooms/%1/%1_big.png".arg(Calaos.getRoomTypeIcon(currentRoomType))
+        source: "qrc:/img/rooms/%1/%1_big.png".arg(CalaosJs.getRoomTypeIcon(currentRoomType))
 
         anchors {
             horizontalCenter: parent.horizontalCenter

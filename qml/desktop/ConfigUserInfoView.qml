@@ -103,7 +103,7 @@ Item {
                                                          TextInput.Password,
                                                          false,
                                                          function(pass1) {
-                                                             Calaos.singleshotTimer(200, function() {
+                                                             CalaosJs.singleshotTimer(200, function() {
                                                                  AppActions.openKeyboard(qsTr("Password"),
                                                                                      qsTr("Enter your new password again to validate it"),
                                                                                      "",
@@ -344,7 +344,6 @@ Item {
         Filter {
             type: ActionTypes.addUserInfoEmail
             onDispatched: (filtertype, message) => {
-                console.log("user email append")
                 userInfoModel.addEmail(message.text)
             }
         }

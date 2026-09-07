@@ -14,3 +14,6 @@ mobile.pro.user*
 lang/auto_translate.exe
 lang/auto_translate
 lang/auto_translate.conf
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/

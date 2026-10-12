@@ -47,6 +47,7 @@ public:
         OutputStateChange,  //data
         AudioStateChange,   //id = player id (may be empty), data
         LogEvent,           //data
+        DeviceChange,       //id, data = the whole `device` object of an io_changed
     };
     Q_ENUM(Type)
 

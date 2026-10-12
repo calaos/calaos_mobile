@@ -81,6 +81,9 @@ private slots:
     void v3Events();
     void v3IoChangedExpandsEveryState();
     void v3IoChangedWithoutIdIsNotFatal();
+    void v3IoChangedCarriesDeviceObject();
+    void v3IoChangedMalformedDeviceIsDropped_data();
+    void v3IoChangedMalformedDeviceIsDropped();
     void v3IoStatusCarriesTheWholeData();
     void v3MalformedAndUnknown_data();
     void v3MalformedAndUnknown();
@@ -295,6 +298,46 @@ void TstCalaosEventDecoder::v3IoChangedExpandsEveryState()
                                              "OutputChange|output_9|state|true|0|",
                                              "InputChange|output_9|value|75|0|",
                                              "OutputChange|output_9|value|75|0|" }));
+}
+
+void TstCalaosEventDecoder::v3IoChangedCarriesDeviceObject()
+{
+    const QList<DecodedEvent> events = record(CalaosEventDecoder::decodeEventV3(
+        frameFromJson(R"({"type_str":"io_changed","data":{"id":"salon_ac","state":"cool",
+            "device":{"family":"climate","impl":"proxy",
+                      "state":{"mode":"cool","current_temp":23.4,"target_temp":21.0}}}})")));
+
+    //The object is not flattened to a string and the plain state still flows.
+    QCOMPARE(describe(events), (QStringList{ "DeviceChange|salon_ac|||0|",
+                                             "InputChange|salon_ac|state|cool|0|",
+                                             "OutputChange|salon_ac|state|cool|0|" }));
+
+    const DecodedEvent &dev = events.first();
+    QCOMPARE(dev.type, DecodedEvent::DeviceChange);
+    QCOMPARE(dev.data.value("family").toString(), QStringLiteral("climate"));
+    QCOMPARE(dev.data.value("state").toMap().value("current_temp").toDouble(), 23.4);
+}
+
+void TstCalaosEventDecoder::v3IoChangedMalformedDeviceIsDropped_data()
+{
+    QTest::addColumn<QByteArray>("device");
+
+    QTest::newRow("string") << QByteArray(R"("oops")");
+    QTest::newRow("number") << QByteArray("42");
+    QTest::newRow("array") << QByteArray("[1,2]");
+    QTest::newRow("null") << QByteArray("null");
+}
+
+void TstCalaosEventDecoder::v3IoChangedMalformedDeviceIsDropped()
+{
+    QFETCH(QByteArray, device);
+
+    const QByteArray frame = R"({"type_str":"io_changed","data":{"id":"salon_ac","state":"off","device":)"
+                             + device + "}}";
+    const QList<DecodedEvent> events = record(CalaosEventDecoder::decodeEventV3(frameFromJson(frame)));
+
+    QCOMPARE(describe(events), (QStringList{ "InputChange|salon_ac|state|off|0|",
+                                             "OutputChange|salon_ac|state|off|0|" }));
 }
 
 void TstCalaosEventDecoder::v3IoChangedWithoutIdIsNotFatal()

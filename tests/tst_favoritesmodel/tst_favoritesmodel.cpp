@@ -53,6 +53,7 @@ signals:
     void eventInputChange(QString id, QString key, QString value);
     void eventOutputChange(QString id, QString key, QString value);
     void eventIoStatusChange(QString id, QVariantMap statusData);
+    void eventDeviceChange(QString id, QVariantMap device);
 };
 
 namespace

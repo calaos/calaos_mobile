@@ -273,6 +273,9 @@ IOBase::IOBase(QQmlApplicationEngine *eng, IOConnection *con, int t):
         ok = connect(events, SIGNAL(eventIoStatusChange(QString,QVariantMap)),
                      this, SLOT(ioStatusChanged(QString,QVariantMap))) && ok;
 
+        ok = connect(events, SIGNAL(eventDeviceChange(QString,QVariantMap)),
+                     this, SLOT(deviceChanged(QString,QVariantMap))) && ok;
+
         if (!ok)
             qWarning() << "IOBase: the connection object" << events
                        << "does not expose the expected IOConnection signals,"
@@ -283,6 +286,20 @@ IOBase::IOBase(QQmlApplicationEngine *eng, IOConnection *con, int t):
 void IOBase::load(const QVariantMap &io)
 {
     ioData = io;
+
+    //Anything but a non-empty object is treated as "no device": a bad payload
+    //must not stop the item from loading.
+    device.clear();
+    if (io.contains(JsonKeys::Device))
+    {
+        const QVariant d = io[JsonKeys::Device];
+        if (d.typeId() == QMetaType::QVariantMap && !d.toMap().isEmpty())
+            device = d.toMap();
+        else
+            qWarning() << "IOBase: ignoring malformed device of" << io[JsonKeys::Id].toString();
+        if (device.isEmpty())
+            ioData.remove(JsonKeys::Device);
+    }
 
     update_ioName(ioData[JsonKeys::Name].toString());
     update_ioHits(Common::toIntSafe(ioData[JsonKeys::Hits], 0, "IOBase.hits"));
@@ -654,6 +671,19 @@ void IOBase::outputChanged(QString id, QString key, QString value)
         ioData[JsonKeys::Name] = value;
         update_ioName(value);
     }
+}
+
+void IOBase::deviceChanged(QString id, QVariantMap newDevice)
+{
+    if (id != ioData[JsonKeys::Id].toString()) return; //not for us
+
+    //Top-level merge: a frame that omits a section (e.g. `ios`) keeps the one
+    //received at get_home.
+    for (auto it = newDevice.constBegin(); it != newDevice.constEnd(); ++it)
+        device.insert(it.key(), it.value());
+
+    ioData[JsonKeys::Device] = device;
+    emit deviceChange();
 }
 
 void IOBase::ioStatusChanged(QString id, QVariantMap statusData)

@@ -1052,6 +1052,9 @@ void CalaosConnection::dispatchEvents(const QList<DecodedEvent> &events)
         case DecodedEvent::IoStatusChange:
             emit eventIoStatusChange(ev.id, ev.data);
             break;
+        case DecodedEvent::DeviceChange:
+            emit eventDeviceChange(ev.id, ev.data);
+            break;
         case DecodedEvent::InputStateChange:
             emit eventInputStateChange(ev.data);
             break;

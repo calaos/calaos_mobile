@@ -131,7 +131,11 @@ public:
      * appears in the protocol ("IOBase.state", ...).
      * The default is 0 everywhere it is used in src/, so replacing a bare parse
      * with these helpers changes no value: it only adds the trace. */
-    static int toIntSafe(const QString &s, int def = 0, const char *what = nullptr);
+    //A device object is only usable as a non-empty JSON object; decoder and model
+//share this rule so `"device":{}` is dropped the same way everywhere.
+static bool isUsableDevice(const QVariant &v);
+
+static int toIntSafe(const QString &s, int def = 0, const char *what = nullptr);
     static double toDoubleSafe(const QString &s, double def = 0.0, const char *what = nullptr);
     static qint64 toLongLongSafe(const QString &s, qint64 def = 0, const char *what = nullptr);
 

@@ -244,3 +244,8 @@ QString Common::getDemoHost()
 {
     return QStringLiteral("demo.calaos.fr");
 }
+
+bool Common::isUsableDevice(const QVariant &v)
+{
+    return v.typeId() == QMetaType::QVariantMap && !v.toMap().isEmpty();
+}

@@ -6,7 +6,6 @@
 #include "qqmlhelpers.h"
 #include <QQmlApplicationEngine>
 #include "Common.h"
-#include "JsonKeys.h"
 #include "IOConnection.h"
 
 class IOBase;
@@ -208,10 +207,10 @@ public:
     Q_INVOKABLE void sendStringValue(QString value);
     Q_INVOKABLE void sendIntValue(double value);
 
-    bool hasDevice() const { return !device.isEmpty(); }
-    QVariantMap getDevice() const { return device; }
-    QVariantMap getDeviceCapabilities() const { return device.value(JsonKeys::Capabilities).toMap(); }
-    QVariantMap getDeviceState() const { return device.value(JsonKeys::State).toMap(); }
+    bool hasDevice() const;
+    QVariantMap getDevice() const;
+    QVariantMap getDeviceCapabilities() const;
+    QVariantMap getDeviceState() const;
 
     Q_INVOKABLE bool getStateBool();
     Q_INVOKABLE double getStateInt();
@@ -234,7 +233,6 @@ public:
 
 private:
     QVariantMap ioData;
-    QVariantMap device;
     QQmlApplicationEngine *engine;
     IOConnection *connection;
     int ioType;

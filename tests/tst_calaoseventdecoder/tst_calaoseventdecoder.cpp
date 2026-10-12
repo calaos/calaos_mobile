@@ -82,6 +82,7 @@ private slots:
     void v3IoChangedExpandsEveryState();
     void v3IoChangedWithoutIdIsNotFatal();
     void v3IoChangedCarriesDeviceObject();
+    void v3IoChangedWarnsOnFlattenedStructure();
     void v3IoChangedMalformedDeviceIsDropped_data();
     void v3IoChangedMalformedDeviceIsDropped();
     void v3IoStatusCarriesTheWholeData();
@@ -326,6 +327,7 @@ void TstCalaosEventDecoder::v3IoChangedMalformedDeviceIsDropped_data()
     QTest::newRow("number") << QByteArray("42");
     QTest::newRow("array") << QByteArray("[1,2]");
     QTest::newRow("null") << QByteArray("null");
+    QTest::newRow("empty object") << QByteArray("{}");
 }
 
 void TstCalaosEventDecoder::v3IoChangedMalformedDeviceIsDropped()
@@ -338,6 +340,14 @@ void TstCalaosEventDecoder::v3IoChangedMalformedDeviceIsDropped()
 
     QCOMPARE(describe(events), (QStringList{ "InputChange|salon_ac|state|off|0|",
                                              "OutputChange|salon_ac|state|off|0|" }));
+}
+
+void TstCalaosEventDecoder::v3IoChangedWarnsOnFlattenedStructure()
+{
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("flattened"));
+    const QList<DecodedEvent> events = record(CalaosEventDecoder::decodeEventV3(
+        frameFromJson(R"({"type_str":"io_changed","data":{"id":"o","extra":{"a":1}}})")));
+    QCOMPARE(events.size(), 2);
 }
 
 void TstCalaosEventDecoder::v3IoChangedWithoutIdIsNotFatal()

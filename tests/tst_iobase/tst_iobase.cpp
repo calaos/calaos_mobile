@@ -259,26 +259,71 @@ private slots:
         QCOMPARE(io->getStateString(), QStringLiteral("cool"));
     }
 
-    void deviceChangeMergesAndNotifies()
+    void deviceChangeReplacesWholesaleAndNotifies()
     {
         QScopedPointer<IOBase> io(new IOBase(nullptr, con, IOBase::IOOutput));
         io->load(climateItem(sampleDevice()));
         QSignalSpy spy(io.data(), &IOBase::deviceChange);
 
         emit con->eventDeviceChange(QStringLiteral("salon_ac"),
-            { { "state", QVariantMap{ { "mode", "heat" }, { "target_temp", 19.5 } } } });
+            { { "family", "climate" },
+              { "state", QVariantMap{ { "mode", "heat" }, { "target_temp", 19.5 } } } });
 
         QCOMPARE(spy.count(), 1);
         QCOMPARE(io->getDeviceState().value("mode").toString(), QStringLiteral("heat"));
         QCOMPARE(io->getDeviceState().value("target_temp").toDouble(), 19.5);
-        //Sections absent from the frame survive.
-        QCOMPARE(io->getDeviceCapabilities().value("modes").toList().size(), 2);
-        QCOMPARE(io->getDevice().value("ios").toMap().value("mode").toString(),
-                 QStringLiteral("salon_ac_mode"));
+        //Sections absent from the new object are gone.
+        QVERIFY(io->getDeviceCapabilities().isEmpty());
+        QVERIFY(!io->getDevice().contains("ios"));
 
-        //A clone made after the event sees the merged object.
         QScopedPointer<IOBase> clone(io->cloneIO());
-        QCOMPARE(clone->getDeviceState().value("mode").toString(), QStringLiteral("heat"));
+        QCOMPARE(clone->getDevice(), io->getDevice());
+    }
+
+    void emptyDeviceEventIsIgnored()
+    {
+        QScopedPointer<IOBase> io(new IOBase(nullptr, con, IOBase::IOOutput));
+        io->load(climateItem(sampleDevice()));
+        QSignalSpy spy(io.data(), &IOBase::deviceChange);
+
+        emit con->eventDeviceChange(QStringLiteral("salon_ac"), QVariantMap());
+
+        QCOMPARE(spy.count(), 0);
+        QVERIFY(io->hasDevice());
+    }
+
+    void loadNotifiesWhenDeviceAppearsDisappearsOrDiffers()
+    {
+        QScopedPointer<IOBase> io(new IOBase(nullptr, con, IOBase::IOOutput));
+        QSignalSpy spy(io.data(), &IOBase::deviceChange);
+
+        io->load(climateItem(QVariant()));
+        QCOMPARE(spy.count(), 0);
+
+        io->load(climateItem(sampleDevice()));
+        QCOMPARE(spy.count(), 1);
+
+        io->load(climateItem(sampleDevice()));
+        QCOMPARE(spy.count(), 1);
+
+        QVariantMap other = sampleDevice();
+        other["impl"] = QStringLiteral("thermostat");
+        io->load(climateItem(other));
+        QCOMPARE(spy.count(), 2);
+
+        io->load(climateItem(QVariant()));
+        QCOMPARE(spy.count(), 3);
+    }
+
+    void emptyDeviceWarnsOnceNotOnClone()
+    {
+        QScopedPointer<IOBase> io(new IOBase(nullptr, con, IOBase::IOOutput));
+        QTest::ignoreMessage(QtWarningMsg, QRegularExpression("ignoring malformed device"));
+        io->load(climateItem(QVariantMap()));
+
+        QTest::failOnWarning();
+        QScopedPointer<IOBase> clone(io->cloneIO());
+        QVERIFY(!clone->hasDevice());
     }
 
     void deviceChangeForAnotherIoIsIgnored()

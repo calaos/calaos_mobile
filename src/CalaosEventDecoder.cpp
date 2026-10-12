@@ -151,17 +151,20 @@ QList<DecodedEvent> CalaosEventDecoder::decodeEventV3(const QVariantMap &msg)
         {
             if (it.key() == JsonKeys::Id) continue;
 
-            //Not a string state: flattening it would turn the object into "".
-            //A device that is not an object is dropped without touching the
-            //other keys of the frame.
+            //Flattening the object to a string would turn it into "".
             if (it.key() == JsonKeys::Device)
             {
-                if (it.value().typeId() == QMetaType::QVariantMap)
+                if (Common::isUsableDevice(it.value()))
                     events << makeMapEvent(DecodedEvent::DeviceChange, id, it.value().toMap());
                 else
                     qWarning() << "io_changed: ignoring malformed device of" << id;
                 continue;
             }
+
+            if (it.value().typeId() == QMetaType::QVariantMap ||
+                it.value().typeId() == QMetaType::QVariantList)
+                qWarning() << "io_changed: structured value of" << it.key() << "of" << id
+                           << "is flattened to an empty string";
 
             events << makeIoChange(DecodedEvent::InputChange, id, it.key(), it.value().toString());
             events << makeIoChange(DecodedEvent::OutputChange, id, it.key(), it.value().toString());

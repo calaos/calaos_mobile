@@ -285,20 +285,15 @@ IOBase::IOBase(QQmlApplicationEngine *eng, IOConnection *con, int t):
 
 void IOBase::load(const QVariantMap &io)
 {
+    const QVariantMap previousDevice = getDevice();
     ioData = io;
 
-    //Anything but a non-empty object is treated as "no device": a bad payload
-    //must not stop the item from loading.
-    device.clear();
-    if (io.contains(JsonKeys::Device))
+    //An unusable device is dropped from ioData so that clones neither see it
+    //nor warn about it again.
+    if (ioData.contains(JsonKeys::Device) && !Common::isUsableDevice(ioData[JsonKeys::Device]))
     {
-        const QVariant d = io[JsonKeys::Device];
-        if (d.typeId() == QMetaType::QVariantMap && !d.toMap().isEmpty())
-            device = d.toMap();
-        else
-            qWarning() << "IOBase: ignoring malformed device of" << io[JsonKeys::Id].toString();
-        if (device.isEmpty())
-            ioData.remove(JsonKeys::Device);
+        qWarning() << "IOBase: ignoring malformed device of" << io[JsonKeys::Id].toString();
+        ioData.remove(JsonKeys::Device);
     }
 
     update_ioName(ioData[JsonKeys::Name].toString());
@@ -328,6 +323,9 @@ void IOBase::load(const QVariantMap &io)
         QVariantMap statusInfo = io[JsonKeys::StatusInfo].toMap();
         ioStatusChanged(ioData[JsonKeys::Id].toString(), statusInfo);
     }
+
+    if (getDevice() != previousDevice)
+        emit deviceChange();
 }
 
 void IOBase::checkFirstState()
@@ -673,16 +671,34 @@ void IOBase::outputChanged(QString id, QString key, QString value)
     }
 }
 
+bool IOBase::hasDevice() const
+{
+    return !getDevice().isEmpty();
+}
+
+QVariantMap IOBase::getDevice() const
+{
+    return ioData.value(JsonKeys::Device).toMap();
+}
+
+QVariantMap IOBase::getDeviceCapabilities() const
+{
+    return getDevice().value(JsonKeys::Capabilities).toMap();
+}
+
+QVariantMap IOBase::getDeviceState() const
+{
+    return getDevice().value(JsonKeys::State).toMap();
+}
+
 void IOBase::deviceChanged(QString id, QVariantMap newDevice)
 {
     if (id != ioData[JsonKeys::Id].toString()) return; //not for us
+    if (newDevice.isEmpty()) return;
 
-    //Top-level merge: a frame that omits a section (e.g. `ios`) keeps the one
-    //received at get_home.
-    for (auto it = newDevice.constBegin(); it != newDevice.constEnd(); ++it)
-        device.insert(it.key(), it.value());
-
-    ioData[JsonKeys::Device] = device;
+    //The server always sends the whole object: keeping stale sections of the
+    //previous one would show capabilities that no longer exist.
+    ioData[JsonKeys::Device] = newDevice;
     emit deviceChange();
 }
 

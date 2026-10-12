@@ -6,6 +6,7 @@
 #include "qqmlhelpers.h"
 #include <QQmlApplicationEngine>
 #include "Common.h"
+#include "JsonKeys.h"
 #include "IOConnection.h"
 
 class IOBase;
@@ -144,6 +145,13 @@ class IOBase: public QObject, public QStandardItem
 
     QML_READONLY_PROPERTY_MODEL(bool, hasWarning, RoomModel::RoleWarning)
 
+    //`device` object of a climate (or other device-family) item, empty for a
+    //plain IO. Updated by io_changed, see deviceChanged().
+    Q_PROPERTY(bool hasDevice READ hasDevice NOTIFY deviceChange)
+    Q_PROPERTY(QVariantMap device READ getDevice NOTIFY deviceChange)
+    Q_PROPERTY(QVariantMap deviceCapabilities READ getDeviceCapabilities NOTIFY deviceChange)
+    Q_PROPERTY(QVariantMap deviceState READ getDeviceState NOTIFY deviceChange)
+
     Q_PROPERTY(bool stateBool READ getStateBool NOTIFY stateChange)
     Q_PROPERTY(double stateInt READ getStateInt NOTIFY stateChange)
     Q_PROPERTY(QString stateString READ getStateString NOTIFY stateChange)
@@ -200,6 +208,11 @@ public:
     Q_INVOKABLE void sendStringValue(QString value);
     Q_INVOKABLE void sendIntValue(double value);
 
+    bool hasDevice() const { return !device.isEmpty(); }
+    QVariantMap getDevice() const { return device; }
+    QVariantMap getDeviceCapabilities() const { return device.value(JsonKeys::Capabilities).toMap(); }
+    QVariantMap getDeviceState() const { return device.value(JsonKeys::State).toMap(); }
+
     Q_INVOKABLE bool getStateBool();
     Q_INVOKABLE double getStateInt();
     Q_INVOKABLE QString getStateString();
@@ -221,6 +234,7 @@ public:
 
 private:
     QVariantMap ioData;
+    QVariantMap device;
     QQmlApplicationEngine *engine;
     IOConnection *connection;
     int ioType;
@@ -231,9 +245,11 @@ private slots:
     void inputChanged(QString id, QString key, QString value);
     void outputChanged(QString id, QString key, QString value);
     void ioStatusChanged(QString id, QVariantMap statusData);
+    void deviceChanged(QString id, QVariantMap newDevice);
 
 signals:
     void stateChange();
+    void deviceChange();
 
     void light_on(IOBase *io);
     void light_off(IOBase *io);

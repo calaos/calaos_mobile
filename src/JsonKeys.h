@@ -93,6 +93,8 @@ inline constexpr QLatin1StringView Unit{"unit"};
 inline constexpr QLatin1StringView Rw{"rw"};
 inline constexpr QLatin1StringView Visible{"visible"};
 inline constexpr QLatin1StringView ValueWarning{"value_warning"};
+inline constexpr QLatin1StringView Device{"device"};
+inline constexpr QLatin1StringView Capabilities{"capabilities"};
 
 //--- IO status_info ---------------------------------------------------------
 inline constexpr QLatin1StringView StatusInfo{"status_info"};

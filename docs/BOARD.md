@@ -2,6 +2,8 @@
 
 Suivi du backlog de refactoring (robustesse, maintenabilité, bonnes pratiques). Chaque ticket est spécifié dans [`docs/tasks/`](tasks/) et est auto-porteur : il peut être confié tel quel à un agent de développement autonome.
 
+Chantier « devices / climate » : ticket MOB-1 suivi dans le board de calaos_base (`docs/devices/BOARD.md`).
+
 ## Règles d'utilisation
 
 - **Le statut vit ici et uniquement ici** (les fichiers de ticket sont des specs immuables). Statuts : `À faire` → `En cours` → `En revue` → `Terminé`.

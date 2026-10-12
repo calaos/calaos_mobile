@@ -423,6 +423,7 @@ signals:
     void changeCredsSuccess(QString uname, QString pass);
     void changeCredsFailed();
     void eventIoStatusChange(QString id, QVariantMap statusData);
+    void eventDeviceChange(QString id, QVariantMap device);
 
     //Lifecycle changes, the value is a ReconnectPolicy::State. Application
     //derives its applicationStatus from this instead of tracking it in

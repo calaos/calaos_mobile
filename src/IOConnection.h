@@ -31,6 +31,7 @@
  *   void eventInputChange(QString id, QString key, QString value)
  *   void eventOutputChange(QString id, QString key, QString value)
  *   void eventIoStatusChange(QString id, QVariantMap statusData)
+ *   void eventDeviceChange(QString id, QVariantMap device)
  * IOBase warns loudly if a connection fails, so a signature drift shows up as
  * a message instead of an io that silently stops updating.
  */
@@ -39,7 +40,7 @@ class IOConnection
 public:
     virtual ~IOConnection() {}
 
-    //The QObject emitting the three io signals above. Usually the implementer
+    //The QObject emitting the four io signals above. Usually the implementer
     //itself; kept separate so implementers are free not to be QObjects.
     virtual QObject *eventSource() = 0;
 

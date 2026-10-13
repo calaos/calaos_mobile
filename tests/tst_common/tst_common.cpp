@@ -68,6 +68,7 @@ const QVector<IOTypeCase> &ioTypeCases()
         { Common::CameraInput,          "CameraInput",          "camera_input",  "" },
         { Common::CameraOutput,         "CameraOutput",         "camera_output", "" },
         { Common::FavoritesLightsCount, "FavoritesLightsCount", "fav_all_lights","" },
+        { Common::Climate,              "Climate",              "climate",       "" },
 
         //Types stylés : même chaîne de type que Light, discriminés par le style.
         { Common::Pump,                 "Pump",                 "light",         "pump" },
@@ -353,6 +354,7 @@ const QVector<RegistryCase> &registryCases()
     { Common::LockSensor,           Cat::Sensor,   false, false, false, true,  false },
     { Common::GarageDoorSensor,     Cat::Sensor,   false, false, false, true,  false },
     { Common::FavoritesLightsCount, Cat::Other,    false, false, false, false, false },
+    { Common::Climate,              Cat::Climate,  false, false, false, false, true  },
     };
 
     return cases;

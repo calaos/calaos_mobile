@@ -5,6 +5,9 @@ CalaosSlider 1.0 CalaosSlider.qml
 Fonts 1.0 Fonts.qml
 IOAnalogStyled 1.0 IOAnalogStyled.qml
 IOBinaryDevice 1.0 IOBinaryDevice.qml
+IOClimate 1.0 IOClimate.qml
+ClimateChoiceRow 1.0 ClimateChoiceRow.qml
+ClimateSetpoint 1.0 ClimateSetpoint.qml
 IOBoiler 1.0 IOBoiler.qml
 IOFavAllLights 1.0 IOFavAllLights.qml
 IOHeater 1.0 IOHeater.qml

@@ -37,6 +37,7 @@ public:
         Var,
         Scenario,
         Media,      //audio and camera endpoints
+        Climate,    //device family: the mode is the state, the rest is in `device`
     };
 
     struct Entry

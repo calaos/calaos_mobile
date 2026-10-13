@@ -207,8 +207,7 @@ private slots:
         QScopedPointer<IOBase> io(new IOBase(nullptr, con, IOBase::IOOutput));
         io->load(climateItem(sampleDevice()));
 
-        //No widget for the family yet: it must load as an unknown type.
-        QCOMPARE(io->get_ioType(), Common::Unkown);
+        QCOMPARE(io->get_ioType(), Common::Climate);
         QVERIFY(io->hasDevice());
         QCOMPARE(io->getDevice().value("impl").toString(), QStringLiteral("proxy"));
         QCOMPARE(io->getDeviceCapabilities().value("modes").toList().size(), 2);

@@ -132,6 +132,7 @@ Reusable IO widgets mapped to `Common::IOType`:
 - `IOLight`, `IOLightDimmer`, `IOLightRGB` - Light controls
 - `IOShutter`, `IOShutterSmart` - Shutter/blind controls
 - `IOTemp` - Temperature display
+- `IOClimate` - Climate device (modes, setpoint/range, fan/swing), driven by the capabilities of the `device` object; logic in `ClimateLogic.js`
 - `IOVarBool`, `IOVarInt`, `IOVarString` - Generic variable controls
 - `IOScenario` - Scenario trigger
 - `IOFavAllLights` - All-lights-off favorite

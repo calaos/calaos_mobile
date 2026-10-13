@@ -74,6 +74,9 @@ public:
         VibrationSensor,
         LockSensor,
         GarageDoorSensor,
+
+        //Device family, state is the mode and the details travel in `device`
+        Climate,
     };
     Q_ENUMS(IOType)
 

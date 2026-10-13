@@ -74,6 +74,9 @@ const QVector<Entry> &table()
         { Common::SwitchLong,           "switch_long",   "",                Category::Other,    false, false, false, false, false },
 
         { Common::FavoritesLightsCount, "fav_all_lights","",                Category::Other,    false, false, false, false, false },
+
+        //Controlled and shown as an output: its state is the mode to set.
+        { Common::Climate,              "climate",       "",                Category::Climate,  false, false, false, false, true  },
     };
 
     return t;

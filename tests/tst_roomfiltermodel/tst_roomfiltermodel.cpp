@@ -153,6 +153,7 @@ private slots:
     void partitionCoversEveryIoExactlyOnce();
     void filterChangeKeepsPartitionStable();
     void sourceModelResetDropsStaleItems();
+    void climateWeighsAsManyRowsAsItShows();
     void nonIOBaseItemIsSkipped();
     void sortingWithNonIOBaseItemDoesNotCrash();
 
@@ -330,6 +331,36 @@ void TstRoomFilterModel::sourceModelResetDropsStaleItems()
 
 /* Un item qui n'est pas un IOBase (ou un getItemModel() qui rend nullptr) ne
  * doit pas faire planter resetCache(). */
+/* Un climate empile boutons de mode, consigne et sélecteurs : il compte pour
+ * plusieurs lignes dans l'équilibrage gauche/droite, sinon une pièce avec une
+ * clim déborde d'un côté. */
+void TstRoomFilterModel::climateWeighsAsManyRowsAsItShows()
+{
+    delete proxy;
+    delete rmodel;
+    rmodel = new RoomModel(nullptr, nullptr);
+    const QVector<IODef> defs = {
+        { "c1", "Clim",  Common::Climate },
+        { "s1", "Inter 1", Common::Switch },
+        { "s2", "Inter 2", Common::Switch },
+        { "s3", "Inter 3", Common::Switch },
+        { "s4", "Inter 4", Common::Switch },
+    };
+    for (const IODef &d: defs)
+        rmodel->appendRow(makeIo(d));
+    proxy = new TestableRoomFilterModel();
+    proxy->set_source(rmodel);
+
+    QVERIFY(proxy->callResetCache());
+
+    QStringList left = proxy->leftIds();
+    QStringList right = proxy->rightIds();
+    left.sort();
+    right.sort();
+    QCOMPARE(left, (QStringList{ "c1", "s1" }));
+    QCOMPARE(right, (QStringList{ "s2", "s3", "s4" }));
+}
+
 void TstRoomFilterModel::nonIOBaseItemIsSkipped()
 {
     QStringList warnings;

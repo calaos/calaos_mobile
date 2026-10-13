@@ -62,9 +62,28 @@ TestCase {
         compare(Logic.targetBounds({ target_temp: { min: 16, max: 30, min_range: -1 } }).minRange, 0)
     }
 
-    function test_rangeNeedsASetpoint() {
-        compare(Logic.capabilities({ target_temp_range: true }).range, false)
+    function test_rangeIsStrictlyTrue() {
         compare(Logic.capabilities({ target_temp: {}, target_temp_range: "true" }).range, false)
+        compare(Logic.capabilities({ target_temp: {} }).range, false)
+    }
+
+    function test_rangeOnlyDeviceHasBoundsAndNoSingleLink() {
+        // low/high links only: no target_temp capability, spec defaults apply
+        var caps = { modes: ["off", "heat"], target_temp_range: true }
+        var c = Logic.capabilities(caps, { mode: "m", target_temp_low: "l", target_temp_high: "h" })
+        compare(c.range, true)
+        compare(c.rangeOnly, true)
+        compare(c.bounds.min, 7)
+        compare(c.bounds.max, 35)
+    }
+
+    function test_rangeOnlyNeedsTheLinkTable() {
+        var caps = { target_temp: {}, target_temp_range: true }
+        compare(Logic.capabilities(caps, { target_temp: "t", target_temp_low: "l" }).rangeOnly, false)
+        compare(Logic.capabilities(caps, {}).rangeOnly, true)
+        // no table at all: nothing says the single setpoint is missing
+        compare(Logic.capabilities(caps, undefined).rangeOnly, false)
+        compare(Logic.capabilities({ target_temp: {} }, {}).rangeOnly, false)
     }
 
     function test_listsDropJunk() {
@@ -150,6 +169,7 @@ TestCase {
         var withRange = Logic.capabilities({ target_temp: {}, target_temp_range: true })
         var single = Logic.capabilities({ target_temp: {} })
         var none = Logic.capabilities({})
+        var rangeOnly = Logic.capabilities({ target_temp_range: true }, {})
         return [
             { tag: "heat", mode: "heat", caps: withRange, want: "single" },
             { tag: "cool", mode: "cool", caps: withRange, want: "single" },
@@ -159,7 +179,12 @@ TestCase {
             { tag: "off keeps the control (greyed)", mode: "off", caps: withRange, want: "single" },
             { tag: "unknown keeps the control (greyed)", mode: "", caps: withRange, want: "single" },
             { tag: "fan_only hides it", mode: "fan_only", caps: withRange, want: "none" },
-            { tag: "no capability", mode: "heat", caps: none, want: "none" }
+            { tag: "no capability", mode: "heat", caps: none, want: "none" },
+            { tag: "range only, heat", mode: "heat", caps: rangeOnly, want: "range" },
+            { tag: "range only, cool", mode: "cool", caps: rangeOnly, want: "range" },
+            { tag: "range only, off keeps it (greyed)", mode: "off", caps: rangeOnly, want: "range" },
+            { tag: "range only, unknown mode", mode: "", caps: rangeOnly, want: "range" },
+            { tag: "range only, fan_only hides it", mode: "fan_only", caps: rangeOnly, want: "none" }
         ]
     }
 

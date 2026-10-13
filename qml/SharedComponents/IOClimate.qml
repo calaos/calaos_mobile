@@ -12,7 +12,8 @@ ItemBase {
     property variant modelData
 
     readonly property bool deviceKnown: modelData ? modelData.hasDevice : false
-    readonly property var caps: Logic.capabilities(modelData ? modelData.deviceCapabilities : undefined)
+    readonly property var caps: Logic.capabilities(modelData ? modelData.deviceCapabilities : undefined,
+                                                    modelData && modelData.device ? modelData.device.ios : undefined)
     readonly property var devState: modelData ? modelData.deviceState : undefined
     readonly property string mode: Logic.currentMode(modelData ? modelData.stateString : undefined)
     readonly property bool controlsActive: Logic.controlsActive(mode)
@@ -25,8 +26,6 @@ ItemBase {
     property var pending: ({})
     property var echoed: ({})
 
-    //ItemBase is a plain row that switches itself off; this one has controls.
-    enabled: true
     height: layout.implicitHeight + Units.dp(16)
 
     function shown(key) {
@@ -47,9 +46,10 @@ ItemBase {
     function flush() {
         if (!Logic.hasFields(pending))
             return
+        //echoed first: clearing pending alone would show the old value for a beat
         var fields = pending
-        pending = ({})
         sendFields(fields)
+        pending = ({})
     }
 
     function chooseMode(value) {
@@ -135,6 +135,19 @@ ItemBase {
         function onDeviceChange() {
             root.echoed = Logic.confirmed(root.echoed, root.modelData.deviceState)
         }
+
+        //The server will not apply what was sent: show the state it holds now
+        function onCommandRefused() {
+            echoTimer.stop()
+            root.echoed = ({})
+        }
+    }
+
+    //A card scrolled out of the list or closed must not drop an edit that is
+    //still waiting for the end of the burst
+    Component.onDestruction: {
+        if (modelData)
+            flush()
     }
 
     ColumnLayout {
@@ -228,8 +241,7 @@ ItemBase {
                            ? Logic.fallbackTarget(root.devState ? root.devState.current_temp : undefined,
                                                   root.caps.bounds)
                            : 0
-            low: root.shown("target_temp_low")
-            high: root.shown("target_temp_high")
+            range: ({ low: root.shown("target_temp_low"), high: root.shown("target_temp_high") })
 
             onValueEdited: function(v) {
                 root.queue({ target_temp: v })

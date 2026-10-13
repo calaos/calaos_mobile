@@ -62,6 +62,7 @@ signals:
     void eventOutputChange(QString id, QString key, QString value);
     void eventIoStatusChange(QString id, QVariantMap statusData);
     void eventDeviceChange(QString id, QVariantMap device);
+    void eventCommandRefused(QString id);
 };
 
 namespace {
@@ -200,6 +201,18 @@ private slots:
 
         QCOMPARE(mo.indexOfMethod("askStateText()"), -1);
         QCOMPARE(mo.indexOfMethod("textDialogValid(QString)"), -1);
+    }
+
+    void refusalIsForwardedForOwnIdOnly()
+    {
+        QScopedPointer<IOBase> io(new IOBase(nullptr, con, IOBase::IOOutput));
+        io->load(climateItem(sampleDevice()));
+        QSignalSpy spy(io.data(), &IOBase::commandRefused);
+
+        emit con->eventCommandRefused(QStringLiteral("another_io"));
+        QCOMPARE(spy.count(), 0);
+        emit con->eventCommandRefused(QStringLiteral("salon_ac"));
+        QCOMPARE(spy.count(), 1);
     }
 
     void climateItemKeepsDeviceObject()

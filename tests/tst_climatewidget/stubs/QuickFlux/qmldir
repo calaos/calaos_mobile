@@ -1,0 +1,3 @@
+module QuickFlux
+KeyTable 1.0 KeyTable.qml
+singleton AppDispatcher 1.0 AppDispatcher.qml

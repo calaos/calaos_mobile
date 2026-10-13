@@ -106,7 +106,10 @@ ListView {
         [Common.MotionSensor]: ioswitch,
         [Common.VibrationSensor]: ioswitch,
         [Common.LockSensor]: ioswitch,
-        [Common.GarageDoorSensor]: ioswitch
+        [Common.GarageDoorSensor]: ioswitch,
+
+        //device family, driven by the capabilities of its `device` object
+        [Common.Climate]: climate
     })
 
     //AnalogIn is the only type whose delegate also depends on the style the
@@ -182,4 +185,5 @@ ListView {
     Component { id: heater; IOHeater {} }
     Component { id: analogStyled; IOAnalogStyled {} }
     Component { id: ioswitch; IOSwitch {} }
+    Component { id: climate; IOClimate {} }
 }

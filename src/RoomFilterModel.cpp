@@ -18,6 +18,9 @@ enum IoRank
     RankOther,
 };
 
+//Climate stacks mode buttons, a setpoint and selectors: about four rows tall.
+const int ClimateRows = 4;
+
 int ioRank(Common::IOType t)
 {
     const IOTypeRegistry::Category cat = IOTypeRegistry::category(t);
@@ -137,6 +140,8 @@ void RoomFilterModel::resetCache()
         //plain one: they weigh more in the left/right balance.
         if (ioType == Common::ShutterSmart)
             totalCount += 3;
+        else if (ioType == Common::Climate)
+            totalCount += ClimateRows;
         else if (IOTypeRegistry::isDimmableLight(ioType))
             totalCount += 2;
         else
@@ -189,15 +194,17 @@ void RoomFilterModel::resetCache()
 
     foreach (IOBase *io, other)
     {
+        const int weight = io->get_ioType() == Common::Climate? ClimateRows: 1;
+
         if (leftCount <= half)
         {
             leftCache[io->get_ioId()] = io;
-            leftCount++;
+            leftCount += weight;
         }
         else
         {
             rightCache[io->get_ioId()] = io;
-            rightCount++;
+            rightCount += weight;
         }
     }
 }

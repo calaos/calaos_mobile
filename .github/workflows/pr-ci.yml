@@ -90,6 +90,7 @@ jobs:
           pacman -Syu --noconfirm --needed \
             git \
             qt6-base \
+            qt6-5compat \
             qt6-declarative \
             qt6-websockets
 

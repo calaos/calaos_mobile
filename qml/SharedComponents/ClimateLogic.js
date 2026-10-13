@@ -54,10 +54,13 @@ function round6(v) {
 //setpoint at all. min_range is only meaningful with target_temp_range.
 function targetBounds(caps) {
     var t = caps ? caps.target_temp : undefined
-    if (!isObj(t) && t !== true)
-        return null
-    if (t === true)
+    if (!isObj(t)) {
+        //A device with only low/high links has no target_temp capability of
+        //its own but still has bounds to apply to its range
+        if (t !== true && !(caps && caps.target_temp_range === true))
+            return null
         t = {}
+    }
 
     var min = t.min, max = t.max
     if (!isNum(min) || !isNum(max) || max <= min) {
@@ -73,15 +76,19 @@ function targetBounds(caps) {
              decimals: decimals(step) }
 }
 
-//Everything the widget reads from the capabilities, normalized once.
-function capabilities(caps) {
+//Everything the widget reads from the capabilities, normalized once. `ios` is
+//the device's link table: a range without a target_temp link is a device that
+//only takes low/high, and a lone target_temp command would always be refused.
+function capabilities(caps, ios) {
     if (!isObj(caps))
         caps = {}
     var bounds = targetBounds(caps)
+    var range = bounds !== null && caps.target_temp_range === true
     return {
         modes: stringList(caps.modes),
         bounds: bounds,
-        range: bounds !== null && caps.target_temp_range === true,
+        range: range,
+        rangeOnly: range && isObj(ios) && !ios.target_temp,
         fanModes: stringList(caps.fan_modes),
         swingModes: stringList(caps.swing_modes),
         reportsAction: caps.reports_action === true
@@ -99,11 +106,13 @@ function controlsActive(mode) {
     return mode !== "" && mode !== "off"
 }
 
-//"none", "single" or "range". fan_only has no temperature to aim for, and a
-//range only exists in auto on a device that has one.
+//"none", "single" or "range". fan_only has no temperature to aim for; a range
+//is shown in auto, and in every mode when it is all the device has.
 function setpointKind(mode, caps) {
     if (caps.bounds === null || mode === "fan_only")
         return "none"
+    if (caps.rangeOnly)
+        return "range"
     if (mode === "auto" && caps.range)
         return "range"
     return "single"

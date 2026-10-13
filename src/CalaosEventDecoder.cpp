@@ -47,6 +47,26 @@ DecodedEvent makeMapEvent(DecodedEvent::Type type, const QString &id, const QVar
 
 }
 
+DecodedEvent CalaosEventDecoder::decodeSetStateAnswer(const QVariantMap &frame)
+{
+    if (frame.value(JsonKeys::Msg).toString() != QLatin1String("set_state"))
+        return makeEvent(DecodedEvent::Unknown);
+
+    const QVariant data = frame.value(JsonKeys::Data);
+    if (data.typeId() != QMetaType::QVariantMap)
+        return makeEvent(DecodedEvent::Malformed);
+    if (data.toMap().value(JsonKeys::Success).toString() == QLatin1String("true"))
+        return makeEvent(DecodedEvent::Unknown);
+
+    const QString tag = frame.value(JsonKeys::MsgId).toString();
+    if (!tag.startsWith(JsonKeys::SetStateTag) || tag.size() == JsonKeys::SetStateTag.size())
+        return makeEvent(DecodedEvent::Unknown);
+
+    DecodedEvent ev = makeEvent(DecodedEvent::CommandRefused);
+    ev.id = tag.mid(JsonKeys::SetStateTag.size());
+    return ev;
+}
+
 QList<DecodedEvent> CalaosEventDecoder::decodeEvent(const QVariant &event, ApiVersion v)
 {
     if (v == ApiV2)

@@ -244,10 +244,13 @@ private slots:
     void outputChanged(QString id, QString key, QString value);
     void ioStatusChanged(QString id, QVariantMap statusData);
     void deviceChanged(QString id, QVariantMap newDevice);
+    void commandRefusedFor(QString id);
 
 signals:
     void stateChange();
     void deviceChange();
+    //The server answered success:false to a command sent for this io
+    void commandRefused();
 
     void light_on(IOBase *io);
     void light_off(IOBase *io);

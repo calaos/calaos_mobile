@@ -27,6 +27,10 @@ public:
 
     Q_INVOKABLE QObject *getItemModel(int idx);
 
+    //Rows a climate card takes in the left/right balance: what its capabilities
+    //make it show (header and modes, setpoint, fan, swing).
+    static int climateRows(IOBase *io);
+
 private slots:
     void resetCache();
 

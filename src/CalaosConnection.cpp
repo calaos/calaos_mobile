@@ -770,7 +770,9 @@ void CalaosConnection::sendCommand(QString id, QString value, QString type, QStr
     jroot[JsonKeys::Value] = value;
 
     if (isWebsocket())
-        sendWebsocket(action, jroot, "user_cmd");
+        sendWebsocket(action, jroot,
+                      action == QLatin1String("set_state") ? JsonKeys::SetStateTag + id
+                                                           : QStringLiteral("user_cmd"));
     else
         sendHttp(action, jroot);
 }
@@ -1055,6 +1057,9 @@ void CalaosConnection::dispatchEvents(const QList<DecodedEvent> &events)
         case DecodedEvent::DeviceChange:
             emit eventDeviceChange(ev.id, ev.data);
             break;
+        case DecodedEvent::CommandRefused:
+            emit eventCommandRefused(ev.id);
+            break;
         case DecodedEvent::InputStateChange:
             emit eventInputStateChange(ev.data);
             break;
@@ -1165,6 +1170,10 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
         //emit event for specific input/output change
         dispatchEvents(CalaosEventDecoder::decodeStateMap(jdata.toVariantMap(),
                                                           CalaosEventDecoder::StrictString));
+    }
+    else if (jroot[JsonKeys::Msg] == "set_state")
+    {
+        dispatchEvents({ CalaosEventDecoder::decodeSetStateAnswer(jroot.toVariantMap()) });
     }
     else if (jroot[JsonKeys::Msg] == "eventlog")
     {

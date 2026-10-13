@@ -18,9 +18,6 @@ enum IoRank
     RankOther,
 };
 
-//Climate stacks mode buttons, a setpoint and selectors: about four rows tall.
-const int ClimateRows = 4;
-
 int ioRank(Common::IOType t)
 {
     const IOTypeRegistry::Category cat = IOTypeRegistry::category(t);
@@ -68,6 +65,22 @@ RoomFilterModel::RoomFilterModel(QObject *parent):
 
     setDynamicSortFilter(true);
     sort(0);
+}
+
+int RoomFilterModel::climateRows(IOBase *io)
+{
+    if (!io->hasDevice())
+        return 1;
+
+    const QVariantMap caps = io->getDeviceCapabilities();
+    int rows = 2; //header and mode buttons
+    if (caps.contains("target_temp") || caps.value("target_temp_range").toBool())
+        rows += 2;
+    if (!caps.value("fan_modes").toList().isEmpty())
+        rows += 1;
+    if (!caps.value("swing_modes").toList().isEmpty())
+        rows += 1;
+    return rows;
 }
 
 int RoomFilterModel::indexToSource(int idx)
@@ -141,7 +154,7 @@ void RoomFilterModel::resetCache()
         if (ioType == Common::ShutterSmart)
             totalCount += 3;
         else if (ioType == Common::Climate)
-            totalCount += ClimateRows;
+            totalCount += climateRows(obj);
         else if (IOTypeRegistry::isDimmableLight(ioType))
             totalCount += 2;
         else
@@ -194,7 +207,7 @@ void RoomFilterModel::resetCache()
 
     foreach (IOBase *io, other)
     {
-        const int weight = io->get_ioType() == Common::Climate? ClimateRows: 1;
+        const int weight = io->get_ioType() == Common::Climate? climateRows(io): 1;
 
         if (leftCount <= half)
         {

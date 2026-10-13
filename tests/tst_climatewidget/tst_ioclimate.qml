@@ -39,8 +39,9 @@ TestCase {
         }
     }
 
-    function device(caps, state) {
-        return { family: "climate", impl: "proxy", capabilities: caps, state: state, ios: {} }
+    function device(caps, state, ios) {
+        return { family: "climate", impl: "proxy", capabilities: caps, state: state,
+                 ios: ios !== undefined ? ios : { mode: "m", target_temp: "t", target_temp_low: "l", target_temp_high: "h" } }
     }
 
     function make(mode, dev) {
@@ -283,8 +284,8 @@ TestCase {
         compare(find(sp, "valueText").text, "19.0 – 24.0" + nbsp + degC)
         compare(find(sp, "rangeSlider").visible, true)
         compare(find(sp, "slider").visible, false)
-        compare(find(sp, "rangeSlider").first.value, 19)
-        compare(find(sp, "rangeSlider").second.value, 24)
+        tryCompare(find(sp, "rangeSlider").first, "value", 19)
+        tryCompare(find(sp, "rangeSlider").second, "value", 24)
     }
 
     function test_autoWithoutRangeStaysSingle() {
@@ -480,7 +481,7 @@ TestCase {
         waitForCommands(1)
         compare(JSON.parse(sentCommands()[0]), { target_temp_low: 22, target_temp_high: 24 })
         // the handle goes back to the allowed position
-        compare(rs.first.value, 22)
+        tryCompare(rs.first, "value", 22)
         compare(find(find(w, "setpoint"), "valueText").text, "22.0 – 24.0" + nbsp + degC)
     }
 
@@ -500,7 +501,7 @@ TestCase {
         var rs = find(find(w, "setpoint"), "rangeSlider")
         rs.first.value = 23.5
         rs.first.moved()
-        compare(rs.first.value, 22)
+        tryCompare(rs.first, "value", 22)
     }
 
     function test_rangeUntouchedHandleNotReportedIsNotSent() {
@@ -581,5 +582,138 @@ TestCase {
         tryVerify(function() { return find(list.contentItem, "modeRow") !== null }, 2000)
         // one widget only: the other item keeps its own delegate
         compare(find(list.contentItem, "modeRow").visible, true)
+    }
+
+    // --- range-only device (low/high links, no target_temp link) -----------------
+
+    function rangeOnlyDevice(low, high) {
+        var caps = fullCaps()
+        delete caps.target_temp
+        caps.modes = ["off", "heat", "cool"]
+        var st = { mode: "heat", current_temp: 21 }
+        if (low !== undefined) st.target_temp_low = low
+        if (high !== undefined) st.target_temp_high = high
+        return device(caps, st, { mode: "m", target_temp_low: "l", target_temp_high: "h" })
+    }
+
+    function test_rangeOnlyDeviceShowsARangeInEveryMode() {
+        var w = make("heat", rangeOnlyDevice(19, 24))
+        var sp = find(w, "setpoint")
+        compare(sp.visible, true)
+        compare(sp.ranged, true)
+        compare(find(sp, "valueText").text, "19.0 \u2013 24.0" + nbsp + degC)
+        compare(find(sp, "btPlus").visible, false)
+
+        var wc = make("cool", rangeOnlyDevice(19, 24))
+        compare(find(wc, "setpoint").ranged, true)
+        compare(find(wc, "setpoint").active, true)
+
+        var wo = make("off", rangeOnlyDevice(19, 24))
+        compare(find(wo, "setpoint").ranged, true)
+        compare(find(wo, "setpoint").active, false)
+    }
+
+    function test_rangeOnlyDeviceNeverSendsASingleTarget() {
+        var w = make("heat", rangeOnlyDevice(19, 24))
+        var rs = find(find(w, "setpoint"), "rangeSlider")
+        rs.second.value = 26
+        rs.second.moved()
+        waitForCommands(1)
+        compare(JSON.parse(sentCommands()[0]), { target_temp_low: 19, target_temp_high: 26 })
+        verify(sentCommands()[0].indexOf("\"target_temp\"") < 0)
+    }
+
+    function test_rangeOnlyDeviceWithoutReportedRangeShowsADash() {
+        var w = make("heat", rangeOnlyDevice())
+        compare(find(find(w, "setpoint"), "valueText").text, "\u2014")
+    }
+
+    // --- the range jumps past the handles ------------------------------------------
+
+    function test_rangeShiftedByTheServerMovesBothHandles() {
+        var st = fullState()
+        st.mode = "auto"
+        st.target_temp_low = 19.5
+        st.target_temp_high = 24.5
+        var w = make("auto", device(fullCaps(), st))
+        var rs = find(find(w, "setpoint"), "rangeSlider")
+        tryCompare(rs.first, "value", 19.5)
+        tryCompare(rs.second, "value", 24.5)
+
+        st = fullState()
+        st.mode = "auto"
+        st.target_temp_low = 25
+        st.target_temp_high = 28
+        frame(w, "auto", device(fullCaps(), st))
+        tryCompare(rs.first, "value", 25)
+        tryCompare(rs.second, "value", 28)
+
+        // dragging the high handle must not carry a low the user never touched
+        rs.second.value = 29
+        rs.second.moved()
+        waitForCommands(1)
+        compare(JSON.parse(sentCommands()[0]), { target_temp_low: 25, target_temp_high: 29 })
+    }
+
+    function test_rangeShiftedDownwardsToo() {
+        var st = fullState()
+        st.mode = "auto"
+        st.target_temp_low = 25
+        st.target_temp_high = 28
+        var w = make("auto", device(fullCaps(), st))
+        var rs = find(find(w, "setpoint"), "rangeSlider")
+        st = fullState()
+        st.mode = "auto"
+        st.target_temp_low = 17
+        st.target_temp_high = 20
+        frame(w, "auto", device(fullCaps(), st))
+        tryCompare(rs.first, "value", 17)
+        tryCompare(rs.second, "value", 20)
+    }
+
+    // --- refusal and teardown ------------------------------------------------------------
+
+    function test_refusedCommandRevertsAtOnce() {
+        var w = makeFull("heat")
+        var sp = find(w, "setpoint")
+        mouseClick(find(sp, "btPlus"))
+        waitForCommands(1)
+        compare(find(sp, "valueText").text, "21.5" + nbsp + degC)
+
+        harness.pushRefusal("salon_ac")
+        compare(find(sp, "valueText").text, "21.0" + nbsp + degC)
+    }
+
+    function test_refusalOfAnotherIoIsIgnored() {
+        var w = makeFull("heat")
+        var sp = find(w, "setpoint")
+        mouseClick(find(sp, "btPlus"))
+        waitForCommands(1)
+        harness.pushRefusal("another_io")
+        compare(find(sp, "valueText").text, "21.5" + nbsp + degC)
+    }
+
+    function test_refusedFanChoiceReverts() {
+        var w = makeFull("cool")
+        mouseClick(chip(find(w, "fanRow"), "high"))
+        compare(selectedValues(find(w, "fanRow")), ["high"])
+        harness.pushRefusal("salon_ac")
+        compare(selectedValues(find(w, "fanRow")), ["auto"])
+    }
+
+    function test_pendingEditIsSentWhenTheCardGoesAway() {
+        var w = makeFull("heat")
+        mouseClick(find(find(w, "setpoint"), "btPlus"))
+        compare(sentCommands(), [])
+        w.destroy()
+        tryVerify(function() { return sentCommands().length === 1 }, 1000)
+        compare(JSON.parse(sentCommands()[0]), { target_temp: 21.5 })
+    }
+
+    function test_cardWithNothingPendingSendsNothingWhenItGoesAway() {
+        var w = makeFull("heat")
+        w.destroy()
+        wait(100)
+        compare(sentCommands(), [])
     }
 }

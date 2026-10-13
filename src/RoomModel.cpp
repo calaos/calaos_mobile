@@ -276,6 +276,10 @@ IOBase::IOBase(QQmlApplicationEngine *eng, IOConnection *con, int t):
         ok = connect(events, SIGNAL(eventDeviceChange(QString,QVariantMap)),
                      this, SLOT(deviceChanged(QString,QVariantMap))) && ok;
 
+        if (events->metaObject()->indexOfSignal("eventCommandRefused(QString)") >= 0)
+            connect(events, SIGNAL(eventCommandRefused(QString)),
+                    this, SLOT(commandRefusedFor(QString)));
+
         if (!ok)
             qWarning() << "IOBase: the connection object" << events
                        << "does not expose the expected IOConnection signals,"
@@ -700,6 +704,13 @@ void IOBase::deviceChanged(QString id, QVariantMap newDevice)
     //previous one would show capabilities that no longer exist.
     ioData[JsonKeys::Device] = newDevice;
     emit deviceChange();
+}
+
+void IOBase::commandRefusedFor(QString id)
+{
+    if (id != ioData[JsonKeys::Id].toString()) return; //not for us
+
+    emit commandRefused();
 }
 
 void IOBase::ioStatusChanged(QString id, QVariantMap statusData)

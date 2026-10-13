@@ -82,6 +82,8 @@ private slots:
     void v3IoChangedExpandsEveryState();
     void v3IoChangedWithoutIdIsNotFatal();
     void v3IoChangedCarriesDeviceObject();
+    void setStateAnswer_data();
+    void setStateAnswer();
     void v3IoChangedWarnsOnFlattenedStructure();
     void v3IoChangedMalformedDeviceIsDropped_data();
     void v3IoChangedMalformedDeviceIsDropped();
@@ -317,6 +319,44 @@ void TstCalaosEventDecoder::v3IoChangedCarriesDeviceObject()
     QCOMPARE(dev.type, DecodedEvent::DeviceChange);
     QCOMPARE(dev.data.value("family").toString(), QStringLiteral("climate"));
     QCOMPARE(dev.data.value("state").toMap().value("current_temp").toDouble(), 23.4);
+}
+
+void TstCalaosEventDecoder::setStateAnswer_data()
+{
+    QTest::addColumn<QByteArray>("frame");
+    QTest::addColumn<QString>("expected");
+
+    QTest::newRow("refusal names its io")
+        << QByteArray(R"({"msg":"set_state","msg_id":"user_cmd:salon_ac","data":{"success":"false"}})")
+        << QStringLiteral("CommandRefused|salon_ac|||0|");
+    QTest::newRow("success")
+        << QByteArray(R"({"msg":"set_state","msg_id":"user_cmd:salon_ac","data":{"success":"true"}})")
+        << QStringLiteral("Unknown||||0|");
+    QTest::newRow("missing success counts as a refusal")
+        << QByteArray(R"({"msg":"set_state","msg_id":"user_cmd:salon_ac","data":{}})")
+        << QStringLiteral("CommandRefused|salon_ac|||0|");
+    QTest::newRow("tag of another kind of command")
+        << QByteArray(R"({"msg":"set_state","msg_id":"user_cmd","data":{"success":"false"}})")
+        << QStringLiteral("Unknown||||0|");
+    QTest::newRow("tag without an io")
+        << QByteArray(R"({"msg":"set_state","msg_id":"user_cmd:","data":{"success":"false"}})")
+        << QStringLiteral("Unknown||||0|");
+    QTest::newRow("other message")
+        << QByteArray(R"({"msg":"get_state","msg_id":"user_cmd:x","data":{"success":"false"}})")
+        << QStringLiteral("Unknown||||0|");
+    QTest::newRow("no data")
+        << QByteArray(R"({"msg":"set_state","msg_id":"user_cmd:x"})")
+        << QStringLiteral("Malformed||||0|");
+}
+
+void TstCalaosEventDecoder::setStateAnswer()
+{
+    QFETCH(QByteArray, frame);
+    QFETCH(QString, expected);
+
+    const DecodedEvent ev = CalaosEventDecoder::decodeSetStateAnswer(frameFromJson(frame));
+    record({ ev });
+    QCOMPARE(describe(ev), expected);
 }
 
 void TstCalaosEventDecoder::v3IoChangedMalformedDeviceIsDropped_data()

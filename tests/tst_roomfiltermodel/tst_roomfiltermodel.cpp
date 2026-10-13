@@ -20,6 +20,8 @@
  */
 
 #include <QtTest>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLoggingCategory>
 #include <QSet>
 #include <QStandardItem>
@@ -153,6 +155,7 @@ private slots:
     void partitionCoversEveryIoExactlyOnce();
     void filterChangeKeepsPartitionStable();
     void sourceModelResetDropsStaleItems();
+    void climateRowsFollowTheCapabilities();
     void climateWeighsAsManyRowsAsItShows();
     void nonIOBaseItemIsSkipped();
     void sortingWithNonIOBaseItemDoesNotCrash();
@@ -331,16 +334,55 @@ void TstRoomFilterModel::sourceModelResetDropsStaleItems()
 
 /* Un item qui n'est pas un IOBase (ou un getItemModel() qui rend nullptr) ne
  * doit pas faire planter resetCache(). */
-/* Un climate empile boutons de mode, consigne et sélecteurs : il compte pour
- * plusieurs lignes dans l'équilibrage gauche/droite, sinon une pièce avec une
- * clim déborde d'un côté. */
+namespace {
+
+//Un climate chargé comme RoomModel::load() le fait, avec ses capacités.
+IOBase *makeClimate(const char *id, const QByteArray &capsJson)
+{
+    IOBase *io = new IOBase(nullptr, nullptr, IOBase::IOOutput);
+    QVariantMap item;
+    item["id"] = QString::fromLatin1(id);
+    item["name"] = QStringLiteral("Clim");
+    item["gui_type"] = QStringLiteral("climate");
+    if (!capsJson.isEmpty())
+    {
+        QVariantMap device;
+        device["family"] = QStringLiteral("climate");
+        device["capabilities"] = QJsonDocument::fromJson(capsJson).object().toVariantMap();
+        item["device"] = device;
+    }
+    io->load(item);
+    return io;
+}
+
+const QByteArray fullCaps = R"({"modes":["off","heat"],"target_temp":{},"fan_modes":["low"],"swing_modes":["off"]})";
+
+} //namespace
+
+/* La carte climate prend autant de lignes que ses capacités en affichent. */
+void TstRoomFilterModel::climateRowsFollowTheCapabilities()
+{
+    QScopedPointer<IOBase> full(makeClimate("a", fullCaps));
+    QScopedPointer<IOBase> heatOnly(makeClimate("b", R"({"modes":["off","heat"],"target_temp":{}})"));
+    QScopedPointer<IOBase> rangeOnly(makeClimate("c", R"({"modes":["auto"],"target_temp_range":true})"));
+    QScopedPointer<IOBase> modesOnly(makeClimate("d", R"({"modes":["off","heat"]})"));
+    QScopedPointer<IOBase> noDevice(makeClimate("e", QByteArray()));
+
+    QCOMPARE(RoomFilterModel::climateRows(full.data()), 6);
+    QCOMPARE(RoomFilterModel::climateRows(heatOnly.data()), 4);
+    QCOMPARE(RoomFilterModel::climateRows(rangeOnly.data()), 4);
+    QCOMPARE(RoomFilterModel::climateRows(modesOnly.data()), 2);
+    QCOMPARE(RoomFilterModel::climateRows(noDevice.data()), 1);
+}
+
+/* Une pièce avec une clim complète ne doit pas déborder d'un côté. */
 void TstRoomFilterModel::climateWeighsAsManyRowsAsItShows()
 {
     delete proxy;
     delete rmodel;
     rmodel = new RoomModel(nullptr, nullptr);
+    rmodel->appendRow(makeClimate("c1", fullCaps));
     const QVector<IODef> defs = {
-        { "c1", "Clim",  Common::Climate },
         { "s1", "Inter 1", Common::Switch },
         { "s2", "Inter 2", Common::Switch },
         { "s3", "Inter 3", Common::Switch },
@@ -357,8 +399,8 @@ void TstRoomFilterModel::climateWeighsAsManyRowsAsItShows()
     QStringList right = proxy->rightIds();
     left.sort();
     right.sort();
-    QCOMPARE(left, (QStringList{ "c1", "s1" }));
-    QCOMPARE(right, (QStringList{ "s2", "s3", "s4" }));
+    QCOMPARE(left, (QStringList{ "c1" }));
+    QCOMPARE(right, (QStringList{ "s1", "s2", "s3", "s4" }));
 }
 
 void TstRoomFilterModel::nonIOBaseItemIsSkipped()

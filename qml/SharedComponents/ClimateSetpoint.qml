@@ -14,8 +14,11 @@ Item {
     property bool ranged: false
     //Values to show. undefined means the server never reported them.
     property var value
-    property var low
-    property var high
+    //{ low, high }, each undefined when the server never reported it. One
+    //object so that a move of both handles is applied as one.
+    property var range: ({})
+    readonly property var low: range ? range.low : undefined
+    readonly property var high: range ? range.high : undefined
     property bool active: true
 
     signal valueEdited(real v)
@@ -91,8 +94,9 @@ Item {
             to: root.bounds ? root.bounds.max : 1
             stepSize: root.bounds ? root.bounds.step : 1
             snapMode: Controls.RangeSlider.SnapAlways
-            first.value: Logic.isNum(root.low) ? root.low : from
-            second.value: Logic.isNum(root.high) ? root.high : to
+
+            onFromChanged: root.syncHandles()
+            onToChanged: root.syncHandles()
 
             first.onMoved: root.moveHandle("low")
             second.onMoved: root.moveHandle("high")
@@ -124,29 +128,40 @@ Item {
     }
 
     function moveHandle(which) {
-        var r = Logic.moveRange(rangeSlider.first.value, rangeSlider.second.value, which, root.bounds)
+        //The handle the user did not touch comes from the reported values: the
+        //slider may still hold a stale position for it
+        var lowIn = which === "low" ? rangeSlider.first.value
+                                    : (Logic.isNum(low) ? low : rangeSlider.first.value)
+        var highIn = which === "high" ? rangeSlider.second.value
+                                      : (Logic.isNum(high) ? high : rangeSlider.second.value)
+        var r = Logic.moveRange(lowIn, highIn, which, root.bounds)
         var edit = {}
-        //The handle the user did not touch is only sent along when the server
-        //reported it: otherwise its slider position is a placeholder.
-        if (which === "low" || Logic.isNum(root.low))
+        //An untouched handle is only sent along when the server reported it:
+        //otherwise its slider position is a placeholder.
+        if (which === "low" || Logic.isNum(low))
             edit.target_temp_low = r.low
-        if (which === "high" || Logic.isNum(root.high))
+        if (which === "high" || Logic.isNum(high))
             edit.target_temp_high = r.high
         root.rangeEdited(edit)
-        rebindHandles()
+        syncHandles()
     }
 
-    //A handle dragged past a limit must come back to the value the shown state
-    //holds, even when that value did not change (a binding only reacts to a
-    //change of its sources).
-    function rebindHandles() {
-        rangeSlider.first.value = Qt.binding(function() {
-            return Logic.isNum(root.low) ? root.low : rangeSlider.from
-        })
-        rangeSlider.second.value = Qt.binding(function() {
-            return Logic.isNum(root.high) ? root.high : rangeSlider.to
-        })
+    //Both handles at once: a handle cannot cross the other one, so setting
+    //them one by one would leave the first stuck when the range jumps past it.
+    //Deferred, so that a burst of changes ends on the last value only.
+    function syncHandles() {
+        Qt.callLater(applyHandles)
     }
+
+    function applyHandles() {
+        if (!bounds)
+            return
+        rangeSlider.setValues(Logic.isNum(low) ? low : rangeSlider.from,
+                              Logic.isNum(high) ? high : rangeSlider.to)
+    }
+
+    onRangeChanged: syncHandles()
+    Component.onCompleted: applyHandles()
 
     component Knob: Rectangle {
         id: knob

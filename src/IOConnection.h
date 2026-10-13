@@ -32,6 +32,8 @@
  *   void eventOutputChange(QString id, QString key, QString value)
  *   void eventIoStatusChange(QString id, QVariantMap statusData)
  *   void eventDeviceChange(QString id, QVariantMap device)
+ * and, optionally (a double that never refuses can leave it out):
+ *   void eventCommandRefused(QString id)
  * IOBase warns loudly if a connection fails, so a signature drift shows up as
  * a message instead of an io that silently stops updating.
  */

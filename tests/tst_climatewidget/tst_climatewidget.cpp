@@ -45,6 +45,7 @@ signals:
     void eventOutputChange(QString id, QString key, QString value);
     void eventIoStatusChange(QString id, QVariantMap statusData);
     void eventDeviceChange(QString id, QVariantMap device);
+    void eventCommandRefused(QString id);
 };
 
 //What the QML tests see of the application: climate items backed by the real
@@ -88,6 +89,8 @@ public:
         if (!state.isNull())
             emit con.eventOutputChange(id, QStringLiteral("state"), state);
     }
+
+    Q_INVOKABLE void pushRefusal(const QString &id) { emit con.eventCommandRefused(id); }
 
     Q_INVOKABLE QStringList sent() const { return con.sent; }
     Q_INVOKABLE void clearSent() { con.sent.clear(); }

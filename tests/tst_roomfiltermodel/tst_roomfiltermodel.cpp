@@ -155,8 +155,8 @@ private slots:
     void partitionCoversEveryIoExactlyOnce();
     void filterChangeKeepsPartitionStable();
     void sourceModelResetDropsStaleItems();
-    void climateRowsFollowTheCapabilities();
-    void climateWeighsAsManyRowsAsItShows();
+    void climateRowsDoNotDependOnTheCapabilities();
+    void climateWeighsTwoRows();
     void nonIOBaseItemIsSkipped();
     void sortingWithNonIOBaseItemDoesNotCrash();
 
@@ -359,8 +359,9 @@ const QByteArray fullCaps = R"({"modes":["off","heat"],"target_temp":{},"fan_mod
 
 } //namespace
 
-/* La carte climate prend autant de lignes que ses capacités en affichent. */
-void TstRoomFilterModel::climateRowsFollowTheCapabilities()
+/* L'item de liste climate fait la même hauteur quelles que soient les capacités : les
+ * réglages ne s'affichent qu'au tap. */
+void TstRoomFilterModel::climateRowsDoNotDependOnTheCapabilities()
 {
     QScopedPointer<IOBase> full(makeClimate("a", fullCaps));
     QScopedPointer<IOBase> heatOnly(makeClimate("b", R"({"modes":["off","heat"],"target_temp":{}})"));
@@ -368,15 +369,15 @@ void TstRoomFilterModel::climateRowsFollowTheCapabilities()
     QScopedPointer<IOBase> modesOnly(makeClimate("d", R"({"modes":["off","heat"]})"));
     QScopedPointer<IOBase> noDevice(makeClimate("e", QByteArray()));
 
-    QCOMPARE(RoomFilterModel::climateRows(full.data()), 6);
-    QCOMPARE(RoomFilterModel::climateRows(heatOnly.data()), 4);
-    QCOMPARE(RoomFilterModel::climateRows(rangeOnly.data()), 4);
+    QCOMPARE(RoomFilterModel::climateRows(full.data()), 2);
+    QCOMPARE(RoomFilterModel::climateRows(heatOnly.data()), 2);
+    QCOMPARE(RoomFilterModel::climateRows(rangeOnly.data()), 2);
     QCOMPARE(RoomFilterModel::climateRows(modesOnly.data()), 2);
-    QCOMPARE(RoomFilterModel::climateRows(noDevice.data()), 1);
+    QCOMPARE(RoomFilterModel::climateRows(noDevice.data()), 2);
 }
 
-/* Une pièce avec une clim complète ne doit pas déborder d'un côté. */
-void TstRoomFilterModel::climateWeighsAsManyRowsAsItShows()
+/* Une clim pèse deux rangées dans l'équilibrage gauche / droite. */
+void TstRoomFilterModel::climateWeighsTwoRows()
 {
     delete proxy;
     delete rmodel;
@@ -399,8 +400,8 @@ void TstRoomFilterModel::climateWeighsAsManyRowsAsItShows()
     QStringList right = proxy->rightIds();
     left.sort();
     right.sort();
-    QCOMPARE(left, (QStringList{ "c1" }));
-    QCOMPARE(right, (QStringList{ "s1", "s2", "s3", "s4" }));
+    QCOMPARE(left, (QStringList{ "c1", "s1", "s2" }));
+    QCOMPARE(right, (QStringList{ "s3", "s4" }));
 }
 
 void TstRoomFilterModel::nonIOBaseItemIsSkipped()

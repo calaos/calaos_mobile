@@ -332,6 +332,8 @@ Window {
 
     DialogSensorDetails { id: dialogSensorDetails }
 
+    DialogClimate { id: dialogClimate }
+
     //Dispatch actions
     AppListener {
         Filter {
@@ -429,6 +431,14 @@ Window {
 
             onDispatched: (filtertype, message) => {
                 dialogRecoveryBoot.show()
+            }
+        }
+
+        Filter {
+            type: ActionTypes.showClimateDetails
+
+            onDispatched: (filtertype, message) => {
+                dialogClimate.openFor(message.io)
             }
         }
 

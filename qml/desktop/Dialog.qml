@@ -104,7 +104,7 @@ PopupBase {
             anchors.fill: parent
             propagateComposedEvents: false
 
-            onClicked: {
+            onClicked: (mouse) => {
                 mouse.accepted = false
             }
         }

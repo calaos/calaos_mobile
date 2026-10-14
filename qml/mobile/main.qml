@@ -381,6 +381,13 @@ Window {
         }
 
         Filter {
+            type: ActionTypes.showClimateDetails
+            onDispatched: (filtertype, message) => {
+                climateSheet.openFor(message.io)
+            }
+        }
+
+        Filter {
             type: ActionTypes.showSensorDetails
             onDispatched: (filtertype, message) => {
                 sensorDetailModel = message.sensor
@@ -421,4 +428,7 @@ Window {
             rootWindow.askTextIo = null
         }
     }
+
+    //Settings of a climate device, a bottom sheet over the current view
+    ClimateSheet { id: climateSheet }
 }

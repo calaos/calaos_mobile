@@ -46,6 +46,8 @@ KeyTable {
 
     property string showSensorDetails
 
+    property string showClimateDetails
+
     property string showUpdateAvailableDialog
 }
 

@@ -6,10 +6,14 @@ Fonts 1.0 Fonts.qml
 IOAnalogStyled 1.0 IOAnalogStyled.qml
 IOBinaryDevice 1.0 IOBinaryDevice.qml
 IOClimate 1.0 IOClimate.qml
-ClimateChoiceRow 1.0 ClimateChoiceRow.qml
-ClimateSetpoint 1.0 ClimateSetpoint.qml
+ClimateModel 1.0 ClimateModel.qml
 ClimateListItem 1.0 ClimateListItem.qml
 ClimateDial 1.0 ClimateDial.qml
+ClimateReading 1.0 ClimateReading.qml
+ClimateDetail 1.0 ClimateDetail.qml
+ClimateModePill 1.0 ClimateModePill.qml
+ClimateRows 1.0 ClimateRows.qml
+ClimateMore 1.0 ClimateMore.qml
 ClimateIcon 1.0 ClimateIcon.qml
 IOBoiler 1.0 IOBoiler.qml
 IOFavAllLights 1.0 IOFavAllLights.qml

@@ -3,6 +3,7 @@
 #include <QQmlContext>
 #include <QQmlPropertyMap>
 #include <QFontDatabase>
+#include <QFile>
 #include <QStringList>
 #include <QVector>
 
@@ -118,7 +119,13 @@ class AppStub: public QObject
     Q_OBJECT
 
 public:
-    Q_INVOKABLE QString getPictureSized(const QString &) const { return QString(); }
+    //The images of the app are compiled into the test, so that the faces of the
+    //buttons and the backdrop of the dialogs are the real ones
+    Q_INVOKABLE QString getPictureSized(const QString &pic) const
+    {
+        const QString res = QStringLiteral(":/img/") + pic + QStringLiteral(".png");
+        return QFile::exists(res) ? QStringLiteral("qrc") + res : QString();
+    }
 };
 
 class Setup: public QObject

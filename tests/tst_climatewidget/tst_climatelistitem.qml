@@ -116,6 +116,8 @@ TestCase {
         fakeNow += 100000
         harness.pushFrame("salon_ac", undefined,
             device(mkState({ mode: "heat", action: "idle", lockout: { output: "heat", remaining: 300 } })))
+        // let the clock tick: the countdown must restart from the new value, not from the old stamp
+        wait(1300)
         compare(text(w, "statusText"), "Starts in 5 min")
     }
 

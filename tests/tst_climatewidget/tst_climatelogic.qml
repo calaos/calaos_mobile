@@ -218,9 +218,9 @@ TestCase {
         compare(Logic.formatReading(23.449, undefined), "23.4 °C")
         compare(Logic.formatReading(undefined, "°C"), "—")
         // the separator of the locale, in the panel as in the list
-        compare(Logic.formatSetpoint(21.5, bounds, ","), "21,5 °C")
-        compare(Logic.formatRange(19, 24.5, bounds, ","), "19,0 – 24,5 °C")
-        compare(Logic.formatReading(23.4, "°C", ","), "23,4 °C")
+        compare(Logic.formatSetpoint(21.5, bounds, ","), "21,5\u00a0°C")
+        compare(Logic.formatRange(19, 24.5, bounds, ","), "19,0 – 24,5\u00a0°C")
+        compare(Logic.formatReading(23.4, "°C", ","), "23,4\u00a0°C")
         compare(Logic.formatReading(NaN, "°C"), "—")
         compare(Logic.formatReading(null, "°C"), "—")
     }

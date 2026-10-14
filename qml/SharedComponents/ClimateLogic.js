@@ -150,22 +150,27 @@ function fallbackTarget(currentTemp, b) {
     return snap((b.min + b.max) / 2, b)
 }
 
-function formatSetpoint(v, b) {
-    return isNum(v) ? v.toFixed(b.decimals) + " " + b.unit : ABSENT
+//`point` is the decimal separator of the locale, "." when left out.
+function withPoint(text, point) {
+    return point ? text.replace(".", point) : text
 }
 
-function formatRange(low, high, b) {
+function formatSetpoint(v, b, point) {
+    return isNum(v) ? withPoint(v.toFixed(b.decimals), point) + " " + b.unit : ABSENT
+}
+
+function formatRange(low, high, b, point) {
     if (!isNum(low) || !isNum(high))
         return ABSENT
-    return low.toFixed(b.decimals) + " – " + high.toFixed(b.decimals)
+    return withPoint(low.toFixed(b.decimals), point) + " – " + withPoint(high.toFixed(b.decimals), point)
             + " " + b.unit
 }
 
 //A reading, not a setpoint: one decimal at most, whatever the step is.
-function formatReading(v, unit) {
+function formatReading(v, unit, point) {
     if (!isNum(v))
         return ABSENT
-    return (Math.round(v * 10) / 10) + " " + (unit || DEFAULT_UNIT)
+    return withPoint(String(Math.round(v * 10) / 10), point) + " " + (unit || DEFAULT_UNIT)
 }
 
 //Plain mode string, or "" when the mode is not one the device offers.
@@ -223,13 +228,18 @@ function dialAngle(t, b) {
 
 var NO_VALUE = "--"
 
-//List item: 22.5 -> "22,5°", 21 -> "21°". `point` is the locale decimal separator.
-function formatDegrees(v, point) {
-    return isNum(v) ? plainNumber(v, point) + "°" : NO_VALUE
+//List item: 22.5 -> "22,5°", 21 -> "21°". At most `decimals` digits (one when left
+//out), trailing zeros dropped; `point` is the decimal separator of the locale.
+function formatDegrees(v, point, decimals) {
+    return isNum(v) ? plainNumber(v, point, decimals) + "°" : NO_VALUE
 }
 
-function plainNumber(v, point) {
-    return String(Math.round(v * 10) / 10).replace(".", point || ".")
+function plainNumber(v, point, decimals) {
+    var d = decimals === undefined ? 1 : decimals
+    var text = v.toFixed(d)
+    if (d > 0)
+        text = text.replace(/0+$/, "").replace(/\.$/, "")
+    return withPoint(text, point)
 }
 
 //The reading of the room: "" when the device does not report it.
@@ -238,12 +248,12 @@ function formatRoom(v, point) {
 }
 
 //"22°" for a single setpoint, "21 – 23°" for a range, "--" when it is not
-//known or the mode has none.
-function formatListSetpoint(kind, values, point) {
+//known or the mode has none. `decimals` follows the step of the setpoint.
+function formatListSetpoint(kind, values, point, decimals) {
     if (kind === "range" && isNum(values.low) && isNum(values.high))
-        return plainNumber(values.low, point) + " – " + formatDegrees(values.high, point)
+        return plainNumber(values.low, point, decimals) + " – " + formatDegrees(values.high, point, decimals)
     if (kind === "single" && isNum(values.target))
-        return formatDegrees(values.target, point)
+        return formatDegrees(values.target, point, decimals)
     return NO_VALUE
 }
 
@@ -277,6 +287,7 @@ function listStatus(deviceKnown, mode, state, caps, lockoutSeconds) {
     var s = isObj(state) ? state : {}
     var action = typeof s.action === "string" && caps && caps.reportsAction ? s.action : ""
     out.action = action
+    out.acting = ACTING.indexOf(action) >= 0
 
     if (s.connected === false) {
         out.kind = "offline"
@@ -296,9 +307,11 @@ function listStatus(deviceKnown, mode, state, caps, lockoutSeconds) {
         out.minutes = lockoutMinutes(lockoutSeconds)
     } else if (action !== "") {
         out.kind = action === "idle" || action === "off" ? "idle" : "action"
-        out.acting = ACTING.indexOf(action) >= 0
         out.tone = ACTION_TONE[action] || "muted"
     }
+    //A device that is offline, off or in an unknown mode is not doing what it last reported
+    if (out.kind === "offline" || out.kind === "unknown" || out.kind === "off")
+        out.acting = false
     return out
 }
 

@@ -25,10 +25,17 @@ Item {
     })
 
     Shape {
+        objectName: "iconShape"
         width: 24
         height: 24
         scale: root.size / 24
         transformOrigin: Item.TopLeft
+
+        //Curve renderer: anti-aliased strokes without MSAA. Older Qt does not have it.
+        Component.onCompleted: {
+            if (Shape.CurveRenderer !== undefined)
+                preferredRendererType = Shape.CurveRenderer
+        }
 
         ShapePath {
             strokeColor: root.color

@@ -23,8 +23,21 @@ Item {
     property bool expanded: false
 
     property alias dial: dial
+    readonly property bool pressed: tap.pressed
+    readonly property bool hovered: tap.containsMouse
+
+    signal clicked()
 
     implicitHeight: Units.dp(68)
+
+    //Only the item itself takes the tap, not the controls that open below it
+    MouseArea {
+        id: tap
+        objectName: "tapArea"
+        anchors.fill: parent
+        hoverEnabled: true
+        onClicked: root.clicked()
+    }
 
     RowLayout {
         anchors {

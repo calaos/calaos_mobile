@@ -46,7 +46,15 @@ Item {
     function sweep(from, to) { return Math.max(0.4, to - from) }
 
     Shape {
+        objectName: "dialShape"
         anchors.fill: parent
+
+        //Curve renderer: anti-aliased strokes without MSAA. Older Qt does not have it.
+        Component.onCompleted: {
+            if (Shape.CurveRenderer !== undefined)
+                preferredRendererType = Shape.CurveRenderer
+        }
+
 
         ShapePath {
             strokeColor: root.trackColor

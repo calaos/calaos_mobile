@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Layouts
 import "."
@@ -6,8 +8,8 @@ import "ClimateLogic.js" as Logic
 //Climate device (spec 5.3, 6): everything it shows comes from the capabilities
 //of the `device` object, so one widget serves every impl. The item's scalar
 //state is the mode; "" means the mode is not known.
-//Collapsed it is the list item of UI_CLIMATE.md; a tap opens the controls
-//below it until the sheet / dialog of MOB-4 takes that over.
+//Collapsed it is the list item of UI_CLIMATE.md; a tap on it opens the controls
+//below it, which the bottom sheet / dialog of the final design will replace.
 ItemBase {
     id: root
 
@@ -30,6 +32,7 @@ ItemBase {
     readonly property var status: Logic.listStatus(deviceKnown, mode, devState, caps, lockoutSeconds)
     readonly property string setpointKind: Logic.setpointKind(mode, caps)
     property bool expanded: false
+    readonly property alias lockoutTicking: lockoutTimer.running
 
     readonly property var listValues: ({ target: shown("target_temp"), low: shown("target_temp_low"),
                                          high: shown("target_temp_high") })
@@ -41,6 +44,11 @@ ItemBase {
                                       : plainDial ? Theme.mutedColor : toneColor(status.tone)
     readonly property color dialKnob: status.kind === "offline" ? Theme.mutedColor
                                       : plainDial ? Theme.whiteColor : toneColor(status.tone)
+    //Auto: yellow and cyan for the two ends, neutral when the device is not running, amber while it waits
+    readonly property var rangeKnobs: status.kind === "lockout" ? [Theme.amberColor, Theme.amberColor]
+                                      : (status.kind === "offline" || status.kind === "unknown") ? [Theme.mutedColor, Theme.mutedColor]
+                                      : status.kind === "off" ? [Theme.whiteColor, Theme.whiteColor]
+                                      : [Theme.yellowColor, Theme.blueColor]
 
     //The server publishes the seconds left once; the countdown runs here
     property var clock: Date.now
@@ -49,10 +57,7 @@ ItemBase {
     readonly property real lockoutSeconds: Logic.lockoutLeft(devState ? devState.lockout : undefined,
                                                               now - lockoutStamp)
 
-    enabled: true
     height: layout.implicitHeight
-
-    onClicked: expanded = !expanded
 
     function restampLockout() {
         now = clock()
@@ -174,7 +179,7 @@ ItemBase {
         switch (st.kind) {
         case "offline": return qsTr("Offline")
         //The pill already says the mode is unknown; the action is more to the point
-        case "unknown": return st.action !== "" ? actionLabel(st.action) : qsTr("Mode unknown")
+        case "unknown": return st.action !== "" ? actionLabel(st.action) : ""
         case "off": return qsTr("Stopped")
         case "fault": return faultLabel(st.fault)
         case "lockout": return qsTr("Starts in %n min", "", st.minutes)
@@ -222,9 +227,10 @@ ItemBase {
     }
 
     Timer {
+        id: lockoutTimer
         interval: 1000
         repeat: true
-        running: root.lockoutSeconds > 0
+        running: root.status.kind === "lockout"
         onTriggered: root.now = root.clock()
     }
 
@@ -248,111 +254,122 @@ ItemBase {
             modeMuted: root.status.modeMuted
             statusText: root.statusLabel(root.status)
             statusColor: root.toneColor(root.status.tone)
-            setpointText: Logic.formatListSetpoint(root.setpointKind, root.listValues, Qt.locale().decimalPoint)
+            setpointText: Logic.formatListSetpoint(root.setpointKind, root.listValues, Qt.locale().decimalPoint,
+                                                   root.caps.bounds ? root.caps.bounds.decimals : undefined)
             setpointMuted: Logic.setpointMuted(root.status, root.mode)
             expanded: root.expanded
+
+            onClicked: root.expanded = !root.expanded
+            onPressedChanged: root.__inBorder.state = pressed ? "pressed" : "released"
+            onHoveredChanged: root.state = hovered ? "hovered" : "normal"
 
             dial.model: Logic.dialModel(root.setpointKind, root.caps.bounds, root.listValues,
                                         root.devState ? root.devState.current_temp : undefined)
             dial.fillColor: root.dialFill
             dial.rangeColor: root.status.acting ? root.toneColor(root.status.tone) : root.idleArc
             dial.tickColor: root.status.kind === "offline" ? Theme.mutedColor : "#ffffff"
-            dial.knobColors: root.setpointKind === "range" ? [Theme.yellowColor, Theme.blueColor] : [root.dialKnob]
+            dial.knobColors: root.setpointKind === "range" ? root.rangeKnobs : [root.dialKnob]
         }
 
-        ColumnLayout {
+        //Built on the first tap: a room lists many of these and most stay closed
+        Loader {
             id: settings
             objectName: "settings"
 
+            active: root.expanded
             visible: root.expanded
             Layout.fillWidth: true
+            Layout.preferredHeight: item ? (item as Item).implicitHeight : 0
             Layout.leftMargin: Units.dp(8)
             Layout.rightMargin: Units.dp(8)
             Layout.bottomMargin: Units.dp(8)
-            spacing: Units.dp(6)
 
-            ClimateChoiceRow {
-                id: modeRow
-                objectName: "modeRow"
-                Layout.fillWidth: true
-                visible: root.deviceKnown && root.caps.modes.length > 0
-                choices: root.toChoices(root.caps.modes, root.modeLabel)
-                current: root.mode
-                onChosen: function(value) { root.chooseMode(value) }
-            }
-
-            ClimateSetpoint {
-                id: setpoint
-                objectName: "setpoint"
-                Layout.fillWidth: true
-                visible: root.deviceKnown && root.setpointKind !== "none"
-                bounds: root.caps.bounds
-                ranged: root.setpointKind === "range"
-                active: root.controlsActive
-                value: root.shown("target_temp")
-                fallbackValue: root.caps.bounds
-                               ? Logic.fallbackTarget(root.devState ? root.devState.current_temp : undefined,
-                                                      root.caps.bounds)
-                               : 0
-                range: ({ low: root.shown("target_temp_low"), high: root.shown("target_temp_high") })
-
-                onValueEdited: function(v) {
-                    root.queue({ target_temp: v })
-                }
-                onRangeEdited: function(range) {
-                    root.queue(range)
-                }
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                objectName: "fanSection"
-                visible: root.deviceKnown && root.caps.fanModes.length > 0
+            sourceComponent: ColumnLayout {
                 spacing: Units.dp(6)
 
-                Text {
-                    Layout.preferredWidth: Units.dp(56)
-                    Layout.alignment: Qt.AlignTop
-                    topPadding: Units.dp(6)
-                    color: Theme.colorAlpha(Theme.whiteColor, 0.7)
-                    font { family: calaosFont.fontFamilyThin; pointSize: 11 }
-                    text: qsTr("Fan")
-                }
-
                 ClimateChoiceRow {
-                    id: fanRow
-                    objectName: "fanRow"
+                    id: modeRow
+                    objectName: "modeRow"
                     Layout.fillWidth: true
-                    active: root.controlsActive
-                    choices: root.toChoices(root.caps.fanModes, root.optionLabel)
-                    current: String(root.shown("fan_mode"))
-                    onChosen: function(value) { root.sendFields({ fan_mode: value }) }
-                }
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                objectName: "swingSection"
-                visible: root.deviceKnown && root.caps.swingModes.length > 0
-                spacing: Units.dp(6)
-
-                Text {
-                    Layout.preferredWidth: Units.dp(56)
-                    Layout.alignment: Qt.AlignTop
-                    topPadding: Units.dp(6)
-                    color: Theme.colorAlpha(Theme.whiteColor, 0.7)
-                    font { family: calaosFont.fontFamilyThin; pointSize: 11 }
-                    text: qsTr("Swing")
+                    visible: root.deviceKnown && root.caps.modes.length > 0
+                    choices: root.toChoices(root.caps.modes, root.modeLabel)
+                    current: root.mode
+                    onChosen: function(value) { root.chooseMode(value) }
                 }
 
-                ClimateChoiceRow {
-                    id: swingRow
-                    objectName: "swingRow"
+                ClimateSetpoint {
+                    id: setpoint
+                    objectName: "setpoint"
                     Layout.fillWidth: true
+                    visible: root.deviceKnown && root.setpointKind !== "none"
+                    bounds: root.caps.bounds
+                    ranged: root.setpointKind === "range"
                     active: root.controlsActive
-                    choices: root.toChoices(root.caps.swingModes, root.optionLabel)
-                    current: String(root.shown("swing_mode"))
-                    onChosen: function(value) { root.sendFields({ swing_mode: value }) }
+                    value: root.shown("target_temp")
+                    fallbackValue: root.caps.bounds
+                                   ? Logic.fallbackTarget(root.devState ? root.devState.current_temp : undefined,
+                                                          root.caps.bounds)
+                                   : 0
+                    range: ({ low: root.shown("target_temp_low"), high: root.shown("target_temp_high") })
+
+                    onValueEdited: function(v) {
+                        root.queue({ target_temp: v })
+                    }
+                    onRangeEdited: function(range) {
+                        root.queue(range)
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    objectName: "fanSection"
+                    visible: root.deviceKnown && root.caps.fanModes.length > 0
+                    spacing: Units.dp(6)
+
+                    Text {
+                        Layout.preferredWidth: Units.dp(56)
+                        Layout.alignment: Qt.AlignTop
+                        topPadding: Units.dp(6)
+                        color: Theme.colorAlpha(Theme.whiteColor, 0.7)
+                        font { family: calaosFont.fontFamilyThin; pointSize: 11 }
+                        text: qsTr("Fan")
+                    }
+
+                    ClimateChoiceRow {
+                        id: fanRow
+                        objectName: "fanRow"
+                        Layout.fillWidth: true
+                        active: root.controlsActive
+                        choices: root.toChoices(root.caps.fanModes, root.optionLabel)
+                        current: String(root.shown("fan_mode"))
+                        onChosen: function(value) { root.sendFields({ fan_mode: value }) }
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    objectName: "swingSection"
+                    visible: root.deviceKnown && root.caps.swingModes.length > 0
+                    spacing: Units.dp(6)
+
+                    Text {
+                        Layout.preferredWidth: Units.dp(56)
+                        Layout.alignment: Qt.AlignTop
+                        topPadding: Units.dp(6)
+                        color: Theme.colorAlpha(Theme.whiteColor, 0.7)
+                        font { family: calaosFont.fontFamilyThin; pointSize: 11 }
+                        text: qsTr("Swing")
+                    }
+
+                    ClimateChoiceRow {
+                        id: swingRow
+                        objectName: "swingRow"
+                        Layout.fillWidth: true
+                        active: root.controlsActive
+                        choices: root.toChoices(root.caps.swingModes, root.optionLabel)
+                        current: String(root.shown("swing_mode"))
+                        onChosen: function(value) { root.sendFields({ swing_mode: value }) }
+                    }
                 }
             }
         }

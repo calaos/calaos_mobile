@@ -56,8 +56,8 @@ Item {
                 horizontalAlignment: Text.AlignHCenter
                 color: Theme.yellowColor
                 font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pointSize: 16 }
-                text: root.ranged ? Logic.formatRange(root.low, root.high, root.bounds)
-                                  : Logic.formatSetpoint(root.value, root.bounds)
+                text: root.ranged ? Logic.formatRange(root.low, root.high, root.bounds, Qt.locale().decimalPoint)
+                                  : Logic.formatSetpoint(root.value, root.bounds, Qt.locale().decimalPoint)
             }
 
             ItemButtonAction {

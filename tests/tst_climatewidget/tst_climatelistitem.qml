@@ -332,7 +332,7 @@ TestCase {
         compare(dial.size, Units.dp(52))
     }
 
-    // --- optional data of CLIM-6 ---------------------------------------------------------
+    // --- optional fields the server may not publish yet ---------------------------------------------------------
 
     function test_aDeviceWithoutTheNewFieldsStillWorks() {
         var w = make({ mode: "cool" })
@@ -514,19 +514,19 @@ TestCase {
 
     function test_theLockoutTimerOnlyRunsWhileTheLockoutIsShown() {
         var w = make({ mode: "heat", action: "idle", lockout: { output: "heat", remaining: 140 } })
-        compare(find(w, "lockoutTimer").running, true)
+        compare(w.lockoutTicking, true)
 
         harness.pushFrame("salon_ac", undefined, device(mkState({ mode: "heat", action: "idle", connected: false,
             lockout: { output: "heat", remaining: 140 } })))
-        compare(find(w, "lockoutTimer").running, false)
+        compare(w.lockoutTicking, false)
 
         harness.pushFrame("salon_ac", undefined, device(mkState({ mode: "heat", action: "idle", fault: "sensor_stale",
             lockout: { output: "heat", remaining: 140 } })))
-        compare(find(w, "lockoutTimer").running, false)
+        compare(w.lockoutTicking, false)
 
         harness.pushFrame("salon_ac", undefined, device(mkState({ mode: "heat", action: "idle",
             lockout: { output: "heat", remaining: 140 } })))
-        compare(find(w, "lockoutTimer").running, true)
+        compare(w.lockoutTicking, true)
     }
 
     function test_noSettingsAreBuiltForACollapsedItem() {

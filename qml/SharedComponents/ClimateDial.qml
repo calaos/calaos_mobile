@@ -21,15 +21,23 @@ Item {
     property color ringColor: "#0b0f12"
     property var knobColors: []
 
+    //Proportions of the 52-unit mini dial; the large one sets its own
     readonly property real unit: size / 52
-    readonly property real stroke: 4.5 * unit
-    readonly property real knobRadius: 4.5 * unit
-    readonly property real pad: Math.max(knobRadius + 2 * unit, stroke / 2) + unit
+    property real stroke: 4.5 * unit
+    property real knobRadius: 4.5 * unit
+    property real tickWidth: 1.5 * unit
+    property real tickReach: 0.9
+    //The ring that separates a knob from the arc
+    property real ringWidth: 2 * unit
+    readonly property real pad: Math.max(knobRadius + ringWidth, stroke / 2) + ringWidth / 2
     readonly property real radius: size / 2 - pad
     readonly property real center: size / 2
 
     width: size
     height: Math.ceil(center + radius * Math.cos(Math.PI / 6) + pad)
+
+    //Centred in the opening of the dial
+    default property alias content: inner.data
 
     function polarX(angle) { return center + radius * Math.cos((angle - 90) * Math.PI / 180) }
     function polarY(angle) { return center + radius * Math.sin((angle - 90) * Math.PI / 180) }
@@ -103,17 +111,25 @@ Item {
         ShapePath {
             objectName: "arcTick"
             strokeColor: root.model.tick !== null ? root.tickColor : "transparent"
-            strokeWidth: 1.5 * root.unit
+            strokeWidth: root.tickWidth
             fillColor: "transparent"
             capStyle: ShapePath.RoundCap
 
-            startX: root.radial(root.model.tick, -root.stroke * 0.9, true)
-            startY: root.radial(root.model.tick, -root.stroke * 0.9, false)
+            startX: root.radial(root.model.tick, -root.stroke * root.tickReach, true)
+            startY: root.radial(root.model.tick, -root.stroke * root.tickReach, false)
             PathLine {
-                x: root.radial(root.model.tick, root.stroke * 0.9, true)
-                y: root.radial(root.model.tick, root.stroke * 0.9, false)
+                x: root.radial(root.model.tick, root.stroke * root.tickReach, true)
+                y: root.radial(root.model.tick, root.stroke * root.tickReach, false)
             }
         }
+    }
+
+    Item {
+        id: inner
+        x: 0
+        y: root.center
+        width: root.width
+        height: 0
     }
 
     Repeater {
@@ -124,7 +140,7 @@ Item {
 
             objectName: "knob" + index
             //The ring is centred on the knob's edge, so the outline is one ring-width wider
-            readonly property real outer: root.knobRadius + root.unit
+            readonly property real outer: root.knobRadius + root.ringWidth / 2
             width: outer * 2
             height: width
             radius: outer
@@ -132,7 +148,7 @@ Item {
             y: root.polarY(root.model.knobs[index]) - outer
             color: root.knobColors[index] !== undefined ? root.knobColors[index] : "#ffffff"
             border.color: root.ringColor
-            border.width: 2 * root.unit
+            border.width: root.ringWidth
         }
     }
 }

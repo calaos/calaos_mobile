@@ -36,6 +36,7 @@ struct SentCommand
     QString value;
     QString type;
     QString action;
+    int seq = 0;
 };
 
 } //namespace
@@ -52,7 +53,12 @@ public:
 
     void sendCommand(QString id, QString value, QString type, QString action) override
     {
-        sent.append({ id, value, type, action });
+        sent.append({ id, value, type, action, 0 });
+    }
+
+    void sendNumberedCommand(QString id, QString value, QString type, QString action, int seq) override
+    {
+        sent.append({ id, value, type, action, seq });
     }
 
     QVector<SentCommand> sent;
@@ -63,6 +69,7 @@ signals:
     void eventIoStatusChange(QString id, QVariantMap statusData);
     void eventDeviceChange(QString id, QVariantMap device);
     void eventCommandRefused(QString id);
+    void eventCommandAnswered(QString id, int seq, bool ok);
 };
 
 namespace {
@@ -213,6 +220,63 @@ private slots:
         QCOMPARE(spy.count(), 0);
         emit con->eventCommandRefused(QStringLiteral("salon_ac"));
         QCOMPARE(spy.count(), 1);
+    }
+
+    void commandsAreNumberedAndTheirAnswerIsForwarded()
+    {
+        QScopedPointer<IOBase> io(new IOBase(nullptr, con, IOBase::IOOutput));
+        io->load(climateItem(sampleDevice()));
+        QSignalSpy spy(io.data(), &IOBase::commandAnswered);
+
+        QCOMPARE(io->sendStringValue(QStringLiteral("heat")), 1);
+        QCOMPARE(io->sendStringValue(QStringLiteral("{\"target_temp\":22}")), 2);
+        QCOMPARE(con->sent.at(0).seq, 1);
+        QCOMPARE(con->sent.at(1).seq, 2);
+        QCOMPARE(con->sent.at(1).action, QStringLiteral("set_state"));
+
+        emit con->eventCommandAnswered(QStringLiteral("another_io"), 1, false);
+        QCOMPARE(spy.count(), 0);
+        emit con->eventCommandAnswered(QStringLiteral("salon_ac"), 2, false);
+        emit con->eventCommandAnswered(QStringLiteral("salon_ac"), 1, true);
+        QCOMPARE(spy.count(), 2);
+        QCOMPARE(spy.at(0).at(0).toInt(), 2);
+        QCOMPARE(spy.at(0).at(1).toBool(), false);
+        QCOMPARE(spy.at(1).at(0).toInt(), 1);
+        QCOMPARE(spy.at(1).at(1).toBool(), true);
+    }
+
+    void numberingIsPerIo()
+    {
+        QScopedPointer<IOBase> a(new IOBase(nullptr, con, IOBase::IOOutput));
+        QScopedPointer<IOBase> b(new IOBase(nullptr, con, IOBase::IOOutput));
+        a->load(climateItem(sampleDevice()));
+        b->load(climateItem(sampleDevice()));
+        QCOMPARE(a->sendStringValue(QStringLiteral("x")), 1);
+        QCOMPARE(a->sendStringValue(QStringLiteral("x")), 2);
+        QCOMPARE(b->sendStringValue(QStringLiteral("x")), 1);
+    }
+
+    void deviceStampIsWhenTheFrameArrived()
+    {
+        static qint64 now = 1000;
+        IOBase::setClock([]() -> qint64 { return now; });
+
+        QScopedPointer<IOBase> io(new IOBase(nullptr, con, IOBase::IOOutput));
+        io->load(climateItem(sampleDevice()));
+        QCOMPARE(io->getDeviceStamp(), qint64(1000));
+
+        now = 61000;
+        QVariantMap dev = sampleDevice();
+        dev["state"] = QVariantMap{ { "mode", "heat" }, { "lockout", QVariantMap{ { "remaining", 90 } } } };
+        emit con->eventDeviceChange(QStringLiteral("salon_ac"), dev);
+        QCOMPARE(io->getDeviceStamp(), qint64(61000));
+
+        // a frame for another io leaves it alone
+        now = 99000;
+        emit con->eventDeviceChange(QStringLiteral("another_io"), dev);
+        QCOMPARE(io->getDeviceStamp(), qint64(61000));
+
+        IOBase::setClock(nullptr);
     }
 
     void climateItemKeepsDeviceObject()

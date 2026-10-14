@@ -56,7 +56,6 @@ TestCase {
             property int itemWidth: 390
             property var picks: []
             property var items: []
-            property bool expandFirst: false
             color: "#080808"
             width: itemWidth + 20
             height: col.implicitHeight + 20
@@ -75,7 +74,6 @@ TestCase {
                         width: frame.itemWidth
                         sourceComponent: IOClimate {
                             clock: function() { return 1000000 }
-                            expanded: frame.expandFirst && slot.modelData.id === "cool"
                             modelData: harness.makeClimate({
                                 id: "io_" + slot.modelData.id, name: slot.modelData.name, gui_type: "climate",
                                 state: slot.modelData.st.mode, rw: "true",
@@ -88,8 +86,8 @@ TestCase {
         }
     }
 
-    function render(picks, width, expandFirst) {
-        var f = createTemporaryObject(columnComponent, tc, { picks: picks, itemWidth: width, expandFirst: expandFirst === true })
+    function render(picks, width) {
+        var f = createTemporaryObject(columnComponent, tc, { picks: picks, itemWidth: width })
         verify(f !== null)
         waitForRendering(f)
         return f
@@ -217,6 +215,5 @@ TestCase {
         //A column of the desktop room view is about 366 wide
         shot(render(pick(["cool", "heat", "autoIdle", "autoHeat", "wait"]), 366), "desktop-list-states.png")
         shot(render(pick(["off", "unknown", "offline", "dry", "fault"]), 366), "desktop-list-states-2.png")
-        shot(render(pick(["cool", "heat"]), 390, true), "mobile-expanded.png")
     }
 }

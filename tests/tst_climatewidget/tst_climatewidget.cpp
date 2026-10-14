@@ -3,6 +3,7 @@
 #include <QQmlContext>
 #include <QQmlPropertyMap>
 #include <QFontDatabase>
+#include <QFile>
 #include <QStringList>
 #include <QVector>
 
@@ -37,9 +38,17 @@ public:
     void sendCommand(QString, QString value, QString, QString) override
     {
         sent << value;
+        seqs << 0;
+    }
+
+    void sendNumberedCommand(QString, QString value, QString, QString, int seq) override
+    {
+        sent << value;
+        seqs << seq;
     }
 
     QStringList sent;
+    QVector<int> seqs;
 
 signals:
     void eventInputChange(QString id, QString key, QString value);
@@ -47,16 +56,34 @@ signals:
     void eventIoStatusChange(QString id, QVariantMap statusData);
     void eventDeviceChange(QString id, QVariantMap device);
     void eventCommandRefused(QString id);
+    void eventCommandAnswered(QString id, int seq, bool ok);
 };
 
 //What the QML tests see of the application: climate items backed by the real
 //IOBase, and the commands they sent.
+namespace {
+qint64 fakeNow = 1000000;
+}
+
 class Harness: public QObject
 {
     Q_OBJECT
 
 public:
-    ~Harness() override { reset(); }
+    Harness()
+    {
+        //What the frames are stamped with, so that a test moves time as it likes
+        IOBase::setClock([]() -> qint64 { return fakeNow; });
+    }
+
+    ~Harness() override
+    {
+        reset();
+        IOBase::setClock(nullptr);
+    }
+
+    Q_INVOKABLE void setNow(double ms) { fakeNow = qint64(ms); }
+    Q_INVOKABLE double now() const { return double(fakeNow); }
 
     Q_INVOKABLE QObject *makeClimate(const QVariantMap &item)
     {
@@ -91,12 +118,22 @@ public:
             emit con.eventOutputChange(id, QStringLiteral("state"), state);
     }
 
-    Q_INVOKABLE void pushRefusal(const QString &id) { emit con.eventCommandRefused(id); }
+    //The answer of the server to the command `seq` of an io, in the order the test likes
+    Q_INVOKABLE void pushAnswer(const QString &id, int seq, bool ok) { emit con.eventCommandAnswered(id, seq, ok); }
+
+    //Numbers the commands carried, in the order they were sent (0 for a plain one)
+    Q_INVOKABLE QVariantList seqs() const
+    {
+        QVariantList l;
+        for (int s: con.seqs)
+            l << s;
+        return l;
+    }
 
     Q_INVOKABLE QString env(const QString &name) const { return qEnvironmentVariable(name.toUtf8().constData()); }
 
     Q_INVOKABLE QStringList sent() const { return con.sent; }
-    Q_INVOKABLE void clearSent() { con.sent.clear(); }
+    Q_INVOKABLE void clearSent() { con.sent.clear(); con.seqs.clear(); }
 
     Q_INVOKABLE void reset()
     {
@@ -105,6 +142,7 @@ public:
         qDeleteAll(ios);
         ios.clear();
         con.sent.clear();
+        con.seqs.clear();
     }
 
 private:
@@ -118,7 +156,13 @@ class AppStub: public QObject
     Q_OBJECT
 
 public:
-    Q_INVOKABLE QString getPictureSized(const QString &) const { return QString(); }
+    //The images of the app are compiled into the test, so that the faces of the
+    //buttons and the backdrop of the dialogs are the real ones
+    Q_INVOKABLE QString getPictureSized(const QString &pic) const
+    {
+        const QString res = QStringLiteral(":/img/") + pic + QStringLiteral(".png");
+        return QFile::exists(res) ? QStringLiteral("qrc") + res : QString();
+    }
 };
 
 class Setup: public QObject

@@ -2,6 +2,7 @@ import QtQuick
 import QtTest
 import QtQuick.Shapes
 import SharedComponents
+import QuickFlux
 
 //The collapsed IOClimate, i.e. the list item of UI_CLIMATE.md, one row of the
 //"displayed status" table at a time.
@@ -16,6 +17,7 @@ TestCase {
     readonly property string point: Qt.locale().decimalPoint
 
     property real fakeNow: 1000000
+    onFakeNowChanged: harness.setNow(fakeNow)
     function fakeClock() { return fakeNow }
 
     Component {
@@ -319,9 +321,8 @@ TestCase {
         compare(w.height, Units.dp(68))
         compare(find(w, "chevron").visible, true)
         compare(find(w, "chevron").name, "chevronR")
-        // the -/+ of the controls only exist inside the closed settings
-        compare(find(w, "settings").visible, false)
         compare(find(w, "btPlus"), null)
+        compare(find(w, "btMin"), null)
     }
 
     function test_dialTakesTheHeightOfTheRows() {
@@ -369,61 +370,33 @@ TestCase {
         compare(find(w, "roomTemp").visible, false)
     }
 
-    // --- tap -------------------------------------------------------------------------------
+    // --- what a tap does -------------------------------------------------------------------
 
-    function test_tapOpensTheCurrentSettingsAndTapsAgainClosesThem() {
+    function test_tapAsksForTheSettingsOfThatDevice() {
         var w = make({ mode: "heat", action: "heating" })
-        var closed = w.height
-        compare(find(w, "modeRow"), null)
-
+        AppDispatcher.clear()
         mouseClick(w, w.width / 2, Units.dp(30))
-        compare(w.expanded, true)
-        compare(find(w, "modeRow").visible, true)
-        compare(find(w, "setpoint").visible, true)
-        tryVerify(function() { return w.height > closed })
-
-        mouseClick(w, w.width / 2, Units.dp(30))
-        compare(w.expanded, false)
-        compare(find(w, "modeRow"), null)
-        tryCompare(w, "height", closed)
-    }
-
-    function test_tappingTheListItemSendsNothing() {
-        var w = make({ mode: "heat" })
-        mouseClick(w, w.width / 2, Units.dp(30))
-        mouseClick(w, w.width / 2, Units.dp(30))
-        wait(50)
+        compare(AppDispatcher.log.length, 1)
+        compare(AppDispatcher.log[0].message.io, w.modelData)
+        // nothing opens inline and nothing is sent
+        compare(w.height, Units.dp(68))
         compare(harness.sent(), [])
     }
 
-    // --- what a tap reaches --------------------------------------------------------------
-
-    function test_onlyTheListItemTogglesTheSettings() {
-        var w = make({ mode: "heat", action: "heating" })
+    function test_everyTapAsksAgain() {
+        var w = make({ mode: "heat" })
+        AppDispatcher.clear()
         mouseClick(w, w.width / 2, Units.dp(30))
-        compare(w.expanded, true)
-        tryVerify(function() { return w.height > Units.dp(120) })
-
-        // the margin under the controls, the name of a row, a greyed button: none of them closes the panel
-        mouseClick(w, w.width - 2, w.height - 3)
-        mouseClick(w, 4, w.height - 20)
-        compare(w.expanded, true)
-        compare(find(w, "modeRow").visible, true)
+        mouseClick(w, w.width / 2, Units.dp(30))
+        compare(AppDispatcher.log.length, 2)
     }
 
-    function test_pressFeedbackFollowsTheListItemOnly() {
+    function test_pressFeedbackFollowsTheItem() {
         var w = make({ mode: "heat" })
         mousePress(w, w.width / 2, Units.dp(30))
         compare(w.__inBorder.state, "pressed")
         mouseRelease(w, w.width / 2, Units.dp(30))
         compare(w.__inBorder.state, "released")
-        compare(w.expanded, true)
-
-        // a press on the controls does not light the item up
-        tryVerify(function() { return w.height > Units.dp(120) })
-        mousePress(w, w.width - 2, w.height - 3)
-        compare(w.__inBorder.state, "released")
-        mouseRelease(w, w.width - 2, w.height - 3)
     }
 
     Component {
@@ -443,6 +416,7 @@ TestCase {
         var flick = createTemporaryObject(scrolledComponent, tc)
         flick.item.modelData = io
         var w = flick.item
+        AppDispatcher.clear()
 
         mousePress(flick, 200, Units.dp(30))
         compare(w.__inBorder.state, "pressed")
@@ -451,7 +425,7 @@ TestCase {
             mouseMove(flick, 200, y)
         tryCompare(w.__inBorder, "state", "released")
         mouseRelease(flick, 200, 200)
-        compare(w.expanded, false)
+        compare(AppDispatcher.log.length, 0)
     }
 
     // --- dial colours in auto ---------------------------------------------------------------
@@ -529,16 +503,6 @@ TestCase {
         compare(w.lockoutTicking, true)
     }
 
-    function test_noSettingsAreBuiltForACollapsedItem() {
-        var w = make({ mode: "heat" })
-        compare(find(w, "settings").item, null)
-        w.expanded = true
-        verify(find(w, "settings").item !== null)
-        verify(find(w, "modeRow") !== null)
-        w.expanded = false
-        compare(find(w, "settings").item, null)
-    }
-
     // --- anti-aliasing on the GPU ----------------------------------------------------------------
 
     function test_shapesAskForTheCurveRenderer() {
@@ -547,5 +511,25 @@ TestCase {
             skip("this Qt has no curve renderer")
         compare(find(w, "dialShape").preferredRendererType, Shape.CurveRenderer)
         compare(find(w, "iconShape").preferredRendererType, Shape.CurveRenderer)
+    }
+
+    // --- in a room list ------------------------------------------------------------------
+
+    Component {
+        id: listComponent
+        ItemListView { showHeader: false }
+    }
+
+    function test_roomListShowsAClimateItemAmongOthers() {
+        var st = mkState({ mode: "heat" })
+        var room = harness.makeRoom([
+            { id: "salon_ac", name: "Clim salon", gui_type: "climate", state: "heat", visible: "true", device: device(st) },
+            { id: "msg", name: "Message", gui_type: "var_string", state: "hello", visible: "true", rw: "true" }
+        ])
+        var list = createTemporaryObject(listComponent, tc, { model: room, width: 400, height: 500 })
+        tryVerify(function() { return find(list.contentItem, "modePill") !== null }, 2000)
+        // one widget only: the other item keeps its own delegate
+        compare(find(list.contentItem, "modeText").text, "Heat")
+        compare(find(list.contentItem, "btPlus"), null)
     }
 }

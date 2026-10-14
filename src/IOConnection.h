@@ -34,6 +34,8 @@
  *   void eventDeviceChange(QString id, QVariantMap device)
  * and, optionally (a double that never refuses can leave it out):
  *   void eventCommandRefused(QString id)
+ *   void eventCommandAnswered(QString id, int seq, bool ok)
+ * the second one answers a command sent through sendNumberedCommand().
  * IOBase warns loudly if a connection fails, so a signature drift shows up as
  * a message instead of an io that silently stops updating.
  */
@@ -52,6 +54,15 @@ public:
 
     //type is "input"/"output" (or empty), action is typically "set_state".
     virtual void sendCommand(QString id, QString value, QString type, QString action) = 0;
+
+    //Same, for a command the sender wants the answer of: seq (> 0, unique per
+    //io) comes back in eventCommandAnswered(). A transport that cannot tell
+    //answers apart sends it as a plain command.
+    virtual void sendNumberedCommand(QString id, QString value, QString type, QString action, int seq)
+    {
+        Q_UNUSED(seq)
+        sendCommand(id, value, type, action);
+    }
 };
 
 #endif // IOCONNECTION_H

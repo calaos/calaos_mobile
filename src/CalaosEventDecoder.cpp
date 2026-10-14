@@ -55,15 +55,33 @@ DecodedEvent CalaosEventDecoder::decodeSetStateAnswer(const QVariantMap &frame)
     const QVariant data = frame.value(JsonKeys::Data);
     if (data.typeId() != QMetaType::QVariantMap)
         return makeEvent(DecodedEvent::Malformed);
-    if (data.toMap().value(JsonKeys::Success).toString() == QLatin1String("true"))
-        return makeEvent(DecodedEvent::Unknown);
+    const bool ok = data.toMap().value(JsonKeys::Success).toString() == QLatin1String("true");
 
     const QString tag = frame.value(JsonKeys::MsgId).toString();
     if (!tag.startsWith(JsonKeys::SetStateTag) || tag.size() == JsonKeys::SetStateTag.size())
         return makeEvent(DecodedEvent::Unknown);
 
+    QString id = tag.mid(JsonKeys::SetStateTag.size());
+    const int sep = id.lastIndexOf(JsonKeys::SetStateSeqSeparator);
+    if (sep > 0)
+    {
+        bool isNumber = false;
+        const int seq = id.mid(sep + 1).toInt(&isNumber);
+        if (isNumber && seq > 0)
+        {
+            DecodedEvent ev = makeEvent(DecodedEvent::CommandAnswered);
+            ev.id = id.left(sep);
+            ev.value = QString::number(seq);
+            ev.state = ok ? QStringLiteral("true") : QStringLiteral("false");
+            return ev;
+        }
+    }
+
+    if (ok)
+        return makeEvent(DecodedEvent::Unknown);
+
     DecodedEvent ev = makeEvent(DecodedEvent::CommandRefused);
-    ev.id = tag.mid(JsonKeys::SetStateTag.size());
+    ev.id = id;
     return ev;
 }
 

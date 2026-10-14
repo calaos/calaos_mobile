@@ -10,8 +10,6 @@ var DEFAULT_MAX = 35
 var DEFAULT_STEP = 0.5
 var DEFAULT_UNIT = "°C"
 
-var ABSENT = "—"
-
 function isNum(v) {
     return typeof v === "number" && isFinite(v)
 }
@@ -91,7 +89,8 @@ function capabilities(caps, ios) {
         rangeOnly: range && isObj(ios) && !ios.target_temp,
         fanModes: stringList(caps.fan_modes),
         swingModes: stringList(caps.swing_modes),
-        reportsAction: caps.reports_action === true
+        reportsAction: caps.reports_action === true,
+        humidity: caps.humidity === true
     }
 }
 
@@ -155,24 +154,6 @@ function withPoint(text, point) {
     return point ? text.replace(".", point) : text
 }
 
-function formatSetpoint(v, b, point) {
-    return isNum(v) ? withPoint(v.toFixed(b.decimals), point) + " " + b.unit : ABSENT
-}
-
-function formatRange(low, high, b, point) {
-    if (!isNum(low) || !isNum(high))
-        return ABSENT
-    return withPoint(low.toFixed(b.decimals), point) + " – " + withPoint(high.toFixed(b.decimals), point)
-            + " " + b.unit
-}
-
-//A reading, not a setpoint: one decimal at most, whatever the step is.
-function formatReading(v, unit, point) {
-    if (!isNum(v))
-        return ABSENT
-    return withPoint(String(Math.round(v * 10) / 10), point) + " " + (unit || DEFAULT_UNIT)
-}
-
 //Plain mode string, or "" when the mode is not one the device offers.
 function modeCommand(mode, caps) {
     return caps.modes.indexOf(mode) >= 0 ? mode : ""
@@ -181,38 +162,6 @@ function modeCommand(mode, caps) {
 //Partial update (spec 5.2): only the fields present are applied.
 function partialCommand(fields) {
     return JSON.stringify(fields)
-}
-
-function hasFields(obj) {
-    return Object.keys(obj).length > 0
-}
-
-function merged(a, b) {
-    var out = {}, k
-    for (k in a)
-        out[k] = a[k]
-    for (k in b)
-        out[k] = b[k]
-    return out
-}
-
-//First of the sources that holds the key.
-function pick(key, sources) {
-    for (var i = 0; i < sources.length; i++) {
-        if (isObj(sources[i]) && sources[i][key] !== undefined)
-            return sources[i][key]
-    }
-    return undefined
-}
-
-//Drops from `echoed` the fields the server has now reported with that value.
-function confirmed(echoed, state) {
-    var out = {}
-    for (var k in echoed) {
-        if (!isObj(state) || state[k] !== echoed[k])
-            out[k] = echoed[k]
-    }
-    return out
 }
 
 //Dial: 300 degrees, open at the bottom, angles counted clockwise from 12 o'clock.
@@ -338,4 +287,51 @@ function dialModel(kind, bounds, values, current) {
     if (isNum(current))
         out.tick = dialAngle(current, bounds)
     return out
+}
+
+//One tap on a - / + of the setpoint line. `which`: "target", "low" or "high".
+//Returns the new value, or the current one when the limit is reached; a
+//value that is not known yet starts from `fallback`.
+function stepSetpoint(which, dir, values, b, fallback) {
+    if (which === "target")
+        return stepValue(isNum(values.target) ? values.target : fallback, dir, b)
+    var low = isNum(values.low) ? values.low : fallback
+    var high = isNum(values.high) ? values.high : fallback
+    var r = which === "low" ? moveRange(low + dir * b.step, high, "low", b)
+                            : moveRange(low, high + dir * b.step, "high", b)
+    return which === "low" ? r.low : r.high
+}
+
+//Whether the button does anything: the inner ones are refused at min_range.
+function canStep(which, dir, values, b) {
+    if (b === null || b === undefined)
+        return false
+    var current = values[which]
+    if (!isNum(current))
+        return true
+    //A range already tighter than min_range would be pushed back the other way
+    return (stepSetpoint(which, dir, values, b, current) - current) * dir > 0
+}
+
+//The two ends are as close as min_range allows.
+function rangeAtStop(values, b) {
+    return b !== null && b !== undefined && b.minRange > 0 && isNum(values.low) && isNum(values.high)
+            && values.high - values.low <= b.minRange + 1e-6
+}
+
+//Seconds as { minutes, seconds } for the countdown of a lock-out.
+function splitDuration(seconds) {
+    //Rounded up: while the lock-out runs the count never says "0 s"
+    var s = Math.max(0, Math.ceil(seconds))
+    return { minutes: Math.floor(s / 60), seconds: s % 60 }
+}
+
+//Whether the "more settings" page has anything to show.
+function hasMore(caps, state) {
+    return caps.fanModes.length > 0 || caps.swingModes.length > 0 || humidityShown(caps, state)
+}
+
+//Humidity is announced by the capabilities and read from the state, both optional.
+function humidityShown(caps, state) {
+    return caps.humidity === true && isObj(state) && isNum(state.humidity)
 }

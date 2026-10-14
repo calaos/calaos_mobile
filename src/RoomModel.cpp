@@ -1,5 +1,6 @@
 #include "RoomModel.h"
 #include <QDebug>
+#include <QDateTime>
 #include "IOTypeRegistry.h"
 #include "JsonKeys.h"
 
@@ -236,6 +237,22 @@ void RoomModel::temperatureIoChanged()
     emit temp_changed_sig(temperatureIo->getStateInt());
 }
 
+namespace {
+
+qint64 systemClock()
+{
+    return QDateTime::currentMSecsSinceEpoch();
+}
+
+qint64 (*clockNow)() = systemClock;
+
+}
+
+void IOBase::setClock(qint64 (*clock)())
+{
+    clockNow = clock ? clock : systemClock;
+}
+
 IOBase::IOBase(QQmlApplicationEngine *eng, IOConnection *con, int t):
     QStandardItem(),
     engine(eng),
@@ -275,6 +292,10 @@ IOBase::IOBase(QQmlApplicationEngine *eng, IOConnection *con, int t):
 
         ok = connect(events, SIGNAL(eventDeviceChange(QString,QVariantMap)),
                      this, SLOT(deviceChanged(QString,QVariantMap))) && ok;
+
+        if (events->metaObject()->indexOfSignal("eventCommandAnswered(QString,int,bool)") >= 0)
+            connect(events, SIGNAL(eventCommandAnswered(QString,int,bool)),
+                    this, SLOT(commandAnsweredFor(QString,int,bool)));
 
         if (events->metaObject()->indexOfSignal("eventCommandRefused(QString)") >= 0)
             connect(events, SIGNAL(eventCommandRefused(QString)),
@@ -329,7 +350,10 @@ void IOBase::load(const QVariantMap &io)
     }
 
     if (getDevice() != previousDevice)
+    {
+        deviceStamp = clockNow();
         emit deviceChange();
+    }
 }
 
 void IOBase::checkFirstState()
@@ -430,12 +454,15 @@ void IOBase::sendStop()
             "set_state");
 }
 
-void IOBase::sendStringValue(QString value)
+int IOBase::sendStringValue(QString value)
 {
-    connection->sendCommand(ioData[JsonKeys::Id].toString(),
+    const int seq = ++commandSeq;
+    connection->sendNumberedCommand(ioData[JsonKeys::Id].toString(),
             value,
             ioType == IOOutput?"output":"input",
-            "set_state");
+            "set_state",
+            seq);
+    return seq;
 }
 
 void IOBase::sendIntValue(double value)
@@ -703,7 +730,15 @@ void IOBase::deviceChanged(QString id, QVariantMap newDevice)
     //The server always sends the whole object: keeping stale sections of the
     //previous one would show capabilities that no longer exist.
     ioData[JsonKeys::Device] = newDevice;
+    deviceStamp = clockNow();
     emit deviceChange();
+}
+
+void IOBase::commandAnsweredFor(QString id, int seq, bool ok)
+{
+    if (id != ioData[JsonKeys::Id].toString()) return; //not for us
+
+    emit commandAnswered(seq, ok);
 }
 
 void IOBase::commandRefusedFor(QString id)

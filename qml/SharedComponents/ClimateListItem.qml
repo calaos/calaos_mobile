@@ -20,7 +20,6 @@ Item {
     property color statusColor: Theme.mutedColor
     property string setpointText
     property bool setpointMuted: false
-    property bool expanded: false
 
     property alias dial: dial
     readonly property bool pressed: tap.pressed
@@ -141,10 +140,7 @@ Item {
             name: "chevronR"
             size: Units.dp(18)
             color: Theme.mutedColor
-            rotation: root.expanded ? 90 : 0
             Layout.alignment: Qt.AlignVCenter
-
-            Behavior on rotation { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
         }
     }
 }

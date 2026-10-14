@@ -33,6 +33,7 @@
         <file>qml/desktop/PopupBase.qml</file>
         <file>qml/desktop/BasePopupView.qml</file>
         <file>qml/desktop/Dialog.qml</file>
+<file>qml/desktop/DialogClimate.qml</file>
         <file>qml/quickflux/ActionTypes.qml</file>
         <file>qml/quickflux/AppActions.qml</file>
         <file>qml/quickflux/qmldir</file>

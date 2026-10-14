@@ -207,54 +207,10 @@ TestCase {
         compare(Logic.currentMode(21), "")
     }
 
-    function test_formatting() {
-        compare(Logic.formatSetpoint(21, bounds), "21.0 °C")
-        compare(Logic.formatSetpoint(undefined, bounds), "—")
-        compare(Logic.formatSetpoint("21", bounds), "—")
-        compare(Logic.formatRange(19, 24.5, bounds), "19.0 – 24.5 °C")
-        compare(Logic.formatRange(19, undefined, bounds), "—")
-        compare(Logic.formatReading(23.4, "°C"), "23.4 °C")
-        compare(Logic.formatReading(23, "°C"), "23 °C")
-        compare(Logic.formatReading(23.449, undefined), "23.4 °C")
-        compare(Logic.formatReading(undefined, "°C"), "—")
-        // the separator of the locale, in the panel as in the list
-        compare(Logic.formatSetpoint(21.5, bounds, ","), "21,5\u00a0°C")
-        compare(Logic.formatRange(19, 24.5, bounds, ","), "19,0 – 24,5\u00a0°C")
-        compare(Logic.formatReading(23.4, "°C", ","), "23,4\u00a0°C")
-        compare(Logic.formatReading(NaN, "°C"), "—")
-        compare(Logic.formatReading(null, "°C"), "—")
-    }
-
     function test_modeCommandOnlyForOfferedModes() {
         var caps = Logic.capabilities({ modes: ["off", "heat"] })
         compare(Logic.modeCommand("heat", caps), "heat")
         compare(Logic.modeCommand("cool", caps), "")
-    }
-
-    function test_partialCommand() {
-        compare(Logic.partialCommand({ target_temp: 21.5 }), "{\"target_temp\":21.5}")
-        compare(JSON.parse(Logic.partialCommand({ target_temp_low: 19, target_temp_high: 24 })).target_temp_high, 24)
-    }
-
-    function test_pickPrefersTheFirstSourceHoldingTheKey() {
-        compare(Logic.pick("a", [{ a: 1 }, { a: 2 }]), 1)
-        compare(Logic.pick("a", [{}, { a: 2 }]), 2)
-        compare(Logic.pick("a", [{}, undefined, null, "x"]), undefined)
-        // 0 is a value, not an absence
-        compare(Logic.pick("a", [{ a: 0 }, { a: 2 }]), 0)
-    }
-
-    function test_confirmedDropsOnlyMatchingFields() {
-        var left = Logic.confirmed({ target_temp: 22, fan_mode: "high" }, { target_temp: 22, fan_mode: "low" })
-        compare(left, { fan_mode: "high" })
-        compare(Logic.confirmed({ target_temp: 22 }, undefined), { target_temp: 22 })
-    }
-
-    function test_mergedDoesNotMutate() {
-        var a = { x: 1 }
-        var m = Logic.merged(a, { y: 2, x: 3 })
-        compare(a, { x: 1 })
-        compare(m, { x: 3, y: 2 })
     }
 
     function test_fallbackTarget() {
@@ -462,4 +418,86 @@ TestCase {
         compare(Logic.dialModel("range", bounds, { low: 20 }, undefined).range, null)
     }
 
+    // --- setpoint buttons ------------------------------------------------------------
+
+    readonly property var rangeBounds: Logic.targetBounds({ target_temp: { min: 16, max: 30, step: 0.5, min_range: 2 } })
+
+    function test_partialCommand() {
+        compare(Logic.partialCommand({ fan_mode: "low" }), "{\"fan_mode\":\"low\"}")
+        compare(Logic.partialCommand({ target_temp_low: 19.5, target_temp_high: 24 }), "{\"target_temp_low\":19.5,\"target_temp_high\":24}")
+    }
+
+    function test_stepSetpoint_data() {
+        return [
+            { tag: "target up", which: "target", dir: 1, values: { target: 22 }, to: 22.5 },
+            { tag: "target down", which: "target", dir: -1, values: { target: 22 }, to: 21.5 },
+            { tag: "target stops at max", which: "target", dir: 1, values: { target: 30 }, to: 30 },
+            { tag: "target stops at min", which: "target", dir: -1, values: { target: 16 }, to: 16 },
+            { tag: "unknown target starts from the fallback", which: "target", dir: 1, values: {}, fallback: 19, to: 19.5 },
+            { tag: "low up", which: "low", dir: 1, values: { low: 19, high: 24 }, to: 19.5 },
+            { tag: "low down", which: "low", dir: -1, values: { low: 19, high: 24 }, to: 18.5 },
+            { tag: "low stops min_range under high", which: "low", dir: 1, values: { low: 22, high: 24 }, to: 22 },
+            { tag: "high down", which: "high", dir: -1, values: { low: 19, high: 24 }, to: 23.5 },
+            { tag: "high stops min_range over low", which: "high", dir: -1, values: { low: 22, high: 24 }, to: 24 },
+            { tag: "high stops at max", which: "high", dir: 1, values: { low: 19, high: 30 }, to: 30 },
+            { tag: "low from an unknown value", which: "low", dir: 1, values: { high: 24 }, fallback: 20, to: 20.5 }
+        ]
+    }
+
+    function test_stepSetpoint(d) {
+        compare(Logic.stepSetpoint(d.which, d.dir, d.values, rangeBounds, d.fallback !== undefined ? d.fallback : 23), d.to)
+    }
+
+    function test_stepNeverGoesTheOtherWay() {
+        // min_range 2 and a range already tighter than that
+        var tight = { low: 22, high: 23 }
+        compare(Logic.canStep("low", 1, tight, rangeBounds), false)
+        compare(Logic.canStep("high", -1, tight, rangeBounds), false)
+        compare(Logic.canStep("low", -1, tight, rangeBounds), true)
+        compare(Logic.canStep("high", 1, tight, rangeBounds), true)
+    }
+
+    function test_canStepFollowsWhatMovesTheValue() {
+        var stop = { low: 21, high: 23 }
+        compare(Logic.canStep("low", 1, stop, rangeBounds), false)
+        compare(Logic.canStep("high", -1, stop, rangeBounds), false)
+        compare(Logic.canStep("low", -1, stop, rangeBounds), true)
+        compare(Logic.canStep("high", 1, stop, rangeBounds), true)
+        compare(Logic.canStep("target", 1, { target: 30 }, rangeBounds), false)
+        compare(Logic.canStep("target", -1, { target: 30 }, rangeBounds), true)
+        // nothing known yet: the button starts from the fallback
+        compare(Logic.canStep("target", 1, {}, rangeBounds), true)
+        compare(Logic.canStep("target", 1, { target: 22 }, null), false)
+    }
+
+    function test_rangeAtStop() {
+        compare(Logic.rangeAtStop({ low: 21, high: 23 }, rangeBounds), true)
+        compare(Logic.rangeAtStop({ low: 21, high: 23.5 }, rangeBounds), false)
+        compare(Logic.rangeAtStop({ low: 21 }, rangeBounds), false)
+        compare(Logic.rangeAtStop({ low: 21, high: 21 }, Logic.targetBounds({ target_temp: { min: 16, max: 30 } })), false)
+        compare(Logic.rangeAtStop({ low: 21, high: 23 }, null), false)
+    }
+
+    function test_splitDuration() {
+        compare(Logic.splitDuration(140), { minutes: 2, seconds: 20 })
+        compare(Logic.splitDuration(59.6), { minutes: 1, seconds: 0 })
+        compare(Logic.splitDuration(0.2), { minutes: 0, seconds: 1 })
+        compare(Logic.splitDuration(60.1), { minutes: 1, seconds: 1 })
+        compare(Logic.splitDuration(45), { minutes: 0, seconds: 45 })
+        compare(Logic.splitDuration(-3), { minutes: 0, seconds: 0 })
+    }
+
+    function test_theMorePageNeedsSomethingToShow() {
+        var c = Logic.capabilities({ fan_modes: ["low"], swing_modes: ["off"], humidity: true })
+        compare(Logic.hasMore(c, {}), true)
+        compare(Logic.hasMore(Logic.capabilities({ fan_modes: ["low"] }), {}), true)
+        compare(Logic.hasMore(Logic.capabilities({ swing_modes: ["off"] }), {}), true)
+        compare(Logic.hasMore(Logic.capabilities({}), {}), false)
+        // humidity needs the capability and a value
+        compare(Logic.hasMore(Logic.capabilities({ humidity: true }), { humidity: 50 }), true)
+        compare(Logic.hasMore(Logic.capabilities({ humidity: true }), {}), false)
+        compare(Logic.hasMore(Logic.capabilities({}), { humidity: 50 }), false)
+        compare(Logic.humidityShown(Logic.capabilities({ humidity: true }), { humidity: "wet" }), false)
+        compare(Logic.humidityShown(Logic.capabilities({ humidity: "yes" }), { humidity: 50 }), false)
+    }
 }

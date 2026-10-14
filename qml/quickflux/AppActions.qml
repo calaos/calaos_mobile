@@ -113,4 +113,9 @@ QtObject {
             sensor: sensorModel
         });
     }
+
+    //The user opened a climate device: each variant shows the settings its way
+    function showClimateDetails(io) {
+        AppDispatcher.dispatch(ActionTypes.showClimateDetails, { io: io });
+    }
 }

@@ -150,6 +150,9 @@ class IOBase: public QObject, public QStandardItem
     Q_PROPERTY(QVariantMap device READ getDevice NOTIFY deviceChange)
     Q_PROPERTY(QVariantMap deviceCapabilities READ getDeviceCapabilities NOTIFY deviceChange)
     Q_PROPERTY(QVariantMap deviceState READ getDeviceState NOTIFY deviceChange)
+    //When the device object was received, in ms since the epoch: what its
+    //timers (a lock-out counting down) are counted from.
+    Q_PROPERTY(qint64 deviceStamp READ getDeviceStamp NOTIFY deviceChange)
 
     Q_PROPERTY(bool stateBool READ getStateBool NOTIFY stateChange)
     Q_PROPERTY(double stateInt READ getStateInt NOTIFY stateChange)
@@ -204,13 +207,19 @@ public:
     Q_INVOKABLE void sendDown();
     Q_INVOKABLE void sendUp();
     Q_INVOKABLE void sendStop();
-    Q_INVOKABLE void sendStringValue(QString value);
+    //Numbered, so that the answer comes back in commandAnswered(): returns
+    //the number, unique among the commands sent through this io.
+    Q_INVOKABLE int sendStringValue(QString value);
     Q_INVOKABLE void sendIntValue(double value);
 
     bool hasDevice() const;
     QVariantMap getDevice() const;
     QVariantMap getDeviceCapabilities() const;
     QVariantMap getDeviceState() const;
+    qint64 getDeviceStamp() const { return deviceStamp; }
+
+    //The clock the stamps come from, replaceable by a test
+    static void setClock(qint64 (*clock)());
 
     Q_INVOKABLE bool getStateBool();
     Q_INVOKABLE double getStateInt();
@@ -233,6 +242,8 @@ public:
 
 private:
     QVariantMap ioData;
+    qint64 deviceStamp = 0;
+    int commandSeq = 0;
     QQmlApplicationEngine *engine;
     IOConnection *connection;
     int ioType;
@@ -245,12 +256,16 @@ private slots:
     void ioStatusChanged(QString id, QVariantMap statusData);
     void deviceChanged(QString id, QVariantMap newDevice);
     void commandRefusedFor(QString id);
+    void commandAnsweredFor(QString id, int seq, bool ok);
 
 signals:
     void stateChange();
     void deviceChange();
     //The server answered success:false to a command sent for this io
     void commandRefused();
+    //The answer to a command sent by sendStringValue(), accepted or not. The
+    //new state of the device is published separately, and later.
+    void commandAnswered(int seq, bool ok);
 
     void light_on(IOBase *io);
     void light_off(IOBase *io);

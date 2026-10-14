@@ -13,6 +13,8 @@ DEFINES += CALAOS_STUB_QML_DIR=\\\"$$PWD/stubs\\\"
 DEFINES += CALAOS_FONTS_DIR=\\\"$$clean_path($$PWD/../../fonts)\\\"
 DEFINES += CALAOS_QML_DIR=\\\"$$clean_path($$PWD/../../qml)\\\"
 
+RESOURCES += $$PWD/../../img_desktop.qrc
+
 HEADERS += \
     $$SRC_DIR/Common.h \
     $$SRC_DIR/IOConnection.h \
@@ -28,7 +30,12 @@ SOURCES += \
 
 OTHER_FILES += \
     tst_climatelogic.qml \
-    tst_ioclimate.qml \
+    tst_climatemodel.qml \
+    tst_climatesheet.qml \
+    tst_climatedialog.qml \
+    tst_climatedrafts.qml \
     tst_climatelistitem.qml \
     tst_climateshots.qml \
+    tst_climatecapturesmobile.qml \
+    tst_climatecapturesdesktop.qml \
     stubs/QuickFlux/qmldir

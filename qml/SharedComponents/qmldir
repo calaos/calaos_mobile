@@ -8,6 +8,9 @@ IOBinaryDevice 1.0 IOBinaryDevice.qml
 IOClimate 1.0 IOClimate.qml
 ClimateChoiceRow 1.0 ClimateChoiceRow.qml
 ClimateSetpoint 1.0 ClimateSetpoint.qml
+ClimateListItem 1.0 ClimateListItem.qml
+ClimateDial 1.0 ClimateDial.qml
+ClimateIcon 1.0 ClimateIcon.qml
 IOBoiler 1.0 IOBoiler.qml
 IOFavAllLights 1.0 IOFavAllLights.qml
 IOHeater 1.0 IOHeater.qml

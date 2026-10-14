@@ -10,6 +10,7 @@ CONFIG += qmltestcase
 
 DEFINES += QUICK_TEST_SOURCE_DIR=\\\"$$PWD\\\"
 DEFINES += CALAOS_STUB_QML_DIR=\\\"$$PWD/stubs\\\"
+DEFINES += CALAOS_FONTS_DIR=\\\"$$clean_path($$PWD/../../fonts)\\\"
 DEFINES += CALAOS_QML_DIR=\\\"$$clean_path($$PWD/../../qml)\\\"
 
 HEADERS += \
@@ -28,4 +29,6 @@ SOURCES += \
 OTHER_FILES += \
     tst_climatelogic.qml \
     tst_ioclimate.qml \
+    tst_climatelistitem.qml \
+    tst_climateshots.qml \
     stubs/QuickFlux/qmldir

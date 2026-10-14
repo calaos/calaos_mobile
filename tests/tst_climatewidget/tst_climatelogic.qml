@@ -258,13 +258,195 @@ TestCase {
         compare(Logic.fallbackTarget(undefined, bounds), 23)
     }
 
-    function test_actionTone() {
-        compare(Logic.actionTone("heating"), "warm")
-        compare(Logic.actionTone("cooling"), "cold")
-        compare(Logic.actionTone("drying"), "dry")
-        compare(Logic.actionTone("fan"), "fan")
-        compare(Logic.actionTone("idle"), "idle")
-        compare(Logic.actionTone("off"), "idle")
-        compare(Logic.actionTone("whatever"), "idle")
+    // --- list item ------------------------------------------------------------
+
+    readonly property var reporting: Logic.capabilities({ reports_action: true })
+
+    function status(mode, state, secs, caps) {
+        return Logic.listStatus(true, mode, state, caps || reporting, secs || 0)
     }
+
+    function test_listStatus_data() {
+        return [
+            { tag: "heating", mode: "heat", state: { action: "heating" },
+              kind: "action", tone: "heat", action: "heating", acting: true },
+            { tag: "cooling", mode: "cool", state: { action: "cooling" },
+              kind: "action", tone: "cool", action: "cooling", acting: true },
+            { tag: "drying", mode: "dry", state: { action: "drying" },
+              kind: "action", tone: "cool", action: "drying", acting: true },
+            { tag: "fan", mode: "fan_only", state: { action: "fan" },
+              kind: "action", tone: "white", action: "fan", acting: true },
+            { tag: "idle", mode: "auto", state: { action: "idle" },
+              kind: "idle", tone: "muted", action: "idle", acting: false },
+            { tag: "action not reported by the device", mode: "heat", state: { action: "heating" }, caps: {},
+              kind: "none", tone: "muted", action: "", acting: false },
+            { tag: "lockout", mode: "heat", state: { action: "idle", lockout: { output: "heat", remaining: 140 } }, secs: 140,
+              kind: "lockout", tone: "wait", action: "idle", acting: false, minutes: 2 },
+            { tag: "lockout beats the action", mode: "heat", state: { action: "heating" }, secs: 30,
+              kind: "lockout", tone: "wait", action: "heating", acting: false, minutes: 1 },
+            { tag: "offline", mode: "heat", state: { action: "heating", connected: false },
+              kind: "offline", tone: "red", action: "heating", acting: false, modeMuted: true },
+            { tag: "offline beats a lockout", mode: "heat", state: { connected: false }, secs: 90,
+              kind: "offline", tone: "red", action: "", acting: false, modeMuted: true },
+            { tag: "connected true is not offline", mode: "heat", state: { connected: true, action: "heating" },
+              kind: "action", tone: "heat", action: "heating", acting: true },
+            { tag: "connected as a string is not offline", mode: "heat", state: { connected: "false" },
+              kind: "none", tone: "muted", action: "", acting: false },
+            { tag: "fault sensor_stale", mode: "heat", state: { fault: "sensor_stale", action: "idle" },
+              kind: "fault", tone: "wait", fault: "sensor_stale", action: "idle", acting: false },
+            { tag: "fault humidity_high", mode: "cool", state: { fault: "humidity_high" },
+              kind: "fault", tone: "wait", fault: "humidity_high", action: "", acting: false },
+            { tag: "fault beats a lockout", mode: "cool", state: { fault: "sensor_missing" }, secs: 60,
+              kind: "fault", tone: "wait", fault: "sensor_missing", action: "", acting: false },
+            { tag: "empty fault is none", mode: "heat", state: { fault: "", action: "heating" },
+              kind: "action", tone: "heat", action: "heating", acting: true },
+            { tag: "fault that is not a string is ignored", mode: "heat", state: { fault: 3 },
+              kind: "none", tone: "muted", action: "", acting: false },
+            { tag: "off", mode: "off", state: { action: "idle" },
+              kind: "off", tone: "muted", action: "idle", acting: false, modeMuted: true },
+            { tag: "off beats a fault", mode: "off", state: { fault: "sensor_stale" },
+              kind: "off", tone: "muted", action: "", acting: false, modeMuted: true },
+            { tag: "unknown mode", mode: "", state: {},
+              kind: "unknown", tone: "muted", action: "", acting: false, modeMuted: true },
+            { tag: "unknown mode keeps the action", mode: "", state: { action: "heating" },
+              kind: "unknown", tone: "muted", action: "heating", acting: false, modeMuted: true },
+            { tag: "unknown mode beats a lockout", mode: "", state: {}, secs: 60,
+              kind: "unknown", tone: "muted", action: "", acting: false, modeMuted: true },
+            { tag: "no state at all", mode: "heat", state: undefined,
+              kind: "none", tone: "muted", action: "", acting: false },
+            { tag: "unknown action keeps the muted tone", mode: "heat", state: { action: "defrost" },
+              kind: "action", tone: "muted", action: "defrost", acting: false }
+        ]
+    }
+
+    function test_listStatus(d) {
+        var st = status(d.mode, d.state, d.secs, d.caps !== undefined ? Logic.capabilities(d.caps) : undefined)
+        compare(st.kind, d.kind)
+        compare(st.tone, d.tone)
+        compare(st.action, d.action)
+        compare(st.acting, d.acting)
+        compare(st.fault, d.fault !== undefined ? d.fault : "")
+        compare(st.minutes, d.minutes !== undefined ? d.minutes : 0)
+        compare(st.modeMuted, d.modeMuted !== undefined ? d.modeMuted : false)
+    }
+
+    function test_listStatusWithoutDevice() {
+        var st = Logic.listStatus(false, "cool", { action: "cooling", connected: false }, reporting, 0)
+        compare(st.kind, "none")
+        compare(st.acting, false)
+        compare(st.modeMuted, false)
+        compare(Logic.listStatus(false, "", undefined, reporting, 0).modeMuted, true)
+    }
+
+    function test_lockoutLeft_data() {
+        return [
+            { tag: "just published", lockout: { remaining: 140 }, elapsed: 0, left: 140 },
+            { tag: "counts down", lockout: { remaining: 140 }, elapsed: 20000, left: 120 },
+            { tag: "ran out", lockout: { remaining: 140 }, elapsed: 141000, left: 0 },
+            { tag: "clock going backwards", lockout: { remaining: 140 }, elapsed: -5000, left: 140 },
+            { tag: "absent", lockout: undefined, elapsed: 0, left: 0 },
+            { tag: "zero", lockout: { remaining: 0 }, elapsed: 0, left: 0 },
+            { tag: "remaining as a string", lockout: { remaining: "140" }, elapsed: 0, left: 0 },
+            { tag: "not an object", lockout: 140, elapsed: 0, left: 0 },
+            { tag: "no remaining", lockout: { output: "heat" }, elapsed: 0, left: 0 }
+        ]
+    }
+
+    function test_lockoutLeft(d) {
+        compare(Logic.lockoutLeft(d.lockout, d.elapsed), d.left)
+    }
+
+    function test_lockoutMinutes_data() {
+        return [
+            { tag: "rounds to the nearest", secs: 140, min: 2 },
+            { tag: "rounds up from 90 s", secs: 90, min: 2 },
+            { tag: "rounds down below 90 s", secs: 89, min: 1 },
+            { tag: "never 0 while it runs", secs: 5, min: 1 },
+            { tag: "long", secs: 1800, min: 30 }
+        ]
+    }
+
+    function test_lockoutMinutes(d) {
+        compare(Logic.lockoutMinutes(d.secs), d.min)
+    }
+
+    function test_formatDegrees_data() {
+        return [
+            { tag: "integer", v: 21, point: ".", text: "21°" },
+            { tag: "half", v: 22.5, point: ".", text: "22.5°" },
+            { tag: "locale separator", v: 22.5, point: ",", text: "22,5°" },
+            { tag: "one decimal at most", v: 21.04, point: ".", text: "21°" },
+            { tag: "rounds", v: 18.66, point: ".", text: "18.7°" },
+            { tag: "negative", v: -3.5, point: ".", text: "-3.5°" },
+            { tag: "absent", v: undefined, point: ".", text: "--" },
+            { tag: "string", v: "21", point: ".", text: "--" },
+            { tag: "NaN", v: NaN, point: ".", text: "--" }
+        ]
+    }
+
+    function test_formatDegrees(d) {
+        compare(Logic.formatDegrees(d.v, d.point), d.text)
+    }
+
+    function test_formatRoomIsEmptyWhenAbsent() {
+        compare(Logic.formatRoom(undefined, "."), "")
+        compare(Logic.formatRoom(25.4, ","), "25,4°")
+    }
+
+    function test_formatListSetpoint_data() {
+        return [
+            { tag: "single", kind: "single", values: { target: 22 }, text: "22°" },
+            { tag: "single with a decimal", kind: "single", values: { target: 20.5 }, text: "20.5°" },
+            { tag: "single unknown", kind: "single", values: {}, text: "--" },
+            { tag: "range", kind: "range", values: { low: 21, high: 23 }, text: "21 – 23°" },
+            { tag: "range with decimals", kind: "range", values: { low: 19.5, high: 24.5 }, text: "19.5 – 24.5°" },
+            { tag: "range ignores target", kind: "range", values: { target: 22, low: 21, high: 23 }, text: "21 – 23°" },
+            { tag: "range missing a bound", kind: "range", values: { low: 21 }, text: "--" },
+            { tag: "range missing both", kind: "range", values: { target: 22 }, text: "--" },
+            { tag: "none", kind: "none", values: { target: 22 }, text: "--" }
+        ]
+    }
+
+    function test_formatListSetpoint(d) {
+        compare(Logic.formatListSetpoint(d.kind, d.values, "."), d.text)
+    }
+
+    function test_setpointMuted() {
+        compare(Logic.setpointMuted({ kind: "offline" }, "heat"), true)
+        compare(Logic.setpointMuted({ kind: "off" }, "off"), true)
+        compare(Logic.setpointMuted({ kind: "unknown" }, ""), true)
+        compare(Logic.setpointMuted({ kind: "action" }, "heat"), false)
+        compare(Logic.setpointMuted({ kind: "lockout" }, "heat"), false)
+    }
+
+    function test_dialAngle() {
+        compare(Logic.dialAngle(16, bounds), -150)
+        compare(Logic.dialAngle(30, bounds), 150)
+        compare(Logic.dialAngle(23, bounds), 0)
+        compare(Logic.dialAngle(5, bounds), -150)
+        compare(Logic.dialAngle(99, bounds), 150)
+        compare(Logic.dialAngle(undefined, bounds), -150)
+    }
+
+    function test_dialModel() {
+        var single = Logic.dialModel("single", bounds, { target: 23 }, 16)
+        compare(single.fill, [-150, 0])
+        compare(single.knobs, [0])
+        compare(single.range, null)
+        compare(single.tick, -150)
+
+        var range = Logic.dialModel("range", bounds, { low: 16, high: 30, target: 20 }, undefined)
+        compare(range.range, [-150, 150])
+        compare(range.knobs, [-150, 150])
+        compare(range.fill, null)
+        compare(range.tick, null)
+
+        var none = Logic.dialModel("single", bounds, {}, undefined)
+        compare(none.fill, null)
+        compare(none.knobs, [])
+        compare(Logic.dialModel("single", null, { target: 20 }, 20).knobs, [])
+        compare(Logic.dialModel("none", bounds, { target: 20 }, undefined).fill, null)
+        compare(Logic.dialModel("range", bounds, { low: 20 }, undefined).range, null)
+    }
+
 }

@@ -425,6 +425,7 @@ signals:
     void eventIoStatusChange(QString id, QVariantMap statusData);
     void eventDeviceChange(QString id, QVariantMap device);
     void eventCommandRefused(QString id);
+    void eventCommandAnswered(QString id, int seq, bool ok);
 
     //Lifecycle changes, the value is a ReconnectPolicy::State. Application
     //derives its applicationStatus from this instead of tracking it in
@@ -436,6 +437,7 @@ public slots:
     void logout();
     //IOConnection, with the default arguments the rest of the app relies on.
     void sendCommand(QString id, QString value, QString type = QString(), QString action = QString()) override;
+    void sendNumberedCommand(QString id, QString value, QString type, QString action, int seq) override;
     void queryState(QStringList inputs, QStringList outputs, QStringList audio_players);
     void getCameraPicture(const QString &camid, QString urlSuffix = QString());
     void getAudioCover(const QString &playerid);

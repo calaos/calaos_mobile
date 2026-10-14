@@ -49,6 +49,7 @@ public:
         LogEvent,           //data
         DeviceChange,       //id, data = the whole `device` object of an io_changed
         CommandRefused,     //id = io of a set_state the server answered success:false
+        CommandAnswered,    //id = io, value = sequence number of the command, state = "true" / "false"
     };
     Q_ENUM(Type)
 
@@ -114,8 +115,10 @@ public:
     //player id -> audio player map.
     static QList<DecodedEvent> decodeStateMap(const QVariantMap &states, StateStringMode mode);
 
-    //Websocket answer to a set_state. Only a refusal tied to an IO (msg_id built
-    //by CalaosConnection::sendCommand) is an event; anything else is Unknown.
+    //Websocket answer to a set_state. Only an answer tied to an IO (msg_id built
+    //by CalaosConnection::sendCommand) is an event, a CommandAnswered when the
+    //command was numbered and a CommandRefused when it was not and failed;
+    //anything else is Unknown.
     static DecodedEvent decodeSetStateAnswer(const QVariantMap &frame);
 
     //Whole answer of an HTTP request (get_state, get_eventlog, audio query):

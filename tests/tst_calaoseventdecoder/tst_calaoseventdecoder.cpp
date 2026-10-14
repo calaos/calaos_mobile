@@ -332,6 +332,24 @@ void TstCalaosEventDecoder::setStateAnswer_data()
     QTest::newRow("success")
         << QByteArray(R"({"msg":"set_state","msg_id":"user_cmd:salon_ac","data":{"success":"true"}})")
         << QStringLiteral("Unknown||||0|");
+    QTest::newRow("numbered success")
+        << QByteArray(R"({"msg":"set_state","msg_id":"user_cmd:salon_ac#7","data":{"success":"true"}})")
+        << QStringLiteral("CommandAnswered|salon_ac|true|7|0|");
+    QTest::newRow("numbered refusal")
+        << QByteArray(R"({"msg":"set_state","msg_id":"user_cmd:salon_ac#12","data":{"success":"false"}})")
+        << QStringLiteral("CommandAnswered|salon_ac|false|12|0|");
+    QTest::newRow("an io id that holds a separator keeps it")
+        << QByteArray(R"({"msg":"set_state","msg_id":"user_cmd:zone#2#3","data":{"success":"true"}})")
+        << QStringLiteral("CommandAnswered|zone#2|true|3|0|");
+    QTest::newRow("a sequence that is not a number is part of the id")
+        << QByteArray(R"({"msg":"set_state","msg_id":"user_cmd:salon_ac#x","data":{"success":"false"}})")
+        << QStringLiteral("CommandRefused|salon_ac#x|||0|");
+    QTest::newRow("sequence zero is not a sequence")
+        << QByteArray(R"({"msg":"set_state","msg_id":"user_cmd:salon_ac#0","data":{"success":"true"}})")
+        << QStringLiteral("Unknown||||0|");
+    QTest::newRow("a tag that starts with the separator has no io")
+        << QByteArray(R"({"msg":"set_state","msg_id":"user_cmd:#4","data":{"success":"false"}})")
+        << QStringLiteral("CommandRefused|#4|||0|");
     QTest::newRow("missing success counts as a refusal")
         << QByteArray(R"({"msg":"set_state","msg_id":"user_cmd:salon_ac","data":{}})")
         << QStringLiteral("CommandRefused|salon_ac|||0|");

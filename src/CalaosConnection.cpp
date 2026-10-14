@@ -756,6 +756,11 @@ void CalaosConnection::sendHttp(const QString &msg, QJsonObject &data, bool igno
 
 void CalaosConnection::sendCommand(QString id, QString value, QString type, QString action)
 {
+    sendNumberedCommand(id, value, type, action, 0);
+}
+
+void CalaosConnection::sendNumberedCommand(QString id, QString value, QString type, QString action, int seq)
+{
     QJsonObject jroot;
     if (isHttp())
     {
@@ -771,8 +776,9 @@ void CalaosConnection::sendCommand(QString id, QString value, QString type, QStr
 
     if (isWebsocket())
         sendWebsocket(action, jroot,
-                      action == QLatin1String("set_state") ? JsonKeys::SetStateTag + id
-                                                           : QStringLiteral("user_cmd"));
+                      action == QLatin1String("set_state")
+                          ? JsonKeys::SetStateTag + id + (seq > 0 ? JsonKeys::SetStateSeqSeparator + QString::number(seq) : QString())
+                          : QStringLiteral("user_cmd"));
     else
         sendHttp(action, jroot);
 }
@@ -1059,6 +1065,9 @@ void CalaosConnection::dispatchEvents(const QList<DecodedEvent> &events)
             break;
         case DecodedEvent::CommandRefused:
             emit eventCommandRefused(ev.id);
+            break;
+        case DecodedEvent::CommandAnswered:
+            emit eventCommandAnswered(ev.id, ev.value.toInt(), ev.state == QLatin1String("true"));
             break;
         case DecodedEvent::InputStateChange:
             emit eventInputStateChange(ev.data);

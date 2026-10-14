@@ -48,9 +48,11 @@ inline constexpr QLatin1StringView Data{"data"};
 inline constexpr QLatin1StringView Action{"action"};
 //v3 event frames name their event type here instead of in "msg".
 inline constexpr QLatin1StringView TypeStr{"type_str"};
-//msg_id of a websocket set_state: "<prefix><io id>". The server echoes it in
-//its answer, which is how a refusal is tied back to the IO it concerns.
+//msg_id of a websocket set_state: "<prefix><io id>", or "<prefix><io id>#<seq>"
+//when the sender numbers its commands. The server echoes it in its answer,
+//which is how an answer is tied back to the IO, and to the command, it concerns.
 inline constexpr QLatin1StringView SetStateTag{"user_cmd:"};
+inline constexpr QLatin1Char SetStateSeqSeparator{'#'};
 
 //--- Credentials ------------------------------------------------------------
 //Also the two names CalaosConnection redacts before logging a payload.

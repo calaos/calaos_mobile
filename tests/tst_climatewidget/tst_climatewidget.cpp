@@ -2,6 +2,7 @@
 #include <QQmlEngine>
 #include <QQmlContext>
 #include <QQmlPropertyMap>
+#include <QFontDatabase>
 #include <QStringList>
 #include <QVector>
 
@@ -92,6 +93,8 @@ public:
 
     Q_INVOKABLE void pushRefusal(const QString &id) { emit con.eventCommandRefused(id); }
 
+    Q_INVOKABLE QString env(const QString &name) const { return qEnvironmentVariable(name.toUtf8().constData()); }
+
     Q_INVOKABLE QStringList sent() const { return con.sent; }
     Q_INVOKABLE void clearSent() { con.sent.clear(); }
 
@@ -129,9 +132,25 @@ public slots:
         engine->addImportPath(QStringLiteral(CALAOS_STUB_QML_DIR));
         Common::registerQml();
 
+        //The real Roboto files, all weights as Fonts.qml loads them, so that text metrics
+        //and screenshots match the app
+        for (const char *w: { "Black", "Bold", "Medium", "Italic" })
+            QFontDatabase::addApplicationFont(
+                QStringLiteral(CALAOS_FONTS_DIR "/Roboto-") + QLatin1String(w) + QStringLiteral(".ttf"));
+
         auto *fonts = new QQmlPropertyMap(engine);
-        for (const char *k: { "fontFamily", "fontFamilyThin", "fontFamilyLight" })
-            fonts->insert(QLatin1String(k), QString());
+        const struct { const char *key; const char *file; } faces[] = {
+            { "fontFamily", "Roboto-Regular.ttf" },
+            { "fontFamilyThin", "Roboto-Thin.ttf" },
+            { "fontFamilyLight", "Roboto-Light.ttf" },
+        };
+        for (const auto &f: faces)
+        {
+            const int id = QFontDatabase::addApplicationFont(
+                QStringLiteral(CALAOS_FONTS_DIR "/") + QLatin1String(f.file));
+            const QStringList families = QFontDatabase::applicationFontFamilies(id);
+            fonts->insert(QLatin1String(f.key), families.isEmpty() ? QString() : families.first());
+        }
 
         engine->rootContext()->setContextProperty(QStringLiteral("calaosFont"), fonts);
         engine->rootContext()->setContextProperty(QStringLiteral("calaosApp"), new AppStub);

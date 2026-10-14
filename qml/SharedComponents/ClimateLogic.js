@@ -150,22 +150,27 @@ function fallbackTarget(currentTemp, b) {
     return snap((b.min + b.max) / 2, b)
 }
 
-function formatSetpoint(v, b) {
-    return isNum(v) ? v.toFixed(b.decimals) + " " + b.unit : ABSENT
+//`point` is the decimal separator of the locale, "." when left out.
+function withPoint(text, point) {
+    return point ? text.replace(".", point) : text
 }
 
-function formatRange(low, high, b) {
+function formatSetpoint(v, b, point) {
+    return isNum(v) ? withPoint(v.toFixed(b.decimals), point) + " " + b.unit : ABSENT
+}
+
+function formatRange(low, high, b, point) {
     if (!isNum(low) || !isNum(high))
         return ABSENT
-    return low.toFixed(b.decimals) + " – " + high.toFixed(b.decimals)
+    return withPoint(low.toFixed(b.decimals), point) + " – " + withPoint(high.toFixed(b.decimals), point)
             + " " + b.unit
 }
 
 //A reading, not a setpoint: one decimal at most, whatever the step is.
-function formatReading(v, unit) {
+function formatReading(v, unit, point) {
     if (!isNum(v))
         return ABSENT
-    return (Math.round(v * 10) / 10) + " " + (unit || DEFAULT_UNIT)
+    return withPoint(String(Math.round(v * 10) / 10), point) + " " + (unit || DEFAULT_UNIT)
 }
 
 //Plain mode string, or "" when the mode is not one the device offers.
@@ -210,13 +215,127 @@ function confirmed(echoed, state) {
     return out
 }
 
-//Visual family of an action reported by the device.
-function actionTone(action) {
-    switch (action) {
-    case "heating": return "warm"
-    case "cooling": return "cold"
-    case "drying": return "dry"
-    case "fan": return "fan"
-    default: return "idle"
+//Dial: 300 degrees, open at the bottom, angles counted clockwise from 12 o'clock.
+var ARC_START = -150
+var ARC_SPAN = 300
+
+function dialAngle(t, b) {
+    if (!isNum(t) || b === null || b === undefined)
+        return ARC_START
+    var f = Math.min(1, Math.max(0, (t - b.min) / (b.max - b.min)))
+    return ARC_START + ARC_SPAN * f
+}
+
+var NO_VALUE = "--"
+
+//List item: 22.5 -> "22,5°", 21 -> "21°". At most `decimals` digits (one when left
+//out), trailing zeros dropped; `point` is the decimal separator of the locale.
+function formatDegrees(v, point, decimals) {
+    return isNum(v) ? plainNumber(v, point, decimals) + "°" : NO_VALUE
+}
+
+function plainNumber(v, point, decimals) {
+    var d = decimals === undefined ? 1 : decimals
+    var text = v.toFixed(d)
+    if (d > 0)
+        text = text.replace(/0+$/, "").replace(/\.$/, "")
+    return withPoint(text, point)
+}
+
+//The reading of the room: "" when the device does not report it.
+function formatRoom(v, point) {
+    return isNum(v) ? formatDegrees(v, point) : ""
+}
+
+//"22°" for a single setpoint, "21 – 23°" for a range, "--" when it is not
+//known or the mode has none. `decimals` follows the step of the setpoint.
+function formatListSetpoint(kind, values, point, decimals) {
+    if (kind === "range" && isNum(values.low) && isNum(values.high))
+        return plainNumber(values.low, point, decimals) + " – " + formatDegrees(values.high, point, decimals)
+    if (kind === "single" && isNum(values.target))
+        return formatDegrees(values.target, point, decimals)
+    return NO_VALUE
+}
+
+//Seconds left on a lock-out from the value the server published and the time
+//elapsed since it did; 0 when there is none (or it ran out).
+function lockoutLeft(lockout, elapsedMs) {
+    if (!isObj(lockout) || !isNum(lockout.remaining) || lockout.remaining <= 0)
+        return 0
+    return Math.max(0, lockout.remaining - Math.max(0, elapsedMs) / 1000)
+}
+
+//Whole minutes shown for a lock-out, never "0 min" while one is running.
+function lockoutMinutes(seconds) {
+    return Math.max(1, Math.round(seconds / 60))
+}
+
+var ACTING = ["heating", "cooling", "drying", "fan"]
+var ACTION_TONE = { heating: "heat", cooling: "cool", drying: "cool", fan: "white" }
+
+//What the list item says about the device, one status at a time. Priority:
+//offline, mode unknown, off, safety fault, lock-out, action. `action` is only
+//read when the device reports one.
+//kind: none | offline | unknown | off | fault | lockout | action | idle
+//tone: heat | cool | wait | red | white | muted
+function listStatus(deviceKnown, mode, state, caps, lockoutSeconds) {
+    var out = { kind: "none", tone: "muted", action: "", fault: "", minutes: 0,
+                acting: false, modeMuted: mode === "" || mode === "off" }
+    if (!deviceKnown)
+        return out
+
+    var s = isObj(state) ? state : {}
+    var action = typeof s.action === "string" && caps && caps.reportsAction ? s.action : ""
+    out.action = action
+    out.acting = ACTING.indexOf(action) >= 0
+
+    if (s.connected === false) {
+        out.kind = "offline"
+        out.tone = "red"
+        out.modeMuted = true
+    } else if (mode === "") {
+        out.kind = "unknown"
+    } else if (mode === "off") {
+        out.kind = "off"
+    } else if (typeof s.fault === "string" && s.fault !== "") {
+        out.kind = "fault"
+        out.tone = "wait"
+        out.fault = s.fault
+    } else if (lockoutSeconds > 0) {
+        out.kind = "lockout"
+        out.tone = "wait"
+        out.minutes = lockoutMinutes(lockoutSeconds)
+    } else if (action !== "") {
+        out.kind = action === "idle" || action === "off" ? "idle" : "action"
+        out.tone = ACTION_TONE[action] || "muted"
     }
+    //A device that is offline, off or in an unknown mode is not doing what it last reported
+    if (out.kind === "offline" || out.kind === "unknown" || out.kind === "off")
+        out.acting = false
+    return out
+}
+
+//Whether the list item shows the setpoint dimmed: nothing can be set.
+function setpointMuted(status, mode) {
+    return status.kind === "offline" || mode === "" || mode === "off"
+}
+
+//What the mini dial draws. Values are temperatures; the caller colours them.
+//{ fill: [from, to] | null, range: [from, to] | null, knobs: [angle...], tick: angle | null }
+function dialModel(kind, bounds, values, current) {
+    var out = { fill: null, range: null, knobs: [], tick: null }
+    if (bounds === null || bounds === undefined)
+        return out
+    if (kind === "range" && isNum(values.low) && isNum(values.high)) {
+        var lo = dialAngle(values.low, bounds), hi = dialAngle(values.high, bounds)
+        out.range = [lo, hi]
+        out.knobs = [lo, hi]
+    } else if (kind === "single" && isNum(values.target)) {
+        var a = dialAngle(values.target, bounds)
+        out.fill = [ARC_START, a]
+        out.knobs = [a]
+    }
+    if (isNum(current))
+        out.tick = dialAngle(current, bounds)
+    return out
 }

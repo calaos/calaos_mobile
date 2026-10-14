@@ -27,8 +27,8 @@ public:
 
     Q_INVOKABLE QObject *getItemModel(int idx);
 
-    //Rows a climate card takes in the left/right balance: what its capabilities
-    //make it show (header and modes, setpoint, fan, swing).
+    //Rows a climate item takes in the left/right balance. Its controls are
+    //hidden until it is tapped, so the weight does not depend on the capabilities.
     static int climateRows(IOBase *io);
 
 private slots:

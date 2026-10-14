@@ -67,20 +67,9 @@ RoomFilterModel::RoomFilterModel(QObject *parent):
     sort(0);
 }
 
-int RoomFilterModel::climateRows(IOBase *io)
+int RoomFilterModel::climateRows(IOBase *)
 {
-    if (!io->hasDevice())
-        return 1;
-
-    const QVariantMap caps = io->getDeviceCapabilities();
-    int rows = 2; //header and mode buttons
-    if (caps.contains("target_temp") || caps.value("target_temp_range").toBool())
-        rows += 2;
-    if (!caps.value("fan_modes").toList().isEmpty())
-        rows += 1;
-    if (!caps.value("swing_modes").toList().isEmpty())
-        rows += 1;
-    return rows;
+    return 2;
 }
 
 int RoomFilterModel::indexToSource(int idx)

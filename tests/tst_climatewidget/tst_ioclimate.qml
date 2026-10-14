@@ -10,12 +10,13 @@ TestCase {
     width: 420
     height: 600
 
+    readonly property string point: Qt.locale().decimalPoint
     readonly property string degC: "°C"
     readonly property string nbsp: " "
 
     Component {
         id: widgetComponent
-        IOClimate { width: 400 }
+        IOClimate { width: 400; expanded: true }
     }
 
     // --- fixtures -----------------------------------------------------------
@@ -127,16 +128,14 @@ TestCase {
         compare(selectedValues(modes), ["cool"])
         compare(chip(modes, "heat").modelData.label, "Heat")
 
-        compare(find(w, "currentTemp").text, "23.4" + nbsp + degC)
-        var badge = find(w, "badge")
-        compare(badge.visible, true)
-        compare(badge.children[0].text, "Cooling")
+        compare(find(w, "roomTemp").text, "23" + point + "4°")
+        compare(find(w, "statusText").text, "Cooling")
 
         var sp = find(w, "setpoint")
         compare(sp.visible, true)
         compare(sp.active, true)
         compare(sp.ranged, false)
-        compare(find(sp, "valueText").text, "21.0" + nbsp + degC)
+        compare(find(sp, "valueText").text, "21" + point + "0" + nbsp + degC)
         compare(find(sp, "slider").from, 16)
         compare(find(sp, "slider").to, 30)
         compare(find(sp, "slider").stepSize, 0.5)
@@ -155,8 +154,8 @@ TestCase {
         compare(find(w, "setpoint").visible, false)
         compare(find(w, "fanSection").visible, false)
         compare(find(w, "swingSection").visible, false)
-        compare(find(w, "badge").visible, false)
-        compare(find(w, "currentTemp").text, "—")
+        compare(find(w, "statusText").text, "")
+        compare(find(w, "roomTemp").visible, false)
     }
 
     function test_onlyFanOrOnlySwing() {
@@ -189,25 +188,23 @@ TestCase {
 
     function test_actionIndicator(d) {
         var w = makeFull("heat", { state: { action: d.action } })
-        var badge = find(w, "badge")
-        compare(badge.visible, true)
-        compare(badge.children[0].text, d.text)
+        compare(find(w, "statusText").text, d.text)
     }
 
     function test_actionHiddenWhenNotReportedOrAbsent() {
         var w = makeFull("heat", { caps: { reports_action: false } })
-        compare(find(w, "badge").visible, false)
+        compare(find(w, "statusText").text, "")
 
         var st = fullState()
         delete st.action
         var w2 = make("cool", device(fullCaps(), st))
-        compare(find(w2, "badge").visible, false)
+        compare(find(w2, "statusText").text, "")
     }
 
     function test_absentValuesShowADash() {
         var st = { mode: "cool" }
         var w = make("cool", device(fullCaps(), st))
-        compare(find(w, "currentTemp").text, "—")
+        compare(find(w, "roomTemp").text, "")
         compare(find(find(w, "setpoint"), "valueText").text, "—")
         compare(selectedValues(find(w, "fanRow")), [])
     }
@@ -217,7 +214,7 @@ TestCase {
         caps.target_temp = { min: 50, max: 86, step: 1, unit: "°F" }
         var w = make("heat", device(caps, { mode: "heat", current_temp: 68.04, target_temp: 70 }))
         compare(find(find(w, "setpoint"), "valueText").text, "70" + nbsp + "°F")
-        compare(find(w, "currentTemp").text, "68" + nbsp + "°F")
+        compare(find(w, "roomTemp").text, "68°")
     }
 
     // --- mode gating ----------------------------------------------------------
@@ -256,9 +253,9 @@ TestCase {
     function test_unknownModeIsExplicit() {
         var w = makeFull("")
         compare(selectedValues(find(w, "modeRow")), [])
-        var badge = find(w, "badge")
-        compare(badge.visible, true)
-        compare(badge.children[0].text, "Mode unknown")
+        // an action that is reported is more useful than repeating what the pill says
+        compare(find(w, "modeText").text, "Mode unknown")
+        compare(find(w, "statusText").text, "Cooling")
         compare(find(w, "setpoint").active, false)
         compare(find(w, "fanRow").active, false)
 
@@ -269,19 +266,19 @@ TestCase {
 
     function test_modeUnknownToKnownWhenTheServerReports() {
         var w = makeFull("")
-        compare(find(w, "badge").children[0].text, "Mode unknown")
+        compare(find(w, "modeText").text, "Mode unknown")
         var st = fullState()
         frame(w, "heat", device(fullCaps(), st))
         compare(selectedValues(find(w, "modeRow")), ["heat"])
         compare(find(w, "setpoint").active, true)
-        compare(find(w, "badge").children[0].text, "Cooling")
+        compare(find(w, "modeText").text, "Heat")
     }
 
     function test_autoWithRangeShowsTwoHandles() {
         var w = makeFull("auto")
         var sp = find(w, "setpoint")
         compare(sp.ranged, true)
-        compare(find(sp, "valueText").text, "19.0 – 24.0" + nbsp + degC)
+        compare(find(sp, "valueText").text, "19" + point + "0 – 24" + point + "0" + nbsp + degC)
         compare(find(sp, "rangeSlider").visible, true)
         compare(find(sp, "slider").visible, false)
         tryCompare(find(sp, "rangeSlider").first, "value", 19)
@@ -295,7 +292,7 @@ TestCase {
         var sp = find(w, "setpoint")
         compare(sp.ranged, false)
         compare(find(sp, "slider").visible, true)
-        compare(find(sp, "valueText").text, "21.0" + nbsp + degC)
+        compare(find(sp, "valueText").text, "21" + point + "0" + nbsp + degC)
     }
 
     function test_rangeHandlesThatWereNeverReportedShowADash() {
@@ -311,15 +308,16 @@ TestCase {
         compare(find(w, "modeRow").visible, false)
         compare(find(w, "setpoint").visible, false)
         compare(find(w, "fanSection").visible, false)
-        compare(find(w, "badge").visible, false)
-        compare(find(w, "currentTemp").text, "Cool")
+        compare(find(w, "statusText").text, "")
+        compare(find(w, "modeText").text, "Cool")
+        compare(find(w, "roomTemp").visible, false)
         compare(sentCommands(), [])
     }
 
     function test_noDeviceAndNoModeToo() {
         var w = make("")
-        compare(find(w, "currentTemp").text, "—")
-        compare(find(w, "badge").visible, false)
+        compare(find(w, "modePill").visible, false)
+        compare(find(w, "statusText").text, "")
     }
 
     function test_malformedCapabilitiesDegradeGracefully() {
@@ -339,15 +337,15 @@ TestCase {
         compare(find(sp, "slider").stepSize, 0.5)
         compare(find(w, "fanSection").visible, false)
         compare(find(w, "swingSection").visible, false)
-        compare(find(w, "badge").visible, false)
+        compare(find(w, "statusText").text, "")
     }
 
     function test_malformedStateValues() {
         var st = { mode: "heat", current_temp: "warm", target_temp: "21", action: 3 }
         var w = make("heat", device(fullCaps(), st))
-        compare(find(w, "currentTemp").text, "—")
+        compare(find(w, "roomTemp").text, "")
         compare(find(find(w, "setpoint"), "valueText").text, "—")
-        compare(find(w, "badge").visible, false)
+        compare(find(w, "statusText").text, "")
     }
 
     // --- live updates ---------------------------------------------------------
@@ -362,9 +360,9 @@ TestCase {
         frame(w, "heat", device(fullCaps(), st))
 
         compare(selectedValues(find(w, "modeRow")), ["heat"])
-        compare(find(find(w, "setpoint"), "valueText").text, "22.5" + nbsp + degC)
-        compare(find(w, "currentTemp").text, "20.1" + nbsp + degC)
-        compare(find(w, "badge").children[0].text, "Heating")
+        compare(find(find(w, "setpoint"), "valueText").text, "22" + point + "5" + nbsp + degC)
+        compare(find(w, "roomTemp").text, "20" + point + "1°")
+        compare(find(w, "statusText").text, "Heating")
     }
 
     function test_deviceIsReplacedNotMerged() {
@@ -377,7 +375,7 @@ TestCase {
         compare(chipValues(find(w, "modeRow")), ["off", "cool"])
         compare(find(w, "fanSection").visible, false)
         compare(find(w, "swingSection").visible, false)
-        compare(find(w, "badge").visible, false)
+        compare(find(w, "statusText").text, "")
         compare(find(find(w, "setpoint"), "slider").from, 18)
         compare(find(find(w, "setpoint"), "valueText").text, "22" + nbsp + degC)
     }
@@ -415,7 +413,7 @@ TestCase {
         mouseClick(find(sp, "btMin"))
 
         // shown immediately, sent once the user stops tapping
-        compare(find(sp, "valueText").text, "22.0" + nbsp + degC)
+        compare(find(sp, "valueText").text, "22" + point + "0" + nbsp + degC)
         compare(sentCommands(), [])
 
         waitForCommands(1)
@@ -482,7 +480,7 @@ TestCase {
         compare(JSON.parse(sentCommands()[0]), { target_temp_low: 22, target_temp_high: 24 })
         // the handle goes back to the allowed position
         tryCompare(rs.first, "value", 22)
-        compare(find(find(w, "setpoint"), "valueText").text, "22.0 – 24.0" + nbsp + degC)
+        compare(find(find(w, "setpoint"), "valueText").text, "22" + point + "0 – 24" + point + "0" + nbsp + degC)
     }
 
     function test_rangeHighHandle() {
@@ -548,13 +546,13 @@ TestCase {
         var sp = find(w, "setpoint")
         mouseClick(find(sp, "btPlus"))
         waitForCommands(1)
-        compare(find(sp, "valueText").text, "21.5" + nbsp + degC)
+        compare(find(sp, "valueText").text, "21" + point + "5" + nbsp + degC)
 
         var st = fullState()
         st.mode = "heat"
         st.target_temp = 21.5
         frame(w, "heat", device(fullCaps(), st))
-        compare(find(sp, "valueText").text, "21.5" + nbsp + degC)
+        compare(find(sp, "valueText").text, "21" + point + "5" + nbsp + degC)
     }
 
     function test_plusStartsFromTheCurrentTemperatureWhenTheTargetIsUnknown() {
@@ -579,9 +577,11 @@ TestCase {
             { id: "msg", name: "Message", gui_type: "var_string", state: "hello", visible: "true", rw: "true" }
         ])
         var list = createTemporaryObject(listComponent, tc, { model: room, width: 400, height: 500 })
-        tryVerify(function() { return find(list.contentItem, "modeRow") !== null }, 2000)
+        tryVerify(function() { return find(list.contentItem, "modePill") !== null }, 2000)
         // one widget only: the other item keeps its own delegate
-        compare(find(list.contentItem, "modeRow").visible, true)
+        compare(find(list.contentItem, "modeText").text, "Heat")
+        // the controls are not even created until the item is tapped
+        compare(find(list.contentItem, "modeRow"), null)
     }
 
     // --- range-only device (low/high links, no target_temp link) -----------------
@@ -601,7 +601,7 @@ TestCase {
         var sp = find(w, "setpoint")
         compare(sp.visible, true)
         compare(sp.ranged, true)
-        compare(find(sp, "valueText").text, "19.0 \u2013 24.0" + nbsp + degC)
+        compare(find(sp, "valueText").text, "19" + point + "0 \u2013 24" + point + "0" + nbsp + degC)
         compare(find(sp, "btPlus").visible, false)
 
         var wc = make("cool", rangeOnlyDevice(19, 24))
@@ -678,10 +678,10 @@ TestCase {
         var sp = find(w, "setpoint")
         mouseClick(find(sp, "btPlus"))
         waitForCommands(1)
-        compare(find(sp, "valueText").text, "21.5" + nbsp + degC)
+        compare(find(sp, "valueText").text, "21" + point + "5" + nbsp + degC)
 
         harness.pushRefusal("salon_ac")
-        compare(find(sp, "valueText").text, "21.0" + nbsp + degC)
+        compare(find(sp, "valueText").text, "21" + point + "0" + nbsp + degC)
     }
 
     function test_refusalOfAnotherIoIsIgnored() {
@@ -690,7 +690,7 @@ TestCase {
         mouseClick(find(sp, "btPlus"))
         waitForCommands(1)
         harness.pushRefusal("another_io")
-        compare(find(sp, "valueText").text, "21.5" + nbsp + degC)
+        compare(find(sp, "valueText").text, "21" + point + "5" + nbsp + degC)
     }
 
     function test_refusedFanChoiceReverts() {

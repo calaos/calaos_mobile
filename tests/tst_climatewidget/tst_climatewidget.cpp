@@ -132,7 +132,12 @@ public slots:
         engine->addImportPath(QStringLiteral(CALAOS_STUB_QML_DIR));
         Common::registerQml();
 
-        //The real Roboto files, so that text metrics and screenshots match the app
+        //The real Roboto files, all weights as Fonts.qml loads them, so that text metrics
+        //and screenshots match the app
+        for (const char *w: { "Black", "Bold", "Medium", "Italic" })
+            QFontDatabase::addApplicationFont(
+                QStringLiteral(CALAOS_FONTS_DIR "/Roboto-") + QLatin1String(w) + QStringLiteral(".ttf"));
+
         auto *fonts = new QQmlPropertyMap(engine);
         const struct { const char *key; const char *file; } faces[] = {
             { "fontFamily", "Roboto-Regular.ttf" },

@@ -217,6 +217,10 @@ TestCase {
         compare(Logic.formatReading(23, "°C"), "23 °C")
         compare(Logic.formatReading(23.449, undefined), "23.4 °C")
         compare(Logic.formatReading(undefined, "°C"), "—")
+        // the separator of the locale, in the panel as in the list
+        compare(Logic.formatSetpoint(21.5, bounds, ","), "21,5 °C")
+        compare(Logic.formatRange(19, 24.5, bounds, ","), "19,0 – 24,5 °C")
+        compare(Logic.formatReading(23.4, "°C", ","), "23,4 °C")
         compare(Logic.formatReading(NaN, "°C"), "—")
         compare(Logic.formatReading(null, "°C"), "—")
     }
@@ -283,7 +287,9 @@ TestCase {
             { tag: "lockout", mode: "heat", state: { action: "idle", lockout: { output: "heat", remaining: 140 } }, secs: 140,
               kind: "lockout", tone: "wait", action: "idle", acting: false, minutes: 2 },
             { tag: "lockout beats the action", mode: "heat", state: { action: "heating" }, secs: 30,
-              kind: "lockout", tone: "wait", action: "heating", acting: false, minutes: 1 },
+              kind: "lockout", tone: "wait", action: "heating", acting: true, minutes: 1 },
+            { tag: "off with an action reported", mode: "off", state: { action: "heating" },
+              kind: "off", tone: "muted", action: "heating", acting: false, modeMuted: true },
             { tag: "offline", mode: "heat", state: { action: "heating", connected: false },
               kind: "offline", tone: "red", action: "heating", acting: false, modeMuted: true },
             { tag: "offline beats a lockout", mode: "heat", state: { connected: false }, secs: 90,
@@ -294,6 +300,8 @@ TestCase {
               kind: "none", tone: "muted", action: "", acting: false },
             { tag: "fault sensor_stale", mode: "heat", state: { fault: "sensor_stale", action: "idle" },
               kind: "fault", tone: "wait", fault: "sensor_stale", action: "idle", acting: false },
+            { tag: "fault while heating still acts", mode: "heat", state: { fault: "humidity_stale", action: "heating" },
+              kind: "fault", tone: "wait", fault: "humidity_stale", action: "heating", acting: true },
             { tag: "fault humidity_high", mode: "cool", state: { fault: "humidity_high" },
               kind: "fault", tone: "wait", fault: "humidity_high", action: "", acting: false },
             { tag: "fault beats a lockout", mode: "cool", state: { fault: "sensor_missing" }, secs: 60,
@@ -376,6 +384,9 @@ TestCase {
             { tag: "half", v: 22.5, point: ".", text: "22.5°" },
             { tag: "locale separator", v: 22.5, point: ",", text: "22,5°" },
             { tag: "one decimal at most", v: 21.04, point: ".", text: "21°" },
+            { tag: "two decimals for a quarter step", v: 22.25, point: ",", dec: 2, text: "22,25°" },
+            { tag: "trailing zeros dropped", v: 22.5, point: ".", dec: 2, text: "22.5°" },
+            { tag: "whole degrees", v: 21.4, point: ".", dec: 0, text: "21°" },
             { tag: "rounds", v: 18.66, point: ".", text: "18.7°" },
             { tag: "negative", v: -3.5, point: ".", text: "-3.5°" },
             { tag: "absent", v: undefined, point: ".", text: "--" },
@@ -385,7 +396,7 @@ TestCase {
     }
 
     function test_formatDegrees(d) {
-        compare(Logic.formatDegrees(d.v, d.point), d.text)
+        compare(Logic.formatDegrees(d.v, d.point, d.dec), d.text)
     }
 
     function test_formatRoomIsEmptyWhenAbsent() {
@@ -400,6 +411,8 @@ TestCase {
             { tag: "single unknown", kind: "single", values: {}, text: "--" },
             { tag: "range", kind: "range", values: { low: 21, high: 23 }, text: "21 – 23°" },
             { tag: "range with decimals", kind: "range", values: { low: 19.5, high: 24.5 }, text: "19.5 – 24.5°" },
+            { tag: "range on a quarter step", kind: "range", values: { low: 19.25, high: 24 }, dec: 2, text: "19.25 – 24°" },
+            { tag: "single on a quarter step", kind: "single", values: { target: 22.25 }, dec: 2, text: "22.25°" },
             { tag: "range ignores target", kind: "range", values: { target: 22, low: 21, high: 23 }, text: "21 – 23°" },
             { tag: "range missing a bound", kind: "range", values: { low: 21 }, text: "--" },
             { tag: "range missing both", kind: "range", values: { target: 22 }, text: "--" },
@@ -408,7 +421,7 @@ TestCase {
     }
 
     function test_formatListSetpoint(d) {
-        compare(Logic.formatListSetpoint(d.kind, d.values, "."), d.text)
+        compare(Logic.formatListSetpoint(d.kind, d.values, ".", d.dec), d.text)
     }
 
     function test_setpointMuted() {

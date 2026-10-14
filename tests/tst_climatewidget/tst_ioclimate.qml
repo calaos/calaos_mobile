@@ -135,7 +135,7 @@ TestCase {
         compare(sp.visible, true)
         compare(sp.active, true)
         compare(sp.ranged, false)
-        compare(find(sp, "valueText").text, "21.0" + nbsp + degC)
+        compare(find(sp, "valueText").text, "21" + point + "0" + nbsp + degC)
         compare(find(sp, "slider").from, 16)
         compare(find(sp, "slider").to, 30)
         compare(find(sp, "slider").stepSize, 0.5)
@@ -278,7 +278,7 @@ TestCase {
         var w = makeFull("auto")
         var sp = find(w, "setpoint")
         compare(sp.ranged, true)
-        compare(find(sp, "valueText").text, "19.0 – 24.0" + nbsp + degC)
+        compare(find(sp, "valueText").text, "19" + point + "0 – 24" + point + "0" + nbsp + degC)
         compare(find(sp, "rangeSlider").visible, true)
         compare(find(sp, "slider").visible, false)
         tryCompare(find(sp, "rangeSlider").first, "value", 19)
@@ -292,7 +292,7 @@ TestCase {
         var sp = find(w, "setpoint")
         compare(sp.ranged, false)
         compare(find(sp, "slider").visible, true)
-        compare(find(sp, "valueText").text, "21.0" + nbsp + degC)
+        compare(find(sp, "valueText").text, "21" + point + "0" + nbsp + degC)
     }
 
     function test_rangeHandlesThatWereNeverReportedShowADash() {
@@ -360,7 +360,7 @@ TestCase {
         frame(w, "heat", device(fullCaps(), st))
 
         compare(selectedValues(find(w, "modeRow")), ["heat"])
-        compare(find(find(w, "setpoint"), "valueText").text, "22.5" + nbsp + degC)
+        compare(find(find(w, "setpoint"), "valueText").text, "22" + point + "5" + nbsp + degC)
         compare(find(w, "roomTemp").text, "20" + point + "1°")
         compare(find(w, "statusText").text, "Heating")
     }
@@ -413,7 +413,7 @@ TestCase {
         mouseClick(find(sp, "btMin"))
 
         // shown immediately, sent once the user stops tapping
-        compare(find(sp, "valueText").text, "22.0" + nbsp + degC)
+        compare(find(sp, "valueText").text, "22" + point + "0" + nbsp + degC)
         compare(sentCommands(), [])
 
         waitForCommands(1)
@@ -480,7 +480,7 @@ TestCase {
         compare(JSON.parse(sentCommands()[0]), { target_temp_low: 22, target_temp_high: 24 })
         // the handle goes back to the allowed position
         tryCompare(rs.first, "value", 22)
-        compare(find(find(w, "setpoint"), "valueText").text, "22.0 – 24.0" + nbsp + degC)
+        compare(find(find(w, "setpoint"), "valueText").text, "22" + point + "0 – 24" + point + "0" + nbsp + degC)
     }
 
     function test_rangeHighHandle() {
@@ -546,13 +546,13 @@ TestCase {
         var sp = find(w, "setpoint")
         mouseClick(find(sp, "btPlus"))
         waitForCommands(1)
-        compare(find(sp, "valueText").text, "21.5" + nbsp + degC)
+        compare(find(sp, "valueText").text, "21" + point + "5" + nbsp + degC)
 
         var st = fullState()
         st.mode = "heat"
         st.target_temp = 21.5
         frame(w, "heat", device(fullCaps(), st))
-        compare(find(sp, "valueText").text, "21.5" + nbsp + degC)
+        compare(find(sp, "valueText").text, "21" + point + "5" + nbsp + degC)
     }
 
     function test_plusStartsFromTheCurrentTemperatureWhenTheTargetIsUnknown() {
@@ -580,8 +580,8 @@ TestCase {
         tryVerify(function() { return find(list.contentItem, "modePill") !== null }, 2000)
         // one widget only: the other item keeps its own delegate
         compare(find(list.contentItem, "modeText").text, "Heat")
-        // the controls stay closed until the item is tapped
-        compare(find(list.contentItem, "modeRow").visible, false)
+        // the controls are not even created until the item is tapped
+        compare(find(list.contentItem, "modeRow"), null)
     }
 
     // --- range-only device (low/high links, no target_temp link) -----------------
@@ -601,7 +601,7 @@ TestCase {
         var sp = find(w, "setpoint")
         compare(sp.visible, true)
         compare(sp.ranged, true)
-        compare(find(sp, "valueText").text, "19.0 \u2013 24.0" + nbsp + degC)
+        compare(find(sp, "valueText").text, "19" + point + "0 \u2013 24" + point + "0" + nbsp + degC)
         compare(find(sp, "btPlus").visible, false)
 
         var wc = make("cool", rangeOnlyDevice(19, 24))
@@ -678,10 +678,10 @@ TestCase {
         var sp = find(w, "setpoint")
         mouseClick(find(sp, "btPlus"))
         waitForCommands(1)
-        compare(find(sp, "valueText").text, "21.5" + nbsp + degC)
+        compare(find(sp, "valueText").text, "21" + point + "5" + nbsp + degC)
 
         harness.pushRefusal("salon_ac")
-        compare(find(sp, "valueText").text, "21.0" + nbsp + degC)
+        compare(find(sp, "valueText").text, "21" + point + "0" + nbsp + degC)
     }
 
     function test_refusalOfAnotherIoIsIgnored() {
@@ -690,7 +690,7 @@ TestCase {
         mouseClick(find(sp, "btPlus"))
         waitForCommands(1)
         harness.pushRefusal("another_io")
-        compare(find(sp, "valueText").text, "21.5" + nbsp + degC)
+        compare(find(sp, "valueText").text, "21" + point + "5" + nbsp + degC)
     }
 
     function test_refusedFanChoiceReverts() {

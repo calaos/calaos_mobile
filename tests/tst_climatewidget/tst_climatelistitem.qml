@@ -1,5 +1,6 @@
 import QtQuick
 import QtTest
+import QtQuick.Shapes
 import SharedComponents
 
 //The collapsed IOClimate, i.e. the list item of UI_CLIMATE.md, one row of the
@@ -170,7 +171,8 @@ TestCase {
         compare(find(w, "modeText").color, Theme.mutedColor)
         compare(find(w, "modeIcon").name, "help")
         compare(find(w, "modePill").visible, true)
-        compare(text(w, "statusText"), "Mode unknown")
+        // said once, in the pill
+        compare(text(w, "statusText"), "")
     }
 
     function test_unknownModeTellsTheReportedAction() {
@@ -319,8 +321,7 @@ TestCase {
         compare(find(w, "chevron").name, "chevronR")
         // the -/+ of the controls only exist inside the closed settings
         compare(find(w, "settings").visible, false)
-        var plus = find(w, "btPlus")
-        verify(plus === null || !plus.visible)
+        compare(find(w, "btPlus"), null)
     }
 
     function test_dialTakesTheHeightOfTheRows() {
@@ -373,7 +374,7 @@ TestCase {
     function test_tapOpensTheCurrentSettingsAndTapsAgainClosesThem() {
         var w = make({ mode: "heat", action: "heating" })
         var closed = w.height
-        compare(find(w, "modeRow").visible, false)
+        compare(find(w, "modeRow"), null)
 
         mouseClick(w, w.width / 2, Units.dp(30))
         compare(w.expanded, true)
@@ -383,7 +384,7 @@ TestCase {
 
         mouseClick(w, w.width / 2, Units.dp(30))
         compare(w.expanded, false)
-        compare(find(w, "modeRow").visible, false)
+        compare(find(w, "modeRow"), null)
         tryCompare(w, "height", closed)
     }
 
@@ -393,5 +394,158 @@ TestCase {
         mouseClick(w, w.width / 2, Units.dp(30))
         wait(50)
         compare(harness.sent(), [])
+    }
+
+    // --- what a tap reaches --------------------------------------------------------------
+
+    function test_onlyTheListItemTogglesTheSettings() {
+        var w = make({ mode: "heat", action: "heating" })
+        mouseClick(w, w.width / 2, Units.dp(30))
+        compare(w.expanded, true)
+        tryVerify(function() { return w.height > Units.dp(120) })
+
+        // the margin under the controls, the name of a row, a greyed button: none of them closes the panel
+        mouseClick(w, w.width - 2, w.height - 3)
+        mouseClick(w, 4, w.height - 20)
+        compare(w.expanded, true)
+        compare(find(w, "modeRow").visible, true)
+    }
+
+    function test_pressFeedbackFollowsTheListItemOnly() {
+        var w = make({ mode: "heat" })
+        mousePress(w, w.width / 2, Units.dp(30))
+        compare(w.__inBorder.state, "pressed")
+        mouseRelease(w, w.width / 2, Units.dp(30))
+        compare(w.__inBorder.state, "released")
+        compare(w.expanded, true)
+
+        // a press on the controls does not light the item up
+        tryVerify(function() { return w.height > Units.dp(120) })
+        mousePress(w, w.width - 2, w.height - 3)
+        compare(w.__inBorder.state, "released")
+        mouseRelease(w, w.width - 2, w.height - 3)
+    }
+
+    Component {
+        id: scrolledComponent
+        Flickable {
+            width: 400; height: 300
+            contentWidth: 400; contentHeight: 1200
+            property alias item: inner
+            IOClimate { id: inner; width: 400; clock: tc.fakeClock }
+        }
+    }
+
+    function test_aScrollCancelsThePressFeedback() {
+        var st = mkState({ mode: "heat" })
+        var io = harness.makeClimate({ id: "salon_ac", name: "Clim", gui_type: "climate", state: "heat",
+                                       device: device(st) })
+        var flick = createTemporaryObject(scrolledComponent, tc)
+        flick.item.modelData = io
+        var w = flick.item
+
+        mousePress(flick, 200, Units.dp(30))
+        compare(w.__inBorder.state, "pressed")
+        // the flickable takes the grab once the finger has moved far enough
+        for (var y = 30; y < 200; y += 20)
+            mouseMove(flick, 200, y)
+        tryCompare(w.__inBorder, "state", "released")
+        mouseRelease(flick, 200, 200)
+        compare(w.expanded, false)
+    }
+
+    // --- dial colours in auto ---------------------------------------------------------------
+
+    function test_autoKnobsFollowTheStatus_data() {
+        var y = Theme.yellowColor, c = Theme.blueColor
+        return [
+            { tag: "acting", over: { mode: "auto", action: "heating" }, knobs: [y, c] },
+            { tag: "idle", over: { mode: "auto", action: "idle" }, knobs: [y, c] },
+            { tag: "offline", over: { connected: false }, knobs: [Theme.mutedColor, Theme.mutedColor] },
+            { tag: "off", over: { mode: "off" }, knobs: [Theme.whiteColor, Theme.whiteColor] },
+            { tag: "unknown mode", over: { mode: "" }, knobs: [Theme.mutedColor, Theme.mutedColor] },
+            { tag: "lockout", over: { action: "idle", lockout: { output: "heat", remaining: 140 } },
+              knobs: [Theme.amberColor, Theme.amberColor] }
+        ]
+    }
+
+    //A range-only device shows its range in every mode, so off and unknown have knobs too
+    function test_autoKnobsFollowTheStatus(d) {
+        var over = { mode: "heat", target_temp_low: 20, target_temp_high: 24 }
+        for (var k in d.over)
+            over[k] = d.over[k]
+        var c = caps()
+        delete c.target_temp
+        var dev = { family: "climate", impl: "proxy", capabilities: c, state: mkState(over),
+                    ios: { mode: "m", target_temp_low: "l", target_temp_high: "h" } }
+        var w = createTemporaryObject(itemComponent, tc, { modelData: harness.makeClimate(
+            { id: "x", name: "X", gui_type: "climate", state: over.mode, device: dev }) })
+        var knobs = find(w, "dial").knobColors
+        compare(knobs.length, 2)
+        compare(knobs[0], d.knobs[0])
+        compare(knobs[1], d.knobs[1])
+    }
+
+    // --- setpoint precision and separator -----------------------------------------------------
+
+    function test_setpointFollowsTheStep_data() {
+        return [
+            { tag: "quarter", step: 0.25, target: 22.25, text: "22" + point + "25°" },
+            { tag: "quarter, round value", step: 0.25, target: 22, text: "22°" },
+            { tag: "half", step: 0.5, target: 20.5, text: "20" + point + "5°" },
+            { tag: "tenth", step: 0.1, target: 20.3, text: "20" + point + "3°" },
+            { tag: "whole degrees", step: 1, target: 21, text: "21°" }
+        ]
+    }
+
+    function test_setpointFollowsTheStep(d) {
+        var w = make({ mode: "heat", target_temp: d.target },
+                     { target_temp: { min: 16, max: 30, step: d.step, unit: "°C" } })
+        compare(text(w, "setpointText"), d.text)
+    }
+
+    function test_theRangeFollowsTheStepToo() {
+        var w = make({ mode: "auto", target_temp_low: 20.25, target_temp_high: 24 },
+                     { target_temp: { min: 16, max: 30, step: 0.25, unit: "°C" } })
+        compare(text(w, "setpointText"), "20" + point + "25 – 24°")
+    }
+
+    // --- cost of a hidden panel and of an idle timer --------------------------------------------
+
+    function test_theLockoutTimerOnlyRunsWhileTheLockoutIsShown() {
+        var w = make({ mode: "heat", action: "idle", lockout: { output: "heat", remaining: 140 } })
+        compare(find(w, "lockoutTimer").running, true)
+
+        harness.pushFrame("salon_ac", undefined, device(mkState({ mode: "heat", action: "idle", connected: false,
+            lockout: { output: "heat", remaining: 140 } })))
+        compare(find(w, "lockoutTimer").running, false)
+
+        harness.pushFrame("salon_ac", undefined, device(mkState({ mode: "heat", action: "idle", fault: "sensor_stale",
+            lockout: { output: "heat", remaining: 140 } })))
+        compare(find(w, "lockoutTimer").running, false)
+
+        harness.pushFrame("salon_ac", undefined, device(mkState({ mode: "heat", action: "idle",
+            lockout: { output: "heat", remaining: 140 } })))
+        compare(find(w, "lockoutTimer").running, true)
+    }
+
+    function test_noSettingsAreBuiltForACollapsedItem() {
+        var w = make({ mode: "heat" })
+        compare(find(w, "settings").item, null)
+        w.expanded = true
+        verify(find(w, "settings").item !== null)
+        verify(find(w, "modeRow") !== null)
+        w.expanded = false
+        compare(find(w, "settings").item, null)
+    }
+
+    // --- anti-aliasing on the GPU ----------------------------------------------------------------
+
+    function test_shapesAskForTheCurveRenderer() {
+        var w = make({ mode: "heat", target_temp: 21 })
+        if (Shape.CurveRenderer === undefined)
+            skip("this Qt has no curve renderer")
+        compare(find(w, "dialShape").preferredRendererType, Shape.CurveRenderer)
+        compare(find(w, "iconShape").preferredRendererType, Shape.CurveRenderer)
     }
 }

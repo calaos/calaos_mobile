@@ -17,6 +17,7 @@ TestCase {
     readonly property string point: Qt.locale().decimalPoint
 
     property real fakeNow: 1000000
+    onFakeNowChanged: harness.setNow(fakeNow)
     function fakeClock() { return fakeNow }
 
     Component {
@@ -55,11 +56,25 @@ TestCase {
                  ios: { mode: "m", target_temp: "t", target_temp_low: "l", target_temp_high: "h" } }
     }
 
+    property var hosts: []
+
+    //Where the Back key of the phone ends up when the sheet does not keep it
+    Item {
+        id: under
+        property int backReleases: 0
+        focus: true
+        Keys.onReleased: (event) => {
+            if (event.key === Qt.Key_Back)
+                backReleases++
+        }
+    }
+
     function open(over, capsOver) {
         var st = mkState(over)
         var io = harness.makeClimate({ id: "salon_ac", name: "Clim salon", gui_type: "climate",
                                        state: st.mode, rw: "true", device: device(st, capsOver) })
         var host = createTemporaryObject(hostComponent, tc)
+        hosts.push(host)
         host.openFor(io)
         tryVerify(function() { return host.opened }, 3000)
         tryVerify(function() { return find(Overlay.overlay, "bigDial") !== null && find(Overlay.overlay, "bigDial").width > 0 }, 3000)
@@ -78,12 +93,19 @@ TestCase {
     }
 
     function cleanup() {
-        // sheets belong to the window: wait for them to be gone before the next test
-        tryVerify(function() { return Overlay.overlay.children.length < 1 || !anyOpen() }, 3000)
-    }
-
-    function anyOpen() {
-        return false
+        // sheets belong to the window: close and wait for them before the next test
+        for (var i = 0; i < hosts.length; i++) {
+            var h = hosts[i]
+            h.close()
+            tryVerify(function() { return !h.opened && !h.modeOpened && !h.moreOpened }, 3000)
+            h.destroy()
+        }
+        hosts = []
+        tc.width = 390
+        tc.height = 900
+        under.backReleases = 0
+        under.forceActiveFocus()
+        wait(50)
     }
 
     function find(item, name) {
@@ -380,5 +402,137 @@ TestCase {
         host.openFor(io2)
         tryVerify(function() { return host.opened && text("sheetName") === "PAC chambre" }, 3000)
         compare(text("valueText"), "20" + point + "5°")
+    }
+
+    // --- edges and keys ----------------------------------------------------------------------------
+
+    function test_aSwipeFromTheBottomEdgeOpensNothing() {
+        var host = createTemporaryObject(hostComponent, tc)
+        hosts.push(host)
+        wait(100)
+        mousePress(tc, 200, tc.height - 3)
+        for (var y = tc.height - 3; y > tc.height - 400; y -= 20)
+            mouseMove(tc, 200, y)
+        mouseRelease(tc, 200, tc.height - 400)
+        wait(600)
+        compare(host.opened, false)
+        compare(host.modeOpened, false)
+        compare(host.moreOpened, false)
+    }
+
+    function test_backClosesOnReleaseAndTheReleaseStaysInTheSheet() {
+        var host = open({ mode: "cool" })
+        keyPress(Qt.Key_Back)
+        // closing on the press would let the release reach the page underneath
+        compare(host.opened, true)
+        keyRelease(Qt.Key_Back)
+        tryVerify(function() { return !host.opened }, 3000)
+        compare(under.backReleases, 0)
+    }
+
+    function test_backClosesOnlyTheSheetOnTop() {
+        var host = open({ mode: "cool" })
+        mouseClick(find(Overlay.overlay, "modePill"))
+        tryVerify(function() { return host.modeOpened }, 3000)
+        keyPress(Qt.Key_Back)
+        keyRelease(Qt.Key_Back)
+        tryVerify(function() { return !host.modeOpened }, 3000)
+        compare(host.opened, true)
+        compare(under.backReleases, 0)
+    }
+
+    // --- rows, offline, landscape, closing ---------------------------------------------------------
+
+    function test_rowsAreTheSameAfterAFrame() {
+        var host = open({ mode: "cool" })
+        mouseClick(find(Overlay.overlay, "modePill"))
+        tryVerify(function() { return host.modeOpened }, 3000)
+        var before = find(Overlay.overlay, "row_heat")
+        verify(before !== null)
+        frame({ mode: "cool", current_temp: 25.6 })
+        frame({ mode: "cool", current_temp: 25.8 })
+        verify(find(Overlay.overlay, "row_heat") === before, "a tap that lands between two frames is not lost")
+        // and a change of the list is followed
+        frame({ mode: "cool" }, { modes: ["off", "heat", "cool"] })
+        tryVerify(function() { return find(Overlay.overlay, "row_dry") === null }, 2000)
+        verify(find(Overlay.overlay, "row_heat") === before)
+    }
+
+    function test_fanRowsAreTheSameAfterAFrame() {
+        var host = open({ mode: "cool" })
+        mouseClick(find(Overlay.overlay, "moreLink"))
+        tryVerify(function() { return host.moreOpened }, 3000)
+        var before = find(Overlay.overlay, "row_low")
+        verify(before !== null)
+        frame({ mode: "cool", current_temp: 25.6 })
+        verify(find(Overlay.overlay, "row_low") === before)
+    }
+
+    function test_offlineTheFanAndSwingRowsAreOff() {
+        var host = open({ mode: "cool", connected: false })
+        mouseClick(find(Overlay.overlay, "moreLink"))
+        tryVerify(function() { return host.moreOpened }, 3000)
+        compare(find(Overlay.overlay, "fanRows").active, false)
+        compare(find(Overlay.overlay, "swingRows").active, false)
+        wait(300)
+        mouseClick(find(Overlay.overlay, "row_low"))
+        wait(100)
+        compare(harness.sent(), [])
+    }
+
+    function test_offlineTheRangeValuesAreGrey() {
+        open({ mode: "auto", connected: false })
+        compare(find(Overlay.overlay, "lowText").color, Theme.mutedColor)
+        compare(find(Overlay.overlay, "highText").color, Theme.mutedColor)
+    }
+
+    function test_theRangeValuesKeepTheirColoursWhenItRuns() {
+        open({ mode: "auto", action: "heating" })
+        compare(find(Overlay.overlay, "lowText").color, Theme.yellowColor)
+        compare(find(Overlay.overlay, "highText").color, Theme.blueColor)
+    }
+
+    function test_inLandscapeTheSheetScrolls() {
+        tc.width = 844
+        tc.height = 360
+        wait(200)
+        var host = open({ mode: "auto", action: "heating" })
+        var scroll = find(Overlay.overlay, "sheetScroll")
+        verify(scroll !== null)
+        verify(scroll.contentHeight > scroll.height, "the content is taller than the sheet")
+        compare(scroll.interactive, true)
+        // the last row can be brought into view
+        scroll.contentY = scroll.contentHeight - scroll.height
+        var link = find(Overlay.overlay, "moreLink")
+        var p = link.mapToItem(scroll, 0, link.height)
+        verify(p.y <= scroll.height + 1)
+    }
+
+    function test_inPortraitNothingNeedsToScroll() {
+        open({ mode: "auto", action: "heating" })
+        var scroll = find(Overlay.overlay, "sheetScroll")
+        compare(scroll.interactive, false)
+    }
+
+    function test_theModelLetsGoOfTheDeviceWhenTheSheetCloses() {
+        var host = open({ mode: "heat", action: "idle", lockout: { output: "heat", remaining: 140 } })
+        compare(host.climate.lockoutTicking, true)
+        host.close()
+        tryVerify(function() { return !host.opened }, 3000)
+        wait(300)
+        compare(host.climate.modelData, null)
+        compare(host.climate.lockoutTicking, false)
+    }
+
+    function test_theLockoutIsCountedFromTheFrame() {
+        var st = mkState({ mode: "heat", action: "idle", lockout: { output: "heat", remaining: 140 } })
+        var io = harness.makeClimate({ id: "salon_ac", name: "Clim", gui_type: "climate", state: "heat", rw: "true",
+                                       device: device(st) })
+        fakeNow += 60000
+        var host = createTemporaryObject(hostComponent, tc)
+        hosts.push(host)
+        host.openFor(io)
+        tryVerify(function() { return host.opened && find(Overlay.overlay, "statusWord") !== null }, 3000)
+        compare(text("statusWord"), "Starts in 1 min 20 s")
     }
 }

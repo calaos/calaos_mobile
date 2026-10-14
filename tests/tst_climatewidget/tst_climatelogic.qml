@@ -448,6 +448,15 @@ TestCase {
         compare(Logic.stepSetpoint(d.which, d.dir, d.values, rangeBounds, d.fallback !== undefined ? d.fallback : 23), d.to)
     }
 
+    function test_stepNeverGoesTheOtherWay() {
+        // min_range 2 and a range already tighter than that
+        var tight = { low: 22, high: 23 }
+        compare(Logic.canStep("low", 1, tight, rangeBounds), false)
+        compare(Logic.canStep("high", -1, tight, rangeBounds), false)
+        compare(Logic.canStep("low", -1, tight, rangeBounds), true)
+        compare(Logic.canStep("high", 1, tight, rangeBounds), true)
+    }
+
     function test_canStepFollowsWhatMovesTheValue() {
         var stop = { low: 21, high: 23 }
         compare(Logic.canStep("low", 1, stop, rangeBounds), false)
@@ -472,6 +481,8 @@ TestCase {
     function test_splitDuration() {
         compare(Logic.splitDuration(140), { minutes: 2, seconds: 20 })
         compare(Logic.splitDuration(59.6), { minutes: 1, seconds: 0 })
+        compare(Logic.splitDuration(0.2), { minutes: 0, seconds: 1 })
+        compare(Logic.splitDuration(60.1), { minutes: 1, seconds: 1 })
         compare(Logic.splitDuration(45), { minutes: 0, seconds: 45 })
         compare(Logic.splitDuration(-3), { minutes: 0, seconds: 0 })
     }

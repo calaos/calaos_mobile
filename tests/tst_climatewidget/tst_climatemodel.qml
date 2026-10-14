@@ -15,6 +15,7 @@ TestCase {
     readonly property string point: Qt.locale().decimalPoint
 
     property real fakeNow: 1000000
+    onFakeNowChanged: harness.setNow(fakeNow)
     function fakeClock() { return fakeNow }
 
     Component {
@@ -301,11 +302,16 @@ TestCase {
         compare(m.values.target, 22.5)
     }
 
+    //The answer of the server to the n-th command sent
+    function answer(n, ok, id) {
+        harness.pushAnswer(id !== undefined ? id : "salon_ac", harness.seqs()[n], ok)
+    }
+
     function test_theFirstCommandRefusedKeepsTheOthers() {
         var m = make({ mode: "heat", target_temp: 22 })
         tap(m, "target", 1)
         tap(m, "target", 1)
-        harness.pushRefusal("salon_ac")
+        answer(0, false)
         compare(m.inFlight, 1)
         compare(m.values.target, 23)
     }
@@ -315,7 +321,7 @@ TestCase {
         tap(m, "target", 1)
         tap(m, "target", -1)
         tap(m, "target", 1)
-        harness.pushRefusal("salon_ac")
+        answer(0, false)
         compare(m.inFlight, 2)
         compare(m.values.target, 22.5)
     }
@@ -324,30 +330,98 @@ TestCase {
         var m = make({ mode: "heat", target_temp: 22 })
         tap(m, "target", 1)
         compare(m.values.target, 22.5)
-        harness.pushRefusal("salon_ac")
+        answer(0, false)
         compare(m.values.target, 22)
+    }
+
+    function test_aRefusedHighBoundGoesBackAtOnce() {
+        var m = make({ mode: "auto", target_temp_low: 20, target_temp_high: 24 })
+        tap(m, "high", 1)
+        compare(m.values.high, 24.5)
+        answer(0, false)
+        compare(m.values.high, 24)
+        compare(m.inFlight, 0)
+    }
+
+    function test_theLastCommandRefusedKeepsTheEarlierOnes() {
+        var m = make({ mode: "heat", target_temp: 22 })
+        tap(m, "target", 1)
+        tap(m, "target", 1)
+        answer(1, false)
+        compare(m.inFlight, 1)
+        compare(m.values.target, 22.5)
+    }
+
+    function test_aModeRefusedWhileASetpointIsInFlightKeepsTheSetpoint() {
+        var m = make({ mode: "heat", target_temp: 22 })
+        tap(m, "target", 1)
+        m.chooseMode("cool")
+        compare(harness.sent().length, 2)
+        answer(1, false)
+        compare(m.inFlight, 1)
+        compare(m.values.target, 22.5)
+    }
+
+    function test_aSlowAcceptedCommandIsKeptAndALaterRefusalOnlyDropsItself() {
+        var m = make({ mode: "heat", target_temp: 22 })
+        tap(m, "target", 1)
+        tap(m, "target", 1)
+        // accepted, but the proxy has not read the value back yet
+        answer(0, true)
+        compare(m.inFlight, 2)
+        answer(1, false)
+        compare(m.inFlight, 1)
+        compare(m.values.target, 22.5)
+        // and it does come, later
+        frame(m, { mode: "heat", target_temp: 22.5 })
+        compare(m.inFlight, 0)
+        compare(m.values.target, 22.5)
+    }
+
+    function test_theAnswersCanComeInAnyOrder() {
+        var m = make({ mode: "heat", target_temp: 22 })
+        tap(m, "target", 1)
+        tap(m, "target", 1)
+        answer(1, true)
+        answer(0, false)
+        compare(m.inFlight, 1)
+        compare(m.values.target, 23)
     }
 
     function test_theRefusalOfAnotherDeviceIsIgnored() {
         var m = make({ mode: "heat", target_temp: 22 })
         tap(m, "target", 1)
-        harness.pushRefusal("another_io")
+        answer(0, false, "another_io")
         compare(m.values.target, 22.5)
+    }
+
+    function test_anAnswerThatMatchesNothingIsIgnored() {
+        var m = make({ mode: "heat", target_temp: 22 })
+        tap(m, "target", 1)
+        harness.pushAnswer("salon_ac", 999, false)
+        compare(m.inFlight, 1)
     }
 
     function test_aRefusedFanChoiceReverts() {
         var m = make({ mode: "cool" })
         m.commit({ fan_mode: "high" })
-        harness.pushRefusal("salon_ac")
+        answer(0, false)
         compare(m.shown("fan_mode"), "auto")
     }
 
     function test_nothingHeardForAWhileShowsTheServer() {
         var m = make({ mode: "heat", target_temp: 22 })
+        m.holdMs = 300
         tap(m, "target", 1)
         compare(m.values.target, 22.5)
-        tryCompare(m, "inFlight", 0, 4000)
+        tryCompare(m, "inFlight", 0, 3000)
         compare(m.values.target, 22)
+    }
+
+    function test_aProxyReadsBackSlowlySoTheHoldIsLong() {
+        // readback_hold is 10 s on the server for a proxy: waiting less shows the old value, then the new one
+        var m = make({ mode: "heat", target_temp: 22 })
+        compare(m.holdMs, 10000)
     }
 
     function test_aPendingEditSurvivesAnOutsideChange() {
@@ -410,5 +484,68 @@ TestCase {
         verify(withIt.caps.humidity)
         var none = make({ mode: "cool", humidity: 48 })
         compare(none.caps.humidity, false)
+    }
+
+    // --- the lockout counts from the frame -------------------------------------------------
+
+    function test_theLockoutCountsFromTheFrameNotFromTheOpening() {
+        var st = mkState({ mode: "heat", action: "idle", lockout: { output: "heat", remaining: 140 } })
+        var io = harness.makeClimate({ id: "salon_ac", name: "Clim", gui_type: "climate", state: "heat", rw: "true",
+                                       device: device(st) })
+        // a minute passes before the view is built on that device
+        fakeNow += 60000
+        var m = createTemporaryObject(modelComponent, tc, { modelData: io })
+        compare(m.lockoutSeconds, 80)
+        compare(m.statusLabel(m.status, true), "Starts in 1 min 20 s")
+    }
+
+    function test_aNewFrameRestartsTheCount() {
+        var m = make({ mode: "heat", action: "idle", lockout: { output: "heat", remaining: 140 } })
+        fakeNow += 100000
+        frame(m, { mode: "heat", action: "idle", lockout: { output: "heat", remaining: 300 } })
+        compare(m.lockoutSeconds, 300)
+    }
+
+    function test_theLockoutNeverSaysZeroSeconds() {
+        var m = make({ mode: "heat", action: "idle", lockout: { output: "heat", remaining: 140 } })
+        compare(m.lockoutLabel(0.2), "Starts in 1 s")
+        compare(m.lockoutLabel(59.2), "Starts in 1 min 0 s")
+    }
+
+    // --- stopping ---------------------------------------------------------------------------------
+
+    function test_withoutADeviceTheModelIsQuiet() {
+        var m = make({ mode: "heat", action: "idle", lockout: { output: "heat", remaining: 140 } })
+        tap(m, "target", 1)
+        compare(m.lockoutTicking, true)
+        m.modelData = null
+        compare(m.lockoutTicking, false)
+        compare(m.inFlight, 0)
+        compare(m.status.kind, "none")
+        // frames of the old device do not reach it any more
+        frame(m, { mode: "heat", target_temp: 25 })
+        compare(m.inFlight, 0)
+    }
+
+    // --- the buttons never go the wrong way ----------------------------------------------------
+
+    function test_aRangeTighterThanMinRangeDoesNotMoveTheWrongWay() {
+        var m = make({ mode: "auto", target_temp_low: 22, target_temp_high: 23 })
+        compare(m.canStep("low", 1), false)
+        compare(m.canStep("high", -1), false)
+        compare(m.canStep("low", -1), true)
+        compare(m.canStep("high", 1), true)
+        m.step("low", 1)
+        m.flush()
+        compare(harness.sent(), [])
+        compare(m.values.low, 22)
+    }
+
+    function test_offlineNothingCanBeChanged() {
+        var m = make({ mode: "heat", connected: false })
+        compare(m.canControl, false)
+        compare(make({ mode: "heat" }).canControl, true)
+        compare(make({ mode: "off" }).canControl, false)
+        compare(make({ mode: "" }).canControl, false)
     }
 }

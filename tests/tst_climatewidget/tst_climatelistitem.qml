@@ -17,6 +17,7 @@ TestCase {
     readonly property string point: Qt.locale().decimalPoint
 
     property real fakeNow: 1000000
+    onFakeNowChanged: harness.setNow(fakeNow)
     function fakeClock() { return fakeNow }
 
     Component {

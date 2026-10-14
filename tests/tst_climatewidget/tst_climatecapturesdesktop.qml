@@ -17,6 +17,7 @@ TestCase {
 
     readonly property string shotsDir: harness.env("CLIMATE_SHOTS_DIR")
     property real fakeNow: 1000000
+    onFakeNowChanged: harness.setNow(fakeNow)
     function fakeClock() { return fakeNow }
 
     //Round 5 data: the same devices as the list captures

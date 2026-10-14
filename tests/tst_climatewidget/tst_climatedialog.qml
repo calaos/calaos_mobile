@@ -16,6 +16,7 @@ TestCase {
     readonly property string point: Qt.locale().decimalPoint
 
     property real fakeNow: 1000000
+    onFakeNowChanged: harness.setNow(fakeNow)
     function fakeClock() { return fakeNow }
 
     //The layer main.qml gives the dialogs: they reparent themselves onto it
@@ -60,11 +61,14 @@ TestCase {
                  ios: { mode: "m", target_temp: "t", target_temp_low: "l", target_temp_high: "h" } }
     }
 
+    property var hosts: []
+
     function open(over, capsOver) {
         var st = mkState(over)
         var io = harness.makeClimate({ id: "salon_ac", name: "Clim salon", gui_type: "climate",
                                        state: st.mode, rw: "true", device: device(st, capsOver) })
         var dlg = createTemporaryObject(dialogComponent, tc)
+        hosts.push(dlg)
         dlg.openFor(io)
         tryVerify(function() { return dlg.detail.showing && find(layer, "bigDial") !== null && dlg.detail.opacity === 1 }, 3000)
         wait(350)
@@ -74,6 +78,13 @@ TestCase {
     function frame(over, capsOver) {
         var st = mkState(over)
         harness.pushFrame("salon_ac", st.mode, device(st, capsOver))
+    }
+
+    function cleanup() {
+        for (var i = 0; i < hosts.length; i++)
+            hosts[i].destroy()
+        hosts = []
+        wait(50)
     }
 
     function init() {
@@ -318,5 +329,73 @@ TestCase {
         dlg.openFor(io2)
         tryVerify(function() { return dlg.detail.showing && dlg.detail.title === "PAC chambre" }, 3000)
         compare(text("valueText"), "20" + point + "5°")
+    }
+
+    // --- what stays reachable under a dialog ------------------------------------------------------
+
+    function test_theDialogBelowCannotBeReachedThroughTheOneOnTop() {
+        var dlg = open({ mode: "cool" })
+        mouseClick(find(layer, "modePill"))
+        tryVerify(function() { return dlg.modeDialog.showing && dlg.modeDialog.opacity === 1 }, 3000)
+        wait(350)
+        // the part of the first dialog that the mode dialog leaves uncovered: its Close button, on the right
+        var close = dlg.detail.negativeButton
+        var p = close.mapToItem(layer, close.width - 4, close.height / 2)
+        verify(p.x > dlg.modeDialog.x + dlg.modeDialog.width, "the Close of the first dialog sticks out")
+        mouseClick(layer, p.x, p.y)
+        wait(400)
+        // what was clicked was the veil: it closes the dialog on top and leaves the first one, current and alive
+        compare(dlg.modeDialog.showing, false)
+        compare(dlg.detail.showing, true)
+        compare(layer.currentOverlay, dlg.detail)
+    }
+
+    function test_theDialogBelowWorksAgainOnceTheOnTopIsGone() {
+        var dlg = open({ mode: "cool" })
+        mouseClick(find(layer, "modePill"))
+        tryVerify(function() { return dlg.modeDialog.showing && dlg.modeDialog.opacity === 1 }, 3000)
+        wait(350)
+        mouseClick(dlg.modeDialog.negativeButton)
+        tryVerify(function() { return !dlg.modeDialog.showing }, 3000)
+        compare(dlg.detail.enabled, true)
+        mouseClick(dlg.detail.negativeButton)
+        tryVerify(function() { return !dlg.detail.showing }, 3000)
+        compare(layer.currentOverlay, null)
+    }
+
+    function test_rowsAreTheSameAfterAFrame() {
+        var dlg = open({ mode: "cool" })
+        mouseClick(find(layer, "modePill"))
+        tryVerify(function() { return dlg.modeDialog.showing && dlg.modeDialog.opacity === 1 }, 3000)
+        var before = find(dlg.modeDialog, "row_heat")
+        verify(before !== null)
+        frame({ mode: "cool", current_temp: 25.6 })
+        verify(find(dlg.modeDialog, "row_heat") === before)
+    }
+
+    function test_offlineTheFanAndSwingRowsAreOff() {
+        var dlg = open({ mode: "cool", connected: false })
+        mouseClick(find(layer, "moreLink"))
+        tryVerify(function() { return dlg.moreDialog.showing && dlg.moreDialog.opacity === 1 }, 3000)
+        wait(350)
+        compare(find(dlg.moreDialog, "fanRows").active, false)
+        mouseClick(find(dlg.moreDialog, "row_high"))
+        wait(100)
+        compare(harness.sent(), [])
+    }
+
+    function test_offlineTheRangeValuesAreGrey() {
+        open({ mode: "auto", connected: false })
+        compare(find(layer, "lowText").color, Theme.mutedColor)
+        compare(find(layer, "highText").color, Theme.mutedColor)
+    }
+
+    function test_theModelLetsGoOfTheDeviceWhenTheDialogCloses() {
+        var dlg = open({ mode: "heat", action: "idle", lockout: { output: "heat", remaining: 90 } })
+        compare(dlg.climate.lockoutTicking, true)
+        mouseClick(dlg.detail.negativeButton)
+        tryVerify(function() { return !dlg.detail.showing }, 3000)
+        compare(dlg.climate.modelData, null)
+        compare(dlg.climate.lockoutTicking, false)
     }
 }

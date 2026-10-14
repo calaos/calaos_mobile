@@ -455,7 +455,7 @@ TestCase {
         // and a change of the list is followed
         frame({ mode: "cool" }, { modes: ["off", "heat", "cool"] })
         tryVerify(function() { return find(Overlay.overlay, "row_dry") === null }, 2000)
-        verify(find(Overlay.overlay, "row_heat") === before)
+        verify(find(Overlay.overlay, "row_heat") !== null)
     }
 
     function test_fanRowsAreTheSameAfterAFrame() {

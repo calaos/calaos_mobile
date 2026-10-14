@@ -22,6 +22,13 @@ Drawer {
     edge: Qt.BottomEdge
     modal: true
     dim: true
+    //A swipe from the edge of the screen must not open an empty sheet: it is
+    //opened by code only. Swiping it down still closes it.
+    dragMargin: 0
+    //Back and Escape are taken on release, as Dialog.qml does: closing on the
+    //press lets the release reach the page below, which then goes back too.
+    closePolicy: Popup.CloseOnPressOutside
+    focus: true
     width: parent ? parent.width : 0
     height: !parent ? 0
             : heightRatio > 0 ? parent.height * heightRatio
@@ -50,6 +57,20 @@ Drawer {
     }
 
     contentItem: Item {
+        focus: true
+
+        Keys.onPressed: (event) => {
+            if (event.key === Qt.Key_Back || event.key === Qt.Key_Escape)
+                event.accepted = true
+        }
+
+        Keys.onReleased: (event) => {
+            if (event.key === Qt.Key_Back || event.key === Qt.Key_Escape) {
+                sheet.close()
+                event.accepted = true
+            }
+        }
+
         Rectangle {
             id: grip
             objectName: "grip"

@@ -17,6 +17,7 @@ Item {
     property real rangeNumSize: Units.dp(34)
 
     readonly property bool ranged: climate.setpointKind === "range"
+    readonly property bool muted: Logic.setpointMuted(climate.status, climate.mode)
     readonly property bool shown: climate.deviceKnown && climate.setpointKind !== "none"
 
     visible: shown
@@ -65,7 +66,7 @@ Item {
                     objectName: "valueText"
                     width: Units.dp(130); height: Units.dp(48)
                     font.pixelSize: root.numSize
-                    color: Logic.setpointMuted(root.climate.status, root.climate.mode) ? Theme.mutedColor : Theme.yellowColor
+                    color: root.muted ? Theme.mutedColor : Theme.yellowColor
                     text: Logic.formatListSetpoint("single", root.climate.values, root.climate.point, root.climate.decimals)
                 }
                 Step { objectName: "btPlus"; which: "target"; dir: 1 }
@@ -78,7 +79,7 @@ Item {
                     objectName: "lowText"
                     width: Units.dp(80); height: Units.dp(48)
                     font.pixelSize: root.rangeNumSize
-                    color: Theme.yellowColor
+                    color: root.muted ? Theme.mutedColor : Theme.yellowColor
                     text: Logic.formatDegrees(root.climate.values.low, root.climate.point, root.climate.decimals)
                 }
                 Step { objectName: "btLowPlus"; which: "low"; dir: 1 }
@@ -91,7 +92,7 @@ Item {
                     objectName: "highText"
                     width: Units.dp(80); height: Units.dp(48)
                     font.pixelSize: root.rangeNumSize
-                    color: Theme.blueColor
+                    color: root.muted ? Theme.mutedColor : Theme.blueColor
                     text: Logic.formatDegrees(root.climate.values.high, root.climate.point, root.climate.decimals)
                 }
                 Step { objectName: "btHighPlus"; which: "high"; dir: 1 }

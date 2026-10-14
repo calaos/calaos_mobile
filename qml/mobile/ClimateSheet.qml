@@ -19,8 +19,13 @@ Item {
     width: 0
     height: 0
 
+    //Opened since the last time it started to close: a closed signal that arrives
+    //after a quick reopening is not about the device we hold now
+    property bool wanted: false
+
     function openFor(io) {
         climate.modelData = io
+        wanted = true
         detail.open()
     }
 
@@ -37,9 +42,23 @@ Item {
         objectName: "detailSheet"
         heightRatio: 0.7
         fontFamily: host.fontFamily
-        onAboutToHide: climate.flush()
+        onAboutToHide: {
+            climate.flush()
+            host.wanted = false
+        }
+        //Let go of the device once the sheet is gone: nothing keeps counting or listening
+        onClosed: {
+            if (!host.wanted)
+                climate.modelData = null
+        }
+
+        SheetScroll {
+            objectName: "sheetScroll"
+            anchors.fill: parent
+            implicitContentHeight: detailColumn.implicitHeight
 
         ColumnLayout {
+            id: detailColumn
             anchors.fill: parent
             spacing: 0
 
@@ -106,6 +125,7 @@ Item {
                 }
             }
         }
+        }
     }
 
     BottomSheet {
@@ -114,6 +134,11 @@ Item {
         title: qsTr("Mode")
         fontFamily: host.fontFamily
         fitHeight: modeRows.implicitHeight
+
+        SheetScroll {
+            objectName: "modeScroll"
+            anchors.fill: parent
+            implicitContentHeight: modeRows.implicitHeight
 
         ClimateRows {
             id: modeRows
@@ -129,6 +154,7 @@ Item {
                 modeSheet.close()
             }
         }
+        }
     }
 
     BottomSheet {
@@ -138,12 +164,18 @@ Item {
         fontFamily: host.fontFamily
         fitHeight: more.implicitHeight
 
+        SheetScroll {
+            objectName: "moreScroll"
+            anchors.fill: parent
+            implicitContentHeight: more.implicitHeight
+
         ClimateMore {
             id: more
             objectName: "more"
             width: parent.width
             climate: climate
             fontFamily: host.fontFamily
+        }
         }
     }
 }

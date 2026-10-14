@@ -35,6 +35,16 @@ Item {
 
     ClimateModel { id: climate }
 
+    //Let go of the device once the dialog has faded out: nothing keeps counting or listening
+    Timer {
+        id: release
+        interval: 400
+        onTriggered: {
+            if (!detail.showing)
+                climate.modelData = null
+        }
+    }
+
     Dialog {
         id: detail
         objectName: "detailDialog"
@@ -44,7 +54,13 @@ Item {
         hasActions: true
         positiveButtonEnabled: false
         negativeButtonText: qsTr("Close")
-        onClosed: climate.flush()
+        //The dialogs opened on top of this one leave a band of it uncovered: it
+        //must not take clicks, or its Close would close this one under them
+        enabled: !modeDialog.showing && !moreDialog.showing
+        onClosed: {
+            climate.flush()
+            release.restart()
+        }
 
         ClimateDetail {
             objectName: "detail"

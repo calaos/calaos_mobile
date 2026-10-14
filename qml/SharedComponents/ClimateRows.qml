@@ -16,28 +16,53 @@ Column {
 
     signal chosen(string value)
 
+    //The delegates are kept as long as the list of values is: `choices` is
+    //recomputed whenever the device publishes, and rows rebuilt under the
+    //finger would swallow a tap.
+    ListModel { id: rows }
+
+    function sync() {
+        var same = rows.count === choices.length
+        for (var i = 0; same && i < choices.length; i++)
+            same = rows.get(i).value === choices[i].value
+        if (!same) {
+            rows.clear()
+            for (var j = 0; j < choices.length; j++)
+                rows.append({ value: choices[j].value, label: choices[j].label,
+                              icon: choices[j].icon !== undefined ? choices[j].icon : "" })
+        } else {
+            for (var k = 0; k < choices.length; k++)
+                rows.setProperty(k, "label", choices[k].label)
+        }
+    }
+
+    onChoicesChanged: sync()
+    Component.onCompleted: sync()
+
     Repeater {
-        model: root.choices
+        model: rows
 
         delegate: MouseArea {
             id: row
 
-            required property var modelData
-            readonly property bool selected: row.modelData.value === root.current
+            required property string value
+            required property string label
+            required property string icon
+            readonly property bool selected: row.value === root.current
 
-            objectName: "row_" + row.modelData.value
+            objectName: "row_" + row.value
             width: root.width
             height: Units.dp(50)
             enabled: root.active
-            onClicked: root.chosen(row.modelData.value)
+            onClicked: root.chosen(row.value)
 
             Row {
                 anchors { left: parent.left; leftMargin: Units.dp(8); verticalCenter: parent.verticalCenter }
                 spacing: Units.dp(12)
 
                 ClimateIcon {
-                    visible: row.modelData.icon !== undefined
-                    name: row.modelData.icon !== undefined ? row.modelData.icon : "help"
+                    visible: row.icon !== ""
+                    name: row.icon !== "" ? row.icon : "help"
                     size: Units.dp(20)
                     color: row.selected ? Theme.blueColor : Theme.mutedColor
                     anchors.verticalCenter: parent.verticalCenter
@@ -47,7 +72,7 @@ Column {
                     objectName: "rowLabel"
                     color: row.selected ? Theme.blueColor : Theme.whiteColor
                     font { family: root.fontFamily; weight: Font.Light; pixelSize: Units.dp(16) }
-                    text: row.modelData.label
+                    text: row.label
                     anchors.verticalCenter: parent.verticalCenter
                 }
             }

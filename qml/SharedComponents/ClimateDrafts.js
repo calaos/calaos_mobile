@@ -2,10 +2,11 @@
 
 //Values the user has chosen and the server has not confirmed yet.
 //`pending` is what was typed or tapped and is still waiting to be sent (a burst
-//of taps makes one command); `flights` are the commands sent and not answered,
-//oldest first, each with the fields it changed. The server answers by
-//publishing the state, not by acknowledging a command, so a flight ends when
-//the state shows what it sent.
+//of taps makes one command); `flights` are the commands sent and not settled,
+//oldest first, each with the fields it changed and the number it was sent
+//under. The server answers a command at once, accepted or refused, but
+//publishes the new state later (a proxy reads it back from its device): a
+//flight ends when the state shows what it sent, or when its command is refused.
 
 function empty() {
     return { pending: {}, flights: [] }
@@ -42,7 +43,8 @@ function hasPending(d) {
 //Moves the pending fields into a new flight. A field is only followed when what
 //is sent differs from what was expected: nothing will be published for a
 //value the device already holds, and waiting for it would pin the display.
-//`sentFields` is the command to send.
+//`fields` is the command to send; `added` says whether a flight was created for
+//it, to be numbered with tag() once the command has been sent.
 function send(d, state, extra) {
     var sentFields = {}, tracked = {}, any = false, k
     var all = {}
@@ -62,7 +64,17 @@ function send(d, state, extra) {
     var flights = d.flights.slice()
     if (any)
         flights.push({ fields: tracked })
-    return { drafts: { pending: {}, flights: flights }, fields: sentFields }
+    return { drafts: { pending: {}, flights: flights }, fields: sentFields, added: any }
+}
+
+//Numbers the flight that send() just added.
+function tag(d, seq) {
+    if (d.flights.length === 0 || d.flights[d.flights.length - 1].seq !== undefined)
+        return d
+    var flights = d.flights.slice()
+    var last = flights[flights.length - 1]
+    flights[flights.length - 1] = { fields: last.fields, seq: seq }
+    return { pending: d.pending, flights: flights }
 }
 
 function dropEmpty(flights) {
@@ -75,7 +87,7 @@ function without(flight, key) {
         if (k !== key)
             f[k] = flight.fields[k]
     }
-    return { fields: f }
+    return { fields: f, seq: flight.seq }
 }
 
 //A new state arrived. For every followed field whose published value changed:
@@ -114,10 +126,13 @@ function received(d, previous, state) {
     return { pending: d.pending, flights: dropEmpty(flights) }
 }
 
-//The server refused a command. It does not say which one: they are answered in
-//the order they were sent, so it is the oldest. The others are still waiting.
-function refused(d) {
-    return { pending: d.pending, flights: d.flights.slice(1) }
+//The server answered the command `seq`. A refusal ends that flight, whatever
+//else is in flight; an acceptance changes nothing, the state is still to come.
+function answered(d, seq, ok) {
+    if (ok || !(seq > 0))
+        return d
+    return { pending: d.pending,
+             flights: d.flights.filter(function(f) { return f.seq !== seq }) }
 }
 
 //Nothing was heard for too long: whatever the server shows is the truth.

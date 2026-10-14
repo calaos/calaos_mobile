@@ -395,7 +395,7 @@ TestCase {
         compare(dlg.climate.lockoutTicking, true)
         mouseClick(dlg.detail.negativeButton)
         tryVerify(function() { return !dlg.detail.showing }, 3000)
-        compare(dlg.climate.modelData, null)
+        tryVerify(function() { return dlg.climate.modelData === null }, 2000)
         compare(dlg.climate.lockoutTicking, false)
     }
 }

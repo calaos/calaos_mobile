@@ -309,7 +309,8 @@ function canStep(which, dir, values, b) {
     var current = values[which]
     if (!isNum(current))
         return true
-    return stepSetpoint(which, dir, values, b, current) !== current
+    //A range already tighter than min_range would be pushed back the other way
+    return (stepSetpoint(which, dir, values, b, current) - current) * dir > 0
 }
 
 //The two ends are as close as min_range allows.
@@ -320,7 +321,8 @@ function rangeAtStop(values, b) {
 
 //Seconds as { minutes, seconds } for the countdown of a lock-out.
 function splitDuration(seconds) {
-    var s = Math.max(0, Math.round(seconds))
+    //Rounded up: while the lock-out runs the count never says "0 s"
+    var s = Math.max(0, Math.ceil(seconds))
     return { minutes: Math.floor(s / 60), seconds: s % 60 }
 }
 

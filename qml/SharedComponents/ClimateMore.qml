@@ -16,8 +16,10 @@ GridLayout {
     property int columnCount: 1
 
     columns: columnCount
-    uniformCellWidths: true
     columnSpacing: Units.dp(24)
+
+    //Equal columns; uniformCellWidths needs a newer Qt than the app may be built with
+    readonly property real cellWidth: (width - (columnCount - 1) * columnSpacing) / columnCount
     rowSpacing: Units.dp(8)
 
     component Section: Text {
@@ -38,6 +40,7 @@ GridLayout {
         objectName: "fanSection"
         visible: root.climate.caps.fanModes.length > 0
         Layout.fillWidth: true
+        Layout.preferredWidth: root.cellWidth
         Layout.alignment: Qt.AlignTop
         spacing: 0
 
@@ -46,7 +49,7 @@ GridLayout {
             objectName: "fanRows"
             Layout.fillWidth: true
             fontFamily: root.fontFamily
-            active: root.climate.controlsActive
+            active: root.climate.canControl
             choices: root.climate.toChoices(root.climate.caps.fanModes, root.climate.optionLabel)
             current: String(root.climate.shown("fan_mode"))
             onChosen: function(v) { root.climate.commit({ fan_mode: v }) }
@@ -57,6 +60,7 @@ GridLayout {
         objectName: "swingSection"
         visible: root.climate.caps.swingModes.length > 0
         Layout.fillWidth: true
+        Layout.preferredWidth: root.cellWidth
         Layout.alignment: Qt.AlignTop
         spacing: 0
 
@@ -65,7 +69,7 @@ GridLayout {
             objectName: "swingRows"
             Layout.fillWidth: true
             fontFamily: root.fontFamily
-            active: root.climate.controlsActive
+            active: root.climate.canControl
             choices: root.climate.toChoices(root.climate.caps.swingModes, root.climate.optionLabel)
             current: String(root.climate.shown("swing_mode"))
             onChosen: function(v) { root.climate.commit({ swing_mode: v }) }

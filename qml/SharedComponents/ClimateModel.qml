@@ -60,27 +60,29 @@ Item {
     readonly property var dialModel: Logic.dialModel(setpointKind, caps.bounds, values,
                                                      devState ? devState.current_temp : undefined)
 
-    //The server publishes the seconds left once; the countdown runs here
+    //The server publishes the seconds left once, when the frame is sent; the
+    //countdown runs here, from the moment the frame arrived.
     property var clock: Date.now
     property real now: 0
-    property real lockoutStamp: 0
+    readonly property real lockoutStamp: modelData ? modelData.deviceStamp : 0
     readonly property real lockoutSeconds: Logic.lockoutLeft(devState ? devState.lockout : undefined,
                                                               now - lockoutStamp)
     readonly property alias lockoutTicking: lockoutTimer.running
 
-    function restampLockout() {
-        now = clock()
-        lockoutStamp = now
-    }
+    //How long a command that was neither refused nor shown by the state is
+    //waited for. A proxy reads the value back from its device after
+    //readback_hold, 10 s on the server: letting go sooner shows the old value
+    //for a moment, then the new one.
+    property int holdMs: 10000
 
     function reset() {
         flushTimer.stop()
         setDrafts(Drafts.empty())
         lastState = devState
-        restampLockout()
+        now = clock()
     }
 
-    onDevStateChanged: restampLockout()
+    onDevStateChanged: now = clock()
     onModelDataChanged: reset()
     Component.onCompleted: reset()
 
@@ -107,10 +109,10 @@ Item {
         if (!modelData || !Drafts.hasPending(drafts))
             return
         var r = Drafts.send(drafts, devState)
-        drafts = r.drafts
-        if (Drafts.inFlight(r.drafts) > 0)
+        var seq = modelData.sendStringValue(Logic.partialCommand(r.fields))
+        setDrafts(r.added ? Drafts.tag(r.drafts, seq) : r.drafts)
+        if (r.added)
             expiryTimer.restart()
-        modelData.sendStringValue(Logic.partialCommand(r.fields))
     }
 
     //Fan and swing are sent at once, as a partial update
@@ -119,6 +121,8 @@ Item {
         flush()
     }
 
+    //Not followed: the mode is the scalar state, and a refusal of this command
+    //must not touch the setpoints in flight
     function chooseMode(value) {
         var cmd = Logic.modeCommand(value, caps)
         if (cmd !== "" && cmd !== mode)
@@ -135,8 +139,12 @@ Item {
         return caps.bounds ? Logic.fallbackTarget(devState ? devState.current_temp : undefined, caps.bounds) : 0
     }
 
+    //Nothing can be changed on a device that is off, offline or in a mode we
+    //do not know
+    readonly property bool canControl: deviceKnown && controlsActive && status.kind !== "offline"
+
     function canStep(which, dir) {
-        if (!deviceKnown || !controlsActive || setpointKind === "none" || status.kind === "offline")
+        if (!canControl || setpointKind === "none")
             return false
         return Logic.canStep(which, dir, values, caps.bounds)
     }
@@ -265,7 +273,7 @@ Item {
     //Nothing heard for a while: the state the server shows is the truth
     Timer {
         id: expiryTimer
-        interval: 2500
+        interval: root.holdMs
         onTriggered: root.setDrafts(Drafts.expired(root.drafts))
     }
 
@@ -286,9 +294,9 @@ Item {
             root.lastState = state
         }
 
-        //The server will not apply what the oldest command asked
-        function onCommandRefused() {
-            root.setDrafts(Drafts.refused(root.drafts))
+        //Accepted or refused, command by command: a refusal ends its own flight
+        function onCommandAnswered(seq, ok) {
+            root.setDrafts(Drafts.answered(root.drafts, seq, ok))
         }
     }
 

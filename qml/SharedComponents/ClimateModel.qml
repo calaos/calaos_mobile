@@ -232,6 +232,8 @@ Item {
         switch (f) {
         case "sensor_stale": return qsTr("Sensor silent")
         case "sensor_missing": return qsTr("Sensor missing")
+        case "sensor_waiting": return qsTr("Waiting for the sensor")
+        case "sensor_disconnected": return qsTr("Sensor disconnected")
         case "humidity_high": return qsTr("Humidity too high")
         case "humidity_stale": return qsTr("Humidity sensor silent")
         default: return humanize(f)

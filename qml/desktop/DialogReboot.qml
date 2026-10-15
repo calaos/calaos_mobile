@@ -7,7 +7,6 @@ Dialog {
     title: qsTr("Reboot?")
     text: qsTr("Do you want to reboot the machine or only the App? A full reboot will do a complete restart of Calaos.")
     hasActions: true
-    closeOnDisconnect: false
     positiveButtonText: rebootRadio.checked?qsTr("Yes, reboot"):qsTr("Yes, restart")
     negativeButtonText: qsTr("Cancel")
 

@@ -20,7 +20,9 @@ Dialog {
     property bool multiline: false
     property string currentText
 
-    function openKeyboard(title, subtitle, initialText, inputEchoMode, multiline, cb) {
+    function openKeyboard(title, subtitle, initialText, inputEchoMode, multiline, cb, forIo) {
+        //Only the text of an io is lost with the session; the rest is kept
+        closeOnDisconnect = forIo === true
         lTitle.text = title
         lSubTitle.text = subtitle
         dlg.multiline = multiline

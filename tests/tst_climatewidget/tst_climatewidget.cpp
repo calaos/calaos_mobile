@@ -244,13 +244,29 @@ private:
     QVector<RoomModel *> rooms;
 };
 
+//What DialogNetInterface reads of calaosApp.netAddresses
+class NetStub: public QObject
+{
+    Q_OBJECT
+
+public:
+    Q_INVOKABLE QVariantMap get(int) const
+    {
+        return { { "netinterface", "eth0" }, { "isDHCP", false }, { "ipv4", "192.168.0.2" },
+                 { "netmask", "255.255.255.0" }, { "gateway", "192.168.0.1" },
+                 { "dnsServers", "192.168.0.1" }, { "searchDomains", "" } };
+    }
+};
+
 class AppStub: public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(QObject *netAddresses READ netAddresses CONSTANT)
     Q_PROPERTY(int applicationStatus READ applicationStatus NOTIFY applicationStatusChanged)
 
 public:
     int applicationStatus() const { return status; }
+    QObject *netAddresses() { return &nets; }
 
     Q_INVOKABLE void setStatus(int s)
     {
@@ -271,6 +287,7 @@ signals:
 
 private:
     int status = Common::LoggedIn;
+    NetStub nets;
 };
 
 class Setup: public QObject

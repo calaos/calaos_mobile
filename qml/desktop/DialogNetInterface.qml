@@ -10,7 +10,6 @@ Dialog {
     title: qsTr("Configure network interface")
     text: qsTr("Change the network interface configuration")
     hasActions: true
-    closeOnDisconnect: false
     positiveButtonText: qsTr("Apply")
     negativeButtonText: qsTr("Cancel")
 

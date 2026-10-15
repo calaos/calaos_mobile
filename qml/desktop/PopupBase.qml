@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Window
 import "Utils.js" as Utils
-import Calaos
 import SharedComponents
 
 FocusScope {
@@ -14,18 +13,11 @@ FocusScope {
     property bool showing: false
     property Item __lastFocusedItem
 
-    //Dialogs sit on the window overlay, outside the pages, and are not taken
-    //away by a lost connection. Only those about the machine (reboot, update,
-    //network) must outlive it: the server going away is their normal course.
-    property bool closeOnDisconnect: true
-
-    Connections {
-        target: calaosApp
-        function onApplicationStatusChanged(status) {
-            if (popup.closeOnDisconnect && popup.showing && status !== Common.LoggedIn)
-                popup.close()
-        }
-    }
+    //Set by the dialogs showing data of the session (an io, a device): a lost
+    //connection leaves them without anything to show. Pages stay on the desktop
+    //and a reconnect is routine, so every other dialog, and the text a user is
+    //typing in it, must survive it.
+    property bool closeOnDisconnect: false
 
     signal opened
     signal closed
@@ -47,7 +39,10 @@ FocusScope {
 
         showing = true
         forceActiveFocus()
-        parent.currentOverlay = popup
+        if (parent.raise)
+            parent.raise(popup)
+        else
+            parent.currentOverlay = popup
 
         opened()
     }
@@ -55,9 +50,10 @@ FocusScope {
     function close() {
         showing = false
 
-        if (parent.hasOwnProperty("currentOverlay")) {
+        if (parent.release)
+            parent.release(popup)
+        else if (parent.hasOwnProperty("currentOverlay"))
             parent.currentOverlay = null
-        }
 
         if (__lastFocusedItem !== null) {
             __lastFocusedItem.forceActiveFocus()

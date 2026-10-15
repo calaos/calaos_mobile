@@ -26,13 +26,6 @@ Item {
         detail.show()
     }
 
-    //The overlay layer only knows one current dialog: give it back to the
-    //first one when the dialog opened above it is gone
-    function resumeOverlay() {
-        if (detail.showing && detail.parent && detail.parent.hasOwnProperty("currentOverlay"))
-            detail.parent.currentOverlay = detail
-    }
-
     ClimateModel { id: climate }
 
     //Let go of the device once the dialog has faded out: nothing keeps counting or listening
@@ -47,6 +40,7 @@ Item {
 
     Dialog {
         id: detail
+        closeOnDisconnect: true
         objectName: "detailDialog"
 
         title: climate.name
@@ -111,13 +105,13 @@ Item {
 
     Dialog {
         id: modeDialog
+        closeOnDisconnect: true
         objectName: "modeDialog"
         title: qsTr("Mode — %1").arg(climate.name)
         minimumWidth: Units.dp(400)
         hasActions: true
         positiveButtonEnabled: false
         negativeButtonText: qsTr("Close")
-        onClosed: host.resumeOverlay()
 
         ClimateRows {
             objectName: "modeRows"
@@ -136,13 +130,13 @@ Item {
 
     Dialog {
         id: moreDialog
+        closeOnDisconnect: true
         objectName: "moreDialog"
         title: qsTr("More settings — %1").arg(climate.name)
         minimumWidth: climate.caps.fanModes.length > 0 && climate.caps.swingModes.length > 0 ? Units.dp(560) : Units.dp(400)
         hasActions: true
         positiveButtonEnabled: false
         negativeButtonText: qsTr("Close")
-        onClosed: host.resumeOverlay()
 
         ClimateMore {
             objectName: "more"

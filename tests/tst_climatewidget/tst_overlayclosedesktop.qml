@@ -15,6 +15,12 @@ TestCase {
     width: 1000
     height: 800
 
+    //DialogKeyboard sizes itself on the window, as main.qml names it
+    Item {
+        id: rootWindow
+        anchors.fill: parent
+    }
+
     OverlayLayer {
         id: layer
         objectName: "dialogOverlayLayer"
@@ -49,17 +55,24 @@ TestCase {
     }
 
     Component {
-        id: sessionDialog
-        Dialog { title: "Session" }
+        id: plainDialog
+        Dialog { title: "Plain" }
     }
 
     Component {
-        id: machineDialog
+        id: ioDialog
         Dialog {
-            title: "Machine"
-            closeOnDisconnect: false
+            title: "Session"
+            closeOnDisconnect: true
         }
     }
+
+    Component { id: rebootComponent; DialogReboot {} }
+    Component { id: recoveryComponent; DialogRecoveryBoot {} }
+    Component { id: netComponent; DialogNetInterface {} }
+    Component { id: keyboardComponent; DialogKeyboard {} }
+    Component { id: sensorComponent; DialogSensorDetails {} }
+    Component { id: colorComponent; DialogRGBColorPicker {} }
 
     function device() {
         return { family: "climate", impl: "proxy",
@@ -123,30 +136,105 @@ TestCase {
         verify(layer.currentOverlay === null)
     }
 
-    function test_anyDialogClosesNotOnlyTheClimateOnes() {
-        var dlg = createTemporaryObject(sessionDialog, tc)
-        dlg.show()
+    function showAndCheck(dlg) {
+        dlg.show(0)
         tryVerify(function() { return dlg.showing }, 3000)
-        calaosApp.setStatus(Common.Loading)
-        tryVerify(function() { return !dlg.showing }, 3000)
     }
 
-    function test_aDialogAboutTheMachineStays() {
-        var dlg = createTemporaryObject(machineDialog, tc)
-        dlg.show()
-        tryVerify(function() { return dlg.showing }, 3000)
+    function loseTheConnection() {
         calaosApp.setStatus(Common.NotConnected)
         wait(300)
-        verify(dlg.showing)
     }
 
-    function test_aDialogThatIsNotOpenIsLeftAlone() {
-        var dlg = createTemporaryObject(sessionDialog, tc)
-        var closed = 0
-        dlg.closed.connect(function() { closed++ })
-        calaosApp.setStatus(Common.NotConnected)
-        wait(100)
-        compare(closed, 0)
+    function test_aDialogOfTheSessionClosesAndAPlainOneStays() {
+        var io = createTemporaryObject(ioDialog, tc)
+        var plain = createTemporaryObject(plainDialog, tc)
+        showAndCheck(plain)
+        showAndCheck(io)
+        loseTheConnection()
+        verify(!io.showing)
+        verify(plain.showing)
+    }
+
+    function test_theMachineDialogsStay() {
+        var list = [rebootComponent, recoveryComponent, netComponent]
+        for (var i = 0; i < list.length; i++) {
+            var dlg = createTemporaryObject(list[i], tc)
+            showAndCheck(dlg)
+            loseTheConnection()
+            verify(dlg.showing, "machine dialog " + i)
+            dlg.close()
+            calaosApp.setStatus(Common.LoggedIn)
+        }
+    }
+
+    function test_theKeyboardKeepsWhatIsTypedUnlessItIsForAnIo() {
+        var net = createTemporaryObject(netComponent, tc)
+        showAndCheck(net)
+        var kb = createTemporaryObject(keyboardComponent, tc)
+        kb.openKeyboard("IP", "address", "192.168.0.1", TextInput.Normal, false, null)
+        tryVerify(function() { return kb.showing }, 3000)
+        loseTheConnection()
+        verify(kb.showing)
+        verify(net.showing)
+        verify(layer.currentOverlay === kb)
+        kb.close()
+        verify(layer.currentOverlay === net)
+
+        kb.openKeyboard("Text", "of an io", "x", TextInput.Normal, false, null, true)
+        tryVerify(function() { return kb.showing }, 3000)
+        loseTheConnection()
+        verify(!kb.showing)
+        verify(net.showing)
+        verify(layer.currentOverlay === net)
+    }
+
+    function test_theDialogsOfAnIoClose() {
+        var sensor = createTemporaryObject(sensorComponent, tc)
+        sensor.showSensor(makeIo())
+        tryVerify(function() { return sensor.showing }, 3000)
+        var color = createTemporaryObject(colorComponent, tc)
+        color.openWithIO(makeIo(), function() {})
+        tryVerify(function() { return color.showing }, 3000)
+        loseTheConnection()
+        verify(!sensor.showing)
+        verify(!color.showing)
+        verify(layer.currentOverlay === null)
+    }
+
+    function test_closingTheTopDialogGivesTheOverlayBackToTheOneBelow() {
+        var below = createTemporaryObject(plainDialog, tc)
+        var top = createTemporaryObject(ioDialog, tc)
+        showAndCheck(below)
+        showAndCheck(top)
+        verify(layer.currentOverlay === top)
+        top.close()
+        verify(layer.currentOverlay === below)
+        verify(below.showing)
+        below.close()
+        verify(layer.currentOverlay === null)
+    }
+
+    function test_aDialogOfTheSessionOverOneThatStaysLeavesItTheOverlay() {
+        var below = createTemporaryObject(plainDialog, tc)
+        showAndCheck(below)
+        var dlg = openClimate()
+        loseTheConnection()
+        verify(!dlg.detail.showing)
+        verify(below.showing)
+        verify(layer.currentOverlay === below)
+    }
+
+    function test_theTopDialogClosesFirst() {
+        var dlg = openClimate()
+        wait(350)
+        var order = []
+        dlg.detail.closed.connect(function() { order.push("detail") })
+        dlg.modeDialog.closed.connect(function() { order.push("mode") })
+        dlg.modeDialog.show()
+        tryVerify(function() { return dlg.modeDialog.showing }, 3000)
+        loseTheConnection()
+        compare(order.join(","), "mode,detail")
     }
 
     function test_theDeviceIsReleasedWhenItIsDestroyedBeforeTheDisconnect() {

@@ -446,7 +446,6 @@ Item {
 
     Dialog {
         id: confirmDialog
-        closeOnDisconnect: false
         title: qsTr("Install all updates")
         text: qsTr("All available updates will be installed. This may take several minutes.")
         positiveButtonText: qsTr("Install")

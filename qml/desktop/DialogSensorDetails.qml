@@ -4,6 +4,7 @@ import QtQuick.Layouts
 
 Dialog {
     id: dlg
+    closeOnDisconnect: true
 
     function showSensor(item) {
         __internal.item = item

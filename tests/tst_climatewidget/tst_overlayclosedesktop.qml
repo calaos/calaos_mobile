@@ -70,7 +70,6 @@ TestCase {
     Component { id: rebootComponent; DialogReboot {} }
     Component { id: recoveryComponent; DialogRecoveryBoot {} }
     Component { id: netComponent; DialogNetInterface {} }
-    Component { id: keyboardComponent; DialogKeyboard {} }
     Component { id: sensorComponent; DialogSensorDetails {} }
     Component { id: colorComponent; DialogRGBColorPicker {} }
 
@@ -169,6 +168,10 @@ TestCase {
     }
 
     function test_theKeyboardKeepsWhatIsTypedUnlessItIsForAnIo() {
+        //The virtual keyboard module is not installed on every runner
+        var keyboardComponent = Qt.createComponent(Qt.resolvedUrl("../../qml/desktop/DialogKeyboard.qml"))
+        if (keyboardComponent.status !== Component.Ready)
+            skip("QtQuick.VirtualKeyboard is not available")
         var net = createTemporaryObject(netComponent, tc)
         showAndCheck(net)
         var kb = createTemporaryObject(keyboardComponent, tc)

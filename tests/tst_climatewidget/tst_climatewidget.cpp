@@ -219,6 +219,13 @@ public:
     Q_INVOKABLE QStringList sent() const { return con.sent; }
     Q_INVOKABLE void clearSent() { con.sent.clear(); con.seqs.clear(); }
 
+    //What a reconnect does to the io a sheet was opened for
+    Q_INVOKABLE void destroyIo(QObject *io)
+    {
+        ios.removeAll(static_cast<IOBase *>(io));
+        delete io;
+    }
+
     Q_INVOKABLE void reset()
     {
         qDeleteAll(rooms);
@@ -240,8 +247,17 @@ private:
 class AppStub: public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(int applicationStatus READ applicationStatus NOTIFY applicationStatusChanged)
 
 public:
+    int applicationStatus() const { return status; }
+
+    Q_INVOKABLE void setStatus(int s)
+    {
+        status = s;
+        emit applicationStatusChanged(status);
+    }
+
     //The images of the app are compiled into the test, so that the faces of the
     //buttons and the backdrop of the dialogs are the real ones
     Q_INVOKABLE QString getPictureSized(const QString &pic) const
@@ -249,6 +265,12 @@ public:
         const QString res = QStringLiteral(":/img/") + pic + QStringLiteral(".png");
         return QFile::exists(res) ? QStringLiteral("qrc") + res : QString();
     }
+
+signals:
+    void applicationStatusChanged(int status);
+
+private:
+    int status = Common::LoggedIn;
 };
 
 class Setup: public QObject
@@ -283,7 +305,8 @@ public slots:
         }
 
         engine->rootContext()->setContextProperty(QStringLiteral("calaosFont"), fonts);
-        engine->rootContext()->setContextProperty(QStringLiteral("calaosApp"), new AppStub);
+        auto *app = new AppStub;
+        engine->rootContext()->setContextProperty(QStringLiteral("calaosApp"), app);
         auto *harness = new Harness;
         harness->setEngine(engine);
         engine->rootContext()->setContextProperty(QStringLiteral("harness"), harness);

@@ -239,6 +239,7 @@ Item {
         case "sensor_missing": return qsTr("Sensor missing")
         case "sensor_waiting": return qsTr("Waiting for the sensor")
         case "sensor_disconnected": return qsTr("Sensor disconnected")
+        case "sensor_out_of_range": return qsTr("Sensor out of range")
         case "humidity_high": return qsTr("Humidity too high")
         case "humidity_stale": return qsTr("Humidity sensor silent")
         default: return humanize(f)

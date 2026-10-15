@@ -76,7 +76,8 @@ TestCase {
         dry: { name: "Clim cellier", st: { mode: "dry", current_temp: 20.2, target_temp: 20, action: "drying" } },
         stale: { name: "Plancher salon", st: { mode: "cool", current_temp: 24.1, target_temp: 22, action: "idle", fault: "humidity_high" } },
         waiting: { name: "Thermostat salon", st: { mode: "heat", current_temp: 20, target_temp: 21, action: "idle", fault: "sensor_waiting" } },
-        gone: { name: "Thermostat bureau", st: { mode: "heat", current_temp: 20, target_temp: 21, action: "idle", fault: "sensor_disconnected" } }
+        gone: { name: "Thermostat bureau", st: { mode: "heat", current_temp: 20, target_temp: 21, action: "idle", fault: "sensor_disconnected" } },
+        range: { name: "Thermostat cave", st: { mode: "heat", current_temp: 85, target_temp: 21, action: "idle", fault: "sensor_out_of_range" } }
     })
 
     function io(key) {
@@ -167,7 +168,8 @@ TestCase {
             { tag: "lockout", key: "wait", text: "Démarre dans 2 min" },
             { tag: "humidity", key: "stale", text: "Humidité trop haute" },
             { tag: "waiting for the sensor", key: "waiting", text: "En attente de la sonde" },
-            { tag: "sensor disconnected", key: "gone", text: "Sonde déconnectée" }
+            { tag: "sensor disconnected", key: "gone", text: "Sonde déconnectée" },
+            { tag: "sensor out of range", key: "range", text: "Sonde hors limites" }
         ]
     }
 

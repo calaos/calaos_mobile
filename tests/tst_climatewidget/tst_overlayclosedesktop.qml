@@ -20,6 +20,29 @@ TestCase {
         objectName: "dialogOverlayLayer"
     }
 
+
+    //Stand-in for the page behind the dialogs
+    Rectangle {
+        anchors.fill: parent
+        color: "#080808"
+        z: -1
+        Text {
+            anchors.centerIn: parent
+            text: "Login"
+            color: "#3AB4D7"
+            font.pixelSize: 40
+        }
+    }
+
+    readonly property string shotsDir: harness.env("CLIMATE_SHOTS_DIR")
+
+    function shot(file) {
+        var img = grabImage(tc)
+        verify(img.width > 0)
+        if (shotsDir !== "")
+            img.save(shotsDir + "/" + file)
+    }
+
     Component {
         id: climateComponent
         DialogClimate {}
@@ -132,5 +155,19 @@ TestCase {
         calaosApp.setStatus(Common.NotConnected)
         tryVerify(function() { return !dlg.detail.showing }, 3000)
         tryVerify(function() { return dlg.climate.modelData === null }, 3000)
+    }
+
+    function test_shots() {
+        if (shotsDir === "")
+            skip("CLIMATE_SHOTS_DIR not set")
+        var dlg = openClimate()
+        wait(400)
+        dlg.moreDialog.show()
+        wait(500)
+        shot("desktop-open.png")
+        calaosApp.setStatus(Common.NotConnected)
+        //recorded as it is, whether or not the overlays are gone
+        wait(1200)
+        shot("desktop-after-disconnect.png")
     }
 }

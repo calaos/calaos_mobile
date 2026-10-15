@@ -15,6 +15,29 @@ TestCase {
     width: 420
     height: 900
 
+
+    //Stand-in for the login page the app falls back to
+    Rectangle {
+        anchors.fill: parent
+        color: "#080808"
+        z: -1
+        Text {
+            anchors.centerIn: parent
+            text: "Login"
+            color: "#3AB4D7"
+            font.pixelSize: 40
+        }
+    }
+
+    readonly property string shotsDir: harness.env("CLIMATE_SHOTS_DIR")
+
+    function shot(file) {
+        var img = grabImage(tc)
+        verify(img.width > 0)
+        if (shotsDir !== "")
+            img.save(shotsDir + "/" + file)
+    }
+
     Component {
         id: hostComponent
         ClimateSheet {}
@@ -138,5 +161,19 @@ TestCase {
         wait(100)
         host.close()
         tryVerify(function() { return allClosed(host) }, 3000)
+    }
+
+    function test_shots() {
+        if (shotsDir === "")
+            skip("CLIMATE_SHOTS_DIR not set")
+        var host = openHost()
+        wait(400)
+        openModeAndMore(host)
+        wait(400)
+        shot("phone-open.png")
+        calaosApp.setStatus(Common.NotConnected)
+        //recorded as it is, whether or not the overlays are gone
+        wait(1200)
+        shot("phone-after-disconnect.png")
     }
 }

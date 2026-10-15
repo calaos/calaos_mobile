@@ -37,6 +37,8 @@ OTHER_FILES += \
     tst_climatedialog.qml \
     tst_climatedrafts.qml \
     tst_climatelistitem.qml \
+    tst_overlayclosemobile.qml \
+    tst_overlayclosedesktop.qml \
     tst_climateshots.qml \
     tst_climatecapturesmobile.qml \
     tst_climatecapturesdesktop.qml \

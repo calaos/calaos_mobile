@@ -384,7 +384,8 @@ Window {
                                             false,
                                             function (txt) {
                                                 io.sendStringValue(txt)
-                                            })
+                                            },
+                                            true)
             }
         }
         Filter {

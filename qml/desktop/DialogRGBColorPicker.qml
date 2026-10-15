@@ -4,6 +4,7 @@ import QtQuick.Layouts
 
 Dialog {
     id: dlg
+    closeOnDisconnect: true
 
     property var __callback: null
     property QtObject __item

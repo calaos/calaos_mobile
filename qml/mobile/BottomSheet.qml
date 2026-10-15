@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import Calaos
 import SharedComponents
 
 //Sheet that slides up from the bottom edge, in the colours of Dialog.qml:
@@ -41,6 +42,16 @@ Drawer {
     leftPadding: Units.dp(16)
     rightPadding: Units.dp(16)
     bottomPadding: Units.dp(24)
+
+    //The sheet lives on the window overlay, outside the pages: going back to the
+    //login page does not take it away. Every sheet of the app goes through here.
+    Connections {
+        target: calaosApp
+        function onApplicationStatusChanged(status) {
+            if (status !== Common.LoggedIn)
+                sheet.close()
+        }
+    }
 
     Overlay.modal: Rectangle { color: Qt.rgba(0, 0, 0, 0.6) }
 

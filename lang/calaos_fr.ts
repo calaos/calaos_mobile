@@ -1142,29 +1142,29 @@
 <context>
     <name>DialogClimate</name>
     <message>
-        <location filename="../qml/desktop/DialogClimate.qml" line="56"/>
-        <location filename="../qml/desktop/DialogClimate.qml" line="119"/>
-        <location filename="../qml/desktop/DialogClimate.qml" line="144"/>
+        <location filename="../qml/desktop/DialogClimate.qml" line="50"/>
+        <location filename="../qml/desktop/DialogClimate.qml" line="114"/>
+        <location filename="../qml/desktop/DialogClimate.qml" line="139"/>
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogClimate.qml" line="81"/>
+        <location filename="../qml/desktop/DialogClimate.qml" line="75"/>
         <source>Mode unknown</source>
         <translation>Mode inconnu</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogClimate.qml" line="100"/>
+        <location filename="../qml/desktop/DialogClimate.qml" line="94"/>
         <source>More settings</source>
         <translation>Plus de réglages</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogClimate.qml" line="115"/>
+        <location filename="../qml/desktop/DialogClimate.qml" line="110"/>
         <source>Mode — %1</source>
         <translation>Mode — %1</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogClimate.qml" line="140"/>
+        <location filename="../qml/desktop/DialogClimate.qml" line="135"/>
         <source>More settings — %1</source>
         <translation>Plus de réglages — %1</translation>
     </message>
@@ -1172,22 +1172,22 @@
 <context>
     <name>DialogKeyboard</name>
     <message>
-        <location filename="../qml/desktop/DialogKeyboard.qml" line="70"/>
+        <location filename="../qml/desktop/DialogKeyboard.qml" line="72"/>
         <source>Title</source>
         <translation>Titre</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogKeyboard.qml" line="91"/>
+        <location filename="../qml/desktop/DialogKeyboard.qml" line="93"/>
         <source>Sub Title</source>
         <translation>Sous titre</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogKeyboard.qml" line="225"/>
+        <location filename="../qml/desktop/DialogKeyboard.qml" line="227"/>
         <source>Clear current text</source>
         <translation>Effacer tout le texte</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogKeyboard.qml" line="236"/>
+        <location filename="../qml/desktop/DialogKeyboard.qml" line="238"/>
         <source>Confirm</source>
         <translation>Valider</translation>
     </message>
@@ -1196,7 +1196,7 @@
         <translation type="vanished">Valider</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogKeyboard.qml" line="250"/>
+        <location filename="../qml/desktop/DialogKeyboard.qml" line="252"/>
         <source>Quit</source>
         <translation>Quitter</translation>
     </message>
@@ -1335,22 +1335,22 @@
 <context>
     <name>DialogRGBColorPicker</name>
     <message>
-        <location filename="../qml/desktop/DialogRGBColorPicker.qml" line="17"/>
+        <location filename="../qml/desktop/DialogRGBColorPicker.qml" line="18"/>
         <source>Choose a color</source>
         <translation>Choisir une couleur</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogRGBColorPicker.qml" line="18"/>
+        <location filename="../qml/desktop/DialogRGBColorPicker.qml" line="19"/>
         <source>Change the color of the light</source>
         <translation>Changer la couleur de la lumière</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogRGBColorPicker.qml" line="20"/>
+        <location filename="../qml/desktop/DialogRGBColorPicker.qml" line="21"/>
         <source>Change color</source>
         <translation>Changer la couleur</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogRGBColorPicker.qml" line="21"/>
+        <location filename="../qml/desktop/DialogRGBColorPicker.qml" line="22"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
@@ -1439,52 +1439,52 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>DialogSensorDetails</name>
     <message>
-        <location filename="../qml/desktop/DialogSensorDetails.qml" line="13"/>
+        <location filename="../qml/desktop/DialogSensorDetails.qml" line="14"/>
         <source>Sensor details</source>
         <translation>Détails du capteur</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogSensorDetails.qml" line="17"/>
+        <location filename="../qml/desktop/DialogSensorDetails.qml" line="18"/>
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogSensorDetails.qml" line="45"/>
+        <location filename="../qml/desktop/DialogSensorDetails.qml" line="46"/>
         <source>Connected</source>
         <translation>Connecté</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogSensorDetails.qml" line="54"/>
+        <location filename="../qml/desktop/DialogSensorDetails.qml" line="55"/>
         <source>Yes</source>
         <translation>Oui</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogSensorDetails.qml" line="54"/>
+        <location filename="../qml/desktop/DialogSensorDetails.qml" line="55"/>
         <source>No</source>
         <translation>Non</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogSensorDetails.qml" line="66"/>
+        <location filename="../qml/desktop/DialogSensorDetails.qml" line="67"/>
         <source>Battery level</source>
         <translation>Niveau de batterie</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogSensorDetails.qml" line="87"/>
+        <location filename="../qml/desktop/DialogSensorDetails.qml" line="88"/>
         <source>Wireless level</source>
         <translation>Niveau du signal</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogSensorDetails.qml" line="108"/>
+        <location filename="../qml/desktop/DialogSensorDetails.qml" line="109"/>
         <source>Uptime</source>
         <translation>Temps de fonctionnement</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogSensorDetails.qml" line="129"/>
+        <location filename="../qml/desktop/DialogSensorDetails.qml" line="130"/>
         <source>IP Address</source>
         <translation>Adresse IP</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogSensorDetails.qml" line="150"/>
+        <location filename="../qml/desktop/DialogSensorDetails.qml" line="151"/>
         <source>Wifi SSID</source>
         <translation>SSID Wifi</translation>
     </message>

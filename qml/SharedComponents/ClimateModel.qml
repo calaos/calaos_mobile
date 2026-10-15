@@ -174,7 +174,7 @@ Item {
 
     function optionLabel(o) {
         switch (o) {
-        case "off": return qsTr("Off")
+        case "off": return qsTr("Off", "fan option")
         case "on": return qsTr("On")
         case "auto": return qsTr("Auto")
         case "low": return qsTr("Low")
@@ -186,6 +186,11 @@ Item {
         case "horizontal": return qsTr("Horizontal")
         default: return humanize(o)
         }
+    }
+
+    //A swing that is off is a fixed vane, not a feature that is switched off
+    function swingLabel(o) {
+        return o === "off" ? qsTr("Fixed") : optionLabel(o)
     }
 
     function actionLabel(a) {

@@ -5,7 +5,7 @@
     <name>Application</name>
     <message>
         <location filename="../src/Application.cpp" line="207"/>
-        <location filename="../src/Application.cpp" line="386"/>
+        <location filename="../src/Application.cpp" line="391"/>
         <source>Network error</source>
         <translation>Erreur réseau</translation>
     </message>
@@ -22,8 +22,8 @@
         <location filename="../src/Application.cpp" line="211"/>
         <location filename="../src/Application.cpp" line="219"/>
         <location filename="../src/Application.cpp" line="231"/>
-        <location filename="../src/Application.cpp" line="390"/>
-        <location filename="../src/Application.cpp" line="546"/>
+        <location filename="../src/Application.cpp" line="395"/>
+        <location filename="../src/Application.cpp" line="551"/>
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
@@ -48,17 +48,17 @@
         <translation>Les identifiants ont été modifiés avec succès.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="387"/>
+        <location filename="../src/Application.cpp" line="392"/>
         <source>No network connection found, this application requires a network connection to work.</source>
         <translation>Aucune connexion réseau trouvée, cette application nécessite une connexion réseau pour fonctionner.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="544"/>
+        <location filename="../src/Application.cpp" line="549"/>
         <source>Login failed</source>
         <translation>Échec de l&apos;authentification</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="545"/>
+        <location filename="../src/Application.cpp" line="550"/>
         <source>Connection failed, please check your credentials.</source>
         <translation>Échec de la connexion, veuillez vérifier vos identifiants.</translation>
     </message>
@@ -187,6 +187,228 @@
         <location filename="../qml/desktop/CameraSingleView.qml" line="113"/>
         <source>Quit</source>
         <translation>Quitter</translation>
+    </message>
+</context>
+<context>
+    <name>ClimateDetail</name>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateDetail.qml" line="48"/>
+        <source>Room %1</source>
+        <translation>Pièce %1</translation>
+    </message>
+</context>
+<context>
+    <name>ClimateModel</name>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="165"/>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="198"/>
+        <source>Off</source>
+        <translation>Arrêt</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="166"/>
+        <source>Heat</source>
+        <translation>Chauffage</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="167"/>
+        <source>Cool</source>
+        <translation>Froid</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="168"/>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="179"/>
+        <source>Auto</source>
+        <translation>Auto</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="169"/>
+        <source>Dry</source>
+        <translation>Déshumidification</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="170"/>
+        <source>Fan only</source>
+        <translation>Ventilation</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="177"/>
+        <source>Off</source>
+        <comment>fan option</comment>
+        <translation>Désactivé</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="178"/>
+        <source>On</source>
+        <translation>Activé</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="180"/>
+        <source>Low</source>
+        <translation>Faible</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="181"/>
+        <source>Medium</source>
+        <translation>Moyen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="182"/>
+        <source>High</source>
+        <translation>Fort</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="183"/>
+        <source>Quiet</source>
+        <translation>Silencieux</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="184"/>
+        <source>Both</source>
+        <translation>Les deux</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="185"/>
+        <source>Vertical</source>
+        <translation>Vertical</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="186"/>
+        <source>Horizontal</source>
+        <translation>Horizontal</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="193"/>
+        <source>Fixed</source>
+        <translation>Fixe</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="199"/>
+        <source>Idle</source>
+        <translation>En veille</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="200"/>
+        <source>Heating</source>
+        <translation>Chauffe</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="201"/>
+        <source>Cooling</source>
+        <translation>Refroidit</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="202"/>
+        <source>Drying</source>
+        <translation>Déshumidifie</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="203"/>
+        <source>Fan</source>
+        <translation>Ventile</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="238"/>
+        <source>Sensor silent</source>
+        <translation>Sonde muette</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="239"/>
+        <source>Sensor missing</source>
+        <translation>Sonde absente</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="240"/>
+        <source>Waiting for the sensor</source>
+        <translation>En attente de la sonde</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="241"/>
+        <source>Sensor disconnected</source>
+        <translation>Sonde déconnectée</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="242"/>
+        <source>Humidity too high</source>
+        <translation>Humidité trop haute</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="243"/>
+        <source>Humidity sensor silent</source>
+        <translation>Sonde d&apos;humidité muette</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="250"/>
+        <source>Offline</source>
+        <translation>Hors ligne</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="253"/>
+        <source>Stopped</source>
+        <translation>Arrêté</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="256"/>
+        <source>Starts in %n min</source>
+        <translation>
+            <numerusform>Démarre dans %n min</numerusform>
+            <numerusform>Démarre dans %n min</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="266"/>
+        <source>Starts in %1 min %2 s</source>
+        <translation>Démarre dans %1 min %2</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="267"/>
+        <source>Starts in %1 s</source>
+        <translation>Démarre dans %1 s</translation>
+    </message>
+</context>
+<context>
+    <name>ClimateMore</name>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateMore.qml" line="47"/>
+        <source>Ventilation</source>
+        <translation>Ventilation</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateMore.qml" line="67"/>
+        <source>Swing</source>
+        <translation>Oscillation</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateMore.qml" line="87"/>
+        <source>Humidity %1 %</source>
+        <translation>Humidité %1 %</translation>
+    </message>
+</context>
+<context>
+    <name>ClimateReading</name>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateReading.qml" line="108"/>
+        <source>Minimum gap %1°</source>
+        <translation>Écart minimum %1°</translation>
+    </message>
+</context>
+<context>
+    <name>ClimateSheet</name>
+    <message>
+        <location filename="../qml/mobile/ClimateSheet.qml" line="81"/>
+        <source>Mode unknown</source>
+        <translation>Mode inconnu</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/ClimateSheet.qml" line="117"/>
+        <location filename="../qml/mobile/ClimateSheet.qml" line="163"/>
+        <source>More settings</source>
+        <translation>Plus de réglages</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/ClimateSheet.qml" line="134"/>
+        <source>Mode</source>
+        <translation>Mode</translation>
     </message>
 </context>
 <context>
@@ -913,6 +1135,36 @@
     </message>
 </context>
 <context>
+    <name>DialogClimate</name>
+    <message>
+        <location filename="../qml/desktop/DialogClimate.qml" line="56"/>
+        <location filename="../qml/desktop/DialogClimate.qml" line="119"/>
+        <location filename="../qml/desktop/DialogClimate.qml" line="144"/>
+        <source>Close</source>
+        <translation>Fermer</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogClimate.qml" line="81"/>
+        <source>Mode unknown</source>
+        <translation>Mode inconnu</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogClimate.qml" line="100"/>
+        <source>More settings</source>
+        <translation>Plus de réglages</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogClimate.qml" line="115"/>
+        <source>Mode — %1</source>
+        <translation>Mode — %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogClimate.qml" line="140"/>
+        <source>More settings — %1</source>
+        <translation>Plus de réglages — %1</translation>
+    </message>
+</context>
+<context>
     <name>DialogKeyboard</name>
     <message>
         <location filename="../qml/desktop/DialogKeyboard.qml" line="70"/>
@@ -1436,27 +1688,27 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>IOBase</name>
     <message>
-        <location filename="../src/RoomModel.cpp" line="546"/>
+        <location filename="../src/RoomModel.cpp" line="594"/>
         <source>State: Opened.</source>
         <translation>Statut: Ouvert.</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="548"/>
+        <location filename="../src/RoomModel.cpp" line="596"/>
         <source>State: %1% Opened.</source>
         <translation>Statut: %1% Ouvert.</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="550"/>
+        <location filename="../src/RoomModel.cpp" line="598"/>
         <source>State: %1% Closed.</source>
         <translation>Statut: %1% Fermé.</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="553"/>
+        <location filename="../src/RoomModel.cpp" line="601"/>
         <source>State: Closed.</source>
         <translation>Statut: Fermé.</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="556"/>
+        <location filename="../src/RoomModel.cpp" line="604"/>
         <source>Action: Stopped.</source>
         <translation>Action: Arrêté.</translation>
     </message>
@@ -1465,24 +1717,30 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
         <translation type="vanished">Action: Stoppé.</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="558"/>
+        <location filename="../src/RoomModel.cpp" line="606"/>
         <source>Action: Closing...</source>
         <translation>Action: Fermeture...</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="560"/>
+        <location filename="../src/RoomModel.cpp" line="608"/>
         <source>Action: Opening...</source>
         <translation>Action: Ouverture...</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="706"/>
         <source>Change value</source>
-        <translation>Changer la valeur</translation>
+        <translation type="vanished">Changer la valeur</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="706"/>
         <source>Enter new value</source>
-        <translation>Entrez une nouvelle valeur</translation>
+        <translation type="vanished">Entrez une nouvelle valeur</translation>
+    </message>
+</context>
+<context>
+    <name>IOClimate</name>
+    <message>
+        <location filename="../qml/SharedComponents/IOClimate.qml" line="34"/>
+        <source>Mode unknown</source>
+        <translation>Mode inconnu</translation>
     </message>
 </context>
 <context>
@@ -2443,14 +2701,24 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
 <context>
     <name>main</name>
     <message>
-        <location filename="../qml/desktop/main.qml" line="374"/>
+        <location filename="../qml/desktop/main.qml" line="380"/>
         <source>Keyboard</source>
         <translation>Clavier</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/main.qml" line="375"/>
+        <location filename="../qml/desktop/main.qml" line="381"/>
         <source>Change text for &apos;%1&apos;</source>
         <translation>Changer le texte pour &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/main.qml" line="405"/>
+        <source>Change value</source>
+        <translation>Changer la valeur</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/main.qml" line="406"/>
+        <source>Enter new value</source>
+        <translation>Entrez une nouvelle valeur</translation>
     </message>
 </context>
 </TS>

@@ -4,6 +4,10 @@
 #include <QQmlPropertyMap>
 #include <QFontDatabase>
 #include <QFile>
+#include <QCoreApplication>
+#include <QTranslator>
+#include <QXmlStreamReader>
+#include <QVariantMap>
 #include <QStringList>
 #include <QVector>
 
@@ -82,6 +86,86 @@ public:
         IOBase::setClock(nullptr);
     }
 
+    void setEngine(QQmlEngine *e) { engine = e; }
+
+    //Installs lang/calaos_<lang>.qm as the app does ("" goes back to English) and
+    //re-evaluates the texts that are on screen
+    Q_INVOKABLE bool setLanguage(const QString &lang)
+    {
+        if (translator)
+        {
+            QCoreApplication::removeTranslator(translator);
+            delete translator;
+            translator = nullptr;
+        }
+        bool ok = true;
+        if (!lang.isEmpty())
+        {
+            translator = new QTranslator(this);
+            ok = translator->load(QStringLiteral(CALAOS_LANG_DIR "/calaos_%1.qm").arg(lang));
+            if (ok)
+                QCoreApplication::installTranslator(translator);
+        }
+        if (engine)
+            engine->retranslate();
+        return ok;
+    }
+
+    //Every message of the climate contexts of lang/calaos_<lang>.ts, as read from the file:
+    //{ context, source, translation, finished }
+    Q_INVOKABLE QVariantList climateStrings(const QString &lang) const
+    {
+        QVariantList out;
+        QFile f(QStringLiteral(CALAOS_LANG_DIR "/calaos_%1.ts").arg(lang));
+        if (!f.open(QIODevice::ReadOnly))
+            return out;
+        QXmlStreamReader xml(&f);
+        QString context, source, translation;
+        bool finished = true, numerusEmpty = false;
+        while (!xml.atEnd())
+        {
+            xml.readNext();
+            if (xml.isStartElement())
+            {
+                const auto name = xml.name();
+                if (name == u"context")
+                    context.clear();
+                else if (name == u"name" && context.isEmpty())
+                    context = xml.readElementText();
+                else if (name == u"message")
+                {
+                    source.clear();
+                    translation.clear();
+                    finished = true;
+                    numerusEmpty = false;
+                }
+                else if (name == u"source")
+                    source = xml.readElementText();
+                else if (name == u"translation")
+                {
+                    const QString type = xml.attributes().value(QLatin1String("type")).toString();
+                    finished = type.isEmpty();
+                    translation = xml.readElementText(QXmlStreamReader::IncludeChildElements);
+                }
+                else if (name == u"numerusform")
+                {
+                    if (xml.readElementText().isEmpty())
+                        numerusEmpty = true;
+                }
+            }
+            else if (xml.isEndElement() && xml.name() == u"message")
+            {
+                if (context.contains(QLatin1String("Climate")))
+                    out << QVariantMap{ { "context", context }, { "source", source },
+                                        { "translation", translation.trimmed() },
+                                        { "finished", finished && !numerusEmpty } };
+            }
+            else if (xml.isEndElement() && xml.name() == u"context")
+                context.clear();
+        }
+        return out;
+    }
+
     Q_INVOKABLE void setNow(double ms) { fakeNow = qint64(ms); }
     Q_INVOKABLE double now() const { return double(fakeNow); }
 
@@ -146,6 +230,8 @@ public:
     }
 
 private:
+    QQmlEngine *engine = nullptr;
+    QTranslator *translator = nullptr;
     RecordingConnection con;
     QVector<IOBase *> ios;
     QVector<RoomModel *> rooms;
@@ -198,7 +284,9 @@ public slots:
 
         engine->rootContext()->setContextProperty(QStringLiteral("calaosFont"), fonts);
         engine->rootContext()->setContextProperty(QStringLiteral("calaosApp"), new AppStub);
-        engine->rootContext()->setContextProperty(QStringLiteral("harness"), new Harness);
+        auto *harness = new Harness;
+        harness->setEngine(engine);
+        engine->rootContext()->setContextProperty(QStringLiteral("harness"), harness);
     }
 };
 

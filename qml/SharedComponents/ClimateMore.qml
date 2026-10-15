@@ -70,7 +70,7 @@ GridLayout {
             Layout.fillWidth: true
             fontFamily: root.fontFamily
             active: root.climate.canControl
-            choices: root.climate.toChoices(root.climate.caps.swingModes, root.climate.optionLabel)
+            choices: root.climate.toChoices(root.climate.caps.swingModes, root.climate.swingLabel)
             current: String(root.climate.shown("swing_mode"))
             onChosen: function(v) { root.climate.commit({ swing_mode: v }) }
         }

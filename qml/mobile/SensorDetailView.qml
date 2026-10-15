@@ -20,7 +20,7 @@ Item {
         id: flick
 
         y: header.height
-        x: 2 * calaosApp.density
+        x: Units.dp(2)
         width: parent.width - x
         height: parent.height - header.height
 
@@ -31,8 +31,8 @@ Item {
             id: mainLayout
 
             anchors {
-                left: parent.left; leftMargin: 16 * calaosApp.density
-                right: parent.right; rightMargin: 16 * calaosApp.density
+                left: parent.left; leftMargin: Units.dp(16)
+                right: parent.right; rightMargin: Units.dp(16)
             }
 
             Item {
@@ -119,7 +119,7 @@ Item {
                 Text {
                     font { family: calaosFont.fontFamily; weight: Font.Medium; pointSize: 14 }
                     color: "#E7E7E7"
-                    text: Calaos.formatTime(sensorDetailView.sensor.statusUptime)
+                    text: CalaosJs.formatDuration(sensorDetailView.sensor.statusUptime, CalaosJs.Duration.Short)
                     Layout.alignment: Qt.AlignVCenter
                 }
             }

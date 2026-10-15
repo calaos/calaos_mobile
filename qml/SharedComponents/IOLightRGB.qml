@@ -6,7 +6,7 @@ ItemBase {
     property variant modelData
 
     height: colorLayout.implicitHeight +
-            40 * calaosApp.density //default height + sliders
+            Units.dp(40) //default height + sliders
 
     RowLayout {
         id: row
@@ -47,16 +47,9 @@ ItemBase {
             sensor: modelData
         }
 
-        ItemButtonAction {
-            id: bton
-            imageSource: "button_light_on"
-
-            onButtonClicked: {
-                feedbackAnim()
-                modelData.sendTrue()
-            }
-        }
-
+        //buttons go from deactivate to activate, left to right: in a RowLayout
+        //the declaration order is the visual order, unlike the anchors this
+        //code used to rely on
         ItemButtonAction {
             id: btoff
             imageSource: "button_light_off"
@@ -66,39 +59,49 @@ ItemBase {
                 modelData.sendFalse()
             }
         }
+
+        ItemButtonAction {
+            id: bton
+            imageSource: "button_light_on"
+
+            onButtonClicked: {
+                feedbackAnim()
+                modelData.sendTrue()
+            }
+        }
     }
 
     ColumnLayout {
         id: colorLayout
 
         anchors {
-            left: parent.left; leftMargin: 16 * calaosApp.density
-            right: parent.right; rightMargin: 16 * calaosApp.density
-            top: row.bottom; bottomMargin: 8 * calaosApp.density
+            left: parent.left; leftMargin: Units.dp(16)
+            right: parent.right; rightMargin: Units.dp(16)
+            top: row.bottom; bottomMargin: Units.dp(8)
         }
 
         MouseArea {
             id: currColor
 
-            Layout.preferredWidth: 130 * calaosApp.density
-            Layout.minimumHeight: 50 * calaosApp.density
+            Layout.preferredWidth: Units.dp(130)
+            Layout.minimumHeight: Units.dp(50)
             Layout.alignment: Qt.AlignRight
 
             Rectangle {
                 anchors {
                     fill: parent
-                    margins: 10 * calaosApp.density
+                    margins: Units.dp(10)
                     rightMargin: 0
                 }
                 border.color: Qt.rgba(200, 200, 200, 0.1)
-                border.width: 1 * calaosApp.density
-                radius: 4 * calaosApp.density
+                border.width: Units.dp(1)
+                radius: Units.dp(4)
                 color: "transparent"
 
                 Rectangle {
                     anchors {
                         fill: parent
-                        margins: 4 * calaosApp.density
+                        margins: Units.dp(4)
                     }
                     color: modelData.rgbColor
                 }

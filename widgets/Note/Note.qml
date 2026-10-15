@@ -1,7 +1,7 @@
-import QtQuick 2.5
-import SharedComponents 1.0
-import QuickFlux 1.0
-import "qrc:/qml/quickflux"
+import QtQuick
+import SharedComponents
+import QuickFlux
+import "../../qml/quickflux"
 
 Flipable {
     id: flipableNote
@@ -51,8 +51,6 @@ Flipable {
         Filter {
             type: ActionTypes.changeNoteText
             onDispatched: (filtertype, message) => {
-                console.log("note text update")
-
                 if (message.returnPayload.uuid !== widgetModel.uuid) {
                     return; //not for us
                 }

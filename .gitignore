@@ -23,3 +23,6 @@ CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
 *.cmake.user
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/

@@ -2,6 +2,8 @@ import QtQuick
 import Calaos
 import QtQuick.Layouts
 import "."
+import QuickFlux
+import "../quickflux"
 
 ItemBase {
     property variant modelData
@@ -33,7 +35,7 @@ ItemBase {
 
             onButtonClicked: {
                 feedbackAnim()
-                modelData.askStateText()
+                AppActions.openAskTextForIo(modelData)
             }
 
             visible: (modelData.rw || modelData.ioType === Common.StringOut) &&

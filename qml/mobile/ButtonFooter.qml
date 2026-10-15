@@ -7,29 +7,29 @@ BorderImage {
     property alias buttonLabel: txt.text
     signal buttonClicked()
 
-    height: 40 * calaosApp.density
-    width: ic.width + txt.implicitWidth + 20 * calaosApp.density < 120 * calaosApp.density?
-               120 * calaosApp.density:
-               ic.width + txt.implicitWidth + 20 * calaosApp.density
+    height: Units.dp(40)
+    width: ic.width + txt.implicitWidth + Units.dp(20) < Units.dp(120)?
+               Units.dp(120):
+               ic.width + txt.implicitWidth + Units.dp(20)
 
     source: calaosApp.getPictureSized("button_footer_bg")
 
     border {
-        left: 40 * calaosApp.density
-        right: 40 * calaosApp.density
-        top: 10 * calaosApp.density
-        bottom: 10 * calaosApp.density
+        left: Units.dp(40)
+        right: Units.dp(40)
+        top: Units.dp(10)
+        bottom: Units.dp(10)
     }
 
     Image {
         id: ic
 
         source: icon
-        width: icon === ""?0: 34 * calaosApp.density
-        height: 34 * calaosApp.density
+        width: icon === ""?0: Units.dp(34)
+        height: Units.dp(34)
 
         anchors {
-            left: parent.left; leftMargin: 3 * calaosApp.density
+            left: parent.left; leftMargin: Units.dp(3)
             verticalCenter: parent.verticalCenter
         }
     }
@@ -39,7 +39,7 @@ BorderImage {
         color: "#e7e7e7"
         font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
         anchors {
-            left: ic.right; leftMargin: 5 * calaosApp.density
+            left: ic.right; leftMargin: Units.dp(5)
             verticalCenter: parent.verticalCenter
         }
     }

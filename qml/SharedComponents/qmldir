@@ -3,13 +3,30 @@ module SharedComponents
 CalaosItemBase 1.0 CalaosItemBase.qml
 CalaosSlider 1.0 CalaosSlider.qml
 Fonts 1.0 Fonts.qml
+IOAnalogStyled 1.0 IOAnalogStyled.qml
+IOBinaryDevice 1.0 IOBinaryDevice.qml
+IOClimate 1.0 IOClimate.qml
+ClimateModel 1.0 ClimateModel.qml
+ClimateListItem 1.0 ClimateListItem.qml
+ClimateDial 1.0 ClimateDial.qml
+ClimateReading 1.0 ClimateReading.qml
+ClimateDetail 1.0 ClimateDetail.qml
+ClimateModePill 1.0 ClimateModePill.qml
+ClimateRows 1.0 ClimateRows.qml
+ClimateMore 1.0 ClimateMore.qml
+ClimateIcon 1.0 ClimateIcon.qml
+IOBoiler 1.0 IOBoiler.qml
 IOFavAllLights 1.0 IOFavAllLights.qml
+IOHeater 1.0 IOHeater.qml
 IOLight 1.0 IOLight.qml
 IOLightDimmer 1.0 IOLightDimmer.qml
 IOLightRGB 1.0 IOLightRGB.qml
+IOOutlet 1.0 IOOutlet.qml
+IOPump 1.0 IOPump.qml
 IOScenario 1.0 IOScenario.qml
 IOShutter 1.0 IOShutter.qml
 IOShutterSmart 1.0 IOShutterSmart.qml
+IOSwitch 1.0 IOSwitch.qml
 IOTemp 1.0 IOTemp.qml
 IOVarBool 1.0 IOVarBool.qml
 IOVarInt 1.0 IOVarInt.qml
@@ -18,7 +35,7 @@ ItemBase 1.0 ItemBase.qml
 ItemButtonAction 1.0 ItemButtonAction.qml
 IconItem 1.0 IconItem.qml
 AnimatedIcon 1.0 AnimatedIcon.qml
-Calaos 1.0 calaos.js
+CalaosJs 1.0 calaos.js
 singleton Units 1.0 Units.qml
 ScrollBar 1.0 ScrollBar.qml
 ItemListView 1.0 ItemListView.qml
@@ -27,3 +44,6 @@ CalaosRadio 1.0 CalaosRadio.qml
 CalaosCheck 1.0 CalaosCheck.qml
 CalaosCombo 1.0 CalaosCombo.qml
 singleton Theme 1.0 Theme.qml
+ScrollingText 1.0 ScrollingText.qml
+SensorStatusIcon 1.0 SensorStatusIcon.qml
+SingleShotTimer 1.0 SingleShotTimer.qml

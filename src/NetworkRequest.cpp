@@ -1,5 +1,10 @@
 #include "NetworkRequest.h"
 
+//Abort a transfer that stops making progress. Set on the request and not on
+//the manager because setNetManager() can hand us a manager owned by someone
+//else (CalaosOsAPI), which we must not reconfigure behind its back.
+static const int HTTP_TRANSFER_TIMEOUT = 30000;
+
 NetworkRequest::NetworkRequest(QObject *parent):
     QObject(parent),
     sslConfiguration(QSslConfiguration::defaultConfiguration())
@@ -53,6 +58,7 @@ bool NetworkRequest::start()
 
     QNetworkRequest request;
     request.setUrl(QUrl(url));
+    request.setTransferTimeout(HTTP_TRANSFER_TIMEOUT);
     lastError.clear();
     request.setSslConfiguration(sslConfiguration);
 
@@ -151,6 +157,8 @@ void NetworkRequest::nmReadyRead()
 
 void NetworkRequest::nmFinished()
 {
+    httpStatusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+
     if (reply->error() != QNetworkReply::NoError)
     {
         lastError = reply->errorString();
@@ -180,6 +188,8 @@ void NetworkRequest::nmFinishedJson()
 {
     QJsonParseError err;
     QJsonDocument jdoc;
+
+    httpStatusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
 
     if (reply->error() != QNetworkReply::NoError)
     {
@@ -229,6 +239,8 @@ void NetworkRequest::nmFinishedJson()
 
 void NetworkRequest::nmFinishedData()
 {
+    httpStatusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+
     if (reply->error() != QNetworkReply::NoError)
     {
         lastError = reply->errorString();

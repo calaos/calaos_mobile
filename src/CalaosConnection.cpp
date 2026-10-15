@@ -1,18 +1,55 @@
 #include "CalaosConnection.h"
 #include <QJsonDocument>
+#include <QUrlQuery>
 #include <QDebug>
 #include "HardwareUtils.h"
+#include "Common.h"
+#include "JsonKeys.h"
+
+//Query parameters and JSON keys that carry credentials and must never be logged
+static const QStringList &credentialKeys()
+{
+    //"u" and "p" are not JSON keys but the short query parameters of the
+    //legacy v1 camera url, so they stay literals here (see JsonKeys.h).
+    static const QStringList keys = { JsonKeys::CnUser,
+                                      JsonKeys::CnPass,
+                                      QStringLiteral("u"),
+                                      QStringLiteral("p") };
+    return keys;
+}
+
+//Default transfer timeout for every "short" HTTP request (login, commands,
+//state queries, camera pictures, audio covers). Those are all request/reply
+//exchanges the server answers immediately, so 30s without a single byte
+//moving means the link is dead, not slow.
+static const int HTTP_TRANSFER_TIMEOUT = 30000;
+
+//The long-poll (action "poll_listen") is the one exception: the server keeps
+//the request deliberately open until an event happens, so a calm installation
+//legitimately transfers nothing for a long time. It gets its own, much larger
+//per request timeout, which QNetworkAccessManager does NOT override (the
+//manager wide value is only used as a fallback when the request carries none).
+//It still bounds a silently dead connection instead of hanging forever.
+static const int HTTP_POLL_TRANSFER_TIMEOUT = 120000;
+
+//Pause before a long-poll that failed is simply retried, while the session and
+//the UI are kept as they are. Short on purpose: this is not the reconnection
+//backoff, only a breather so a server answering instantly with an error cannot
+//spin the event loop.
+static const int POLL_RETRY_DELAY = 1000;
 
 CalaosConnection::CalaosConnection(QObject *parent) :
     QObject(parent)
 {
     accessManager = new QNetworkAccessManager(this);
     accessManagerCam = new QNetworkAccessManager(this);
+    accessManager->setTransferTimeout(HTTP_TRANSFER_TIMEOUT);
+    accessManagerCam->setTransferTimeout(HTTP_TRANSFER_TIMEOUT);
     pollReply = nullptr;
-    connect(accessManager, SIGNAL(sslErrors(QNetworkReply*, const QList<QSslError> &)),
-            this, SLOT(sslErrors(QNetworkReply*, const QList<QSslError> &)));
-    connect(accessManagerCam, SIGNAL(sslErrors(QNetworkReply*, const QList<QSslError> &)),
-            this, SLOT(sslErrors(QNetworkReply*, const QList<QSslError> &)));
+    connect(accessManager, &QNetworkAccessManager::sslErrors,
+            this, &CalaosConnection::sslErrors);
+    connect(accessManagerCam, &QNetworkAccessManager::sslErrors,
+            this, &CalaosConnection::sslErrors);
 }
 
 void CalaosConnection::sslErrors(QNetworkReply *reply, const QList<QSslError> &)
@@ -25,18 +62,206 @@ void CalaosConnection::sslErrorsWebsocket(const QList<QSslError> &)
     wsocket->ignoreSslErrors();
 }
 
-void CalaosConnection::login(QString user, QString pass, QString h)
+QString CalaosConnection::redactUrl(const QUrl &url)
 {
-    if (constate != ConStateUnknown)
+    if (!url.hasQuery())
+        return url.toString();
+
+    const QList<QPair<QString, QString>> items = QUrlQuery(url).queryItems(QUrl::FullyEncoded);
+    QUrlQuery redacted;
+    bool changed = false;
+
+    for (const auto &item: items)
+    {
+        if (credentialKeys().contains(item.first))
+        {
+            redacted.addQueryItem(item.first, QStringLiteral("***"));
+            changed = true;
+        }
+        else
+        {
+            redacted.addQueryItem(item.first, item.second);
+        }
+    }
+
+    if (!changed)
+        return url.toString();
+
+    QUrl u(url);
+    u.setQuery(redacted);
+    return u.toString();
+}
+
+QByteArray CalaosConnection::redactJson(const QJsonObject &obj)
+{
+    QJsonObject o = obj;
+    for (const QString &key: credentialKeys())
+    {
+        if (o.contains(key))
+            o[key] = QStringLiteral("***");
+    }
+
+    return QJsonDocument(o).toJson();
+}
+
+void CalaosConnection::emitStateChanged()
+{
+    if (lastEmittedState == reconnectPolicy.state())
         return;
 
-    constate = ConStateUnknown;
+    lastEmittedState = reconnectPolicy.state();
+    emit connectionStateChanged(int(lastEmittedState));
+}
 
-    HardwareUtils::Instance()->showNetworkActivity(true);
+void CalaosConnection::cancelReconnectTimer()
+{
+    if (reconnectTimer)
+        reconnectTimer->stop();
+}
+
+void CalaosConnection::armReconnectTimer()
+{
+    if (!reconnectTimer)
+    {
+        reconnectTimer = new QTimer(this);
+        reconnectTimer->setSingleShot(true);
+        connect(reconnectTimer, &QTimer::timeout, this, &CalaosConnection::reconnectTimerFired);
+    }
+
+    //start() on an already running timer restarts it: there is physically only
+    //one reconnection timer in the process, it can never be stacked.
+    const int delay = reconnectPolicy.pendingDelayMs();
+    qInfo() << "Reconnection attempt #" << reconnectPolicy.failureCount()
+            << " scheduled in " << delay << "ms";
+    reconnectTimer->start(delay);
+}
+
+void CalaosConnection::reconnectTimerFired()
+{
+    if (reconnectPolicy.state() != ReconnectPolicy::Reconnecting)
+        return;
+
+    startConnection(username, password, lasthost, ReconnectPolicy::AutoRetry);
+}
+
+void CalaosConnection::resetTransport()
+{
+    constate = ConStateUnknown;
+    wsFallbackDone = false;
+    demoMode = false;
+    uuidPolling.clear();
+
+    //The login handler is hooked on the manager, not on the reply: unhook it
+    //before aborting anything, otherwise the abort of the *previous* attempt
+    //would be reported as a failure of the *next* one.
+    disconnect(accessManager, &QNetworkAccessManager::finished,
+               this, &CalaosConnection::loginFinished);
+
+    closeWebsocket();
+
+    if (pollReply)
+    {
+        //Clearing the member first makes the finished() lambda of that reply
+        //recognise itself as obsolete and bail out.
+        QNetworkReply *reply = pollReply;
+        pollReply = nullptr;
+        reply->abort();
+        reply->deleteLater();
+    }
+
+    const QList<QNetworkReply *> replies = reqReplies;
+    reqReplies.clear();
+    foreach (QNetworkReply *reply, replies)
+    {
+        reply->abort();
+        reply->deleteLater();
+    }
+}
+
+void CalaosConnection::connectionLost(const QString &reason, ReconnectPolicy::Failure kind)
+{
+    if (reconnectPolicy.state() != ReconnectPolicy::Connecting &&
+        reconnectPolicy.state() != ReconnectPolicy::Connected)
+    {
+        //Already torn down and already scheduled: a second failure report for
+        //the same session must not restart anything.
+        return;
+    }
+
+    qWarning() << "Calaos connection lost: " << reason;
+
+    resetTransport();
+
+    const bool retry = reconnectPolicy.failed(kind);
+
+    //Notified before the state change so Application::loginFailed() still sees
+    //the previous applicationStatus and can run its "already disconnected"
+    //guard on a meaningful value.
+    if (kind == ReconnectPolicy::AuthFailure && reconnectPolicy.hasGivenUp())
+        emit loginFailed();
+    else
+        emit disconnected();
+
+    emitStateChanged();
+
+    if (retry)
+        armReconnectTimer();
+}
+
+void CalaosConnection::requestImmediateReconnect(QString user, QString pass, QString h)
+{
+    //Discovery fires once per announce datagram, so it can be chatty. It is
+    //allowed to short-circuit the delay currently pending, but not more than
+    //once per second: otherwise a talkative LAN would defeat the backoff.
+    if (lastAttemptTimer.isValid() &&
+        lastAttemptTimer.elapsed() < ReconnectPolicy::BaseDelayMs)
+        return;
+
+    startConnection(user, pass, h, ReconnectPolicy::AutoRetry);
+}
+
+void CalaosConnection::suspend()
+{
+    cancelReconnectTimer();
+    resetTransport();
+    reconnectPolicy.suspend();
+    emitStateChanged();
+    emit disconnected();
+}
+
+void CalaosConnection::resume(QString user, QString pass, QString h)
+{
+    if (!reconnectPolicy.canResume())
+        return;
+
+    startConnection(user, pass, h, ReconnectPolicy::AutoRetry);
+}
+
+void CalaosConnection::login(QString user, QString pass, QString h)
+{
+    //An explicit login: the user (or the app coming back to the foreground)
+    //asked for it, so the backoff and any previous give-up are reset.
+    startConnection(user, pass, h, ReconnectPolicy::UserRequest);
+}
+
+void CalaosConnection::startConnection(QString user, QString pass, QString h, ReconnectPolicy::Trigger trigger)
+{
+    //Single anti double-login guard of the whole application.
+    if (!reconnectPolicy.canBeginAttempt(trigger))
+        return;
+
+    //Tear the previous transport down first: aborting its replies can report
+    //failures synchronously, and those must land while the policy still knows
+    //about the old attempt.
+    resetTransport();
+    cancelReconnectTimer();
+    reconnectPolicy.beginAttempt(trigger);
+    lastAttemptTimer.restart();
+    emitStateChanged();
 
     username = user;
     password = pass;
-    uuidPolling.clear();
+    lasthost = h;
 
     if ((user == "demo" || user == "demo@calaos.fr") &&
         pass == "demo" &&
@@ -47,9 +272,13 @@ void CalaosConnection::login(QString user, QString pass, QString h)
         //Wait some time for animation
         QTimer::singleShot(1000, this, [this]()
         {
+            //A logout, or any newer attempt, disarms this one.
+            if (!demoMode || reconnectPolicy.state() != ReconnectPolicy::Connecting)
+                return;
             constate = ConStateWebsocket;
-            HardwareUtils::Instance()->showNetworkActivity(false);
-            emit homeLoaded({});
+            reconnectPolicy.attemptSucceeded();
+            emitStateChanged();
+            emitHomeLoaded(QVariantMap());
         });
 
         return;
@@ -89,13 +318,15 @@ void CalaosConnection::login(QString user, QString pass, QString h)
 void CalaosConnection::connectHttp(QString h)
 {
     QJsonObject jroot;
-    jroot["cn_user"] = username;
-    jroot["cn_pass"] = password;
-    jroot["action"] = QStringLiteral("get_home");
+    jroot[JsonKeys::CnUser] = username;
+    jroot[JsonKeys::CnPass] = password;
+    jroot[JsonKeys::Action] = QStringLiteral("get_home");
     QJsonDocument jdoc(jroot);
 
-    connect(accessManager, SIGNAL(finished(QNetworkReply*)),
-            this, SLOT(loginFinished(QNetworkReply*)));
+    //UniqueConnection: even if two paths ever managed to reach connectHttp()
+    //for the same attempt, the answer must be handled exactly once.
+    connect(accessManager, &QNetworkAccessManager::finished,
+            this, &CalaosConnection::loginFinished, Qt::UniqueConnection);
 
     QUrl url(h);
     QNetworkRequest request(url);
@@ -106,16 +337,19 @@ void CalaosConnection::connectHttp(QString h)
 
 void CalaosConnection::connectWebsocket(QString h)
 {
-    qDebug() << "Trying to connect with websocket to: " << h;
+    qDebug() << "Trying to connect with websocket to: " << redactUrl(QUrl(h));
 
     if (!wsocket)
     {
         wsocket = new QWebSocket();
-        connect(wsocket, SIGNAL(sslErrors(QList<QSslError>)),
-                this, SLOT(sslErrorsWebsocket(QList<QSslError>)));
+        connect(wsocket, &QWebSocket::sslErrors,
+                this, &CalaosConnection::sslErrorsWebsocket);
         connect(wsocket, &QWebSocket::connected, this, &CalaosConnection::onWsConnected);
         connect(wsocket, &QWebSocket::disconnected, this, &CalaosConnection::onWsDisconnected);
-        connect(wsocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(onWsError()));
+        //errorOccurred(), not the error() overload: error() is both a getter and
+        //a signal on QWebSocket (so &QWebSocket::error is ambiguous) and the
+        //signal is deprecated since Qt 6.5. Same signal, current name.
+        connect(wsocket, &QWebSocket::errorOccurred, this, &CalaosConnection::onWsError);
     }
 
     wsocket->open(h);
@@ -125,19 +359,30 @@ void CalaosConnection::closeWebsocket()
 {
     if (wsocket)
     {
+        //Unhook first: deleteLater() does not close the socket right away, and
+        //a late disconnected()/error() from a socket we already gave up on
+        //used to re-enter the fallback and the failure handling.
+        disconnect(wsocket, nullptr, this, nullptr);
         wsocket->deleteLater();
         wsocket = nullptr;
     }
 
+    //deleteLater(), not delete: closeWebsocket() is now reachable from the
+    //wsPingTimeout handler itself (a ping timeout is a lost connection), and
+    //destroying a QTimer while its own timeout() is being emitted is a crash.
     if (wsPingTimeout)
     {
-        delete wsPingTimeout;
+        wsPingTimeout->stop();
+        wsPingTimeout->disconnect(this);
+        wsPingTimeout->deleteLater();
         wsPingTimeout = nullptr;
     }
 
     if (wsPing)
     {
-        delete wsPing;
+        wsPing->stop();
+        wsPing->disconnect(this);
+        wsPing->deleteLater();
         wsPing = nullptr;
     }
 
@@ -151,14 +396,29 @@ void CalaosConnection::onWsConnected()
     connect(wsocket, &QWebSocket::textMessageReceived, this, &CalaosConnection::onWsTextMessageReceived);
 
     QJsonObject jroot, jdata;
-    jroot["msg"] = QStringLiteral("login");
-    jdata["cn_user"] = username;
-    jdata["cn_pass"] = password;
-    jroot["data"] = jdata;
+    jroot[JsonKeys::Msg] = QStringLiteral("login");
+    jdata[JsonKeys::CnUser] = username;
+    jdata[JsonKeys::CnPass] = password;
+    jroot[JsonKeys::Data] = jdata;
     QJsonDocument jdoc(jroot);
 
     //Do login procedure
     wsocket->sendTextMessage(jdoc.toJson());
+
+    //Both timers must exist before the pong handler is connected, as the
+    //handler restarts wsPingTimeout as soon as a pong is received.
+    wsPing = new QTimer(this);
+    connect(wsPing, &QTimer::timeout, this, [=]()
+    {
+        wsocket->ping("calaos_ping");
+    });
+
+    wsPingTimeout = new QTimer(this);
+    connect(wsPingTimeout, &QTimer::timeout, this, [=]()
+    {
+        //Transient by nature: tear down and let the backoff bring us back.
+        connectionLost(QStringLiteral("websocket ping timeout"));
+    });
 
     connect(wsocket, &QWebSocket::pong, this, [=](quint64 elapsedTime, const QByteArray &payload)
     {
@@ -171,19 +431,7 @@ void CalaosConnection::onWsConnected()
         wsPingTimeout->start();
     });
 
-    wsPing = new QTimer(this);
-    connect(wsPing, &QTimer::timeout, this, [=]()
-    {
-        wsocket->ping("calaos_ping");
-    });
     wsPing->start(5 * 1000); //every 5s send a ping to calaos_server
-
-    wsPingTimeout = new QTimer(this);
-    connect(wsPingTimeout, &QTimer::timeout, this, [=]()
-    {
-        qWarning() << "Websocket connection timeout, disconnect!";
-        logout();
-    });
     wsPingTimeout->start(20 * 1000); //20s timeout
 
     QTimer::singleShot(100, this, [=]()
@@ -201,8 +449,8 @@ void CalaosConnection::onWsConnected()
 
         //Send the push device token to register the mobile device to calaos_server for push notif
         sendWebsocket(QStringLiteral("register_push"),
-                      {{ "token", HardwareUtils::Instance()->getDeviceToken() },
-                       { "hardware", hw }});
+                      {{ JsonKeys::Token, HardwareUtils::Instance()->getDeviceToken() },
+                       { JsonKeys::Hardware, hw }});
     });
 }
 
@@ -210,12 +458,7 @@ void CalaosConnection::onWsDisconnected()
 {
     qDebug() << "Websocket disconnected";
 
-    closeWebsocket();
-
-    if (constate == ConStateTryWebsocket)
-        connectHttp(httphost);
-    else
-        emit loginFailed();
+    handleWebsocketFailure(QStringLiteral("websocket disconnected"));
 }
 
 void CalaosConnection::onWsError()
@@ -224,56 +467,74 @@ void CalaosConnection::onWsError()
 
     qDebug() << "Websocket error: " << wsocket->errorString();
 
+    handleWebsocketFailure(wsocket->errorString());
+}
+
+void CalaosConnection::handleWebsocketFailure(const QString &reason)
+{
+    //A websocket that fails usually emits error() *and* disconnected(). Both
+    //used to close the socket and start an HTTP login, giving two concurrent
+    //logins. Only the first one through here may engage the fallback.
+    const bool engageFallback = (constate == ConStateTryWebsocket) && !wsFallbackDone;
+
     closeWebsocket();
 
-    if (constate == ConStateTryWebsocket)
+    if (engageFallback)
+    {
+        wsFallbackDone = true;
+        qDebug() << "Websocket failed, falling back to HTTP";
         connectHttp(httphost);
-    else
-        emit loginFailed();
+        return;
+    }
+
+    if (constate == ConStateTryWebsocket)
+    {
+        //Fallback already engaged by the sibling signal, the HTTP login is in
+        //flight: nothing to do, and above all nothing to start.
+        return;
+    }
+
+    connectionLost(reason);
 }
 
 void CalaosConnection::logout()
 {
-    HardwareUtils::Instance()->showNetworkActivity(false);
+    cancelReconnectTimer();
+    resetTransport();
+    //Explicit logout: no automatic reconnection is wanted any more.
+    reconnectPolicy.stop();
+    emitStateChanged();
 
-    constate = ConStateUnknown;
-
-    if (demoMode)
-        demoMode = false;
-
-    closeWebsocket();
-
-    if (pollReply)
-    {
-        pollReply->abort();
-        pollReply->deleteLater();
-        pollReply = nullptr;
-    }
-
-    foreach (QNetworkReply *reply, reqReplies)
-    {
-        reply->abort();
-        reply->deleteLater();
-    }
-    reqReplies.clear();
-
-    uuidPolling.clear();
     emit disconnected();
 }
 
 void CalaosConnection::loginFinished(QNetworkReply *reply)
 {
-    HardwareUtils::Instance()->showNetworkActivity(false);
-
-    disconnect(accessManager, SIGNAL(finished(QNetworkReply*)),
-               this, SLOT(loginFinished(QNetworkReply*)));
+    disconnect(accessManager, &QNetworkAccessManager::finished,
+               this, &CalaosConnection::loginFinished);
 
     reply->deleteLater();
     if (reply->error() != QNetworkReply::NoError)
     {
-        qDebug() << "Error in " << reply->url() << ":" << reply->errorString();
-        constate = ConStateUnknown;
-        emit loginFailed();
+        qDebug() << "Error in " << redactUrl(reply->url()) << ":" << reply->errorString();
+
+        //Credentials rejected by the server is not the same thing as a server
+        //that is down: the first one must not be retried forever.
+        const QVariant codeAttr = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute);
+        const int httpCode = codeAttr.isValid() ? Common::toIntSafe(codeAttr, 0, "login http status") : 0;
+        //calaos_server answers a rejected login on /api.php with 400 and an
+        //HTML body, not 401, so the success flag below is never reached: the
+        //reply already carries a network error. Measured against a local
+        //server: bad password -> 400, good password -> 200. Without 400 here a
+        //wrong password over the HTTP transport retries forever and the login
+        //screen never comes back.
+        const bool isAuth = reply->error() == QNetworkReply::AuthenticationRequiredError ||
+                            reply->error() == QNetworkReply::ContentAccessDenied ||
+                            reply->error() == QNetworkReply::ProtocolInvalidOperationError ||
+                            httpCode == 400 || httpCode == 401 || httpCode == 403;
+
+        connectionLost(reply->errorString(),
+                       isAuth ? ReconnectPolicy::AuthFailure : ReconnectPolicy::TransientFailure);
         return;
     }
 
@@ -288,14 +549,26 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
     if (err.error != QJsonParseError::NoError)
     {
         qDebug() << "JSON parse error " << err.errorString();
-        constate = ConStateUnknown;
-        emit loginFailed();
+        connectionLost(QStringLiteral("login answer is not valid JSON"));
+        return;
+    }
+
+    QVariantMap jroot = jdoc.object().toVariantMap();
+
+    //The HTTP API reports a rejected login with an explicit success flag
+    //rather than an HTTP error code.
+    if (jroot.contains(JsonKeys::Success) &&
+        jroot[JsonKeys::Success].toString() != "true")
+    {
+        connectionLost(QStringLiteral("server rejected the credentials"),
+                       ReconnectPolicy::AuthFailure);
         return;
     }
 
     //Connection success
     constate = ConStateHttp;
-    QVariantMap jroot = jdoc.object().toVariantMap();
+    reconnectPolicy.attemptSucceeded();
+    emitStateChanged();
 
     if (!HardwareUtils::Instance()->getDeviceToken().isEmpty())
     {
@@ -309,8 +582,8 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
 
         //Send the push device token to register the mobile device to calaos_server for push notif
         QJsonObject o = {
-            { "token", HardwareUtils::Instance()->getDeviceToken() },
-            { "hardware", hw }
+            { JsonKeys::Token, HardwareUtils::Instance()->getDeviceToken() },
+            { JsonKeys::Hardware, hw }
         };
         sendHttp(QStringLiteral("register_push"), o);
     }
@@ -318,13 +591,25 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
     //start polling
     startJsonPolling();
 
-    emit homeLoaded(jroot);
+    emitHomeLoaded(jroot);
+}
+
+void CalaosConnection::emitHomeLoaded(const QVariantMap &home)
+{
+    /* The API version is read here, off the payload this class just received,
+     * and no longer written back into this class by RoomModel::load() while it
+     * parses rooms (T18). Doing it before the signal also means every consumer
+     * of homeLoaded() - not only the first model to parse a room - sees the
+     * right value. */
+    bool v2 = isV2HttpApi;
+    if (detectHttpApiV2(home, v2))
+        updateHttpApiV2(v2);
+
+    emit homeLoaded(home);
 }
 
 void CalaosConnection::requestFinished()
 {
-    HardwareUtils::Instance()->showNetworkActivity(false);
-
     QNetworkReply *reqReply = qobject_cast<QNetworkReply*>(QObject::sender());
 
     if (!reqReply)
@@ -337,7 +622,7 @@ void CalaosConnection::requestFinished()
 
     if (reqReply->error() != QNetworkReply::NoError)
     {
-        qDebug() << "Error in " << reqReply->url() << ":" << reqReply->errorString();
+        qDebug() << "Error in " << redactUrl(reqReply->url()) << ":" << reqReply->errorString();
         return;
     }
 
@@ -360,52 +645,12 @@ void CalaosConnection::requestFinished()
 
     QVariantMap jroot = jdoc.object().toVariantMap();
 
-    if (jroot.contains("audio_players") &&
-        !jroot["audio_players"].toList().isEmpty())
-    {
-        //emit event for audio player change
-        emit eventAudioStateChange({}, jroot);
-    }
-
-    if (jroot.contains("events") &&
-        jroot.contains("total_page"))
-    {
-        emit logEventLoaded(jroot["data"].toMap());
-    }
-
-    if (isHttpApiV2())
-    {
-        if (jroot.contains("inputs") &&
-            !jroot["inputs"].toList().isEmpty())
-        {
-            //emit event for specific input change
-            emit eventInputStateChange(jroot);
-        }
-
-        if (jroot.contains("outputs") &&
-            !jroot["outputs"].toList().isEmpty())
-        {
-            //emit event for output change
-            emit eventOutputStateChange(jroot);
-        }
-    }
-    else
-    {
-        for (auto it = jroot.constBegin();it != jroot.constEnd();it++)
-        {
-            if (it.value().canConvert<QString>())
-            {
-                QVariantMap m = { { "id", it.key() },
-                                  { "state", it.value().toString() }};
-                emit eventInputStateChange(m);
-                emit eventOutputStateChange(m);
-            }
-            else
-            {
-                emit eventAudioStateChange(it.key(), it.value().toMap());
-            }
-        }
-    }
+    //Audio player states, event log page and io states can all be in the same
+    //answer: the decoder reports every payload it recognises, in order.
+    dispatchEvents(CalaosEventDecoder::decodeQueryAnswer(
+                       jroot,
+                       isHttpApiV2() ? CalaosEventDecoder::ApiV2
+                                     : CalaosEventDecoder::ApiV3));
 }
 
 void CalaosConnection::requestCamFinished(QNetworkReply *reqReply, const QString &camid)
@@ -420,7 +665,7 @@ void CalaosConnection::requestCamFinished(QNetworkReply *reqReply, const QString
 
     if (reqReply->error() != QNetworkReply::NoError)
     {
-        qDebug() << "Error in " << reqReply->url() << ":" << reqReply->errorString();
+        qDebug() << "Error in " << redactUrl(reqReply->url()) << ":" << reqReply->errorString();
         emit cameraPictureFailed(camid);
         return;
     }
@@ -444,7 +689,7 @@ void CalaosConnection::requestAudioCoverFinished(QNetworkReply *reqReply, const 
 
     if (reqReply->error() != QNetworkReply::NoError)
     {
-        qDebug() << "Error in " << reqReply->url() << ":" << reqReply->errorString();
+        qDebug() << "Error in " << redactUrl(reqReply->url()) << ":" << reqReply->errorString();
         return;
     }
 
@@ -457,20 +702,21 @@ void CalaosConnection::requestAudioCoverFinished(QNetworkReply *reqReply, const 
 
 void CalaosConnection::requestError(QNetworkReply::NetworkError code)
 {
-    Q_UNUSED(code)
-    qDebug() << "Request error!" << code;
-    logout();
-    return;
+    //A single failed command or state query is not a disconnection: this used
+    //to call logout(), which emptied every model of the UI. The link is only
+    //declared dead by the websocket ping timeout or by a run of consecutive
+    //long-poll failures (see handlePollFailure()).
+    qWarning() << "Request error, keeping the session: " << code;
 }
 
 void CalaosConnection::sendWebsocket(const QString &msg, const QJsonObject &data, const QString &client_id)
 {
     if (!isWebsocket()) return;
 
-    QJsonObject o = {{ "msg", msg },
-                     { "data", data }};
+    QJsonObject o = {{ JsonKeys::Msg, msg },
+                     { JsonKeys::Data, data }};
     if (!client_id.isEmpty())
-        o["msg_id"] = client_id;
+        o[JsonKeys::MsgId] = client_id;
 
     QJsonDocument doc(o);
 #ifdef QT_DEBUG
@@ -485,11 +731,11 @@ void CalaosConnection::sendHttp(const QString &msg, QJsonObject &data, bool igno
     if (!isHttp()) return;
 
     if (!msg.isEmpty())
-        data["action"] = msg;
+        data[JsonKeys::Action] = msg;
 
     QJsonDocument doc(data);
 #ifdef QT_DEBUG
-    qDebug().noquote() << "SEND: " << doc.toJson();
+    qDebug().noquote() << "SEND: " << redactJson(data);
 #endif
 
     QUrl url(httphost);
@@ -498,32 +744,41 @@ void CalaosConnection::sendHttp(const QString &msg, QJsonObject &data, bool igno
     request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
     QNetworkReply *reqReply = accessManager->post(request, doc.toJson());
 
-    connect(reqReply, SIGNAL(finished()), this, SLOT(requestFinished()));
+    connect(reqReply, &QNetworkReply::finished, this, &CalaosConnection::requestFinished);
     if (!ignoreErrors)
-        connect(reqReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestError(QNetworkReply::NetworkError)));
+        //QNetworkReply has no error(NetworkError) signal since Qt 6 (only the
+        //error() getter), so the old string based connect never resolved: this
+        //connection was silently dead. errorOccurred() is the Qt 6 name.
+        connect(reqReply, &QNetworkReply::errorOccurred, this, &CalaosConnection::requestError);
 
     reqReplies.append(reqReply);
 }
 
 void CalaosConnection::sendCommand(QString id, QString value, QString type, QString action)
 {
-    HardwareUtils::Instance()->showNetworkActivity(true);
+    sendNumberedCommand(id, value, type, action, 0);
+}
 
+void CalaosConnection::sendNumberedCommand(QString id, QString value, QString type, QString action, int seq)
+{
     QJsonObject jroot;
     if (isHttp())
     {
-        jroot["cn_user"] = username;
-        jroot["cn_pass"] = password;
-        jroot["type"] = type;
+        jroot[JsonKeys::CnUser] = username;
+        jroot[JsonKeys::CnPass] = password;
+        jroot[JsonKeys::Type] = type;
     }
     if (type == "audio" && isHttpApiV2())
-        jroot["player_id"] = id;
+        jroot[JsonKeys::PlayerId] = id;
     else
-        jroot["id"] = id;
-    jroot["value"] = value;
+        jroot[JsonKeys::Id] = id;
+    jroot[JsonKeys::Value] = value;
 
     if (isWebsocket())
-        sendWebsocket(action, jroot, "user_cmd");
+        sendWebsocket(action, jroot,
+                      action == QLatin1String("set_state")
+                          ? JsonKeys::SetStateTag + id + (seq > 0 ? JsonKeys::SetStateSeqSeparator + QString::number(seq) : QString())
+                          : QStringLiteral("user_cmd"));
     else
         sendHttp(action, jroot);
 }
@@ -534,8 +789,8 @@ void CalaosConnection::sendJson(QString action, QJsonObject &jsonData)
         sendWebsocket(action, jsonData, "user_cmd_json");
     else
     {
-        jsonData["cn_user"] = username;
-        jsonData["cn_pass"] = password;
+        jsonData[JsonKeys::CnUser] = username;
+        jsonData[JsonKeys::CnPass] = password;
 
         sendHttp(action, jsonData);
     }
@@ -543,27 +798,25 @@ void CalaosConnection::sendJson(QString action, QJsonObject &jsonData)
 
 void CalaosConnection::queryState(QStringList inputs, QStringList outputs, QStringList audio_players)
 {
-    HardwareUtils::Instance()->showNetworkActivity(true);
-
     QJsonObject jroot;
     if (isHttp())
     {
-        jroot["cn_user"] = username;
-        jroot["cn_pass"] = password;
+        jroot[JsonKeys::CnUser] = username;
+        jroot[JsonKeys::CnPass] = password;
     }
 
     if (isHttpApiV2())
     {
-        jroot["inputs"] = QJsonValue::fromVariant(inputs);
-        jroot["outputs"] = QJsonValue::fromVariant(outputs);
-        jroot["audio_players"] = QJsonValue::fromVariant(audio_players);
+        jroot[JsonKeys::Inputs] = QJsonValue::fromVariant(inputs);
+        jroot[JsonKeys::Outputs] = QJsonValue::fromVariant(outputs);
+        jroot[JsonKeys::AudioPlayers] = QJsonValue::fromVariant(audio_players);
     }
     else
     {
         QStringList io = inputs;
         io.append(outputs);
         io.append(audio_players);
-        jroot["items"] = QJsonValue::fromVariant(io);
+        jroot[JsonKeys::Items] = QJsonValue::fromVariant(io);
     }
 
     if (isWebsocket())
@@ -576,21 +829,21 @@ void CalaosConnection::getCameraPicture(const QString &camid, QString urlSuffix)
 {
     QString u = httphost;
     QJsonObject jroot;
-    jroot["cn_user"] = username;
-    jroot["cn_pass"] = password;
-    jroot["action"] = QString("camera");
+    jroot[JsonKeys::CnUser] = username;
+    jroot[JsonKeys::CnPass] = password;
+    jroot[JsonKeys::Action] = QString("camera");
     if (!urlSuffix.isEmpty()) //v1 camera api
     {
-        jroot["action"] = QStringLiteral("get_camera_pic");
+        jroot[JsonKeys::Action] = QStringLiteral("get_camera_pic");
         u = QStringLiteral("%1%2&u=%3&p=%4")
             .arg(httphost.left(httphost.length() - 8)) // "/api.php" is 9
             .arg(urlSuffix)
             .arg(QString(QUrl::toPercentEncoding(username)))
             .arg(QString(QUrl::toPercentEncoding(password)));
     }
-    jroot["type"] = QString("get_picture");
-    jroot["id"] = camid;
-    jroot["camera_id"] = camid;
+    jroot[JsonKeys::Type] = QString("get_picture");
+    jroot[JsonKeys::Id] = camid;
+    jroot[JsonKeys::CameraId] = camid;
     QJsonDocument jdoc(jroot);
 
 #ifdef QT_DEBUG
@@ -604,7 +857,7 @@ void CalaosConnection::getCameraPicture(const QString &camid, QString urlSuffix)
     QNetworkReply *reqReply = accessManagerCam->post(request, jdoc.toJson());
 
     connect(reqReply, &QNetworkReply::finished, this, [=]() { requestCamFinished(reqReply, camid); });
-//    connect(reqReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestError(QNetworkReply::NetworkError)));
+//    connect(reqReply, &QNetworkReply::errorOccurred, this, &CalaosConnection::requestError);
 
     reqReplies.append(reqReply);
 }
@@ -613,11 +866,11 @@ void CalaosConnection::getAudioCover(const QString &playerid)
 {
     QString u = httphost;
     QJsonObject jroot;
-    jroot["cn_user"] = username;
-    jroot["cn_pass"] = password;
-    jroot["action"] = QString("audio");
-    jroot["audio_action"] = QString("get_cover");
-    jroot["id"] = playerid;
+    jroot[JsonKeys::CnUser] = username;
+    jroot[JsonKeys::CnPass] = password;
+    jroot[JsonKeys::Action] = QString("audio");
+    jroot[JsonKeys::AudioAction] = QString("get_cover");
+    jroot[JsonKeys::Id] = playerid;
     QJsonDocument jdoc(jroot);
 
 #ifdef QT_DEBUG
@@ -643,13 +896,32 @@ void CalaosConnection::changeCredentials(QString user, QString pass)
     username_temp = user;
     password_temp = pass;
 
-    QJsonObject jroot = { { "action", "change_cred" },
-                          { "old_user", username },
-                          { "old_pw", password },
-                          { "new_user", user },
-                          { "new_pw", pass },
+    QJsonObject jroot = { { JsonKeys::Action, "change_cred" },
+                          { JsonKeys::OldUser, username },
+                          { JsonKeys::OldPw, password },
+                          { JsonKeys::NewUser, user },
+                          { JsonKeys::NewPw, pass },
                          };
     sendWebsocket("settings", jroot, "change_creds");
+}
+
+void CalaosConnection::handlePollFailure(const QString &reason)
+{
+    if (!reconnectPolicy.pollFailed())
+    {
+        //Enough consecutive failures: the link really is gone.
+        connectionLost(QStringLiteral("long-poll failed %1 times in a row (%2)")
+                       .arg(reconnectPolicy.pollFailureCount())
+                       .arg(reason));
+        return;
+    }
+
+    //Below the threshold the session and the eight UI models are left
+    //untouched, we simply run the poll again.
+    qWarning() << "Long-poll failure " << reconnectPolicy.pollFailureCount()
+               << "/" << ReconnectPolicy::MaxPollFailures << ": " << reason
+               << " - retrying without dropping the session";
+    QTimer::singleShot(POLL_RETRY_DELAY, this, &CalaosConnection::startJsonPolling);
 }
 
 void CalaosConnection::startJsonPolling()
@@ -657,19 +929,24 @@ void CalaosConnection::startJsonPolling()
     if (constate != ConStateHttp)
         return;
 
+    //Never two polls in flight: the retry timers above and the 200ms chaining
+    //below could otherwise both land after a reconnection.
+    if (pollReply)
+        return;
+
     if (uuidPolling.isEmpty())
         qDebug() << "Start polling...";
 
     QJsonObject jroot;
-    jroot["cn_user"] = username;
-    jroot["cn_pass"] = password;
-    jroot["action"] = QString("poll_listen");
+    jroot[JsonKeys::CnUser] = username;
+    jroot[JsonKeys::CnPass] = password;
+    jroot[JsonKeys::Action] = QString("poll_listen");
     if (uuidPolling.isEmpty())
-        jroot["type"] = QString("register");
+        jroot[JsonKeys::Type] = QString("register");
     else
     {
-        jroot["type"] = QString("get");
-        jroot["uuid"] = uuidPolling;
+        jroot[JsonKeys::Type] = QString("get");
+        jroot[JsonKeys::Uuid] = uuidPolling;
     }
     QJsonDocument jdoc(jroot);
 
@@ -677,21 +954,38 @@ void CalaosConnection::startJsonPolling()
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
-    pollReply = accessManager->post(request, jdoc.toJson());
+    //Long-poll: the server holds this request open until an event shows up.
+    //Setting the timeout on the request itself takes precedence over the 30s
+    //default of accessManager, which would otherwise abort a perfectly healthy
+    //poll on a quiet installation and trigger a logout/login loop.
+    request.setTransferTimeout(HTTP_POLL_TRANSFER_TIMEOUT);
+    QNetworkReply *reply = accessManager->post(request, jdoc.toJson());
+    pollReply = reply;
 
-    connect(pollReply, &QNetworkReply::errorOccurred, this, &CalaosConnection::requestError);
-    connect(pollReply, &QNetworkReply::finished, this, [=]()
+    //The error is handled in finished() only. It used to be wired to
+    //requestError() as well, which logged out on the very first hiccup and
+    //emptied the whole UI.
+    connect(reply, &QNetworkReply::finished, this, [this, reply]()
     {
-        pollReply->deleteLater();
-        if (pollReply->error() != QNetworkReply::NoError)
+        if (pollReply != reply)
         {
-            qDebug() << "Error in " << pollReply->url() << ":" << pollReply->errorString();
-            logout();
+            //A logout or a new connection already replaced this poll, its
+            //answer (or its abort) is obsolete.
+            reply->deleteLater();
             return;
         }
 
-        QByteArray bytes = pollReply->readAll();
         pollReply = nullptr;
+        reply->deleteLater();
+
+        if (reply->error() != QNetworkReply::NoError)
+        {
+            qDebug() << "Error in " << redactUrl(reply->url()) << ":" << reply->errorString();
+            handlePollFailure(reply->errorString());
+            return;
+        }
+
+        QByteArray bytes = reply->readAll();
 
         QJsonParseError err;
         QJsonDocument jdoc = QJsonDocument::fromJson(bytes, &err);
@@ -702,28 +996,29 @@ void CalaosConnection::startJsonPolling()
         {
             qDebug() << "JSON parse error " << err.errorString();
             qDebug() << "Failing data: " << bytes;
-            logout();
-            emit disconnected();
+            handlePollFailure(QStringLiteral("invalid JSON in poll answer"));
             return;
         }
         QVariantMap jroot = jdoc.object().toVariantMap();
 
-        if (jroot.contains("uuid") && uuidPolling.isEmpty())
+        if (jroot.contains(JsonKeys::Uuid) && uuidPolling.isEmpty())
         {
-            uuidPolling = jroot["uuid"].toString();
+            reconnectPolicy.pollSucceeded();
+            uuidPolling = jroot[JsonKeys::Uuid].toString();
             startJsonPolling();
             return;
         }
 
-        if (jroot["success"].toString() != "true")
+        if (jroot[JsonKeys::Success].toString() != "true")
         {
             qDebug() << "Failed to get events";
-            logout();
-            emit disconnected();
+            handlePollFailure(QStringLiteral("poll answer reports a failure"));
             return;
         }
 
-        QVariantList events = jroot["events"].toList();
+        reconnectPolicy.pollSucceeded();
+
+        QVariantList events = jroot[JsonKeys::Events].toList();
         foreach (QVariant v, events)
         {
             if (isHttpApiV2())
@@ -732,8 +1027,68 @@ void CalaosConnection::startJsonPolling()
                 processEventsV3(v.toMap());
         }
 
-        QTimer::singleShot(200, this, SLOT(startJsonPolling()));
+        QTimer::singleShot(200, this, &CalaosConnection::startJsonPolling);
     });
+}
+
+void CalaosConnection::dispatchEvents(const QList<DecodedEvent> &events)
+{
+    for (const DecodedEvent &ev: events)
+    {
+        //No default case on purpose: adding a DecodedEvent::Type without
+        //deciding what it emits here must not compile silently.
+        switch (ev.type)
+        {
+        case DecodedEvent::InputChange:
+            emit eventInputChange(ev.id, ev.state, ev.value);
+            break;
+        case DecodedEvent::OutputChange:
+            emit eventOutputChange(ev.id, ev.state, ev.value);
+            break;
+        case DecodedEvent::AudioVolumeChange:
+            emit eventAudioVolumeChange(ev.id, ev.number);
+            break;
+        case DecodedEvent::AudioStatusChange:
+            emit eventAudioStatusChange(ev.id, ev.state);
+            break;
+        case DecodedEvent::AudioSongChange:
+            emit eventAudioChange(ev.id);
+            break;
+        case DecodedEvent::TouchscreenCamera:
+            emit eventTouchscreenCamera(ev.id);
+            break;
+        case DecodedEvent::IoStatusChange:
+            emit eventIoStatusChange(ev.id, ev.data);
+            break;
+        case DecodedEvent::DeviceChange:
+            emit eventDeviceChange(ev.id, ev.data);
+            break;
+        case DecodedEvent::CommandRefused:
+            emit eventCommandRefused(ev.id);
+            break;
+        case DecodedEvent::CommandAnswered:
+            emit eventCommandAnswered(ev.id, ev.value.toInt(), ev.state == QLatin1String("true"));
+            break;
+        case DecodedEvent::InputStateChange:
+            emit eventInputStateChange(ev.data);
+            break;
+        case DecodedEvent::OutputStateChange:
+            emit eventOutputStateChange(ev.data);
+            break;
+        case DecodedEvent::AudioStateChange:
+            emit eventAudioStateChange(ev.id, ev.data);
+            break;
+        case DecodedEvent::LogEvent:
+            emit logEventLoaded(ev.data);
+            break;
+
+        case DecodedEvent::Unknown:
+        case DecodedEvent::Malformed:
+            //Event types the UI does not consume, and frames the decoder
+            //refused. Both were already dropped before T17.
+            break;
+        }
+    }
 }
 
 void CalaosConnection::processEventsV2(QString msg)
@@ -744,40 +1099,7 @@ void CalaosConnection::processEventsV2(QString msg)
     qDebug().noquote() << "Received: " << msg;
 #endif
 
-    QStringList spl = msg.split(' ');
-
-    if (spl.at(0) == "output" || spl.at(0) == "input")
-    {
-        if (spl.size() < 3) return;
-
-        QString id = QUrl::fromPercentEncoding(spl.at(1).toLocal8Bit());
-        QStringList s = QUrl::fromPercentEncoding(spl.at(2).toLocal8Bit()).split(':');
-        QString val;
-        if (s.size() > 1) val = s.at(1);
-
-        if (spl.at(0) == "input")
-            emit eventInputChange(id, s.at(0), val);
-        else
-            emit eventOutputChange(id, s.at(0), val);
-    }
-    else if (spl.at(0) == "audio_volume")
-    {
-        if (spl.count() < 4) return;
-
-        emit eventAudioVolumeChange(spl.at(1), spl.at(3).toDouble());
-    }
-    else if (spl.at(0) == "audio_status")
-    {
-        emit eventAudioStatusChange(spl.at(1), spl.at(2));
-    }
-    else if (spl.at(0) == "audio")
-    {
-        if (spl.count() > 2 &&
-            spl.at(2) == "songchanged")
-            emit eventAudioChange(spl.at(1));
-    }
-
-    //TODO all other event types
+    dispatchEvents(CalaosEventDecoder::decodeEventV2(msg));
 }
 
 void CalaosConnection::processEventsV3(QVariantMap msg)
@@ -786,41 +1108,7 @@ void CalaosConnection::processEventsV3(QVariantMap msg)
     //qDebug().noquote() << "Received: " << msg["event_raw"];
 #endif
 
-    QVariantMap data = msg["data"].toMap();
-    if (msg["type_str"].toString() == "io_changed")
-    {
-        for (auto it = data.begin();it != data.end();it++)
-        {
-            if (it.key() == "id") continue;
-            emit eventInputChange(data["id"].toString(), it.key(), it.value().toString());
-            emit eventOutputChange(data["id"].toString(), it.key(), it.value().toString());
-        }
-    }
-    else if (msg["type_str"].toString() == "audio_volume_changed")
-    {
-        emit eventAudioVolumeChange(data["player_id"].toString(), data["volume"].toString().toDouble());
-    }
-    else if (msg["type_str"].toString() == "audio_status_changed")
-    {
-        emit eventAudioStatusChange(data["player_id"].toString(), data["state"].toString());
-    }
-    else if (msg["type_str"].toString() == "audio_song_changed")
-    {
-        emit eventAudioChange(data["player_id"].toString());
-    }
-    else if (msg["type_str"].toString() == "touchscreen_camera_request")
-    {
-        emit eventTouchscreenCamera(data["id"].toString());
-    }
-    else if (msg["type_str"].toString() == "io_status_changed")
-    {
-        if (data.contains("id"))
-        {
-            emit eventIoStatusChange(data["id"].toString(), data);
-        }
-    }
-
-    //TODO all other event types
+    dispatchEvents(CalaosEventDecoder::decodeEventV3(msg));
 }
 
 void CalaosConnection::onWsTextMessageReceived(const QString &message)
@@ -830,67 +1118,81 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
 
     if (err.error != QJsonParseError::NoError)
     {
-        qWarning() << "JSON parse error " << err.errorString();
+        qWarning() << "JSON parse error at " << err.offset << " : " << err.errorString();
 
-        if (constate == ConStateUnknown)
-            emit loginFailed();
+        if (reconnectPolicy.state() == ReconnectPolicy::Connecting)
+            connectionLost(QStringLiteral("invalid JSON received while logging in"));
+
+        return;
+    }
+
+    if (!jdoc.isObject())
+    {
+        qWarning() << "Invalid websocket frame, a JSON object was expected";
+
+        if (reconnectPolicy.state() == ReconnectPolicy::Connecting)
+            connectionLost(QStringLiteral("invalid websocket frame while logging in"));
 
         return;
     }
 
     QJsonObject jroot = jdoc.object();
-    QJsonObject jdata = jroot["data"].toObject();
+    QJsonObject jdata = jroot[JsonKeys::Data].toObject();
 
 #ifdef QT_DEBUG
     //qDebug() << "RECV:" << message;
 #endif
 
-    if (jroot["msg"] == "login")
+    if (jroot[JsonKeys::Msg] == "login")
     {
-        if (jdata["success"] == "true" && constate != ConStateWebsocket)
+        if (jdata[JsonKeys::Success] == "true")
         {
-            constate = ConStateWebsocket;
+            if (constate != ConStateWebsocket)
+            {
+                constate = ConStateWebsocket;
+                reconnectPolicy.attemptSucceeded();
+                emitStateChanged();
 
-            //ask for home
-            sendWebsocket("get_home");
+                //ask for home
+                sendWebsocket("get_home");
+            }
+        }
+        else
+        {
+            //The server explicitly rejected the credentials. This used to be
+            //ignored, leaving the application spinning on the loading screen
+            //forever with a wrong password.
+            connectionLost(QStringLiteral("server rejected the credentials"),
+                           ReconnectPolicy::AuthFailure);
         }
     }
-    else if (jroot["msg"] == "get_home")
+    else if (jroot[JsonKeys::Msg] == "get_home")
     {
-        emit homeLoaded(jroot["data"].toObject().toVariantMap());
-        HardwareUtils::Instance()->showNetworkActivity(false);
+        emitHomeLoaded(jroot[JsonKeys::Data].toObject().toVariantMap());
     }
-    else if (jroot["msg"] == "event")
+    else if (jroot[JsonKeys::Msg] == "event")
     {
-        processEventsV3(jroot["data"].toObject().toVariantMap());
+        processEventsV3(jroot[JsonKeys::Data].toObject().toVariantMap());
     }
-    else if (jroot["msg"] == "get_state")
+    else if (jroot[JsonKeys::Msg] == "get_state")
     {
         //emit event for specific input/output change
-        for (auto it = jdata.constBegin();it != jdata.constEnd();it++)
-        {
-            if (it.value().isString())
-            {
-                QVariantMap m = { { "id", it.key() },
-                                  { "state", it.value().toString() }};
-                emit eventInputStateChange(m);
-                emit eventOutputStateChange(m);
-            }
-            else
-            {
-                emit eventAudioStateChange(it.key(), it.value().toObject().toVariantMap());
-            }
-        }
+        dispatchEvents(CalaosEventDecoder::decodeStateMap(jdata.toVariantMap(),
+                                                          CalaosEventDecoder::StrictString));
     }
-    else if (jroot["msg"] == "eventlog")
+    else if (jroot[JsonKeys::Msg] == "set_state")
     {
-        emit logEventLoaded(jroot["data"].toObject().toVariantMap());
+        dispatchEvents({ CalaosEventDecoder::decodeSetStateAnswer(jroot.toVariantMap()) });
     }
-    else if (jroot["msg"] == "settings")
+    else if (jroot[JsonKeys::Msg] == "eventlog")
     {
-        if (jdata["action"] == "change_cred")
+        emit logEventLoaded(jroot[JsonKeys::Data].toObject().toVariantMap());
+    }
+    else if (jroot[JsonKeys::Msg] == "settings")
+    {
+        if (jdata[JsonKeys::Action] == "change_cred")
         {
-            if (jdata["success"] == "true")
+            if (jdata[JsonKeys::Success] == "true")
             {
                 username = username_temp;
                 password = password_temp;
@@ -905,12 +1207,6 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
                 emit changeCredsFailed();
             }
         }
-    }
-
-    //We get this marker when calling sendCommand(...) it helps disabling the net indicator
-    if (jroot["msg_id"] == "user_cmd" || jroot["msg_id"] == "change_creds")
-    {
-        HardwareUtils::Instance()->showNetworkActivity(false);
     }
 }
 

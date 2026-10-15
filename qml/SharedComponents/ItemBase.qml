@@ -7,7 +7,7 @@ CalaosItemBase {
     width: parent.width
 
     //default 1 row height
-    height: 40 * calaosApp.density
+    height: Units.dp(40)
     enabled: false
 
     function feedbackAnim() {

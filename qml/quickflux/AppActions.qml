@@ -1,6 +1,6 @@
 pragma Singleton
-import QtQuick 2.5
-import QuickFlux 1.0
+import QtQuick
+import QuickFlux
 import "./"
 
 QtObject {
@@ -53,8 +53,15 @@ QtObject {
     }
 
     function openEventPushViewerUuid(uuid) {
-        AppDispatcher.dispatch(ActionTypes.openEventPushViewer,
+        AppDispatcher.dispatch(ActionTypes.openEventPushViewerUuid,
                                { notifUuid: uuid });
+    }
+
+    // An io wants a new value typed by the user. IOBase does not know how to
+    // ask (it is a model): each variant's main.qml handles this action with the
+    // presentation it has, then calls io.sendStringValue() with the answer.
+    function openAskTextForIo(model) {
+        AppDispatcher.dispatch(ActionTypes.openAskTextForIo, { io: model });
     }
 
     function openKeyboard(kTitle, kSubtitle, txt, echoMode, kMultiline, kReturnAction, kReturnPayload) {
@@ -105,5 +112,10 @@ QtObject {
         AppDispatcher.dispatch(ActionTypes.showSensorDetails, {
             sensor: sensorModel
         });
+    }
+
+    //The user opened a climate device: each variant shows the settings its way
+    function showClimateDetails(io) {
+        AppDispatcher.dispatch(ActionTypes.showClimateDetails, { io: io });
     }
 }

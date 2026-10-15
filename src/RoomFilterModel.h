@@ -27,6 +27,10 @@ public:
 
     Q_INVOKABLE QObject *getItemModel(int idx);
 
+    //Rows a climate item takes in the left/right balance. Its controls are
+    //hidden until it is tapped, so the weight does not depend on the capabilities.
+    static int climateRows(IOBase *io);
+
 private slots:
     void resetCache();
 

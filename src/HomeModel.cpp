@@ -1,6 +1,7 @@
 #include "HomeModel.h"
 #include <QDebug>
 #include "RoomModel.h"
+#include "JsonKeys.h"
 
 HomeModel::HomeModel(QQmlApplicationEngine *eng, CalaosConnection *con, ScenarioModel *scModel, LightOnModel *lModel, QObject *parent) :
     QStandardItemModel(parent),
@@ -26,26 +27,28 @@ void HomeModel::load(const QVariantMap &homeData)
     clear();
     scenarioModel->clear();
     IOCache::Instance().clearCache();
+    //LightOnModel::clear() (declared LightOnModel*, see HomeModel.h) also
+    //empties onCache, fixing the T06 "ghost lights after reconnect" bug.
     lightOnModel->clear();
 
-    if (!homeData.contains("home"))
+    if (!homeData.contains(JsonKeys::Home))
     {
         qDebug() << "no home entry";
         return;
     }
 
-    QVariantList rooms = homeData["home"].toList();
+    QVariantList rooms = homeData[JsonKeys::Home].toList();
     QVariantList::iterator it = rooms.begin();
     for (;it != rooms.end();it++)
     {
         QVariantMap r = it->toMap();
         RoomItem *room = new RoomItem(engine, connection);
-        connect(room, SIGNAL(sig_light_on(IOBase*)), this, SLOT(newlight_on(IOBase*)));
-        connect(room, SIGNAL(sig_light_off(IOBase*)), this, SLOT(newlight_off(IOBase*)));
+        connect(room, &RoomItem::sig_light_on, this, &HomeModel::newlight_on);
+        connect(room, &RoomItem::sig_light_off, this, &HomeModel::newlight_off);
 
-        room->update_roomName(r["name"].toString());
-        room->update_roomType(r["type"].toString());
-        room->update_roomHits(r["hits"].toString().toInt());
+        room->update_roomName(r[JsonKeys::Name].toString());
+        room->update_roomType(r[JsonKeys::Type].toString());
+        room->update_roomHits(Common::toIntSafe(r[JsonKeys::Hits], 0, "room.hits"));
         room->load(r, scenarioModel, RoomModel::LoadNormal);
         appendRow(room);
     }
@@ -84,19 +87,19 @@ RoomItem::RoomItem(QQmlApplicationEngine *eng, CalaosConnection *con):
     update_current_temperature(0);
 
     room = new RoomModel(engine, connection, this);
-    connect(room, SIGNAL(sig_light_on(IOBase*)), this, SLOT(newlight_on(IOBase*)));
-    connect(room, SIGNAL(sig_light_off(IOBase*)), this, SLOT(newlight_off(IOBase*)));
-    connect(room, SIGNAL(has_temp_sig(bool)), this, SLOT(has_temperature_slot(bool)));
-    connect(room, SIGNAL(temp_changed_sig(double)), this, SLOT(temperature_slot(double)));
+    connect(room, &RoomModel::sig_light_on, this, &RoomItem::newlight_on);
+    connect(room, &RoomModel::sig_light_off, this, &RoomItem::newlight_off);
+    connect(room, &RoomModel::has_temp_sig, this, &RoomItem::has_temperature_slot);
+    connect(room, &RoomModel::temp_changed_sig, this, &RoomItem::temperature_slot);
     engine->setObjectOwnership(room, QQmlEngine::CppOwnership);
 }
 
 RoomItem::~RoomItem()
 {
-    disconnect(room, SIGNAL(sig_light_on(IOBase*)), this, SLOT(newlight_on(IOBase*)));
-    disconnect(room, SIGNAL(sig_light_off(IOBase*)), this, SLOT(newlight_off(IOBase*)));
-    disconnect(room, SIGNAL(has_temp_sig(bool)), this, SLOT(has_temperature_slot(bool)));
-    disconnect(room, SIGNAL(temp_changed_sig(double)), this, SLOT(temperature_slot(double)));
+    disconnect(room, &RoomModel::sig_light_on, this, &RoomItem::newlight_on);
+    disconnect(room, &RoomModel::sig_light_off, this, &RoomItem::newlight_off);
+    disconnect(room, &RoomModel::has_temp_sig, this, &RoomItem::has_temperature_slot);
+    disconnect(room, &RoomModel::temp_changed_sig, this, &RoomItem::temperature_slot);
 }
 
 QObject *RoomItem::getRoomModel() const
@@ -154,6 +157,12 @@ QObject *LightOnModel::getItemModel(int idx)
     return obj;
 }
 
+void LightOnModel::clear()
+{
+    QStandardItemModel::clear();
+    onCache.clear();
+}
+
 void LightOnModel::addLight(IOBase *io)
 {
     if (onCache.contains(io->get_ioId())) return;
@@ -169,6 +178,11 @@ void LightOnModel::removeLight(IOBase *io)
     for (int i = 0;i < rowCount();i++)
     {
         IOBase *cur = dynamic_cast<IOBase *>(item(i));
+        if (!cur)
+        {
+            qWarning() << "LightOnModel: row" << i << "is not an IOBase, skipping";
+            continue;
+        }
         if (cur->get_ioId() == io->get_ioId())
         {
             removeRow(i);
@@ -198,6 +212,11 @@ QObject *LightOnModel::getQmlCloneModel()
     for (int i = 0;i < rowCount();i++)
     {
         IOBase *obj = dynamic_cast<IOBase *>(item(i));
+        if (!obj)
+        {
+            qWarning() << "LightOnModel: row" << i << "is not an IOBase, skipping";
+            continue;
+        }
         IOBase *newIO = obj->cloneIO();
 
         if (!resortedModel.contains(newIO->get_room_name()))

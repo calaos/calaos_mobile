@@ -40,13 +40,16 @@ RUN get_pkgbuilds.sh && \
     build_pkg.sh "calaos-home" "" "$ARCH" "$COMMIT" "$APP_VERSION" && \
     build_pkg.sh "xinput_calibrator" "" "$ARCH" "$COMMIT" "$APP_VERSION"
 
-RUN sudo pacman -S --noconfirm libxinerama readline bash perl libxtst libxft texinfo libxrandr gnupg
+#ttf-dejavu provides the virtual ttf-font dep of ratpoison: without a
+#pre-installed provider makepkg would hit an interactive pacman prompt
+RUN sudo pacman -S --noconfirm libxinerama readline bash perl libxtst libxft texinfo libxrandr gnupg ttf-dejavu
 
-#Build Ratpoison pkg manually, it's not available in arch anymore
-RUN mkdir /src/ratpoison  && \
-    wget https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=ratpoison -O /src/ratpoison/PKGBUILD && \
-    wget https://aur.archlinux.org/cgit/aur.git/plain/ratpoison.desktop?h=ratpoison -O /src/ratpoison/ratpoison.desktop && \
-    gpg --recv-keys 0DFA74AE1524E7EE && \
+#Build Ratpoison pkg manually, it's not available in arch anymore.
+#PKGBUILD and .desktop are vendored in docker/ratpoison/ (no AUR dependency),
+#and its source= points to a mirror on calaos.fr since
+#download.savannah.gnu.org is too unreliable
+COPY --chown=${UID}:${GID} ratpoison /src/ratpoison
+RUN gpg --recv-keys 0DFA74AE1524E7EE && \
     cd /src/ratpoison && \
     sudo -u calaos makepkg -s
 

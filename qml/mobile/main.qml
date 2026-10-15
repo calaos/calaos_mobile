@@ -10,8 +10,16 @@ Window {
     id: rootWindow
     visible: true
 
-    minimumWidth: 320 * calaosApp.density
-    minimumHeight: 480 * calaosApp.density
+    //Units.dp() is the single sizing unit; it only knows the screen density
+    //once we hand it over. Desktop's main.qml does the same.
+    Component.onCompleted: {
+        Units.cachedValue = Qt.binding(function() {
+            return calaosApp.density;
+        });
+    }
+
+    minimumWidth: Units.dp(320)
+    minimumHeight: Units.dp(480)
 
     color: "#080808"
 
@@ -119,7 +127,6 @@ Window {
 
             onRoomClicked: {
                 //get room model
-                console.debug("model: " + homeModel)
                 roomModel = homeModel.getRoomModel(idx)
                 currentRoomName = room_name
                 stackView.push(roomDetailView)
@@ -374,11 +381,54 @@ Window {
         }
 
         Filter {
+            type: ActionTypes.showClimateDetails
+            onDispatched: (filtertype, message) => {
+                climateSheet.openFor(message.io)
+            }
+        }
+
+        Filter {
             type: ActionTypes.showSensorDetails
             onDispatched: (filtertype, message) => {
                 sensorDetailModel = message.sensor
                 stackView.push(sensorDetailView)
             }
         }
+
+        //An io asks for a new value: on mobile we use the platform's native
+        //input dialog. IOBase used to do this itself; it is a model, it has no
+        //business knowing that dialogs exist (T31).
+        Filter {
+            type: ActionTypes.openAskTextForIo
+            onDispatched: (filtertype, message) => {
+                rootWindow.askTextIo = message.io
+                hardwareUtils.inputTextDialog(qsTr("Change value"),
+                                              qsTr("Enter new value"))
+            }
+        }
     }
+
+    //The io waiting for the native input dialog to come back, null when no
+    //dialog is pending. Guards against a stale answer being sent to the wrong
+    //io, which the old C++ path did not do on cancel.
+    property QtObject askTextIo: null
+
+    Connections {
+        target: hardwareUtils
+
+        function onDialogTextValid(text) {
+            if (!rootWindow.askTextIo)
+                return
+            var io = rootWindow.askTextIo
+            rootWindow.askTextIo = null
+            io.sendStringValue(text)
+        }
+
+        function onDialogCanceled() {
+            rootWindow.askTextIo = null
+        }
+    }
+
+    //Settings of a climate device, a bottom sheet over the current view
+    ClimateSheet { id: climateSheet }
 }

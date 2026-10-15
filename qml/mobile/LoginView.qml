@@ -26,18 +26,18 @@ Item {
         id: logo
         source: calaosApp.getPictureSized("logo_full")
         anchors {
-            bottom: formbg.top; bottomMargin: 20 * calaosApp.density
+            bottom: formbg.top; bottomMargin: Units.dp(20)
             horizontalCenter: formbg.horizontalCenter
         }
     }
     Item {
         id: formbg
         //color: Qt.rgba(0.1, 0.1, 0.1, 1)
-        //radius: 4 * calaosApp.density
+        //radius: Units.dp(4)
         smooth: true
 
-        width: isLandscape?300 * calaosApp.density:parent.width - 20 * calaosApp.density
-        height: 300 * calaosApp.density
+        width: isLandscape?Units.dp(300):parent.width - Units.dp(20)
+        height: Units.dp(300)
 
         anchors {
             verticalCenter: parent.verticalCenter
@@ -51,25 +51,25 @@ Item {
             font { family: calaosFont.fontFamily; bold: true; pointSize: 14 }
             anchors {
                 horizontalCenter: parent.horizontalCenter
-                top: parent.top; topMargin: 10 * calaosApp.density
+                top: parent.top; topMargin: Units.dp(10)
             }
         }
 
         Column {
             id: form
             anchors {
-                top: parent.top; topMargin: 80 * calaosApp.density
-                bottom: parent.bottom; bottomMargin: 10 * calaosApp.density
+                top: parent.top; topMargin: Units.dp(80)
+                bottom: parent.bottom; bottomMargin: Units.dp(10)
                 //left: parent.left; leftMargin: 10
                 //right: parent.right; rightMargin: 10
                 horizontalCenter: parent.horizontalCenter
             }
 
-            spacing: 32 * calaosApp.density
+            spacing: Units.dp(32)
 
             CalaosTextField {
                 id: userField
-                width: 200 * calaosApp.density
+                width: Units.dp(200)
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Username")
                 enabled: !loginButton.loadingEnabled
@@ -78,7 +78,7 @@ Item {
 
             CalaosTextField {
                 id: passField
-                width: 200 * calaosApp.density
+                width: Units.dp(200)
                 echoMode: TextInput.Password
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Password")
@@ -88,7 +88,7 @@ Item {
 
             CalaosTextField {
                 id: hostField
-                width: 200 * calaosApp.density
+                width: Units.dp(200)
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Hostname")
                 enabled: !loginButton.loadingEnabled
@@ -98,7 +98,7 @@ Item {
             ButtonLogin {
                 id: loginButton
                 text: qsTr("Login")
-                width: 200 * calaosApp.density
+                width: Units.dp(200)
 
                 onButtonClicked: () => {
                                      if (calaosApp.applicationStatus === Common.Loading) {

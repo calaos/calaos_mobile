@@ -7,7 +7,7 @@ TARGET.path = $$PREFIX/
 
 QT += qml quick network gui websockets
 
-CONFIG += c++11
+CONFIG += c++17
 
 include(3rd_party/quickflux/quickflux.pri)
 include(3rd_party/qt-qml-models/QtQmlModels.pri)
@@ -16,7 +16,9 @@ SOURCES += src/main.cpp \
     src/HomeModel.cpp \
     src/Application.cpp \
     src/CalaosConnection.cpp \
+    src/CalaosEventDecoder.cpp \
     src/Common.cpp \
+    src/IOTypeRegistry.cpp \
     src/RoomModel.cpp \
     src/AudioModel.cpp \
     src/FavoritesModel.cpp \
@@ -26,7 +28,8 @@ SOURCES += src/main.cpp \
     $$PWD/src/Machine.cpp \
     $$PWD/src/Lang.cpp \
     $$PWD/src/EventLogModel.cpp \
-    $$PWD/src/BookmarkModel.cpp
+    $$PWD/src/BookmarkModel.cpp \
+    $$PWD/src/ModelImageProvider.cpp
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH = qml
@@ -35,7 +38,11 @@ HEADERS += \
     src/HomeModel.h \
     src/Application.h \
     src/CalaosConnection.h \
+    src/CalaosEventDecoder.h \
     src/Common.h \
+    src/IOTypeRegistry.h \
+    src/IOConnection.h \
+    src/JsonKeys.h \
     src/RoomModel.h \
     src/AudioModel.h \
     src/FavoritesModel.h \
@@ -46,7 +53,8 @@ HEADERS += \
     $$PWD/src/qqmlhelpers.h \
     $$PWD/src/Lang.h \
     $$PWD/src/EventLogModel.h \
-    $$PWD/src/BookmarkModel.h
+    $$PWD/src/BookmarkModel.h \
+    $$PWD/src/ModelImageProvider.h
 
 win32 {
 LIBS += -liphlpapi

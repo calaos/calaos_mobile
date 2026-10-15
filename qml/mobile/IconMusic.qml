@@ -3,22 +3,22 @@ import SharedComponents
 
 Item {
 
-    width: 118 * calaosApp.density
-    height: 63 * calaosApp.density
+    width: Units.dp(118)
+    height: Units.dp(63)
 
     Image {
-        width: 118 * calaosApp.density
-        height: 108 * calaosApp.density
+        width: Units.dp(118)
+        height: Units.dp(108)
 
         source: calaosApp.getPictureSized("cd_back")
 
         Image {
 
-            x: 18 * calaosApp.density
-            y: 9 * calaosApp.density
+            x: Units.dp(18)
+            y: Units.dp(9)
 
-            width: 91 * calaosApp.density
-            height: 91 * calaosApp.density
+            width: Units.dp(91)
+            height: Units.dp(91)
 
             source: calaosApp.getPictureSized("cd_01")
 

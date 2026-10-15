@@ -44,7 +44,7 @@ ItemBase {
             }
             else if (modelData.ioType === Common.SmokeSensor ||
                      modelData.ioType === Common.WaterLeakSensor ||
-                     modelData.ioType === Common.GasSensor ||
+                     modelData.ioType === Common.GasLeakSensor ||
                      modelData.ioType === Common.CO2Sensor ||
                      modelData.ioType === Common.MotionSensor ||
                      modelData.ioType === Common.VibrationSensor) {

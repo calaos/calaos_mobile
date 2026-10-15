@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import SharedComponents
-import Qt5Compat.GraphicalEffects
 
 Dialog {
     id: dialogBookmarks
@@ -12,7 +11,7 @@ Dialog {
     title: qsTr("Bookmarks")
     text: qsTr("Manage your bookmarks")
     hasActions: true
-    positiveButtonText: qsTr("Add Bookmark")
+    positiveButtonText: qsTr("Add bookmark")
     negativeButtonText: qsTr("Close")
 
     onAccepted: {

@@ -10,8 +10,8 @@ Item {
     property alias label: txt.text
     signal buttonClicked()
 
-    width: 142 / 2 * calaosApp.density
-    height: 94 / 2 * calaosApp.density
+    width: Units.dp(142 / 2)
+    height: Units.dp(94 / 2)
 
     Image {
         id: bg
@@ -43,7 +43,7 @@ Item {
         font { family: calaosFont.fontFamily; bold: false; pointSize: 10 }
         anchors {
             centerIn: parent
-            verticalCenterOffset: 12 * calaosApp.density
+            verticalCenterOffset: Units.dp(12)
         }
     }
 

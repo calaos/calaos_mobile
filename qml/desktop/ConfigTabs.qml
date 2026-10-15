@@ -63,10 +63,10 @@ BorderImage {
 
                 ConfigTabLabelValue {
                     id: uptimeTxt
-                    labelText: qsTr("System started since:")
+                    labelText: qsTr("Running since:")
 
                     property int uptime: calaosApp.uptime
-                    onUptimeChanged: uptimeTxt.valueText = Calaos.formatTime(uptime)
+                    onUptimeChanged: uptimeTxt.valueText = CalaosJs.formatDuration(uptime, CalaosJs.Duration.Short)
 
                     Component.onCompleted: {
                         calaosApp.updateSystemInfo()

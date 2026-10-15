@@ -13,14 +13,14 @@ ListView {
             z: 99
             width: lst.width
             color: "#080808"
-            height: 45 * calaosApp.density
+            height: Units.dp(45)
 
             Image {
                 id: ic
                 source: calaosApp.getPictureSized("icon_room")
                 anchors {
                     verticalCenter: parent.verticalCenter
-                    left: parent.left; leftMargin: 10 * calaosApp.density
+                    left: parent.left; leftMargin: Units.dp(10)
                 }
             }
 
@@ -31,7 +31,7 @@ ListView {
                 text: section
                 anchors {
                     left: ic.source === ""?parent.left:ic.right
-                    leftMargin: 5 * calaosApp.density
+                    leftMargin: Units.dp(5)
                     verticalCenter: parent.verticalCenter
                 }
             }
@@ -39,7 +39,7 @@ ListView {
             Rectangle {
                 anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
                 color: "#333333"
-                height: 2 * calaosApp.density
+                height: Units.dp(2)
             }
         }
     }
@@ -52,59 +52,91 @@ ListView {
     width: parent.width
     height: parent.height
 
-    spacing: 10 * calaosApp.density
+    spacing: Units.dp(10)
 
     delegate: delegate
+
+    //One delegate per Common.IOType, listed in the order src/Common.h declares
+    //the enum so the two can be read side by side. A type absent from the table
+    //falls back to default_delegate (a plain name label), which is what the
+    //ternary chain this replaces did once it ran out of branches.
+    //src/IOTypeRegistry is the C++ side table for the same enum: a type added
+    //there needs a row here too, or it silently shows up as a bare label.
+    readonly property var delegateByType: ({
+        //Unkown: default_delegate
+        [Common.Light]: light,
+        [Common.Temp]: temp,
+        //AnalogIn also has a styled variant, see delegateForItem()
+        [Common.AnalogIn]: var_int,
+        [Common.AnalogOut]: var_int,
+        [Common.LightDimmer]: light_dimmer,
+        [Common.LightRgb]: light_rgb,
+        [Common.Shutter]: shutter,
+        [Common.ShutterSmart]: shutter_smart,
+        [Common.VarBool]: var_bool,
+        [Common.VarInt]: var_int,
+        [Common.VarString]: var_string,
+        [Common.Scenario]: scenario,
+        //AVReceiver: default_delegate, driven from the media views
+        [Common.StringIn]: var_string,
+        [Common.StringOut]: var_string,
+        //Timer, Time, TimeRange: default_delegate, no widget for them yet
+        [Common.Switch]: ioswitch,
+        [Common.Switch3]: ioswitch,
+        [Common.SwitchLong]: ioswitch,
+        //AudioInput, AudioOutput, CameraInput, CameraOutput: default_delegate,
+        //they have their own views
+        [Common.FavoritesLightsCount]: fav_all_lights,
+
+        //styled binary devices
+        [Common.Pump]: pump,
+        [Common.Outlet]: outlet,
+        [Common.Heater]: heater,
+        [Common.Boiler]: boiler,
+
+        //binary sensors, all drawn by IOSwitch which picks its own icon and
+        //wording from the type
+        [Common.DoorSensor]: ioswitch,
+        [Common.OccupancySensor]: ioswitch,
+        [Common.SmokeSensor]: ioswitch,
+        [Common.WaterLeakSensor]: ioswitch,
+        [Common.GasLeakSensor]: ioswitch,
+        [Common.CO2Sensor]: ioswitch,
+        [Common.SoundSensor]: ioswitch,
+        [Common.MotionSensor]: ioswitch,
+        [Common.VibrationSensor]: ioswitch,
+        [Common.LockSensor]: ioswitch,
+        [Common.GarageDoorSensor]: ioswitch,
+
+        //device family, driven by the capabilities of its `device` object
+        [Common.Climate]: climate
+    })
+
+    //AnalogIn is the only type whose delegate also depends on the style the
+    //server sent: a styled gauge when there is one, the plain numeric widget
+    //otherwise. Every other type is decided by delegateByType alone.
+    function delegateForItem(ioType, ioStyle) {
+        if (ioType === Common.AnalogIn && ioStyle !== "default" && ioStyle !== "")
+            return analogStyled
+
+        var comp = delegateByType[ioType]
+        return comp !== undefined? comp: default_delegate
+    }
 
     Component {
         id: delegate
 
         Loader {
             z: index
-            sourceComponent: model.ioType === Common.Pump? pump:
-                             model.ioType === Common.Outlet? outlet:
-                             model.ioType === Common.Boiler? boiler:
-                             model.ioType === Common.Heater? heater:
-                             model.ioType === Common.Light? light:
-                             model.ioType === Common.Temp? temp:
-                             model.ioType === Common.VarInt? var_int:
-                             model.ioType === Common.AnalogIn && (model.ioStyle !== "default" && model.ioStyle !== "") ? analogStyled:
-                             model.ioType === Common.AnalogIn? var_int:
-                             model.ioType === Common.AnalogOut? var_int:
-                             model.ioType === Common.VarBool? var_bool:
-                             model.ioType === Common.VarString? var_string:
-                             model.ioType === Common.StringIn? var_string:
-                             model.ioType === Common.StringOut? var_string:
-                             model.ioType === Common.Scenario? scenario:
-                             model.ioType === Common.Shutter? shutter:
-                             model.ioType === Common.LightDimmer? light_dimmer:
-                             model.ioType === Common.LightRgb? light_rgb:
-                             model.ioType === Common.ShutterSmart? shutter_smart:
-                             model.ioType === Common.FavoritesLightsCount? fav_all_lights:
-                             model.ioType === Common.Switch? ioswitch:
-                             model.ioType === Common.Switch3? ioswitch:
-                             model.ioType === Common.Switch_long? ioswitch:
-                             model.ioType === Common.DoorSensor? ioswitch:
-                             model.ioType === Common.OccupancySensor? ioswitch:
-                             model.ioType === Common.SmokeSensor? ioswitch:
-                             model.ioType === Common.WaterLeakSensor? ioswitch:
-                             model.ioType === Common.GasLeakSensor? ioswitch:
-                             model.ioType === Common.CO2Sensor? ioswitch:
-                             model.ioType === Common.SoundSensor? ioswitch:
-                             model.ioType === Common.MotionSensor? ioswitch:
-                             model.ioType === Common.VibrationSensor? ioswitch:
-                             model.ioType === Common.LockSensor? ioswitch:
-                             model.ioType === Common.GarageDoorSensor? ioswitch:
-                             default_delegate
+            sourceComponent: lst.delegateForItem(model.ioType, model.ioStyle)
 
             onLoaded: {
                 item.modelData = Qt.binding(function() { return lst.model.getItemModel(model.index) })
-                console.debug("model is: " + model.roomName)
             }
 
             anchors.horizontalCenter: parent.horizontalCenter
-            anchors.horizontalCenterOffset: -3 * calaosApp.density
-            width: parent.width - 10 * calaosApp.density
+            anchors.horizontalCenterOffset: -Units.dp(3)
+            width: parent.width - Units.dp(10)
         }
     }
 
@@ -115,11 +147,11 @@ ListView {
             property variant modelData
 
             source: calaosApp.getPictureSized("back_items_home")
-            border.left: 5 * calaosApp.density; border.top: 5 * calaosApp.density
-            border.right: 5 * calaosApp.density; border.bottom: 5 * calaosApp.density
+            border.left: Units.dp(5); border.top: Units.dp(5)
+            border.right: Units.dp(5); border.bottom: Units.dp(5)
 
             width: parent.width
-            height: 40 * calaosApp.density
+            height: Units.dp(40)
 
             Text {
                 color: "#3ab4d7"
@@ -128,8 +160,8 @@ ListView {
                 clip: true
                 elide: Text.ElideMiddle
                 anchors {
-                    left: parent.left; leftMargin: 8 * calaosApp.density
-                    right: parent.right; rightMargin: 8 * calaosApp.density
+                    left: parent.left; leftMargin: Units.dp(8)
+                    right: parent.right; rightMargin: Units.dp(8)
                     verticalCenter: parent.verticalCenter
                 }
             }
@@ -153,4 +185,5 @@ ListView {
     Component { id: heater; IOHeater {} }
     Component { id: analogStyled; IOAnalogStyled {} }
     Component { id: ioswitch; IOSwitch {} }
+    Component { id: climate; IOClimate {} }
 }

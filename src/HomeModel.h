@@ -48,6 +48,16 @@ public slots:
     void addLight(IOBase *io);
     void removeLight(IOBase *io);
 
+    //Deliberately hides (does not override, QStandardItemModel::clear() is
+    //not virtual) the inherited clear(): calling ->clear() on a
+    //LightOnModel*-typed variable (HomeModel.cpp, Application.cpp) now
+    //resolves here at compile time. Before T06, only the model rows were
+    //emptied; onCache kept stale entries (pointing to freed IOBase clones)
+    //across a reconnect, so addLight() wrongly refused to re-add lights that
+    //were actually on ("ghost lights" after logout/login, see
+    //HomeModel.cpp:159 for the guard this fixes).
+    void clear();
+
 signals:
     void lightCountChanged();
 

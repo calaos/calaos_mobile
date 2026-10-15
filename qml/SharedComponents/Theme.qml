@@ -10,6 +10,8 @@ QtObject {
     property color redColor: "#ff5555"
     property color greenColor: "#5fd35f"
     property color whiteColor: "#e7e7e7"
+    property color mutedColor: "#868482"
+    property color amberColor: "#e0a356"
     property color backgroundColor: "#171717"
 
     function colorAlpha(c, alpha) {

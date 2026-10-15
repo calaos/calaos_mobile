@@ -1,5 +1,6 @@
 #include "WeatherInfo.h"
 #include "HardwareUtils.h"
+#include "Common.h"
 #include <QQmlEngine>
 #include <QtQml>
 
@@ -62,8 +63,8 @@ void WeatherModel::refreshWeather()
 
     QNetworkReply *rep = accessManager->get(QNetworkRequest(url));
 
-    connect(rep, SIGNAL(finished()),
-            this, SLOT(handleWeatherNetworkData()));
+    connect(rep, &QNetworkReply::finished,
+            this, &WeatherModel::handleWeatherNetworkData);
 }
 
 void WeatherModel::handleWeatherNetworkData()
@@ -100,8 +101,8 @@ void WeatherModel::handleWeatherNetworkData()
 
     QNetworkReply *rep = accessManager->get(QNetworkRequest(url));
 
-    connect(rep, SIGNAL(finished()),
-            this, SLOT(handleForecastNetworkData()));
+    connect(rep, &QNetworkReply::finished,
+            this, &WeatherModel::handleForecastNetworkData);
 }
 
 void WeatherModel::handleForecastNetworkData()
@@ -190,7 +191,7 @@ QString WeatherData::convertTemp(double t)
 
 void WeatherData::setWeatherData(const QJsonObject &obj)
 {
-    QDateTime dt = QDateTime::fromMSecsSinceEpoch((quint64)obj["dt"].toDouble() * 1000);
+    QDateTime dt = QDateTime::fromMSecsSinceEpoch((quint64)Common::toDoubleSafe(obj["dt"], 0.0, "weather.dt") * 1000);
     update_dayOfWeek(dt.date().toString("ddd"));
 
     QJsonArray jarr = obj["weather"].toArray();
@@ -198,15 +199,15 @@ void WeatherData::setWeatherData(const QJsonObject &obj)
     {
         QJsonObject jw = jarr.at(0).toObject();
         update_weatherIcon(jw["icon"].toString());
-        update_weatherCode(jw["id"].toInt());
+        update_weatherCode(Common::toIntSafe(jw["id"], 0, "weather.weather.id"));
         update_weatherText(jw["main"].toString());
         update_weatherDescription(jw["description"].toString());
     }
 
     QJsonObject tobj = obj["main"].toObject();
-    update_temperature(convertTemp(tobj["temp"].toDouble()));
-    update_temperatureMin(convertTemp(tobj["temp_min"].toDouble()));
-    update_temperatureMax(convertTemp(tobj["temp_max"].toDouble()));
+    update_temperature(convertTemp(Common::toDoubleSafe(tobj["temp"], 0.0, "weather.main.temp")));
+    update_temperatureMin(convertTemp(Common::toDoubleSafe(tobj["temp_min"], 0.0, "weather.main.temp_min")));
+    update_temperatureMax(convertTemp(Common::toDoubleSafe(tobj["temp_max"], 0.0, "weather.main.temp_max")));
     update_pressure(tobj["pressure"].toString());
     update_humidity(tobj["humidity"].toString());
 
@@ -227,6 +228,7 @@ int WeatherModel::getForecastCount()
 
 void WeatherModel::forecastDataClear()
 {
+    qDeleteAll(dataForecast);
     dataForecast.clear();
 }
 

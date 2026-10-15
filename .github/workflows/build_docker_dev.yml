@@ -4,6 +4,14 @@ on:
     push:
       branches: [ master ]
 
+# Serialise the runs. The version is derived from the existing tags, so two
+# pushes close together both compute the same one: the second then fails to
+# create a tag that already exists, after having overwritten the first run's
+# docker image. Queue instead of cancelling, every commit still gets its tag.
+concurrency:
+  group: build-docker-dev
+  cancel-in-progress: false
+
 env:
   REGISTRY_IMAGE: ghcr.io/calaos/calaos_home
   NAME: calaos_home

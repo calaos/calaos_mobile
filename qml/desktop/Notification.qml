@@ -2,6 +2,9 @@ import QtQuick
 import QtQuick.Layouts
 import Calaos
 import SharedComponents
+// ColorOverlay has no MultiEffect equivalent: the tint here is #efefef, and
+// MultiEffect colorizes by source luminance rather than replacing it. See T29
+// and the note in SharedComponents/ItemButtonAction.qml.
 import Qt5Compat.GraphicalEffects
 
 Flipable {
@@ -104,7 +107,8 @@ Flipable {
 
                 Text {
                     id: titleitem
-                    text: "Test title"
+                    //Filled in by showMessage(); the banner is never shown empty.
+                    text: ""
 
                     Layout.preferredWidth: Units.dp(200)
                     Layout.maximumWidth: Units.dp(200)
@@ -117,7 +121,8 @@ Flipable {
 
                 Text {
                     id: msgitem
-                    text: "Message lorem ipsum blabla blabla jhlkjsdlk jlk jdflkdjsf lkjsdlk fjlskdjf l kjdslfkj ldskjflskdjflkjds flkjd slfj dfdf."
+                    //Filled in by showMessage(); the banner is never shown empty.
+                    text: ""
 
                     width: col.width
                     Layout.preferredWidth: Units.dp(200)

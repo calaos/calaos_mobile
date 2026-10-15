@@ -7,6 +7,23 @@
 #include "CalaosConnection.h"
 #include "Common.h"
 
+namespace EventLogIO
+{
+    // Resout un identifiant d'IO en cherchant d'abord cote entree, puis cote
+    // sortie (ordre historique). Extrait de EventLogItem::load() en fonction
+    // pure parametree par les callbacks de recherche, pour rester testable
+    // (tests/tst_eventlogmodel) sans lier IOCache/IOBase (RoomModel.cpp), qui
+    // entrainent CalaosConnection, HardwareUtils et quickflux dans le lien.
+    template <typename T, typename SearchInFn, typename SearchOutFn>
+    T *resolve(SearchInFn searchInput, SearchOutFn searchOutput, const QString &id)
+    {
+        T *io = searchInput(id);
+        if (!io)
+            io = searchOutput(id);
+        return io;
+    }
+}
+
 #define DEFAULT_PER_PAGE    50
 
 class EventLogItem;

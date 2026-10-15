@@ -11,7 +11,7 @@ CalaosItemBase {
 
         anchors {
             fill: thisButton
-            margins: 4 * calaosApp.density
+            margins: Units.dp(4)
         }
 
         onWidthChanged: requestPaint()
@@ -94,7 +94,7 @@ CalaosItemBase {
             ctx.reset();
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.strokeStyle = "#3AB4D7"
-            ctx.lineWidth = 2 * calaosApp.density
+            ctx.lineWidth = Units.dp(2)
             ctx.lineCap = "butt";
 
             ctx.translate(canvas.width / 2, canvas.height / 2);
@@ -140,7 +140,7 @@ CalaosItemBase {
         id: animReset
         PropertyAnimation { target: canvas; duration: 100; properties: "opacity"; to: 0; easing.type: Easing.InCubic }
         ParallelAnimation {
-            PropertyAnimation { target: __rectBorder; duration: 250; property: "radius"; to: 8 * calaosApp.density; easing.type: Easing.InCubic }
+            PropertyAnimation { target: __rectBorder; duration: 250; property: "radius"; to: Units.dp(8); easing.type: Easing.InCubic }
             PropertyAnimation { target: __label; duration: 250; properties: "opacity"; to: 1; easing.type: Easing.InCubic }
             PropertyAnimation { target: __rectBorder; duration: 250; properties: "width"; to: parent.width; easing.type: Easing.InCubic }
         }

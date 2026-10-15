@@ -103,7 +103,7 @@ Item {
                                                          TextInput.Password,
                                                          false,
                                                          function(pass1) {
-                                                             Calaos.singleshotTimer(200, function() {
+                                                             CalaosJs.singleshotTimer(200, function() {
                                                                  AppActions.openKeyboard(qsTr("Password"),
                                                                                      qsTr("Enter your new password again to validate it"),
                                                                                      "",
@@ -130,7 +130,7 @@ Item {
                 Layout.fillWidth: true
                 font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pixelSize: Units.dp(18) }
                 color: Theme.whiteColor
-                text: qsTr("Actual username:")
+                text: qsTr("Current username:")
             }
 
             Item { Layout.fillWidth: true; height: 1 }
@@ -157,7 +157,7 @@ Item {
         Text {
             font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pixelSize: Units.dp(15) }
             color: Theme.colorAlpha(Theme.whiteColor, 0.7)
-            text: qsTr("Here you can configure some personal information like your email address. It is used by Calaos to send you some email. For example, the Note widget can use those addresses to send notes to your mailbox.")
+            text: qsTr("Here you can configure some personal information like your email address. It is used by Calaos to send you emails. For example, the Note widget can use those addresses to send notes to your mailbox.")
             wrapMode: Text.WordWrap
 
             Layout.fillWidth: true
@@ -344,7 +344,6 @@ Item {
         Filter {
             type: ActionTypes.addUserInfoEmail
             onDispatched: (filtertype, message) => {
-                console.log("user email append")
                 userInfoModel.addEmail(message.text)
             }
         }

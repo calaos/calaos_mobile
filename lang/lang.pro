@@ -7,15 +7,14 @@ DEFINES += CALAOS_DESKTOP
 
 SOURCES += \
     ../src/*.cpp \
-    ../src/android/*.cpp \
-    ../src/ios/*.cpp \
-    ../src/ios/*.m \
-    ../src/ios/*.mm
+    ../android/*.cpp \
+    ../ios/*.m \
+    ../ios/*.mm
 
 HEADERS += \
     ../src/*.h \
-    ../src/android/*.h \
-    ../src/ios/*.h
+    ../android/*.h \
+    ../ios/*.h
 
 SOURCES += \
     ../qml/desktop/*.qml \

@@ -5,6 +5,7 @@
         <file>qml/desktop/MainMenu.qml</file>
         <file>qml/desktop/MainMenuButton.qml</file>
         <file>qml/desktop/DesktopView.qml</file>
+        <file>qml/desktop/PageScaffold.qml</file>
         <file>qml/desktop/HomeView.qml</file>
         <file>qml/desktop/RoomDetailView.qml</file>
         <file>qml/desktop/FooterButton.qml</file>
@@ -32,6 +33,7 @@
         <file>qml/desktop/PopupBase.qml</file>
         <file>qml/desktop/BasePopupView.qml</file>
         <file>qml/desktop/Dialog.qml</file>
+<file>qml/desktop/DialogClimate.qml</file>
         <file>qml/quickflux/ActionTypes.qml</file>
         <file>qml/quickflux/AppActions.qml</file>
         <file>qml/quickflux/qmldir</file>
@@ -56,8 +58,10 @@
         <file>qml/desktop/CameraCommandItem.qml</file>
         <file>qml/desktop/ConfigNetworkView.qml</file>
         <file>qml/desktop/ConfigUpdateView.qml</file>
+        <file>qml/desktop/UpdateProgressPanel.qml</file>
         <file>qml/desktop/ConfigInstallView.qml</file>
         <file>qml/desktop/DialogRecoveryBoot.qml</file>
+        <file>qml/desktop/UpdateToast.qml</file>
         <file>qml/desktop/DialogNetInterface.qml</file>
         <file>qml/desktop/DialogSensorDetails.qml</file>
         <file>qml/desktop/SpeedDialPage.qml</file>

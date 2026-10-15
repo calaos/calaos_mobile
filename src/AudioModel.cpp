@@ -1,4 +1,8 @@
 #include "AudioModel.h"
+#include "JsonKeys.h"
+
+//Delay between two state queries of a visible player
+static const int AudioPollIntervalMs = 1000;
 
 AudioModel::AudioModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent):
     QStandardItemModel(parent),
@@ -18,15 +22,22 @@ AudioModel::AudioModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObjec
 
     set_playersVisible(false);
 
-    //add a special image provider for single pictures of cameras
-    imgProvider = new AudioImageProvider(this);
+    //add a special image provider for album covers
+    //The cache is shared with the items, the provider itself is owned by the engine
+    imageCache = ImageCachePtr::create();
+    imgProvider = new AudioImageProvider(imageCache);
     engine->addImageProvider(QLatin1String("audio_cover"), imgProvider);
 
-    connect(this, &AudioModel::playersVisibleChanged, this, [=](bool visible)
+    connect(this, &AudioModel::playersVisibleChanged, this, [this](bool visible)
     {
         for (int i = 0;i < rowCount();i++)
         {
             auto obj = dynamic_cast<AudioPlayer *>(item(i));
+            if (!obj)
+            {
+                qWarning() << "AudioModel: row" << i << "is not an AudioPlayer, skipping";
+                continue;
+            }
             obj->set_playerVisible(visible);
             if (visible)
                 obj->startPolling();
@@ -39,19 +50,20 @@ AudioModel::AudioModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObjec
 void AudioModel::load(const QVariantMap &homeData)
 {
     clear();
+    imageCache->clear();
 
-    if (!homeData.contains("audio"))
+    if (!homeData.contains(JsonKeys::Audio))
     {
         qDebug() << "no audio entry";
         return;
     }
 
-    QVariantList players = homeData["audio"].toList();
+    QVariantList players = homeData[JsonKeys::Audio].toList();
     QVariantList::iterator it = players.begin();
     for (;it != players.end();it++)
     {
         QVariantMap r = it->toMap();
-        AudioPlayer *p = new AudioPlayer(connection);
+        AudioPlayer *p = new AudioPlayer(connection, imageCache);
         p->load(r);
         appendRow(p);
     }
@@ -64,60 +76,14 @@ QObject *AudioModel::getItemModel(int idx)
     return obj;
 }
 
-QImage AudioImageProvider::requestImage(const QString &qid, QSize *size, const QSize &requestedSize)
-{
-    QImage retimg;
-
-    if (!model)
-        return {};
-
-    QStringList sl = qid.split('/');
-    if (sl.empty()) return retimg;
-
-    const QString& id = sl.at(0);
-    AudioPlayer *player = nullptr;
-
-    if (id.toInt() < 0)
-        return retimg;
-
-    for (int i = 0;i < model->rowCount();i++)
-    {
-        AudioPlayer *p = dynamic_cast<AudioPlayer *>(model->item(i));
-        if (p->get_id() == id)
-        {
-            player = p;
-            break;
-        }
-    }
-    if (!player)
-        return retimg;
-
-    player->getCurrentCoverImage(retimg);
-
-    *size = retimg.size();
-    if (requestedSize.isValid())
-        return retimg.scaled(requestedSize, Qt::KeepAspectRatio);
-
-    return retimg;
-}
-
-QPixmap AudioImageProvider::requestPixmap(const QString &id, QSize *size, const QSize &requestedSize)
-{
-    return QPixmap::fromImage(requestImage(id, size, requestedSize));
-}
-
-AudioPlayer::AudioPlayer(CalaosConnection *con):
+AudioPlayer::AudioPlayer(CalaosConnection *con, const ImageCachePtr &cache):
     QStandardItem(),
-    connection(con)
+    connection(con),
+    imageCache(cache)
 {
     loaded = false;
 
     connect(connection, &CalaosConnection::audioCoverDownloaded, this, &AudioPlayer::audioCoverDownloaded);
-}
-
-void AudioPlayer::getCurrentCoverImage(QImage &image)
-{
-    image = currentCoverImage;
 }
 
 void AudioPlayer::updatePlayerState(const QVariantMap &d)
@@ -131,21 +97,21 @@ void AudioPlayer::updatePlayerState(const QVariantMap &d)
     //refresh audio cover
     connection->getAudioCover(get_id());
 
-    update_status(Common::audioStatusFromString(playerData["status"].toString()));
-    update_id(playerData["id"].toString());
-    update_name(playerData["name"].toString());
-    auto vol = playerData["volume"].toDouble();
+    update_status(Common::audioStatusFromString(playerData[JsonKeys::Status].toString()));
+    update_id(playerData[JsonKeys::Id].toString());
+    update_name(playerData[JsonKeys::Name].toString());
+    auto vol = Common::toDoubleSafe(playerData[JsonKeys::Volume], 0.0, "AudioPlayer.volume");
     if (get_volume() != vol)
-        update_volume(playerData["volume"].toDouble());
-    update_elapsed(playerData["time_elapsed"].toDouble());
+        update_volume(vol);
+    update_elapsed(Common::toDoubleSafe(playerData[JsonKeys::TimeElapsed], 0.0, "AudioPlayer.time_elapsed"));
 
-    QVariantMap currentTrack = playerData["current_track"].toMap();
-    update_title(currentTrack["title"].toString());
-    update_album(currentTrack["album"].toString());
-    update_artist(currentTrack["artist"].toString());
-    update_genre(currentTrack["genre"].toString());
-    update_year(currentTrack["year"].toString());
-    update_duration(currentTrack["duration"].toDouble());
+    QVariantMap currentTrack = playerData[JsonKeys::CurrentTrack].toMap();
+    update_title(currentTrack[JsonKeys::Title].toString());
+    update_album(currentTrack[JsonKeys::Album].toString());
+    update_artist(currentTrack[JsonKeys::Artist].toString());
+    update_genre(currentTrack[JsonKeys::Genre].toString());
+    update_year(currentTrack[JsonKeys::Year].toString());
+    update_duration(Common::toDoubleSafe(currentTrack[JsonKeys::Duration], 0.0, "AudioPlayer.current_track.duration"));
 }
 
 void AudioPlayer::load(QVariantMap &d)
@@ -172,7 +138,7 @@ void AudioPlayer::load(QVariantMap &d)
 
 void AudioPlayer::sendNext()
 {
-    connection->sendCommand(playerData["id"].toString(),
+    connection->sendCommand(playerData[JsonKeys::Id].toString(),
             "next",
             "audio",
             "set_state");
@@ -180,7 +146,7 @@ void AudioPlayer::sendNext()
 
 void AudioPlayer::sendPause()
 {
-    connection->sendCommand(playerData["id"].toString(),
+    connection->sendCommand(playerData[JsonKeys::Id].toString(),
             "pause",
             "audio",
             "set_state");
@@ -188,7 +154,7 @@ void AudioPlayer::sendPause()
 
 void AudioPlayer::sendPlay()
 {
-    connection->sendCommand(playerData["id"].toString(),
+    connection->sendCommand(playerData[JsonKeys::Id].toString(),
             "play",
             "audio",
             "set_state");
@@ -196,7 +162,7 @@ void AudioPlayer::sendPlay()
 
 void AudioPlayer::sendPrevious()
 {
-    connection->sendCommand(playerData["id"].toString(),
+    connection->sendCommand(playerData[JsonKeys::Id].toString(),
             "previous",
             "audio",
             "set_state");
@@ -204,7 +170,7 @@ void AudioPlayer::sendPrevious()
 
 void AudioPlayer::sendStop()
 {
-    connection->sendCommand(playerData["id"].toString(),
+    connection->sendCommand(playerData[JsonKeys::Id].toString(),
             "stop",
             "audio",
             "set_state");
@@ -212,7 +178,7 @@ void AudioPlayer::sendStop()
 
 void AudioPlayer::sendVolume(int vol)
 {
-    connection->sendCommand(playerData["id"].toString(),
+    connection->sendCommand(playerData[JsonKeys::Id].toString(),
             QStringLiteral("volume set %1").arg(vol),
             "audio",
             "set_state");
@@ -237,12 +203,12 @@ void AudioPlayer::audioStateChanged(QString playerid, const QVariantMap &data)
     }
 
     //this is for old v1/v2
-    QVariantList players = data["audio_players"].toList();
+    QVariantList players = data[JsonKeys::AudioPlayers].toList();
     QVariantList::iterator it = players.begin();
     for (;it != players.end();it++)
     {
         QVariantMap r = it->toMap();
-        if (r["player_id"].toString() == playerData["id"].toString())
+        if (r[JsonKeys::PlayerId].toString() == playerData[JsonKeys::Id].toString())
         {
             updatePlayerState(data);
             break;
@@ -254,7 +220,7 @@ void AudioPlayer::audioStatusChanged(QString playerid, QString status)
 {
     if (playerid != get_id()) return;
 
-    playerData["volume"] = status;
+    playerData[JsonKeys::Status] = status;
     update_status(Common::audioStatusFromString(status));
 }
 
@@ -262,27 +228,33 @@ void AudioPlayer::audioVolumeChanged(QString playerid, double volume)
 {
     if (playerid != get_id()) return;
 
-    playerData["volume"] = QString("%1").arg(volume);
+    playerData[JsonKeys::Volume] = QString("%1").arg(volume);
     update_volume(volume);
 }
 
 void AudioPlayer::startPolling()
 {
-    if (pollTimer) delete pollTimer;
-    pollTimer = new QTimer(this);
-    connect(pollTimer, &QTimer::timeout, this, [=]()
+    //The timer is created once and reused, never deleted while it may be
+    //active. Restarting it can never create a second polling chain.
+    if (!pollTimer)
     {
-        connection->queryState(QStringList(),
-                               QStringList(),
-                               QStringList() << get_id());
-    });
-    pollTimer->start(1000);
+        pollTimer = new QTimer(this);
+        connect(pollTimer, &QTimer::timeout, this, [this]()
+        {
+            connection->queryState(QStringList(),
+                                   QStringList(),
+                                   QStringList() << get_id());
+        });
+    }
+
+    if (!pollTimer->isActive())
+        pollTimer->start(AudioPollIntervalMs);
 }
 
 void AudioPlayer::stopPolling()
 {
-    delete pollTimer;
-    pollTimer = nullptr;
+    if (pollTimer)
+        pollTimer->stop();
 }
 
 void AudioPlayer::audioCoverDownloaded(QString playerid, const QByteArray &data)
@@ -290,17 +262,17 @@ void AudioPlayer::audioCoverDownloaded(QString playerid, const QByteArray &data)
     if (playerid != get_id())
         return;
 
-    currentCoverImage = QImage::fromData(data);
-    if (currentCoverImage.isNull())
+    const QImage cover = QImage::fromData(data);
+
+    //Push a copy into the cache before advertising the new url, so that the
+    //provider thread never reads a stale entry for a fresh url
+    if (imageCache)
+        imageCache->setImage(get_id(), cover);
+
+    if (cover.isNull())
         update_cover({});
     else
         update_cover(QString("image://audio_cover/%1/%2")
                      .arg(get_id())
                      .arg(QRandomGenerator::global()->generate()));
-}
-
-AudioImageProvider::AudioImageProvider(AudioModel *m):
-    QQuickImageProvider(QQuickImageProvider::Image),
-    model(m)
-{
 }

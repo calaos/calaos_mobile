@@ -29,13 +29,11 @@ Dialog {
         slider_red.value = __item.rgbColor.r * 255
         slider_green.value = __item.rgbColor.g * 255
         slider_blue.value = __item.rgbColor.b * 255
-        console.log("update sliders: r:" + slider_red.value + " g:" + slider_green.value + " b:" + slider_blue.value)
     }
 
     property alias colorPreview: colorPrev.color
 
     function updatePreview() {
-        console.log("r:" + slider_red.value + " g:" + slider_green.value + " b:" + slider_blue.value)
         colorPreview = Qt.rgba(slider_red.value / 255.0, slider_green.value / 255.0, slider_blue.value / 255.0, 1)
     }
 
@@ -43,8 +41,8 @@ Dialog {
         id: slidersLayout
 
         anchors {
-            left: parent.left; leftMargin: 16 * calaosApp.density
-            right: parent.right; rightMargin: 16 * calaosApp.density
+            left: parent.left; leftMargin: Units.dp(16)
+            right: parent.right; rightMargin: Units.dp(16)
         }
 
         CalaosSlider {
@@ -121,18 +119,18 @@ Dialog {
         Rectangle {
 
             Layout.fillWidth: true
-            Layout.preferredHeight: 100 * calaosApp.density
+            Layout.preferredHeight: Units.dp(100)
 
             border.color: Qt.rgba(200, 200, 200, 0.1)
-            border.width: 1 * calaosApp.density
-            radius: 4 * calaosApp.density
+            border.width: Units.dp(1)
+            radius: Units.dp(4)
             color: "transparent"
 
             Rectangle {
                 id: colorPrev
                 anchors {
                     fill: parent
-                    margins: 4 * calaosApp.density
+                    margins: Units.dp(4)
                 }
             }
         }

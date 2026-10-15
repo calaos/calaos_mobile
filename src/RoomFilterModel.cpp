@@ -1,5 +1,36 @@
 #include "RoomFilterModel.h"
 #include "RoomModel.h"
+#include "IOTypeRegistry.h"
+
+namespace
+{
+
+/* Display families of a room view, listed in display order. The same ranking
+ * drives resetCache() (which side of the view an IO goes to) and lessThan()
+ * (in which order the IOs are shown), so the two cannot disagree. The families
+ * themselves come from the registry (src/IOTypeRegistry.h). */
+enum IoRank
+{
+    RankScenario = 0,
+    RankShutter,
+    RankMeasurement,
+    RankLight,
+    RankOther,
+};
+
+int ioRank(Common::IOType t)
+{
+    const IOTypeRegistry::Category cat = IOTypeRegistry::category(t);
+
+    if (cat == IOTypeRegistry::Category::Scenario) return RankScenario;
+    if (cat == IOTypeRegistry::Category::Shutter) return RankShutter;
+    if (IOTypeRegistry::isMeasurement(t)) return RankMeasurement;
+    if (IOTypeRegistry::isLight(t)) return RankLight;
+
+    return RankOther;
+}
+
+} //namespace
 
 RoomFilterModel::RoomFilterModel(QObject *parent):
     QSortFilterProxyModel(parent)
@@ -14,9 +45,9 @@ RoomFilterModel::RoomFilterModel(QObject *parent):
             qWarning() << "Source model (" << source << ") is not a RoomModel, aborting!";
         setSourceModel(rmodel);
 
-        connect(rmodel, SIGNAL(rowsInserted(QModelIndex,int,int)), this, SLOT(resetCache()));
-        connect(rmodel, SIGNAL(rowsRemoved(QModelIndex,int,int)), this, SLOT(resetCache()));
-        connect(rmodel, SIGNAL(modelReset()), this, SLOT(resetCache()));
+        connect(rmodel, &RoomModel::rowsInserted, this, &RoomFilterModel::resetCache);
+        connect(rmodel, &RoomModel::rowsRemoved, this, &RoomFilterModel::resetCache);
+        connect(rmodel, &RoomModel::modelReset, this, &RoomFilterModel::resetCache);
 
         resetCache();
         invalidate();
@@ -34,6 +65,11 @@ RoomFilterModel::RoomFilterModel(QObject *parent):
 
     setDynamicSortFilter(true);
     sort(0);
+}
+
+int RoomFilterModel::climateRows(IOBase *)
+{
+    return 2;
 }
 
 int RoomFilterModel::indexToSource(int idx)
@@ -60,6 +96,16 @@ void RoomFilterModel::resetCache()
     leftCache.clear();
     rightCache.clear();
 
+    /* Those lists are rebuilt from scratch on every call. They MUST be cleared
+     * here: resetCache() is triggered by rowsInserted/rowsRemoved/modelReset and
+     * by every filter change. Without this, they would keep growing and would
+     * hold pointers to IOBase objects already destroyed by the source model
+     * (lessThan() dereferences/compares them). */
+    shutters.clear();
+    lights.clear();
+    temps.clear();
+    other.clear();
+
     /* Smart sorting of IO between left and right listview
      * Rules to follow:
      * - Group all shutter in left
@@ -76,25 +122,29 @@ void RoomFilterModel::resetCache()
     for (int i = 0;i < rmodel->rowCount();i++)
     {
         IOBase *obj = dynamic_cast<IOBase *>(rmodel->getItemModel(i));
+        if (!obj)
+        {
+            qWarning() << "Item" << i << "of source model is not an IOBase, skipping it";
+            continue;
+        }
 
-        if (obj->get_ioType() == Common::Shutter ||
-            obj->get_ioType() == Common::ShutterSmart)
-            shutters << obj;
-        else if (obj->get_ioType() == Common::Light ||
-                 obj->get_ioType() == Common::LightDimmer ||
-                 obj->get_ioType() == Common::LightRgb)
-            lights << obj;
-        else if (obj->get_ioType() == Common::Temp ||
-                 obj->get_ioType() == Common::AnalogIn ||
-                 obj->get_ioType() == Common::VarInt)
-            temps << obj;
-        else
-            other << obj;
+        const Common::IOType ioType = obj->get_ioType();
 
-        if (obj->get_ioType() == Common::ShutterSmart)
+        switch (ioRank(ioType))
+        {
+        case RankShutter: shutters << obj; break;
+        case RankMeasurement: temps << obj; break;
+        case RankLight: lights << obj; break;
+        default: other << obj; break; //scenarios included, as before
+        }
+
+        //A smart shutter and a dimmable light take more rows on screen than a
+        //plain one: they weigh more in the left/right balance.
+        if (ioType == Common::ShutterSmart)
             totalCount += 3;
-        else if (obj->get_ioType() == Common::LightDimmer ||
-                 obj->get_ioType() == Common::LightRgb)
+        else if (ioType == Common::Climate)
+            totalCount += climateRows(obj);
+        else if (IOTypeRegistry::isDimmableLight(ioType))
             totalCount += 2;
         else
         {
@@ -129,35 +179,34 @@ void RoomFilterModel::resetCache()
 
     foreach (IOBase *io, lights)
     {
+        //Weights must match the ones used for totalCount above.
+        const int weight = IOTypeRegistry::isDimmableLight(io->get_ioType())? 2: 1;
+
         if (leftCount < half)
         {
             leftCache[io->get_ioId()] = io;
-            if (io->get_ioType() == Common::Light)
-                leftCount += 1;
-            else
-                leftCount += 2;
+            leftCount += weight;
         }
         else
         {
             rightCache[io->get_ioId()] = io;
-            if (io->get_ioType() == Common::Light)
-                rightCount += 1;
-            else
-                rightCount += 2;
+            rightCount += weight;
         }
     }
 
     foreach (IOBase *io, other)
     {
+        const int weight = io->get_ioType() == Common::Climate? climateRows(io): 1;
+
         if (leftCount <= half)
         {
             leftCache[io->get_ioId()] = io;
-            leftCount++;
+            leftCount += weight;
         }
         else
         {
             rightCache[io->get_ioId()] = io;
-            rightCount++;
+            rightCount += weight;
         }
     }
 }
@@ -208,26 +257,17 @@ bool RoomFilterModel::lessThan(const QModelIndex &left, const QModelIndex &right
     IOBase *lobj = dynamic_cast<IOBase *>(rmodel->itemFromIndex(left));
     IOBase *robj = dynamic_cast<IOBase *>(rmodel->itemFromIndex(right));
 
+    /* An invalid index or a non-IOBase item gives a null pointer here. Keep a
+     * stable and transitive order in that case: non-IOBase items sort last. */
+    if (!lobj || !robj)
+        return lobj && !robj;
+
     qDebug() << "sort '" << lobj->get_ioName() << "' < '" << robj->get_ioName() << "'";
 
     //* first sort by io type if they are different
     // scenarios < shutter < temps < light < other
     if (lobj->get_ioType() != robj->get_ioType())
-    {
-        int l = 4, r = 4;
-
-        if (lobj->get_ioType() == Common::Scenario) l = 0;
-        else if (shutters.contains(lobj)) l = 1;
-        else if (temps.contains(lobj)) l = 2;
-        else if (lights.contains(lobj)) l = 3;
-
-        if (robj->get_ioType() == Common::Scenario) r = 0;
-        else if (shutters.contains(robj)) r = 1;
-        else if (temps.contains(robj)) r = 2;
-        else if (lights.contains(robj)) r = 3;
-
-        return l < r;
-    }
+        return ioRank(lobj->get_ioType()) < ioRank(robj->get_ioType());
 
     //prevent a bug when sorting equal items
     if (lobj->get_ioName() == robj->get_ioName())

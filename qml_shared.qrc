@@ -37,5 +37,18 @@
         <file>qml/SharedComponents/ScrollingText.qml</file>
         <file>qml/SharedComponents/SensorStatusIcon.qml</file>
         <file>qml/SharedComponents/IOSwitch.qml</file>
+        <file>qml/SharedComponents/IOBinaryDevice.qml</file>
+        <file>qml/SharedComponents/IOClimate.qml</file>
+        <file>qml/SharedComponents/ClimateModel.qml</file>
+        <file>qml/SharedComponents/ClimateListItem.qml</file>
+        <file>qml/SharedComponents/ClimateDial.qml</file>
+        <file>qml/SharedComponents/ClimateReading.qml</file>
+        <file>qml/SharedComponents/ClimateDetail.qml</file>
+        <file>qml/SharedComponents/ClimateModePill.qml</file>
+        <file>qml/SharedComponents/ClimateRows.qml</file>
+        <file>qml/SharedComponents/ClimateMore.qml</file>
+        <file>qml/SharedComponents/ClimateIcon.qml</file>
+        <file>qml/SharedComponents/ClimateLogic.js</file>
+        <file>qml/SharedComponents/ClimateDrafts.js</file>
     </qresource>
 </RCC>

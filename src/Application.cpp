@@ -59,10 +59,10 @@ void Application::createQmlApp()
 
     engine.addImportPath("qrc:/qml/");
 
-    connect(HardwareUtils::Instance(), SIGNAL(networkStatusChanged()),
-            this, SLOT(networkStatusChanged()));
-    connect(HardwareUtils::Instance(), SIGNAL(calaosServerDetected()),
-            this, SLOT(calaosServerDetected()));
+    connect(HardwareUtils::Instance(), &HardwareUtils::networkStatusChanged,
+            this, &Application::networkStatusChanged);
+    connect(HardwareUtils::Instance(), &HardwareUtils::calaosServerDetected,
+            this, &Application::calaosServerDetected);
 
     connect(HardwareUtils::Instance(), &HardwareUtils::applicationWillResignActive, this, [=]()
     {
@@ -182,29 +182,34 @@ void Application::createQmlApp()
     update_applicationStatus(Common::NotConnected);
 
     calaosConnect = new CalaosConnection(this);
-    connect(calaosConnect, SIGNAL(homeLoaded(QVariantMap)),
-            this, SLOT(homeLoaded(QVariantMap)));
-    connect(calaosConnect, SIGNAL(loginFailed()),
-            this, SLOT(loginFailed()));
+    connect(calaosConnect, &CalaosConnection::homeLoaded,
+            this, &Application::homeLoaded);
+    connect(calaosConnect, &CalaosConnection::loginFailed,
+            this, &Application::loginFailed);
+    connect(calaosConnect, &CalaosConnection::connectionStateChanged,
+            this, &Application::connectionStateChanged);
     connect(calaosConnect, &CalaosConnection::disconnected, this, [=]()
     {
         update_applicationStatus(Common::NotConnected);
         update_settingsLocked(false);
 
 #ifdef CALAOS_DESKTOP
-        HardwareUtils::Instance()->showAlertMessage(tr("Network error"),
-                                                    tr("The connection to calaos_server was lost."
-                                                       "It will reconnect automatically when calaos_server"
-                                                       "is available again."),
-                                                    tr("Close"));
-
-        //restart autologin, only on desktop to continually try to connect
-        QTimer::singleShot(1000, [=]()
+        //T14: no QTimer::singleShot(1000, login) here any more. CalaosConnection
+        //owns the one and only reconnection timer and applies the exponential
+        //backoff. The alert is only shown on the first failure of a run,
+        //otherwise every retry would pop a dialog.
+        //Not on a credentials rejection: the connection was not lost and it
+        //will not come back on its own, so this text would be wrong twice.
+        //loginFailed() shows the right message once the policy gives up.
+        if (calaosConnect->reconnectFailureCount() == 1 &&
+            !calaosConnect->failingOnCredentials())
         {
-            //reload settings in case it was changed
-            loadSettings();
-            login(get_username(), get_password(), get_hostname());
-        });
+            HardwareUtils::Instance()->showAlertMessage(tr("Network error"),
+                                                        tr("The connection to calaos_server was lost. "
+                                                           "It will reconnect automatically when calaos_server "
+                                                           "is available again."),
+                                                        tr("Close"));
+        }
 #endif
     });
     connect(calaosConnect, &CalaosConnection::changeCredsFailed, this, [=]()
@@ -251,8 +256,16 @@ void Application::createQmlApp()
     bookmarkModel = new BookmarkModel(this);
     engine.rootContext()->setContextProperty("bookmarkModel", bookmarkModel);
 
+    //T31: asking the user to type a value is a platform concern, not a model
+    //one. IOBase no longer opens a dialog itself; qml/mobile/main.qml drives
+    //the native input dialog from here.
+    engine.rootContext()->setContextProperty("hardwareUtils", HardwareUtils::Instance());
+
 #ifdef HAVE_WEBENGINE
-    webProfile = new QQuickWebEngineProfile(QStringLiteral("CalaosWebProfile"), this);
+    //setStorageName() instead of the storage-name constructor: the latter
+    //only exists in recent Qt and this must build on older Qt too (6.4)
+    webProfile = new QQuickWebEngineProfile(this);
+    webProfile->setStorageName(QStringLiteral("CalaosWebProfile"));
     webProfile->setOffTheRecord(false);
     webProfile->setPersistentCookiesPolicy(QQuickWebEngineProfile::ForcePersistentCookies);
     webProfile->setHttpCacheType(QQuickWebEngineProfile::DiskHttpCache);
@@ -285,6 +298,12 @@ void Application::createQmlApp()
     controlPanelModel = new ControlPanelModel(this);
     engine.rootContext()->setContextProperty("controlPanelModel", controlPanelModel);
 
+    updateManager = new UpdateManager(&engine, this);
+    engine.rootContext()->setContextProperty("updateManager", updateManager);
+    engine.rootContext()->setContextProperty("updateCalaosModel", updateManager->calaosModel());
+    engine.rootContext()->setContextProperty("updateGroupsModel", updateManager->groupsModel());
+    engine.rootContext()->setContextProperty("updateProgressModel", updateManager->progressModel());
+
     //network info timer
     updateNetworkInfo();
     auto netTimer = new QTimer(this);
@@ -293,7 +312,7 @@ void Application::createQmlApp()
 
     //sys info timer
     sysInfoTimer = new QTimer();
-    connect(sysInfoTimer, SIGNAL(timeout()), this, SLOT(sysInfoTimerSlot()));
+    connect(sysInfoTimer, &QTimer::timeout, this, &Application::sysInfoTimerSlot);
     sysInfoTimer->start(5000);
     sysInfoTimerSlot();
 
@@ -377,9 +396,6 @@ void Application::login(QString user, QString pass, QString host)
         return;
     }
 
-    if (get_applicationStatus() != Common::NotConnected)
-        return;
-
     host = host.trimmed();
     user = user.trimmed();
     qDebug() << "Try to login to host: " << host;
@@ -388,8 +404,34 @@ void Application::login(QString user, QString pass, QString host)
     update_password(pass);
     update_hostname(host);
 
-    update_applicationStatus(Common::Loading);
+    //T14: no applicationStatus guard here any more. There is exactly one
+    //anti double-login guard and it lives in CalaosConnection/ReconnectPolicy;
+    //the two flags used to desynchronise and turn a login into a silent no-op.
+    //applicationStatus is updated by connectionStateChanged() when (and only
+    //when) the attempt actually starts.
     calaosConnect->login(user, pass, host);
+}
+
+void Application::connectionStateChanged(int state)
+{
+    switch (state)
+    {
+    case ReconnectPolicy::Connecting:
+        update_applicationStatus(Common::Loading);
+        break;
+
+    case ReconnectPolicy::Connected:
+        //Deliberately not LoggedIn yet: homeLoaded() switches to LoggedIn once
+        //the models are filled, otherwise QML would show an empty home.
+        break;
+
+    case ReconnectPolicy::Reconnecting:
+    case ReconnectPolicy::Disconnected:
+    default:
+        update_applicationStatus(Common::NotConnected);
+        update_settingsLocked(false);
+        break;
+    }
 }
 
 void Application::logout()
@@ -479,6 +521,14 @@ void Application::homeLoaded(const QVariantMap &homeData)
 
 void Application::loginFailed()
 {
+    //T14: the guard comes FIRST. It used to sit after the eight clear() calls,
+    //so a stray loginFailed() received while we were already disconnected
+    //emptied every model all over again.
+    if (m_applicationStatus == Common::NotConnected)
+        return;
+
+    qDebug() << "loginFailed called";
+
     update_settingsLocked(false);
     homeModel->clear();
     audioModel->clear();
@@ -490,26 +540,15 @@ void Application::loginFailed()
     cameraModel->clear();
     eventLogModel->clear();
 
-    if (m_applicationStatus == Common::NotConnected)
-        return;
-
-    qDebug() << "loginFailed called";
-
     update_applicationStatus(Common::NotConnected);
 
+    //Only emitted once the credentials were rejected for good, so this dialog
+    //is shown once and the login screen takes over. No automatic retry is
+    //scheduled here: retrying a wrong password forever is exactly the loop
+    //this ticket removes.
     HardwareUtils::Instance()->showAlertMessage(tr("Login failed"),
                                                 tr("Connection failed, please check your credentials."),
                                                 tr("Close"));
-
-#ifdef CALAOS_DESKTOP
-    //restart autologin, only on desktop to continually try to connect
-    QTimer::singleShot(1000, [=]()
-    {
-        //reload settings in case it was changed
-        loadSettings();
-        login(get_username(), get_password(), get_hostname());
-    });
-#endif
 }
 
 bool Application::needPictureHDPI()
@@ -615,19 +654,33 @@ void Application::moveFavorite(int idx, int newidx)
 void Application::networkStatusChanged()
 {
     qDebug() << "Network status changed, " << HardwareUtils::Instance()->getNetworkStatus();
+
     if (HardwareUtils::Instance()->getNetworkStatus() == HardwareUtils::NotConnected)
     {
-        logout();
+        //Airplane mode, cable unplugged... Drop the session, but unlike a real
+        //logout remember that a session is wanted so the link coming back
+        //reconnects on its own (T14).
+        disconnect(HardwareUtils::Instance(), &HardwareUtils::pushNotifReceived,
+                   this, &Application::pushNotificationReceived);
+        HardwareUtils::Instance()->updateCalaosConnectState(false);
+        calaosConnect->suspend();
+        return;
     }
+
+    //Link is back. resume() is a no-op unless a session was wanted and none is
+    //in flight, so a status change while connected costs nothing.
+    loadSettings();
+    calaosConnect->resume(get_username(), get_password(), get_hostname());
 }
 
 void Application::calaosServerDetected()
 {
-    if (get_applicationStatus() != Common::NotConnected)
-        return;
-
+    //T14: no applicationStatus guard and no extra timer. The single guard in
+    //CalaosConnection refuses the call while a session is up or an attempt is
+    //in flight; when a backoff delay is pending it short-circuits it instead
+    //of stacking one more timer.
     loadSettings();
-    login(get_username(), get_password(), get_hostname());
+    calaosConnect->requestImmediateReconnect(get_username(), get_password(), get_hostname());
 }
 
 void Application::rebootMachine()
@@ -792,10 +845,10 @@ void Application::updateSystemInfo()
         {
             if (!success) return;
 
-            update_cpuUsage(data["cpu_usage"].toInt());
-            update_memoryUsage(data["mem_usage"].toInt());
+            update_cpuUsage(Common::toIntSafe(data["cpu_usage"], 0, "system_info.cpu_usage"));
+            update_memoryUsage(Common::toIntSafe(data["mem_usage"], 0, "system_info.mem_usage"));
             update_machineName(data["hostname"].toString());
-            update_uptime(data["uptime"].toInt());
+            update_uptime(Common::toIntSafe(data["uptime"], 0, "system_info.uptime"));
         }
     );
 #endif

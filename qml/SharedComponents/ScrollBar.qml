@@ -64,11 +64,12 @@ Item {
 
     // Size the bar to the required size, depending upon the orientation.
     Rectangle {
-        x: orientation == Qt.Vertical ? 1 : (scrollBar.position * (scrollBar.width-2 * calaosApp.density) + 1 * calaosApp.density)
-        y: orientation == Qt.Vertical ? (scrollBar.position * (scrollBar.height-2 * calaosApp.density) + 1 * calaosApp.density) : 1 * calaosApp.density
-        width: orientation == Qt.Vertical ? (parent.width-2 * calaosApp.density) : (scrollBar.pageSize * (scrollBar.width-2 * calaosApp.density))
-        height: orientation == Qt.Vertical ? (scrollBar.pageSize * (scrollBar.height-2 * calaosApp.density)) : (parent.height-2 * calaosApp.density)
-        radius: orientation == Qt.Vertical ? (width/2 * calaosApp.density - 1 * calaosApp.density) : (height/2 * calaosApp.density - 1 * calaosApp.density)
+        x: orientation == Qt.Vertical ? 1 : (scrollBar.position * (scrollBar.width-Units.dp(2)) + Units.dp(1))
+        y: orientation == Qt.Vertical ? (scrollBar.position * (scrollBar.height-Units.dp(2)) + Units.dp(1)) : Units.dp(1)
+        width: orientation == Qt.Vertical ? (parent.width-Units.dp(2)) : (scrollBar.pageSize * (scrollBar.width-Units.dp(2)))
+        height: orientation == Qt.Vertical ? (scrollBar.pageSize * (scrollBar.height-Units.dp(2))) : (parent.height-Units.dp(2))
+        //width/height are already in pixels here, only the 1px inset is a dp value
+        radius: orientation == Qt.Vertical ? (width/2 - Units.dp(1)) : (height/2 - Units.dp(1))
         color: "#3ab4d7"
         opacity: listObject.visibleArea.heightRatio == 1?0:0.27
     }

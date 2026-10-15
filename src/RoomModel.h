@@ -6,7 +6,7 @@
 #include "qqmlhelpers.h"
 #include <QQmlApplicationEngine>
 #include "Common.h"
-#include "CalaosConnection.h"
+#include "IOConnection.h"
 
 class IOBase;
 
@@ -62,7 +62,7 @@ class ScenarioModel: public QStandardItemModel
 {
     Q_OBJECT
 public:
-    explicit ScenarioModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent = 0);
+    explicit ScenarioModel(QQmlApplicationEngine *eng, IOConnection *con, QObject *parent = 0);
 
     enum
     {
@@ -77,14 +77,14 @@ private:
     QString name, type;
 
     QQmlApplicationEngine *engine;
-    CalaosConnection *connection;
+    IOConnection *connection;
 };
 
 class RoomModel: public QStandardItemModel
 {
     Q_OBJECT
 public:
-    explicit RoomModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent = 0);
+    explicit RoomModel(QQmlApplicationEngine *eng, IOConnection *con, QObject *parent = 0);
 
     enum
     {
@@ -124,9 +124,7 @@ private:
     IOBase *temperatureIo = nullptr;
 
     QQmlApplicationEngine *engine;
-    CalaosConnection *connection;
-
-    QString detectOldGuiType(QString type);
+    IOConnection *connection;
 };
 
 class IOBase: public QObject, public QStandardItem
@@ -145,6 +143,16 @@ class IOBase: public QObject, public QStandardItem
     QML_READONLY_PROPERTY_MODEL(QString, room_name, RoomModel::RoleRoomName)
 
     QML_READONLY_PROPERTY_MODEL(bool, hasWarning, RoomModel::RoleWarning)
+
+    //`device` object of a climate (or other device-family) item, empty for a
+    //plain IO. Updated by io_changed, see deviceChanged().
+    Q_PROPERTY(bool hasDevice READ hasDevice NOTIFY deviceChange)
+    Q_PROPERTY(QVariantMap device READ getDevice NOTIFY deviceChange)
+    Q_PROPERTY(QVariantMap deviceCapabilities READ getDeviceCapabilities NOTIFY deviceChange)
+    Q_PROPERTY(QVariantMap deviceState READ getDeviceState NOTIFY deviceChange)
+    //When the device object was received, in ms since the epoch: what its
+    //timers (a lock-out counting down) are counted from.
+    Q_PROPERTY(qint64 deviceStamp READ getDeviceStamp NOTIFY deviceChange)
 
     Q_PROPERTY(bool stateBool READ getStateBool NOTIFY stateChange)
     Q_PROPERTY(double stateInt READ getStateInt NOTIFY stateChange)
@@ -180,7 +188,7 @@ class IOBase: public QObject, public QStandardItem
     QML_READONLY_PROPERTY(QString, statusWifiSSID)
 
 public:
-    IOBase(QQmlApplicationEngine *eng, CalaosConnection *con, int t);
+    IOBase(QQmlApplicationEngine *eng, IOConnection *con, int t);
 
     enum {
         IOInput, IOOutput
@@ -199,8 +207,19 @@ public:
     Q_INVOKABLE void sendDown();
     Q_INVOKABLE void sendUp();
     Q_INVOKABLE void sendStop();
-    Q_INVOKABLE void sendStringValue(QString value);
+    //Numbered, so that the answer comes back in commandAnswered(): returns
+    //the number, unique among the commands sent through this io.
+    Q_INVOKABLE int sendStringValue(QString value);
     Q_INVOKABLE void sendIntValue(double value);
+
+    bool hasDevice() const;
+    QVariantMap getDevice() const;
+    QVariantMap getDeviceCapabilities() const;
+    QVariantMap getDeviceState() const;
+    qint64 getDeviceStamp() const { return deviceStamp; }
+
+    //The clock the stamps come from, replaceable by a test
+    static void setClock(qint64 (*clock)());
 
     Q_INVOKABLE bool getStateBool();
     Q_INVOKABLE double getStateInt();
@@ -214,12 +233,19 @@ public:
 
     Q_INVOKABLE void sendColor(QColor c);
 
-    Q_INVOKABLE void askStateText();
+    /* Asking the user for a new value is a UI concern: IOBase used to open the
+     * dialog itself (HardwareUtils on mobile, a quickflux dispatch on desktop),
+     * which is why this model could not be linked into a test without dragging
+     * in half the application. The QML that owns the io now dispatches
+     * ActionTypes.openAskTextForIo and each variant's main.qml decides how to
+     * ask; the answer comes back through sendStringValue() above. */
 
 private:
     QVariantMap ioData;
+    qint64 deviceStamp = 0;
+    int commandSeq = 0;
     QQmlApplicationEngine *engine;
-    CalaosConnection *connection;
+    IOConnection *connection;
     int ioType;
 
     void sendRGB(int r, int g, int b);
@@ -228,11 +254,18 @@ private slots:
     void inputChanged(QString id, QString key, QString value);
     void outputChanged(QString id, QString key, QString value);
     void ioStatusChanged(QString id, QVariantMap statusData);
-
-    void textDialogValid(const QString &text);
+    void deviceChanged(QString id, QVariantMap newDevice);
+    void commandRefusedFor(QString id);
+    void commandAnsweredFor(QString id, int seq, bool ok);
 
 signals:
     void stateChange();
+    void deviceChange();
+    //The server answered success:false to a command sent for this io
+    void commandRefused();
+    //The answer to a command sent by sendStringValue(), accepted or not. The
+    //new state of the device is published separately, and later.
+    void commandAnswered(int seq, bool ok);
 
     void light_on(IOBase *io);
     void light_off(IOBase *io);

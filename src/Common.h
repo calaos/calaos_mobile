@@ -74,6 +74,9 @@ public:
         VibrationSensor,
         LockSensor,
         GarageDoorSensor,
+
+        //Device family, state is the mode and the details travel in `device`
+        Climate,
     };
     Q_ENUMS(IOType)
 
@@ -113,6 +116,39 @@ public:
     static IOType IOTypeFromString(QString t, QString style = {});
     static QString audioStatusToString(AudioStatusType t);
     static AudioStatusType audioStatusFromString(QString t);
+
+    /* Defensive parsing of numeric values coming from the server (or from a
+     * config file). QString::toInt() / QVariant::toDouble() without a success
+     * flag silently turn malformed data into 0, which then feeds the business
+     * logic as if it were a real value.
+     *
+     * Contract, identical for all three overloads:
+     *  - readable value      -> the converted value (behaviour unchanged);
+     *  - missing/empty field -> `def`, silently. A key missing from a
+     *                           QVariantMap is normal, not corrupted data,
+     *                           and warning on it would flood the logs;
+     *  - present but
+     *    unconvertible value -> `def` plus a qWarning naming the field.
+     *
+     * `what` only makes the warning actionable: pass the field name as it
+     * appears in the protocol ("IOBase.state", ...).
+     * The default is 0 everywhere it is used in src/, so replacing a bare parse
+     * with these helpers changes no value: it only adds the trace. */
+    static int toIntSafe(const QString &s, int def = 0, const char *what = nullptr);
+    static double toDoubleSafe(const QString &s, double def = 0.0, const char *what = nullptr);
+    static qint64 toLongLongSafe(const QString &s, qint64 def = 0, const char *what = nullptr);
+
+    static int toIntSafe(const QVariant &v, int def = 0, const char *what = nullptr);
+    static double toDoubleSafe(const QVariant &v, double def = 0.0, const char *what = nullptr);
+    static qint64 toLongLongSafe(const QVariant &v, qint64 def = 0, const char *what = nullptr);
+
+    //Handle both a native JSON number and a number carried as a string.
+    static int toIntSafe(const QJsonValue &v, int def = 0, const char *what = nullptr);
+    static double toDoubleSafe(const QJsonValue &v, double def = 0.0, const char *what = nullptr);
+
+    //A device object is only usable as a non-empty JSON object; decoder and model
+    //share this rule so `"device":{}` is dropped the same way everywhere.
+    static bool isUsableDevice(const QVariant &v);
 
     static void registerQml()
     {

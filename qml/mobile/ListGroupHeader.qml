@@ -5,7 +5,7 @@ Item {
 
     property alias title: titl.text
 
-    height: titl.implicitHeight + 10 * calaosApp.density
+    height: titl.implicitHeight + Units.dp(10)
 
     Text {
         id: titl
@@ -14,17 +14,17 @@ Item {
         text: title
         elide: Text.ElideRight
         anchors {
-            left: parent.left; leftMargin: 8 * calaosApp.density
-            right: parent.right; rightMargin: 8 * calaosApp.density
-            top: parent.top; topMargin: 4 * calaosApp.density
+            left: parent.left; leftMargin: Units.dp(8)
+            right: parent.right; rightMargin: Units.dp(8)
+            top: parent.top; topMargin: Units.dp(4)
         }
     }
     Rectangle {
         color: "#424242"
-        height: 2 * calaosApp.density
+        height: Units.dp(2)
         anchors {
-            left: parent.left; leftMargin: 12 * calaosApp.density
-            right: parent.right; rightMargin: 12 * calaosApp.density
+            left: parent.left; leftMargin: Units.dp(12)
+            right: parent.right; rightMargin: Units.dp(12)
             bottom: parent.bottom
         }
     }

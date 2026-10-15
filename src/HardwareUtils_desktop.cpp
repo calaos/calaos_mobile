@@ -83,8 +83,8 @@ void HardwareUtilsDesktop::platformInit(QQmlApplicationEngine *e)
     connect(timer, &QTimer::timeout, this, &HardwareUtilsDesktop::calaosDiscover);
     calaosDiscover();
     timer->start(5000);
-    connect(udpSocket, SIGNAL(readyRead()),
-            this, SLOT(readPendingDatagrams()));
+    connect(udpSocket, &QUdpSocket::readyRead,
+            this, &HardwareUtilsDesktop::readPendingDatagrams);
 
     QString h = getConfigOption("calaos_server_host");
     if (h != "")
@@ -110,19 +110,6 @@ void HardwareUtilsDesktop::showAlertMessage(QString title, QString message, QStr
                      { "message", message },
                      { "button", buttontext }};
     appDispatcher->dispatch("showNotificationMsg", m);
-}
-
-void HardwareUtilsDesktop::showNetworkActivity(bool en)
-{
-    if (qmlEngine->rootObjects().isEmpty()) return;
-
-    //qInfo() << "showNetworkActivity(" << en << ")";
-
-    QVariant ret;
-    QObject *root = qmlEngine->rootObjects().at(0);
-    QMetaObject::invokeMethod(root, "showNetworkActivity",
-                              Q_RETURN_ARG(QVariant, ret),
-                              Q_ARG(QVariant, en));
 }
 
 void HardwareUtilsDesktop::loadAuthKeychain(QString &email, QString &pass)

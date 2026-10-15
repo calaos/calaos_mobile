@@ -42,8 +42,6 @@ public:
     };
     virtual int getNetworkStatus();
 
-    virtual void showNetworkActivity(bool en);
-
     virtual void saveAuthKeychain(const QString &email, const QString &pass);
     virtual void loadAuthKeychain(QString &email, QString &pass);
     virtual QString getServerHost();
@@ -52,7 +50,10 @@ public:
     virtual void setConfigOption(QString key, QString value);
     virtual QString getConfigOption(QString key);
 
-    virtual void inputTextDialog(const QString &title, const QString &message);
+    //Called from qml/mobile/main.qml: the QML layer decides when a value has
+    //to be typed, the platform decides how. The answer comes back through the
+    //dialogTextValid()/dialogCanceled() signals below.
+    Q_INVOKABLE virtual void inputTextDialog(const QString &title, const QString &message);
 
     //This is set by platform code if app was started with options
     //It is used by iOS when started with a QuickAction

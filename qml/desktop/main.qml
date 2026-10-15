@@ -10,8 +10,8 @@ Window {
     id: rootWindow
     visible: true
 
-    width: Units.dp(1024) * calaosApp.density
-    height: Units.dp(768) * calaosApp.density
+    width: Units.dp(1024)
+    height: Units.dp(768)
 
     property QtObject roomModel
     property string currentRoomName
@@ -23,11 +23,6 @@ Window {
     //this is called by HardwareUtils
     function showAlertMessage(title, message, buttonText, timeout) {
         notif.showMessage(title, message, timeout)
-    }
-
-    //this is called by HardwareUtils
-    function showNetworkActivity(en) {
-        //TODO
     }
 
     function goToDesktop() {
@@ -49,6 +44,42 @@ Window {
             if (stackView.depth == 1)
                 mainMenu.unselectAll()
         }
+    }
+
+    //viewId of a page on the navigation stack, "" when it declares none
+    function viewIdOf(page) {
+        return (page && page.viewId) ? page.viewId : ""
+    }
+
+    //Show a top level section, replacing whatever section was open. The desktop
+    //is the stack root and stays there, so a section always ends up at depth 2.
+    function enterSection(sectionView) {
+        stackView.pop(null)
+        stackView.push(sectionView)
+    }
+
+    //Open a Configuration subpage from anywhere, the way a user would reach it:
+    //Configuration in the main menu, then the tile. handleSubitemClick() alone
+    //only pushes the page, it assumes the section was already entered, so
+    //calling it from outside leaves currentButton at 0. The footer selection
+    //and the desktop chrome both follow currentButton, and "Back to config"
+    //needs the config panel underneath.
+    function goToConfigSubitem(itemId) {
+        if (viewIdOf(stackView.currentItem) === itemId)
+            return
+
+        if (mainMenu.currentButton !== 4) {
+            enterSection(configPanelView)
+            mainMenu.currentButton = 4
+        }
+        else {
+            //already in the section but on a deeper page: entering a section
+            //always leaves its root at depth 2, so pop back down to it
+            while (stackView.depth > 2)
+                stackView.pop()
+        }
+
+        handleSubitemClick(itemId)
     }
 
     function handleSubitemClick(itemId) {
@@ -95,34 +126,16 @@ Window {
         menuContent: MainMenu {
             id: mainMenu
 
-            onButtonHomeClicked: {
-                console.log("currentButton", currentButton)
-                if (currentButton == 0)
-                    stackView.push(homeView)
-                else
-                    stackView.replace(desktopView, homeView)
-            }
-            onButtonMediaClicked: {
-                console.log("currentButton", currentButton)
-                if (currentButton == 0)
-                    stackView.push(mediaMenuView)
-                else
-                    stackView.replace(desktopView, mediaMenuView)
-            }
-            onButtonScenariosClicked: {
-                console.log("currentButton", currentButton)
-                if (currentButton == 0)
-                    stackView.push(scenariosView)
-                else
-                    stackView.replace(desktopView, scenariosView)
-            }
-            onButtonConfigClicked: {
-                console.log("currentButton", currentButton)
-                if (currentButton == 0)
-                    stackView.push(configPanelView)
-                else
-                    stackView.replace(desktopView, configPanelView)
-            }
+            //A section always sits at depth 2, directly above the desktop.
+            //replace(desktopView, x) used to be called when coming from another
+            //section, but desktopView is a Component and replace() only treats
+            //its first argument as a target when that target is an Item already
+            //on the stack. It was instead replacing the current page with two
+            //pages, growing the stack and leaving a stray desktop underneath.
+            onButtonHomeClicked: enterSection(homeView)
+            onButtonMediaClicked: enterSection(mediaMenuView)
+            onButtonScenariosClicked: enterSection(scenariosView)
+            onButtonConfigClicked: enterSection(configPanelView)
         }
 
         mainContent: StackViewAnim {
@@ -179,7 +192,6 @@ Window {
 
             onRoomClicked: (idx, room_name, room_type) => {
                 //get room model
-                console.debug("model: " + homeModel)
                 roomModel = homeModel.getRoomModel(idx)
                 currentRoomName = room_name
                 currentRoomType = room_type
@@ -291,6 +303,19 @@ Window {
         }
     }
 
+    //Non modal update notice. Declared before the overlay layer so that a
+    //dialog, which reparents itself into that layer, still covers it.
+    UpdateToast {
+        id: updateToast
+
+        anchors {
+            top: parent.top; topMargin: Units.dp(32)
+            right: parent.right; rightMargin: Units.dp(16)
+        }
+
+        onAccepted: rootWindow.goToConfigSubitem("config/update")
+    }
+
     //This overlay is for displaying dialogs on top of everything
     OverlayLayer {
         id: dialogOverlayLayer
@@ -306,6 +331,8 @@ Window {
     DialogRecoveryBoot { id: dialogRecoveryBoot }
 
     DialogSensorDetails { id: dialogSensorDetails }
+
+    DialogClimate { id: dialogClimate }
 
     //Dispatch actions
     AppListener {
@@ -331,9 +358,18 @@ Window {
             type: ActionTypes.openCameraSingleView
             onDispatched: (filtertype, message) => {
                 cameraSingleModel = message.camModel
+                //handleBack() only re-enables the cameras when this is set, and
+                //nothing on the desktop ever set it: leaving the single camera
+                //view stopped every camera of the list underneath, which stayed
+                //frozen until the user left the media section and came back.
+                isSingleCameraView = true
                 stackView.push(cameraSingleView)
             }
         }
+        //An io asks for a new value. The action used to be dispatched from
+        //IOBase itself; the io is a model and no longer knows that dialogs
+        //exist, so IOVarString.qml dispatches it and we answer here with the
+        //virtual keyboard, the presentation this variant has (T31).
         Filter {
             type: ActionTypes.openAskTextForIo
 
@@ -341,7 +377,6 @@ Window {
 
             onDispatched: (filtertype, message) => {
                 io = message.io
-                console.log("todo keyboard for item:" + io + " - " + io.ioName)
                 dialogKeyboard.openKeyboard(qsTr("Keyboard"),
                                             qsTr("Change text for '%1'").arg(io.ioName),
                                             io.stateString,
@@ -400,10 +435,29 @@ Window {
         }
 
         Filter {
+            type: ActionTypes.showClimateDetails
+
+            onDispatched: (filtertype, message) => {
+                dialogClimate.openFor(message.io)
+            }
+        }
+
+        Filter {
             type: ActionTypes.showSensorDetails
 
             onDispatched: (filtertype, message) => {
                 dialogSensorDetails.showSensor(message.sensor)
+            }
+        }
+
+        Filter {
+            type: ActionTypes.showUpdateAvailableDialog
+
+            onDispatched: (filtertype, message) => {
+                //never surface the notice while an upgrade is already running
+                if (updateManager.isUpgrading)
+                    return
+                updateToast.showToast(message)
             }
         }
     }

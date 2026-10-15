@@ -32,6 +32,7 @@
 #include "OSInstaller.h"
 #include "UsbDisk.h"
 #include "ControlPanelModel.h"
+#include "UpdateManager.h"
 #include "BookmarkModel.h"
 
 #ifdef HAVE_WEBENGINE
@@ -112,6 +113,9 @@ public:
 private slots:
     void homeLoaded(const QVariantMap &homeData);
     void loginFailed();
+    //Mirrors CalaosConnection's ReconnectPolicy::State onto applicationStatus.
+    //applicationStatus is derived from it, never maintained in parallel.
+    void connectionStateChanged(int state);
     void networkStatusChanged();
     void calaosServerDetected();
     void sysInfoTimerSlot();
@@ -133,6 +137,7 @@ private:
     UsbDiskModel *usbDiskModel = nullptr;
     OSInstaller *osInstaller = nullptr;
     ControlPanelModel *controlPanelModel = nullptr;
+    UpdateManager *updateManager = nullptr;
     BookmarkModel *bookmarkModel = nullptr;
 
 #ifdef HAVE_WEBENGINE

@@ -6,7 +6,7 @@ import "."
 ItemBase {
     property variant modelData
 
-    height: 80 * calaosApp.density
+    height: Units.dp(80)
 
     RowLayout {
 
@@ -44,16 +44,9 @@ ItemBase {
             sensor: modelData
         }
 
-        ItemButtonAction {
-            id: bton
-            imageSource: "button_light_on"
-
-            onButtonClicked: {
-                feedbackAnim()
-                modelData.sendTrue()
-            }
-        }
-
+        //buttons go from deactivate to activate, left to right: in a RowLayout
+        //the declaration order is the visual order, unlike the anchors this
+        //code used to rely on
         ItemButtonAction {
             id: btoff
             imageSource: "button_light_off"
@@ -63,22 +56,31 @@ ItemBase {
                 modelData.sendFalse()
             }
         }
+
+        ItemButtonAction {
+            id: bton
+            imageSource: "button_light_on"
+
+            onButtonClicked: {
+                feedbackAnim()
+                modelData.sendTrue()
+            }
+        }
     }
 
     CalaosSlider {
         id: slider
         anchors {
-            left: parent.left; leftMargin: 16 * calaosApp.density
-            right: parent.right; rightMargin: 16 * calaosApp.density
+            left: parent.left; leftMargin: Units.dp(16)
+            right: parent.right; rightMargin: Units.dp(16)
             verticalCenter: parent.verticalCenter
-            verticalCenterOffset: 18 * calaosApp.density
-            //bottom: parent.bottom; bottomMargin: 14 * calaosApp.density
+            verticalCenterOffset: Units.dp(18)
+            //bottom: parent.bottom; bottomMargin: Units.dp(14)
         }
         live: false
         from: 0; to: 100
         value: modelData.stateInt
         onValueChanged: {
-            console.log("slider value changed")
             if (value !== modelData.stateInt) {
                 feedbackAnim()
                 modelData.sendIntValue(Math.round(value))

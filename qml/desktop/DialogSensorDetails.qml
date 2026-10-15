@@ -26,8 +26,8 @@ Dialog {
         id: mainLayout
 
         anchors {
-            left: parent.left; leftMargin: 16 * calaosApp.density
-            right: parent.right; rightMargin: 16 * calaosApp.density
+            left: parent.left; leftMargin: Units.dp(16)
+            right: parent.right; rightMargin: Units.dp(16)
         }
 
         Item {
@@ -114,7 +114,7 @@ Dialog {
             Text {
                 font { family: calaosFont.fontFamily; weight: Font.Medium; pointSize: 14 }
                 color: "#E7E7E7"
-                text: Calaos.formatTime(__internal.item.statusUptime)
+                text: CalaosJs.formatDuration(__internal.item.statusUptime, CalaosJs.Duration.Short)
                 Layout.alignment: Qt.AlignVCenter
             }
         }

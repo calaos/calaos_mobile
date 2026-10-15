@@ -78,7 +78,7 @@ Item {
             Text {
                 font { family: calaosFont.fontFamily; weight: Font.Normal; pixelSize: Units.dp(15) }
                 color: Theme.colorAlpha(Theme.yellowColor, 0.7)
-                text: qsTr("WARNING: All data from the destination disk are going to be lost!")
+                text: qsTr("WARNING: All data on the destination disk will be lost!")
                 wrapMode: Text.WordWrap
 
                 Layout.fillWidth: true

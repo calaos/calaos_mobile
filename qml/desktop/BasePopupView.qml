@@ -1,4 +1,8 @@
 import QtQuick
+// RectangularGlow, not ColorOverlay: this draws the elevation shadow of every
+// desktop popup from a rounded-rectangle shape, independently of any source
+// item. MultiEffect only knows how to shadow its own source, so there is no
+// substitution here at all. See T29.
 import Qt5Compat.GraphicalEffects
 import SharedComponents
 

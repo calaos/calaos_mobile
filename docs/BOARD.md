@@ -3,7 +3,7 @@
 Suivi du backlog de refactoring (robustesse, maintenabilité, bonnes pratiques). Chaque ticket est spécifié dans [`docs/tasks/`](tasks/) et est auto-porteur : il peut être confié tel quel à un agent de développement autonome.
 
 Chantier « devices / climate » : tickets MOB-1 à MOB-6 (widget, item de liste, bottom sheet et dialogue de réglage climate) suivis dans le board de calaos_base (`docs/devices/BOARD.md`).
-FIX-MOB-1 (sheets et dialogues fermés à la déconnexion) : suivi dans le même board de calaos_base.
+FIX-MOB-1 (sheets et dialogues fermés à la déconnexion) : suivi dans le même board de calaos_base. CLIM-9 (libellé « Sonde hors limites ») : idem.
 
 ## Règles d'utilisation
 

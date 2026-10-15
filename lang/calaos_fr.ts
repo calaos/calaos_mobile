@@ -329,26 +329,31 @@
     </message>
     <message>
         <location filename="../qml/SharedComponents/ClimateModel.qml" line="242"/>
+        <source>Sensor out of range</source>
+        <translation>Sonde hors limites</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="243"/>
         <source>Humidity too high</source>
         <translation>Humidité trop haute</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/ClimateModel.qml" line="243"/>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="244"/>
         <source>Humidity sensor silent</source>
         <translation>Sonde d&apos;humidité muette</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/ClimateModel.qml" line="250"/>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="251"/>
         <source>Offline</source>
         <translation>Hors ligne</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/ClimateModel.qml" line="253"/>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="254"/>
         <source>Stopped</source>
         <translation>Arrêté</translation>
     </message>
     <message numerus="yes">
-        <location filename="../qml/SharedComponents/ClimateModel.qml" line="256"/>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="257"/>
         <source>Starts in %n min</source>
         <translation>
             <numerusform>Démarre dans %n min</numerusform>
@@ -356,12 +361,12 @@
         </translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/ClimateModel.qml" line="266"/>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="267"/>
         <source>Starts in %1 min %2 s</source>
         <translation>Démarre dans %1 min %2</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/ClimateModel.qml" line="267"/>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="268"/>
         <source>Starts in %1 s</source>
         <translation>Démarre dans %1 s</translation>
     </message>
@@ -1631,12 +1636,12 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>HardwareUtils_iOS</name>
     <message>
-        <location filename="../ios/HardwareUtils.mm" line="324"/>
+        <location filename="../ios/HardwareUtils.mm" line="356"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
     <message>
-        <location filename="../ios/HardwareUtils.mm" line="325"/>
+        <location filename="../ios/HardwareUtils.mm" line="357"/>
         <source>Confirm</source>
         <translation>Valider</translation>
     </message>

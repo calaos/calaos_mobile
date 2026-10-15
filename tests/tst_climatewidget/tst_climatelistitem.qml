@@ -145,6 +145,8 @@ TestCase {
         return [
             { tag: "sensor_stale", fault: "sensor_stale", text: "Sensor silent" },
             { tag: "sensor_missing", fault: "sensor_missing", text: "Sensor missing" },
+            { tag: "sensor_waiting", fault: "sensor_waiting", text: "Waiting for the sensor" },
+            { tag: "sensor_disconnected", fault: "sensor_disconnected", text: "Sensor disconnected" },
             { tag: "humidity_high", fault: "humidity_high", text: "Humidity too high" },
             { tag: "humidity_stale", fault: "humidity_stale", text: "Humidity sensor silent" },
             { tag: "another reason is humanized", fault: "valve_stuck", text: "Valve stuck" }

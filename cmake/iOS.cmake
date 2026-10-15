@@ -64,7 +64,7 @@ set_target_properties(CalaosHome PROPERTIES
     XCODE_ATTRIBUTE_MARKETING_VERSION                  "${CALAOS_VERSION}"
     XCODE_ATTRIBUTE_CURRENT_PROJECT_VERSION            "${CALAOS_VERSION_CODE}"
     XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY             "1,2"
-    XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET         "14.0"
+    XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET         "17.0"
     XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
     # Produce a dSYM bundle in Release/archive builds so symbols can be uploaded
     # (App Store / crash symbolication). CMake's Xcode generator otherwise leaves

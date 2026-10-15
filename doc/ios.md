@@ -14,7 +14,7 @@
 | Apple Development Team id | `9WYC46992U` |
 | Keychain Sharing group | `fr.calaos.CalaosMobile` |
 | App Group | `group.fr.calaos.CalaosMobile` |
-| Min iOS | depends on Qt version (Qt 6 → iOS 14+) |
+| Min iOS | 17.0 (CMake build; matches the Qt 6.11 iOS libraries) |
 
 These are pinned in [ios/ios.pri](../ios/ios.pri) and
 [ios/AppInfo.plist](../ios/AppInfo.plist):
@@ -226,7 +226,7 @@ requires no manual Xcode-side steps.
 ```bash
 cmake -S . -B build-ios -G Xcode \
       -DCMAKE_SYSTEM_NAME=iOS \
-      -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 \
+      -DCMAKE_OSX_DEPLOYMENT_TARGET=17.0 \
       -DCMAKE_PREFIX_PATH=/path/to/Qt/6.10.0/ios \
       -DCMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM=9WYC46992U
 ```

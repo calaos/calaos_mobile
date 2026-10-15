@@ -33,10 +33,11 @@ echo "==> Configuring for iOS (${CONFIG})"
 cmake -S "${SCRIPT_DIR}" -B "${BUILD_DIR}" \
     -G Xcode \
     -DCMAKE_SYSTEM_NAME=iOS \
-    -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 \
+    -DCMAKE_OSX_DEPLOYMENT_TARGET=17.0 \
     -DCMAKE_PREFIX_PATH="${QT_IOS}" \
     -DQT_HOST_PATH="${QT_HOST}" \
     -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH \
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
     -DCMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM="${TEAM_ID}"
 
 # CMake's Xcode generator leaves "shadow" symlinks in the product dirs
@@ -60,7 +61,7 @@ echo "==> Building (${CONFIG})"
 clean_stale_symlinks
 cmake --build "${BUILD_DIR}" \
     --config "${CONFIG}" \
-    -- -parallelizeTargets -jobs "$(sysctl -n hw.logicalcpu)"
+    -- -allowProvisioningUpdates -parallelizeTargets -jobs "$(sysctl -n hw.logicalcpu)"
 
 if [[ "${ARCHIVE}" == true ]]; then
     echo ""

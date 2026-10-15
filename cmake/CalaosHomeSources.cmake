@@ -9,7 +9,9 @@ set(CALAOS_SOURCES
     src/HomeModel.cpp
     src/Application.cpp
     src/CalaosConnection.cpp
+    src/CalaosEventDecoder.cpp
     src/Common.cpp
+    src/IOTypeRegistry.cpp
     src/RoomModel.cpp
     src/AudioModel.cpp
     src/FavoritesModel.cpp
@@ -20,13 +22,18 @@ set(CALAOS_SOURCES
     src/Lang.cpp
     src/EventLogModel.cpp
     src/BookmarkModel.cpp
+    src/ModelImageProvider.cpp
 )
 
 set(CALAOS_HEADERS
     src/HomeModel.h
     src/Application.h
     src/CalaosConnection.h
+    src/CalaosEventDecoder.h
     src/Common.h
+    src/IOTypeRegistry.h
+    src/IOConnection.h
+    src/JsonKeys.h
     src/RoomModel.h
     src/AudioModel.h
     src/FavoritesModel.h
@@ -38,4 +45,5 @@ set(CALAOS_HEADERS
     src/Lang.h
     src/EventLogModel.h
     src/BookmarkModel.h
+    src/ModelImageProvider.h
 )

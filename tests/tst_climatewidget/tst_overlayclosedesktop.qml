@@ -218,6 +218,35 @@ TestCase {
         verify(layer.currentOverlay === null)
     }
 
+    function test_aDialogDestroyedWhileShownDoesNotHideTheOneBelowFromTheOverlay() {
+        var a = createTemporaryObject(plainDialog, tc)
+        var b = createTemporaryObject(plainDialog, tc)
+        showAndCheck(a)
+        showAndCheck(b)
+        b.destroy()
+        wait(50)
+        var c = createTemporaryObject(plainDialog, tc)
+        showAndCheck(c)
+        c.close()
+        verify(a.showing)
+        verify(layer.currentOverlay === a)
+    }
+
+    function test_disablingTheLayerClosesEveryDialogTopFirst() {
+        var a = createTemporaryObject(plainDialog, tc)
+        var b = createTemporaryObject(plainDialog, tc)
+        var order = []
+        a.closed.connect(function() { order.push("a") })
+        b.closed.connect(function() { order.push("b") })
+        showAndCheck(a)
+        showAndCheck(b)
+        layer.enabled = false
+        layer.enabled = true
+        verify(!a.showing && !b.showing)
+        compare(order.join(","), "b,a")
+        verify(layer.currentOverlay === null)
+    }
+
     function test_aDialogOfTheSessionOverOneThatStaysLeavesItTheOverlay() {
         var below = createTemporaryObject(plainDialog, tc)
         showAndCheck(below)

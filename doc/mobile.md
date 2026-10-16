@@ -156,9 +156,13 @@ QuickFlux dispatches.
   `fr.calaos.CalaosMobile`.
 - Android: native dialogs from
   [android/src/fr/calaos/calaoshome/HardwareUtils.java](../android/src/fr/calaos/calaoshome/HardwareUtils.java);
-  credentials persistence is delegated to `QSettings` because the Android
-  variant historically does not use a Keystore wrapper. **TODO**: any code
-  changes around credential handling must check this flow.
+  credentials and server host in
+  [CredentialStore.java](../android/src/fr/calaos/calaoshome/CredentialStore.java)
+  (SharedPreferences encrypted with an Android Keystore AES-GCM key, excluded
+  from backup), written/read by the `HardwareUtilsAndroid` overrides, so the
+  push picture worker can use them without Qt running. Credentials saved in
+  `QSettings` by earlier versions are migrated at the first start and the
+  clear-text copy removed. See [android.md](android.md) section 6.4.
 
 ## 9. Push notifications
 
@@ -169,8 +173,11 @@ platform-specific:
 
 - **iOS**: APNs + a Notification Service Extension (`PushNotif.appex`) that
   decrypts payloads using a shared keychain item. See [ios.md](ios.md).
-- **Android**: Firebase Cloud Messaging via the Firebase C++ SDK. See
-  [android.md](android.md).
+- **Android**: Firebase Cloud Messaging via the Firebase Java SDK
+  (`CalaosMessagingService`), data-only messages requested with
+  `push_format: "data"` in `register_push` (`PushFormat` in
+  `CalaosConnection.h`), camera picture attached by an expedited WorkManager
+  job. See [android.md](android.md) section 6.
 
 Shared rules (in [src/HardwareUtils.cpp](../src/HardwareUtils.cpp) and
 [src/CalaosConnection.cpp](../src/CalaosConnection.cpp)):

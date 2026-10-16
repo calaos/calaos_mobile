@@ -169,20 +169,172 @@ Java → C++ callbacks go through native methods declared on
 
 ## 6. Push notifications (FCM)
 
-Implementation in
-[android/HardwareUtils_Android.cpp](../android/HardwareUtils_Android.cpp):
-
-1. `HardwareUtilsAndroid::platformInit()` instantiates `FbListener`, which
-   creates a `firebase::App` from the JNI activity context.
-2. `firebase::messaging::Initialize(...)` registers the listener.
-3. `firebase::messaging::GetToken()` future delivers the FCM token →
-   `HardwareUtilsAndroid::setDeviceToken()` → `HardwareUtils::deviceToken`.
-4. `OnTokenReceived` and `OnMessage` are overridden to keep the token in sync
-   and (currently) log incoming messages.
-
+Firebase Cloud Messaging through the **Firebase Java SDK** (AND-4; the C++ SDK
+is gone). Everything lives in Java under
+[android/src/fr/calaos/calaoshome/](../android/src/fr/calaos/calaoshome/);
 [android/build.gradle](../android/build.gradle) applies
-`com.google.gms.google-services` + the Firebase C++ `firebase_dependencies.gradle`
-with `firebaseCpp.dependencies { messaging }`.
+`com.google.gms.google-services` and depends on `firebase-messaging` (BoM) and
+`androidx.work:work-runtime`.
+
+### 6.1 Token
+
+`CalaosMessagingService.onNewToken()` persists the token in the
+`calaos_push` SharedPreferences (excluded from backup) and forwards it to C++
+only when Qt is running (`HardwareUtils.deliverPushToken`). At startup
+`HardwareUtilsAndroid::platformInit()` reads the persisted token, asks
+`FirebaseMessaging.getToken()`, and reports it with
+`HardwareUtils::setDeviceToken()`; `CalaosConnection::registerPushToken()`
+then sends `register_push` (see [mobile.md](mobile.md) section 9).
+
+### 6.2 Contract with calaos_server: data-only messages (AND-7)
+
+With a `notification` block, Play services displays the message itself while
+the app is in the background and `onMessageReceived()` never runs, so the
+camera picture could not be attached. The app therefore asks for **data-only**
+messages. The whole contract is held in `PushFormat` in
+[src/CalaosConnection.h](../src/CalaosConnection.h) (key in `JsonKeys.h`):
+
+- `register_push` (websocket and HTTP `api.php`), Android only, adds the field
+  **`"push_format": "data"`** next to `token` and `hardware: "android"`.
+  iOS and older Android versions send no field and keep the legacy format.
+- For a token registered with `push_format: "data"`, calaos_server sends an
+  FCM **data message** with `android.priority = "high"` and no
+  `notification` block:
+  `data = { "title": "Calaos", "body": <message>, "message": <message>, "event_uuid": <uuid> }`
+  (all strings; `event_uuid` only when the rule attached a camera picture).
+- `CalaosMessagingService.handleMessage()` accepts both shapes
+  (`PushPayload.from`): data-only in every app state, legacy
+  notification+data while in the foreground (in the background the system
+  shows the legacy one, text only, and the data keys reach the activity
+  intent on tap).
+
+### 6.3 Camera picture (AND-7)
+
+`handleMessage()` posts the text notification at once (id derived from
+`event_uuid`), then enqueues `PushPictureWorker` as an **expedited
+WorkManager job** on Android 12+ (unique per event, network constraint). The worker, like
+`ios/PushNotif/NotificationService.m`:
+
+1. reads host and credentials from `CredentialStore` (6.4);
+2. `GET <api>?cn_user=…&cn_pass=…&action=eventlog&uuid=<event_uuid>` → event
+   JSON, `pic_uid`;
+3. `GET <api>?cn_user=…&cn_pass=…&action=event_picture&pic_uid=<pic_uid>` →
+   the picture (a JPEG from calaos_server; any format `BitmapFactory` decodes,
+   first frame of a GIF);
+4. downscales it (longest side 1024 px) and re-posts the notification with
+   the **same id** in `BigPictureStyle` + `largeIcon`
+   (`setOnlyAlertOnce`, so no second sound).
+
+`<api>` is the host as typed: `http(s)://…` used as is, `ws(s)://…` turned
+into `http(s)://…`, a bare host becomes `https://<host>/api.php`
+(`PushPictureWorker.apiBaseUrl`, same rules as `CalaosConnection::login`).
+Timeouts 5 s connect / 10 s read, bodies capped (64 KiB JSON, 8 MiB image),
+no redirects (the credentials are in the query string). A network error is
+retried twice, each retry being a **new expedited request** (not
+`Result.retry()`: WorkManager re-schedules a retried expedited job as a
+regular one, which the system batches for minutes). This matters because
+the first attempt runs in-process right after the message, while the push
+wake-up still grants network; once the process is cached the system closes
+its sockets (`SocketException`), and the expedited retry runs as a
+scheduler job with its own network access. Any failure (no credentials, unreachable server, HTTP 400 for
+wrong credentials, 404, empty `pic_uid`, undecodable image) leaves the text
+notification in place without any visible error. Nothing logs a URL, a
+credential or image bytes.
+
+Limits:
+
+- **TLS is validated by the system trust store**, like `NSURLSession` on iOS.
+  A calaos_server with a **self-signed certificate gets the text notification
+  only**; the TOFU pinning of the Qt side (`CalaosConnection`) is not shared
+  with the worker. Follow-up: export the pinned fingerprint to Java.
+- The manifest sets `android:usesCleartextTraffic="true"` so a server
+  configured with `http://` / `ws://` works from Java too (the Qt side is not
+  subject to that policy). Credentials in the query over plain HTTP are as
+  exposed as in the app's own HTTP fallback.
+- Below Android 12 the work is not expedited (expedited work there means a
+  foreground service with its own notification): the first attempt still
+  runs in-process right away, only the retries are ordinary scheduled jobs.
+
+### 6.4 Credentials readable without Qt: `CredentialStore`
+
+The messaging service and the worker run in a process where the Qt activity
+may never have started, so the server address and `cn_user`/`cn_pass` are
+stored on the Java side, in the `calaos_credentials` SharedPreferences:
+
+- host in clear (not a secret), credentials encrypted with an **AES-256-GCM
+  key of the Android Keystore** (alias `calaos_credentials_v1`, not
+  extractable, random IV per write, `base64(iv || ciphertext)`);
+  `EncryptedSharedPreferences` is deprecated and not used;
+- excluded from Auto Backup and device transfer
+  ([res/xml/backup_rules.xml](../android/res/xml/backup_rules.xml),
+  [data_extraction_rules.xml](../android/res/xml/data_extraction_rules.xml));
+- written by `HardwareUtilsAndroid::saveAuthKeychain()` /
+  `setConfigOption("calaos/host")`, read by `loadAuthKeychain()`, wiped
+  (values **and** Keystore key) by `resetAuthKeychain()` on logout;
+- **migration**: on the first `loadAuthKeychain()` after the update, a pair
+  found in QSettings (`calaos/cn_user`, `calaos/cn_pass` in
+  `files/settings/Calaos/CalaosHome.conf`) is moved to the store and the
+  clear-text copy deleted; the user stays logged in. If the Keystore refuses
+  to encrypt, the pair stays in QSettings and the migration is retried at the
+  next start. An unreadable value (key lost) reads as "no credentials": the
+  user logs in again.
+
+### 6.5 Testing without the server: debug-only fake push
+
+Debug builds (and only them: `sourceSets.debug` in `build.gradle`,
+[android/debug/](../android/debug/)) declare `FakePushReceiver`, which
+injects a data message into `CalaosMessagingService.handleMessage()`:
+
+```bash
+# fake api.php on the Mac (reachable from the emulator as 10.0.2.2)
+tools/fake_calaos_api.py --user demo --password demo --picture /tmp/cam.jpg   # --no-picture for the "no pic_uid" case
+# in the app: host http://10.0.2.2:8080/api.php, user demo, password demo, then
+# (one quoted remote command: adb shell splits words again on the device)
+adb shell 'am broadcast -n fr.calaos.calaoshome/.debug.FakePushReceiver \
+    --es title Calaos --es body "Motion detected" --es event_uuid 11111111-2222-3333-4444-555555555555'
+adb shell cmd statusbar expand-notifications; adb exec-out screencap -p > /tmp/notif.png
+```
+
+The receiver refuses to run in a non-debuggable process and does not exist in
+release builds.
+
+### 6.6 Manual checklist on a phone (once calaos_server sends data-only messages)
+
+Prerequisites: a calaos_server with the `push_format` change deployed, a
+camera rule with push action, the debug APK installed on the phone, logged
+in with a user that is **not** the demo one. Watch with
+`adb logcat -s CalaosHome`.
+
+1. **Registration**: at login the log shows `Registering push token … for
+   android`; on the server the token is stored with the data format
+   (server-side check).
+2. **App killed**: swipe the app away, trigger the camera rule. Expect, in
+   `logcat`, `FCM data message received, event uuid: <uuid>` then
+   `Push picture: notification updated for event <uuid>`; on screen a Calaos
+   notification with text, which gains the camera picture within a few
+   seconds (same entry, no second sound). Tapping it opens the event.
+3. **App in background** (home button) and **in foreground**: same result.
+4. **Server unreachable**: turn Wi-Fi off / mobile data off on the server
+   side (or firewall the server), trigger the rule (or use the fake push
+   receiver): text notification only, `Push picture: download failed`, no
+   crash, the notification stays.
+5. **Wrong credentials**: change the user's password on the server without
+   updating the phone, trigger: text only, `server answered HTTP 400`.
+6. **Rule without camera**: trigger a push rule with no picture: text only,
+   no `event_uuid` in the log, no worker.
+7. **Logout**: Settings → logout (reset). Then
+   `adb shell run-as fr.calaos.calaoshome ls shared_prefs` must not list
+   `calaos_credentials.xml` (or it is empty), and
+   `run-as fr.calaos.calaoshome cat files/settings/Calaos/CalaosHome.conf`
+   must contain no `cn_user` / `cn_pass`.
+8. **Update from a QSettings version**: install the previous build, log in,
+   check `cn_user`/`cn_pass` are in `CalaosHome.conf`; install this build
+   over it (`adb install -r`), start it: still logged in,
+   `credentials migrated to the secure store` in the log, the `.conf` no
+   longer has the pair, `shared_prefs/calaos_credentials.xml` holds
+   base64 blobs only.
+9. **Self-signed server** (if applicable): text notification only; note it
+   as the documented limit.
 
 ## 7. Signing & deploy
 

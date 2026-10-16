@@ -10,6 +10,11 @@
     <!-- %%INSERT_FEATURES -->
     <!-- Runtime permission on Android 13+ (requested by HardwareUtils.onCreate); ignored below. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- usesCleartextTraffic (application tag below): the Java push picture
+         download (PushPictureWorker, HttpURLConnection) must reach a server
+         configured with a plain http:// or ws:// address, as the Qt side
+         (not subject to this policy) already does. -->
+    <!-- Keep the name INSERT_PERMISSIONS placeholder above: androiddeployqt fills it. -->
     <supports-screens
         android:anyDensity="true"
         android:largeScreens="true"
@@ -22,6 +27,7 @@
         android:icon="@drawable/icon"
         android:enableOnBackInvokedCallback="true"
         android:allowBackup="true"
+        android:usesCleartextTraffic="true"
         android:fullBackupOnly="false"
         android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/data_extraction_rules">

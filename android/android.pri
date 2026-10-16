@@ -1,7 +1,10 @@
 QT += gui-private
 
 OTHER_FILES += $$PWD/src/fr/calaos/calaoshome/HardwareUtils.java \
-               $$PWD/src/fr/calaos/calaoshome/CalaosMessagingService.java
+               $$PWD/src/fr/calaos/calaoshome/CalaosMessagingService.java \
+               $$PWD/src/fr/calaos/calaoshome/CredentialStore.java \
+               $$PWD/src/fr/calaos/calaoshome/PushPictureWorker.java \
+               $$PWD/debug/src/fr/calaos/calaoshome/debug/FakePushReceiver.java
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD
 
 SOURCES += $$PWD/HardwareUtils_Android.cpp

@@ -114,4 +114,7 @@ fi
 
 echo ""
 echo "==> Done. Native library / APK:"
-find "${BUILD_DIR}" \( -name 'libCalaosHome*.so' -o -name '*.apk' \) 2>/dev/null | head -5
+ls -1 "${BUILD_DIR}"/libCalaosHome_*.so 2>/dev/null || true
+if [[ "${LIB_ONLY}" == false ]]; then
+    find "${BUILD_DIR}/android-build/build/outputs" -name '*.apk' 2>/dev/null
+fi

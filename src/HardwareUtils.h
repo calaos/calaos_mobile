@@ -55,7 +55,7 @@ public:
     //Session boundaries that matter to platform code running without the
     //app (Android push picture worker): true once home is loaded, false on
     //an explicit user logout only (Application::userLogout()), never on a
-    //lost connection, a reconnection or the iOS resign-active logout.
+    //lost connection, a reconnection or the iOS resign-active pause.
     virtual void setSessionActive(bool active) { Q_UNUSED(active); }
 
     //Called from qml/mobile/main.qml: the QML layer decides when a value has
@@ -84,6 +84,13 @@ public:
     //session dropped first (see DeferredNotifGate). A newer tap already
     //waiting wins.
     void restorePendingNotif(const QString &uuid);
+
+    //The user logged out on purpose (Application::userLogout()): what was
+    //asked of the previous session (a notification tapped but not opened
+    //yet, an iOS Quick Action) must not fire, possibly stale or on another
+    //home, at the next manual login. Not called on a lost connection, the
+    //login cancel button or the iOS resign-active pause.
+    void forgetPendingUserActions();
 
     virtual void setQuickLinks(QVariantList quicklinks) { Q_UNUSED(quicklinks); }
 

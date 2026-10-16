@@ -409,6 +409,10 @@ void Application::login(QString user, QString pass, QString host)
     //the two flags used to desynchronise and turn a login into a silent no-op.
     //applicationStatus is updated by connectionStateChanged() when (and only
     //when) the attempt actually starts.
+    //UserRequest ignores the iOS pause on purpose (FIX-7): the pause only
+    //blocks automatic attempts, and a login comes from the login screen, the
+    //launch timer or become-active, i.e. with the app on screen (at worst
+    //behind a system prompt); the next resign-active pauses it again.
     calaosConnect->login(user, pass, host);
 }
 
@@ -460,7 +464,11 @@ void Application::logout()
 void Application::userLogout()
 {
     HardwareUtils::Instance()->setSessionActive(false);
+    //logout() first: it hands a tap taken but not opened yet back to
+    //HardwareUtils (DeferredNotifGate::loggedOut() also makes any armed delay
+    //stale), so the line below drops it too (FIX-7).
     logout();
+    HardwareUtils::Instance()->forgetPendingUserActions();
 }
 
 void Application::resetAllData()

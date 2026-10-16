@@ -219,6 +219,13 @@ Shared rules (in [src/HardwareUtils.cpp](../src/HardwareUtils.cpp) and
   session that drops before the event is shown hands it back with
   `restorePendingNotif()`, and a delay armed by an earlier login never opens
   anything).
+- **Explicit logout** (Settings → Logout, `Application::userLogout()` only):
+  after `logout()` hands back a tap taken but not opened yet,
+  `HardwareUtils::forgetPendingUserActions()` drops the deferred tap and the
+  iOS Quick Action start option, so neither fires (possibly stale, possibly
+  for another home) at the next manual login (FIX-7). A lost connection, the
+  login cancel button (plain `logout()`) and the iOS resign-active pause keep
+  them for the next login, as above.
 
 ## 10. Internationalisation
 

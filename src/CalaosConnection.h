@@ -409,12 +409,21 @@ public:
     //the guard in ReconnectPolicy refuses the call when an attempt is already
     //in flight or when we gave up on the credentials.
     void requestImmediateReconnect(QString user, QString pass, QString host);
+    //True when requestImmediateReconnect() would start an attempt right now.
+    //Lets the caller skip reading the stored settings when nothing would use
+    //them (FIX-8).
+    bool acceptsImmediateReconnect() const;
 
     //The link is known to be down: drop the session but remember it is wanted.
     void suspend();
     //The link is back: reconnect immediately if a session was wanted, unless
     //it was deliberately closed or the app is in the background.
-    void resume(QString user, QString pass, QString host);
+    //It reconnects with the credentials and host of that session, i.e. those
+    //of the last explicit login (or of the last accepted credentials change),
+    //exactly like the backoff timer does. Never with whatever the login
+    //screen or the stored settings hold at that moment: a network change must
+    //not log in with other credentials (FIX-8).
+    void resume();
     //The app goes to the background (iOS resign-active): drop the session,
     //keep the intent, and let nothing reconnect until unpause().
     void pause();

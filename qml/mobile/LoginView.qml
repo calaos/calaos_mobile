@@ -27,9 +27,31 @@ Item {
         // qmllint enable missing-property
     }
 
+    // The fields show the credentials of calaosApp when the view comes on
+    // screen, then belong to the user (FIX-8). The caller binds username/
+    // password/hostname to calaosApp, but a binding on a TextField survives
+    // typing: a later change of calaosApp would overwrite what is being
+    // typed, and a value that did not change would leave a stale text after a
+    // logout. So the fields are refreshed here, explicitly, when the view is
+    // created and every time it comes back (logout, session lost, reset), and
+    // nothing replaces them while it is on screen. Assigning the text also
+    // drops the caller's binding, on purpose.
+    function syncFromApp() {
+        userField.text = calaosApp.username
+        passField.text = calaosApp.password
+        hostField.text = calaosApp.hostname
+    }
+
+    Component.onCompleted: syncFromApp()
+
     // Safety net: whatever made the login view leave the screen
     // (login, auto-login), the soft keyboard must not follow us.
-    onVisibleChanged: if (!visible) hideKeyboard()
+    onVisibleChanged: {
+        if (visible)
+            syncFromApp()
+        else
+            hideKeyboard()
+    }
 
     Rectangle {
         color: "#080808"

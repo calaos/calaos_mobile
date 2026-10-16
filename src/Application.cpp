@@ -478,6 +478,9 @@ void Application::resetAllData()
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
     settings.setValue("calaos/host", Common::getDemoHost());
     settings.sync();
+    //The login screen shown by the logout below must show what is stored now,
+    //not the credentials and host that were just erased (FIX-8).
+    loadSettings();
     logout();
     //Host and credentials are gone: a tap or Quick Action left from the old
     //home must not fire at the next login, possibly on another home (FIX-7).
@@ -707,8 +710,12 @@ void Application::networkStatusChanged()
     //Link is back. resume() is a no-op unless a session was wanted and none is
     //in flight, so a status change while connected costs nothing. It is also
     //a no-op after a logout and while the app is in the background (FIX-7).
-    loadSettings();
-    calaosConnect->resume(get_username(), get_password(), get_hostname());
+    //No loadSettings() here (FIX-8): it replaced the credentials of a login
+    //that was not accepted (yet) by the stored ones, which overwrote what the
+    //user had typed on the login screen and could even log in to another home
+    //(the demo one). resume() reconnects with the credentials of the session
+    //it resumes, kept by CalaosConnection.
+    calaosConnect->resume();
 }
 
 void Application::calaosServerDetected()
@@ -717,6 +724,13 @@ void Application::calaosServerDetected()
     //CalaosConnection refuses the call while a session is up or an attempt is
     //in flight; when a backoff delay is pending it short-circuits it instead
     //of stacking one more timer.
+    //Discovery is how the desktop finds its server, so the stored settings
+    //(credentials and the discovered host) are read here, but only when an
+    //attempt will actually start: a refused request must not touch the
+    //username/password/hostname properties (FIX-8).
+    if (!calaosConnect->acceptsImmediateReconnect())
+        return;
+
     loadSettings();
     calaosConnect->requestImmediateReconnect(get_username(), get_password(), get_hostname());
 }

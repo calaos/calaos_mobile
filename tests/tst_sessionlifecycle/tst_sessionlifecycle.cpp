@@ -15,6 +15,20 @@
  *  - iOS: the network flapping in the background does not log in, the app
  *    coming back does when a session was up, does not after a logout.
  *
+ * FIX-8: the network coming back used to reload the stored credentials before
+ * resume(), replacing a login typed by hand and not accepted yet (observed: a
+ * wrong password replaced by the stored demo account, and the app went into
+ * demo mode). resume() now takes no credentials and reconnects with those of
+ * the session it resumes; the server records which credentials each login
+ * carried:
+ *
+ *  - typed but rejected credentials + network change: no login with any other
+ *    credentials, never connected;
+ *  - active session + network change: reconnects with the session's
+ *    credentials;
+ *  - acceptsImmediateReconnect() (Application only reads the stored settings
+ *    for discovery when it says yes) follows the policy.
+ *
  * HTTP transport only: the policy is shared by both transports and the HTTP
  * fake is enough to count logins (one get_home per login).
  */
@@ -31,6 +45,9 @@
 
 static const QString TestUser = QStringLiteral("user");
 static const QString TestPass = QStringLiteral("pass");
+//What the user types by mistake on the login screen.
+static const QString TypedUser = QStringLiteral("typed-user");
+static const QString TypedPass = QStringLiteral("wrong-pass");
 
 /*
  * calaos_server's api.php reduced to what a session needs: get_home (the
@@ -42,7 +59,13 @@ class FakeApiServer: public QTcpServer
     Q_OBJECT
 
 public:
+    //Successful logins.
     int logins = 0;
+    //Every login attempt, accepted or not: "user:pass".
+    QStringList attempts;
+    //Only these credentials are accepted.
+    QString acceptedUser = TestUser;
+    QString acceptedPass = TestPass;
 
     QString baseUrl() const
     {
@@ -87,6 +110,15 @@ private:
 
         if (action == QLatin1String("get_home"))
         {
+            const QString user = j.value(QStringLiteral("cn_user")).toString();
+            const QString pass = j.value(QStringLiteral("cn_pass")).toString();
+            attempts.append(user + QLatin1Char(':') + pass);
+            if (user != acceptedUser || pass != acceptedPass)
+            {
+                //What the HTTP API answers to wrong credentials.
+                reply(sock, "{\"success\":\"false\"}");
+                return;
+            }
             logins++;
             reply(sock, "{\"success\":\"true\",\"home\":[],\"cameras\":[],\"audio\":[]}");
             return;
@@ -134,12 +166,17 @@ private slots:
     void iosForegroundLogsBackIn();
     void iosLogoutThenBackgroundAndForegroundStaysLoggedOut();
 
+    void typedCredentialsRejectedThenNetworkChangeUsesNoOtherCredentials();
+    void activeSessionResumesWithTheSessionCredentials();
+    void acceptsImmediateReconnectFollowsThePolicy();
+
 private:
     //The session goes up through an explicit login, as from the login screen.
     void loginAndWait();
     //What Application does on a network change (networkStatusChanged()).
     void networkDown() { connection->suspend(); }
-    void networkUp() { connection->resume(TestUser, TestPass, server->baseUrl()); }
+    //No credentials: Application no longer reloads the stored ones (FIX-8).
+    void networkUp() { connection->resume(); }
     //What Application does when iOS reports the app going to the background
     //and coming back (createQmlApp() lambdas): returns true when Application
     //would call login() again.
@@ -313,6 +350,84 @@ void TstSessionLifecycle::iosLogoutThenBackgroundAndForegroundStaysLoggedOut()
 
     loginAndWait();
     QCOMPARE(server->logins, 2);
+}
+
+//FIX-8, the ticket's case: the stored (accepted) credentials are user/pass,
+//the user types a wrong password, the server rejects it, then the network
+//goes down and comes back while the retry is pending. Before the fix
+//Application reloaded the stored credentials first and resumed with them.
+void TstSessionLifecycle::typedCredentialsRejectedThenNetworkChangeUsesNoOtherCredentials()
+{
+    const QString typed = TypedUser + QLatin1Char(':') + TypedPass;
+
+    connection->login(TypedUser, TypedPass, server->baseUrl());
+    QTRY_COMPARE(server->attempts.size(), 1);
+    //Rejected once: a retry is pending, the session is still wanted, which
+    //is exactly when resume() acts.
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Reconnecting);
+    QVERIFY(connection->failingOnCredentials());
+
+    networkDown();
+    networkUp();
+    //The resume really happened (otherwise this test proves nothing) and
+    //used the typed credentials.
+    QTRY_COMPARE(server->attempts.size(), 2);
+
+    //Let the policy run to its give-up on the credentials.
+    for (int i = 0; i < 4; i++)
+        settle();
+
+    QCOMPARE(server->logins, 0);
+    QVERIFY(server->attempts.size() >= 2);
+    for (const QString &a: std::as_const(server->attempts))
+        QCOMPARE(a, typed);
+    QVERIFY(connection->connectionState() != ReconnectPolicy::Connected);
+
+    //And after the give-up, the network changing again starts nothing.
+    const int count = server->attempts.size();
+    networkDown();
+    networkUp();
+    settle();
+    QCOMPARE(server->attempts.size(), count);
+}
+
+//FIX-8: an active session that loses the link reconnects with its own
+//credentials and host, whatever the caller may hold at that moment.
+void TstSessionLifecycle::activeSessionResumesWithTheSessionCredentials()
+{
+    loginAndWait();
+    const QString session = TestUser + QLatin1Char(':') + TestPass;
+
+    networkDown();
+    networkUp();
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
+
+    QCOMPARE(server->logins, 2);
+    QCOMPARE(server->attempts, QStringList({ session, session }));
+}
+
+//Application::calaosServerDetected() only reads the stored settings when
+//this says an attempt would start.
+void TstSessionLifecycle::acceptsImmediateReconnectFollowsThePolicy()
+{
+    //Nothing tried yet: discovery is how the desktop logs in the first time.
+    QVERIFY(connection->acceptsImmediateReconnect());
+
+    loginAndWait();
+    QVERIFY(!connection->acceptsImmediateReconnect()); //session up
+
+    connection->logout();
+    settle(); //past the anti-chatter delay
+    QVERIFY(!connection->acceptsImmediateReconnect()); //closed on purpose
+
+    loginAndWait();
+    networkDown();
+    settle();
+    QVERIFY(connection->acceptsImmediateReconnect()); //wanted, link down
+
+    connection->requestImmediateReconnect(TestUser, TestPass, server->baseUrl());
+    QVERIFY(!connection->acceptsImmediateReconnect()); //attempt in flight
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
 }
 
 QTEST_MAIN(TstSessionLifecycle)

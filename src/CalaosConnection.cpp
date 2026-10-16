@@ -217,13 +217,21 @@ void CalaosConnection::connectionLost(const QString &reason, ReconnectPolicy::Fa
         armReconnectTimer();
 }
 
-void CalaosConnection::requestImmediateReconnect(QString user, QString pass, QString h)
+bool CalaosConnection::acceptsImmediateReconnect() const
 {
     //Discovery fires once per announce datagram, so it can be chatty. It is
     //allowed to short-circuit the delay currently pending, but not more than
     //once per second: otherwise a talkative LAN would defeat the backoff.
     if (lastAttemptTimer.isValid() &&
         lastAttemptTimer.elapsed() < ReconnectPolicy::BaseDelayMs)
+        return false;
+
+    return reconnectPolicy.canBeginAttempt(ReconnectPolicy::AutoRetry);
+}
+
+void CalaosConnection::requestImmediateReconnect(QString user, QString pass, QString h)
+{
+    if (!acceptsImmediateReconnect())
         return;
 
     startConnection(user, pass, h, ReconnectPolicy::AutoRetry);
@@ -252,12 +260,14 @@ void CalaosConnection::unpause()
     reconnectPolicy.unpause();
 }
 
-void CalaosConnection::resume(QString user, QString pass, QString h)
+void CalaosConnection::resume()
 {
+    //canResume() implies a session was wanted, hence that startConnection()
+    //already ran and stored its credentials and host.
     if (!reconnectPolicy.canResume())
         return;
 
-    startConnection(user, pass, h, ReconnectPolicy::AutoRetry);
+    startConnection(username, password, lasthost, ReconnectPolicy::AutoRetry);
 }
 
 void CalaosConnection::login(QString user, QString pass, QString h)

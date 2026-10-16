@@ -155,6 +155,16 @@ private:
 
     bool startedWithOptHandled = false;
 
+    //Every login goes through here. userAction: typed on the login screen
+    //(true) or automatic (launch, iOS become-active). Offline, the login is
+    //not started but recorded so the link coming back connects (FIX-9).
+    void startLogin(QString user, QString pass, QString host, bool userAction);
+    //The "no network" alert was shown for an automatic login during the
+    //current offline period: the next automatic ones stay silent until the
+    //link is back (iOS reports become-active on every return to the
+    //foreground, and also at launch, next to the launch login).
+    bool offlineAlertShown = false;
+
     //The session is down (logout, lost connection, reconnecting): foreground
     //push notifications stop being routed here, and a notification tapped
     //from now on is deferred by HardwareUtils until homeLoaded().

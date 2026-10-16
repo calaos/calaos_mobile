@@ -57,6 +57,8 @@ private slots:
     void logoutThenBackgroundThenForegroundStaysLoggedOut();
     void backgroundBeforeAnyLoginWantsNothing();
 
+    void offlineLoginRecordsTheIntent();
+
 private:
     //One complete failing attempt: start it, then report the failure.
     //Returns what the policy answered, ie "arm the retry timer".
@@ -648,6 +650,67 @@ void TstReconnectPolicy::backgroundBeforeAnyLoginWantsNothing()
     QVERIFY(!p.isStopped());
     QVERIFY(!p.canResume());
     QVERIFY(p.canBeginAttempt(ReconnectPolicy::UserRequest));
+}
+
+//FIX-9: a login refused for lack of network starts nothing but makes the
+//session wanted; an automatic one never reopens a closed or given-up
+//session, an explicit one does.
+void TstReconnectPolicy::offlineLoginRecordsTheIntent()
+{
+    ReconnectPolicy p;
+    p.setJitterEnabled(false);
+
+    //Launch in airplane mode.
+    QVERIFY(p.deferAttempt(ReconnectPolicy::AutoRetry));
+    QCOMPARE(p.state(), ReconnectPolicy::Disconnected);
+    QVERIFY(p.wantsConnection());
+    QVERIFY(p.canResume());
+    p.beginAttempt(ReconnectPolicy::AutoRetry);
+    QVERIFY(!p.canResume());
+    //Nothing deferred while an attempt is in flight or a session is up.
+    QVERIFY(!p.deferAttempt(ReconnectPolicy::UserRequest));
+    p.attemptSucceeded();
+    QVERIFY(!p.deferAttempt(ReconnectPolicy::UserRequest));
+    QCOMPARE(p.state(), ReconnectPolicy::Connected);
+
+    //Logout: an automatic offline login changes nothing, a tap on Login does.
+    p.stop();
+    QVERIFY(!p.deferAttempt(ReconnectPolicy::AutoRetry));
+    QVERIFY(p.isStopped());
+    QVERIFY(!p.canResume());
+    QVERIFY(p.deferAttempt(ReconnectPolicy::UserRequest));
+    QVERIFY(!p.isStopped());
+    QVERIFY(p.canResume());
+
+    //Given up on the credentials: same rule.
+    for (int i = 0; i < ReconnectPolicy::MaxAuthFailures; i++)
+    {
+        p.beginAttempt(ReconnectPolicy::AutoRetry);
+        p.failed(ReconnectPolicy::AuthFailure);
+    }
+    QVERIFY(p.hasGivenUp());
+    QVERIFY(!p.deferAttempt(ReconnectPolicy::AutoRetry));
+    QVERIFY(!p.canResume());
+    QVERIFY(p.deferAttempt(ReconnectPolicy::UserRequest));
+    QVERIFY(!p.hasGivenUp());
+    QCOMPARE(p.authFailureCount(), 0);
+    QVERIFY(p.canResume());
+
+    //A pending retry is replaced, not kept armed.
+    p.beginAttempt(ReconnectPolicy::AutoRetry);
+    QVERIFY(p.failed(ReconnectPolicy::TransientFailure));
+    QCOMPARE(p.state(), ReconnectPolicy::Reconnecting);
+    QVERIFY(p.deferAttempt(ReconnectPolicy::AutoRetry));
+    QCOMPARE(p.state(), ReconnectPolicy::Disconnected);
+    QCOMPARE(p.pendingDelayMs(), 0);
+
+    //It does not lift an iOS pause: only the foreground does.
+    p.pause();
+    QVERIFY(p.deferAttempt(ReconnectPolicy::UserRequest));
+    QVERIFY(p.isPaused());
+    QVERIFY(!p.canResume());
+    p.unpause();
+    QVERIFY(p.canResume());
 }
 
 QTEST_APPLESS_MAIN(TstReconnectPolicy)

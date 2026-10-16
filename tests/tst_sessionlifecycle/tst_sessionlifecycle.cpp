@@ -29,6 +29,16 @@
  *  - acceptsImmediateReconnect() (Application only reads the stored settings
  *    for discovery when it says yes) follows the policy.
  *
+ * FIX-9: launched without network, the launch login was refused by
+ * Application::login()'s network check before anything recorded that a
+ * session was wanted, so the link coming back resumed nothing. Application
+ * now hands a login refused offline to deferLogin():
+ *
+ *  - offline launch, then the network: exactly one login;
+ *  - logout, then an automatic login offline, then the network: none;
+ *  - offline launch with the stored credentials, the user types others and
+ *    taps Login still offline, then the network: the typed ones are used.
+ *
  * HTTP transport only: the policy is shared by both transports and the HTTP
  * fake is enough to count logins (one get_home per login).
  */
@@ -170,6 +180,10 @@ private slots:
     void activeSessionResumesWithTheSessionCredentials();
     void acceptsImmediateReconnectFollowsThePolicy();
 
+    void offlineLaunchConnectsWhenTheNetworkIsBack();
+    void logoutThenOfflineLaunchStaysLoggedOut();
+    void offlineLaunchThenTypedLoginUsesTheTypedCredentials();
+
 private:
     //The session goes up through an explicit login, as from the login screen.
     void loginAndWait();
@@ -188,6 +202,17 @@ private:
             return false;
         connection->login(TestUser, TestPass, server->baseUrl());
         return true;
+    }
+    //What Application::startLogin() does when the network check fails
+    //(FIX-9): the launch login and iOS become-active are automatic, the
+    //login screen is a user action.
+    bool launchLoginOffline(const QString &user, const QString &pass)
+    {
+        return connection->deferLogin(user, pass, server->baseUrl(), ReconnectPolicy::AutoRetry);
+    }
+    bool typedLoginOffline(const QString &user, const QString &pass)
+    {
+        return connection->deferLogin(user, pass, server->baseUrl(), ReconnectPolicy::UserRequest);
     }
     //Longer than the anti-chatter delay of requestImmediateReconnect() and
     //than the first backoff delay: anything that was going to start a login
@@ -428,6 +453,84 @@ void TstSessionLifecycle::acceptsImmediateReconnectFollowsThePolicy()
     connection->requestImmediateReconnect(TestUser, TestPass, server->baseUrl());
     QVERIFY(!connection->acceptsImmediateReconnect()); //attempt in flight
     QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
+}
+
+//FIX-9, the ticket's case: the app is launched in airplane mode, airplane
+//mode is turned off. Android reports the link going down at launch too, then
+//flapping before it settles: still exactly one login.
+void TstSessionLifecycle::offlineLaunchConnectsWhenTheNetworkIsBack()
+{
+    networkDown();
+    QVERIFY(launchLoginOffline(TestUser, TestPass));
+    settle();
+    QCOMPARE(server->attempts.size(), 0); //nothing while the link is down
+    QCOMPARE(connection->connectionState(), ReconnectPolicy::Disconnected);
+    QVERIFY(!connection->sessionClosedByUser());
+
+    networkUp();
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
+    networkUp(); //a second "link is back" while connected costs nothing
+    settle();
+
+    QCOMPARE(server->logins, 1);
+    QCOMPARE(server->attempts, QStringList({ TestUser + QLatin1Char(':') + TestPass }));
+
+    //From then on it is an ordinary session.
+    networkDown();
+    networkUp();
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
+    QCOMPARE(server->logins, 2);
+}
+
+//FIX-9: an automatic login refused offline (iOS become-active, the launch
+//login) never reopens a session the user closed.
+void TstSessionLifecycle::logoutThenOfflineLaunchStaysLoggedOut()
+{
+    loginAndWait();
+    connection->logout();
+
+    networkDown();
+    QVERIFY(!launchLoginOffline(TestUser, TestPass));
+    QVERIFY(connection->sessionClosedByUser());
+    networkUp();
+    networkDown();
+    networkUp();
+    settle();
+
+    QCOMPARE(server->logins, 1);
+    QCOMPARE(connection->connectionState(), ReconnectPolicy::Disconnected);
+
+    //Tapping Login still works, offline too.
+    networkDown();
+    QVERIFY(typedLoginOffline(TestUser, TestPass));
+    QVERIFY(!connection->sessionClosedByUser());
+    networkUp();
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
+    QCOMPARE(server->logins, 2);
+}
+
+//FIX-9 + FIX-8: launched offline with the stored credentials, the user types
+//other ones and taps Login while still offline. The network coming back
+//logs in with the latest explicit intent, the typed credentials, and nothing
+//else.
+void TstSessionLifecycle::offlineLaunchThenTypedLoginUsesTheTypedCredentials()
+{
+    //Here the typed account is the valid one (a new home, or a fixed password).
+    server->acceptedUser = TypedUser;
+    server->acceptedPass = TypedPass;
+    const QString typed = TypedUser + QLatin1Char(':') + TypedPass;
+
+    networkDown();
+    QVERIFY(launchLoginOffline(TestUser, TestPass));
+    QVERIFY(typedLoginOffline(TypedUser, TypedPass));
+    settle();
+    QCOMPARE(server->attempts.size(), 0);
+
+    networkUp();
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
+    settle();
+    QCOMPARE(server->logins, 1);
+    QCOMPARE(server->attempts, QStringList({ typed }));
 }
 
 QTEST_MAIN(TstSessionLifecycle)

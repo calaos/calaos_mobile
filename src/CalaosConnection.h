@@ -189,6 +189,36 @@ public:
         m_pendingDelayMs = 0;
     }
 
+    //A login refused because the device has no network (FIX-9): nothing
+    //starts, but the session is now wanted, so canResume() says yes when the
+    //link comes back. UserRequest (login screen) counts as an explicit login:
+    //it resets the backoff and the give-up and reopens a deliberately closed
+    //session. AutoRetry (launch login, iOS become-active) does neither: it is
+    //refused after a deliberate close or a give-up, so it can never bring
+    //back a session the user closed. Like beginAttempt(), it does not lift a
+    //pause. Returns false (nothing changed) when refused, or when an attempt
+    //is in flight or a session is up.
+    bool deferAttempt(Trigger t)
+    {
+        if (m_state == Connecting || m_state == Connected)
+            return false;
+        if (t == AutoRetry && (m_givenUp || m_stopped))
+            return false;
+
+        if (t == UserRequest)
+        {
+            m_failures = 0;
+            m_authFailures = 0;
+            m_givenUp = false;
+            m_stopped = false;
+        }
+        m_pollFailures = 0;
+        m_pendingDelayMs = 0;
+        m_wantsConnection = true;
+        m_state = Disconnected;
+        return true;
+    }
+
     //The application goes to the background (iOS resign-active): drop the
     //session like suspend(), and refuse every automatic attempt until
     //unpause(), so a network change seen in the background cannot reconnect.
@@ -419,11 +449,21 @@ public:
     //The link is back: reconnect immediately if a session was wanted, unless
     //it was deliberately closed or the app is in the background.
     //It reconnects with the credentials and host of the last attempt (explicit
-    //login, accepted credentials change or desktop discovery), exactly like
+    //login, accepted credentials change or desktop discovery) or of the last
+    //login refused offline (deferLogin(), FIX-9), exactly like
     //the backoff timer does. Never with whatever the login
     //screen or the stored settings hold at that moment: a network change must
     //not log in with other credentials (FIX-8).
     void resume();
+    //A login refused because the device has no network (FIX-9): start
+    //nothing, but remember the session is wanted with these credentials and
+    //host, so resume() connects with them when the link is back. The latest
+    //recorded intent wins. trigger is UserRequest for the login screen and
+    //AutoRetry for the automatic logins (launch, iOS become-active), which
+    //never reopen a session closed by the user, see
+    //ReconnectPolicy::deferAttempt(). Returns true when the intent was
+    //recorded.
+    bool deferLogin(QString user, QString pass, QString h, ReconnectPolicy::Trigger trigger);
     //The app goes to the background (iOS resign-active): drop the session,
     //keep the intent, and let nothing reconnect until unpause().
     void pause();

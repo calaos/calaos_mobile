@@ -11,6 +11,11 @@
 #
 # This INTERFACE target lives in a directory without QML, so the scan only covers
 # the root paths below: the QML that the mobile .qrc files embed.
+#
+# Keep the list in sync with qml_mobile.qrc and qml_shared.qrc: every directory
+# holding QML they reference must be a root path here. QML embedded from anywhere
+# else is not scanned, its imports are not linked, and it fails at runtime on iOS
+# only (Android deploys QML plugins by its own scan).
 add_library(CalaosHomeQmlImports INTERFACE)
 # Qt treats any library passed to qt_import_qml_plugins() as a QML module and warns
 # unless its output directory ends with its target path: give it a consistent pair.

@@ -22,6 +22,7 @@ SUBDIRS += \
     tst_favoritesmodel \
     tst_homemodel \
     tst_httpapiversion \
+    tst_httpreplies \
     tst_iobase \
     tst_pushnotif \
     tst_qqmlhelpers \

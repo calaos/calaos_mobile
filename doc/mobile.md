@@ -11,7 +11,8 @@ quick UI iteration (in that fallback case `QApplication` is used and `widgets` i
 pulled in).
 
 The variant is selected at build time by the `CALAOS_MOBILE` preprocessor define
-and the [mobile.pro](../mobile.pro) qmake project file.
+and either the [mobile.pro](../mobile.pro) qmake project file (desktop test build,
+iOS) or the CMake build ([CMakeLists.txt](../CMakeLists.txt): Android, iOS).
 
 ## 2. Build
 
@@ -32,14 +33,16 @@ The desktop test build additionally pulls `widgets`. C++ standard: C++11. Target
 qmake mobile.pro
 make -j$(nproc)
 
-# Android: see android.md
-# iOS:     see ios.md
+# Android (CMake only): ./tools/build_android.sh Debug, see android.md
+# iOS:                  see ios.md
 ```
 
-The `mobile.pro` file dispatches to platform sub-projects:
+Android is **not** supported by qmake: the `android` branch of `mobile.pro` is an
+`error()` pointing to `tools/build_android.sh`. The rest of the file dispatches
+to platform sub-projects:
 
 ```qmake
-android { include(android/android.pri) }
+android { error("... use ./tools/build_android.sh ...") }
 else: ios { include(ios/ios.pri) }
 else { QT += widgets }
 ```
@@ -236,8 +239,10 @@ startup (`Application::setupLanguage()`).
 
 ## 11. Versioning
 
-- Android: `versionName` / `versionCode` declared in
-  [android/AndroidManifest.xml](../android/AndroidManifest.xml).
+- Android: derived from [VERSION.txt](../VERSION.txt) by
+  [cmake/Versioning.cmake](../cmake/Versioning.cmake) (`versionName` = semver,
+  `versionCode` = `MAJOR*10000 + MINOR*100 + PATCH`) and injected into the
+  manifest by Qt; the manifest only holds placeholders.
 - iOS: `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` are Xcode build
   settings (set in the Xcode project that qmake regenerates). The displayed
   bundle name is `CalaosHome`, executable `CalaosMobile`, bundle id
@@ -249,9 +254,11 @@ startup (`Application::setupLanguage()`).
 ## 12. Things an LLM should remember
 
 1. Any new shared C++ source goes into [calaos.pri](../calaos.pri); platform
-   sources go into [android/android.pri](../android/android.pri) /
-   [ios/ios.pri](../ios/ios.pri); never declare iOS or Android sources in
-   [mobile.pro](../mobile.pro) directly.
+   sources go into [cmake/Android.cmake](../cmake/Android.cmake) (Android, CMake
+   only) / [ios/ios.pri](../ios/ios.pri) (iOS); never declare iOS or Android
+   sources in [mobile.pro](../mobile.pro) directly. New shared sources are
+   also listed in [cmake/CalaosHomeSources.cmake](../cmake/CalaosHomeSources.cmake)
+   (`tools/check_sources.sh`).
 2. The `QAPP` macro abstracts `QGuiApplication` vs. `QApplication`. Don’t add
    widgets-only APIs without guarding them with `#ifndef CALAOS_MOBILE` or
    pulling `widgets` only in the desktop fallback.

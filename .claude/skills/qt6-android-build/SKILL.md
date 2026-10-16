@@ -7,6 +7,8 @@ description: How to configure, build, install and debug the Calaos Home Android 
 
 Keep this file accurate: if you discover a fact here is wrong, fix it in the same commit.
 
+The human-facing reference is `doc/android.md` (prerequisites, build, install, release, push): when a fact below changes (versions, flags, paths, script behaviour), update that doc in the same commit. Android is **CMake only**: `mobile.pro` has no Android branch (it `error()`s pointing to `tools/build_android.sh`) and `android/android.pri` no longer exists; new Android C++ goes in `cmake/Android.cmake`, shared C++ in both `calaos.pri` and `cmake/CalaosHomeSources.cmake`.
+
 ## Version matrix (source of truth: the installed Qt kit)
 
 | Item | Value | Where it comes from |
@@ -31,7 +33,7 @@ export ANDROID_NDK_ROOT="$ANDROID_SDK_ROOT/ndk/27.2.12479018"
 export PATH="$ANDROID_SDK_ROOT/platform-tools:$PATH"   # adb
 ```
 
-The canonical entry point is `tools/build_android.sh` (created by AND-1; mirrors `tools/build_ios.sh`). Prefer it over hand-written cmake lines, and keep it working.
+The canonical entry point is `tools/build_android.sh` (usage `[Debug|Release] [--aab] [--lib-only]`; mirrors `tools/build_ios.sh`). Prefer it over hand-written cmake lines, and keep it working.
 
 `./tools/build_android.sh Debug --lib-only` builds only the native `libCalaosHome_arm64-v8a.so` (cmake target `CalaosHome`, skips Gradle). Ninja is taken from Homebrew or `~/Qt/Tools/Ninja`. The KDAB file is `android_openssl.cmake` (`add_android_openssl_libraries`), Debug uses its `no-asm` libs.
 

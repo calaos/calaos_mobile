@@ -4,6 +4,12 @@
 > **Desktop continues to use qmake** (`desktop.pro`) until further notice.
 > This document is the authoritative TODO for the agent that will implement
 > the migration. Read it top‑to‑bottom; check items off as you go.
+>
+> **Status (Android): done.** Android is built with CMake only and qmake no
+> longer supports it. §4 below describes what was implemented; the day-to-day
+> reference is [android.md](android.md) and `tools/build_android.sh`. The
+> original Android plan text (native Firebase SDK, Qt 6.10, API 26/34) is
+> superseded where it differs. The iOS parts are unchanged.
 
 ---
 
@@ -35,17 +41,18 @@
 
 ```
 calaos.pri    + desktop.pro    → qmake build (desktop, unchanged)
-calaos.pri    + mobile.pro     → qmake build (legacy mobile, kept as fallback during transition)
-CMakeLists.txt (new, root)     → CMake build (mobile = iOS + Android, new canonical path)
+calaos.pri    + mobile.pro     → qmake build (desktop test fallback and legacy iOS; Android is an error())
+CMakeLists.txt (new, root)     → CMake build (mobile = iOS + Android; the only Android build)
 ```
 
 The new top‑level `CMakeLists.txt` will guard itself with
 `if(IOS OR ANDROID)` and **error out otherwise**, so a desktop developer who
 runs `cmake .` by mistake gets a clear message redirecting them to qmake.
 
-`mobile.pro` and `ios/ios.pri`, `android/android.pri` are kept for a
-transition period (one or two releases) and then deleted. Mark them deprecated
-in their first comment.
+`mobile.pro` and `ios/ios.pri` are kept for a transition period (one or two
+releases) and then deleted. `android/android.pri` is already deleted and the
+`android` branch of `mobile.pro` is an `error()` pointing to
+`tools/build_android.sh`.
 
 ### 1.2 Source‑of‑truth re‑use
 
@@ -88,14 +95,12 @@ cmake/
     CalaosHomeSources.cmake      # NEW — shared C++/HEADER list (parsed from calaos.pri or duplicated)
     CalaosHomeQrc.cmake          # NEW — RESOURCES list
     iOS.cmake                    # NEW — iOS specifics (Xcode attrs, capabilities, appex)
-    Android.cmake                # NEW — Android specifics (Firebase, OpenSSL, gradle hooks)
+    Android.cmake                # NEW — Android specifics (OpenSSL, SDK levels, ABIs, deployment trimming)
     Versioning.cmake             # NEW — read VERSION file, write to plist + manifest
 ios/
     CMakeLists.txt               # NEW — defines the PushNotif appex target
     PushNotif/                   # unchanged
-android/
-    CMakeLists.txt               # NEW — wires firebase + java glue (no separate target needed)
-    ...                          # unchanged
+android/                         # manifest, build.gradle, Java glue, JNI bridge (no own CMakeLists.txt)
 3rd_party/
     quickflux/CMakeLists.txt     # NEW — wraps quickflux.pri (or include the upstream cmake)
     qt-qml-models/CMakeLists.txt # NEW — three .cpp/.h, trivial
@@ -159,94 +164,33 @@ cmake --build build-ios --config Release --target archive
 
 ---
 
-## 4. Android migration — detail
+## 4. Android migration — detail (implemented)
 
-### 4.1 Strategy
+Everything below is in place; see [android.md](android.md) for the full
+build / install / release flow.
 
-Use Qt 6's Android CMake integration via
-`qt_add_executable(CalaosHome MANUAL_FINALIZATION)` +
-`qt_finalize_executable(CalaosHome)`. Qt then auto‑generates the
-`androiddeployqt` JSON, invokes Gradle, and produces the APK/AAB.
-
-Properties to set on the target:
-
-```cmake
-set_property(TARGET CalaosHome PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
-            "${CMAKE_SOURCE_DIR}/android")
-set_property(TARGET CalaosHome PROPERTY QT_ANDROID_VERSION_NAME "${CALAOS_VERSION}")
-set_property(TARGET CalaosHome PROPERTY QT_ANDROID_VERSION_CODE  "${CALAOS_VERSION_CODE}")
-set_property(TARGET CalaosHome PROPERTY QT_ANDROID_MIN_SDK_VERSION    26)
-set_property(TARGET CalaosHome PROPERTY QT_ANDROID_TARGET_SDK_VERSION 34)
-set_property(TARGET CalaosHome PROPERTY QT_ANDROID_ABIS
-            "armeabi-v7a;arm64-v8a;x86;x86_64")
-set_property(TARGET CalaosHome PROPERTY QT_ANDROID_EXTRA_LIBS
-            "${OPENSSL_DIR}/no-asm/latest/arm64-v8a/libcrypto_3.so"
-            "${OPENSSL_DIR}/no-asm/latest/arm64-v8a/libssl_3.so"
-            ...)
-```
-
-### 4.2 Firebase
-
-Replace the qmake snippet in [android/android.pri](../android/android.pri):
-
-```cmake
-if(NOT DEFINED ENV{FIREBASE_CPP_SDK_DIR})
-    message(FATAL_ERROR "FIREBASE_CPP_SDK_DIR env not set")
-endif()
-set(FIREBASE_SDK $ENV{FIREBASE_CPP_SDK_DIR})
-
-target_include_directories(CalaosHome PRIVATE ${FIREBASE_SDK}/include)
-target_link_directories(CalaosHome PRIVATE
-    ${FIREBASE_SDK}/libs/android/${ANDROID_ABI}/cxx-stl-c++)
-target_link_libraries(CalaosHome PRIVATE firebase_messaging firebase_app firebase_auth)
-```
-
-`build.gradle` keeps reading `FIREBASE_CPP_SDK_DIR` via `System.getenv` —
-no change needed there.
-
-### 4.3 OpenSSL prebuilt
-
-The current path is hard‑coded for Windows
-(`C:/Users/$$(USERNAME)/AppData/...`). In CMake:
-
-```cmake
-if(NOT DEFINED ANDROID_OPENSSL_DIR)
-    set(ANDROID_OPENSSL_DIR "$ENV{HOME}/Android/Sdk/android_openssl"
-        CACHE PATH "KDAB android_openssl prebuilt root")
-endif()
-include("${ANDROID_OPENSSL_DIR}/openssl.cmake")  # KDAB ships one
-```
-
-KDAB's android_openssl repo provides `openssl.cmake`. Use it.
-
-### 4.4 Gradle / manifest
-
-Keep [android/AndroidManifest.xml](../android/AndroidManifest.xml),
-[android/build.gradle](../android/build.gradle),
-[android/gradle.properties](../android/gradle.properties),
-[android/google-services.json](../android/google-services.json) **as is**.
-Qt's CMake glue copies them to the build dir and substitutes
-`%%INSERT_PERMISSIONS%%` / `%%QT_…%%` placeholders the same way
-`androiddeployqt` does today.
-
-`versionName` / `versionCode` should be removed from `AndroidManifest.xml`
-and injected from CMake via `QT_ANDROID_VERSION_NAME` / `_CODE` (single
-source of truth in `VERSION`).
-
-### 4.5 Single‑command build
-
-```bash
-cmake -S . -B build-android -G Ninja \
-      -DCMAKE_PREFIX_PATH=/path/to/Qt/6.10.0/android_arm64_v8a \
-      -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake \
-      -DANDROID_PLATFORM=android-26 \
-      -DANDROID_ABI=arm64-v8a \
-      -DQT_HOST_PATH=/path/to/Qt/6.10.0/macos
-cmake --build build-android --target apk      # or aab
-```
-
-For multi‑ABI builds use `-DQT_ANDROID_ABIS="armeabi-v7a;arm64-v8a;x86;x86_64"`
-and the Qt host path; `androiddeployqt` produces fat APKs as today.
+- **Strategy**: `qt_add_executable(CalaosHome MANUAL_FINALIZATION ...)` +
+  `qt_finalize_executable(CalaosHome)` in the root [CMakeLists.txt](../CMakeLists.txt);
+  Qt generates the `androiddeployqt` JSON and drives Gradle.
+- **Target properties** ([cmake/Android.cmake](../cmake/Android.cmake)):
+  `QT_ANDROID_PACKAGE_SOURCE_DIR` = `android/`, version name/code from
+  `VERSION.txt` ([cmake/Versioning.cmake](../cmake/Versioning.cmake)),
+  min SDK 28, target SDK 36, compile SDK 37.0, `QT_ANDROID_ABIS` from
+  `CALAOS_ANDROID_ABIS` (arm64-v8a in Debug, four ABIs in Release).
+- **Push (Firebase)**: Firebase Java SDK in [android/build.gradle](../android/build.gradle)
+  and Java sources; no native Firebase SDK and no CMake linkage (android.md §6).
+- **OpenSSL**: KDAB `android_openssl` (`android_openssl.cmake`,
+  `add_android_openssl_libraries(CalaosHome)`), root in `ANDROID_OPENSSL_DIR`
+  (default `$ANDROID_SDK_ROOT/android_openssl`).
+- **Gradle / manifest**: [android/AndroidManifest.xml](../android/AndroidManifest.xml)
+  and [android/build.gradle](../android/build.gradle) are ported from the Qt 6.12
+  templates; no Gradle wrapper, `gradle.properties` or `libs.xml` in `android/`
+  (Qt generates them). `versionName` / `versionCode` are injected by Qt.
+- **Single-command build**: `./tools/build_android.sh [Debug|Release] [--aab] [--lib-only]`
+  wraps the `cmake` configure (NDK toolchain, `ANDROID_PLATFORM=android-28`,
+  Qt kits, `QT_HOST_PATH`, per-ABI kits) and build, and signs Release output
+  from `CALAOS_*` environment variables. Use it rather than hand-written
+  `cmake` lines.
 
 ---
 
@@ -282,10 +226,13 @@ After local builds work, add two workflows under
 ### 6.2 `android-release.yml`
 - Trigger: same.
 - Runner: `ubuntu-24.04`.
-- Steps: install Qt (target `android`), Android SDK/NDK, Firebase C++ SDK
-  (cached), KDAB android_openssl (cached), then
-  `cmake --build build-android --target aab`, then upload via
-  `r0adkll/upload-google-play`.
+- Steps: install Qt (target `android`), Android SDK/NDK, KDAB android_openssl
+  (cached), then `./tools/build_android.sh Release --aab` (signing from
+  `CALAOS_*`), then upload via `r0adkll/upload-google-play`. The script is
+  written for macOS: on `ubuntu-24.04` set `QT_HOST` to the Linux host kit
+  (`$QT_ROOT/gcc_64`), `ANDROID_SDK_ROOT` and `JAVA_HOME` (JDK 17), and map
+  the CI secrets to the `CALAOS_KEYSTORE` (decode `KEYSTORE_BASE64` to a file),
+  `CALAOS_KEYSTORE_PASS`, `CALAOS_KEY_ALIAS`, `CALAOS_KEY_PASS` variables.
 - Secrets: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`,
   `KEY_PASSWORD`, `PLAY_SERVICE_ACCOUNT_JSON`.
 
@@ -308,8 +255,8 @@ plain GitHub Actions because its signing model is simple enough.
 - [x] Add `.gitignore` entries for `build-ios/`, `build-android/`,
       `CMakeFiles/`, `CMakeCache.txt`.
 - [x] Document the new commands in [ios.md](ios.md) and
-      [android.md](android.md) under a new "CMake build (preferred)" section,
-      keeping the qmake instructions under "Legacy qmake build".
+      [android.md](android.md). (android.md now documents the CMake build
+      only: the qmake Android instructions were removed in AND-6.)
 
 ### Phase 1 — Skeleton CMake (no platform yet)
 - [x] Create top‑level `CMakeLists.txt`:
@@ -336,28 +283,26 @@ plain GitHub Actions because its signing model is simple enough.
 
 ### Phase 2 — Android working build
 - [x] Create `cmake/Android.cmake`, included from root when `ANDROID`.
-- [x] Implement Firebase detection + linking (§4.2). Fail fast if
-      `FIREBASE_CPP_SDK_DIR` env is unset, mirroring
-      [android/android.pri:8‑11](../android/android.pri).
-- [x] Implement android_openssl include (§4.3). Provide `ANDROID_OPENSSL_DIR`
-      cache var; default to `$ENV{HOME}/Android/Sdk/android_openssl`.
+- [x] Push through the Firebase Java SDK (Gradle), no native SDK to link
+      (§4; superseded the original native-SDK plan).
+- [x] Implement android_openssl include (§4). Provide `ANDROID_OPENSSL_DIR`
+      cache var; default to `$ANDROID_SDK_ROOT/android_openssl`.
 - [x] Add `android/HardwareUtils_Android.cpp` and `.h` to the target sources
       via `target_sources(CalaosHome PRIVATE ...)` when `ANDROID`.
 - [x] Set `QT_ANDROID_PACKAGE_SOURCE_DIR`, `QT_ANDROID_VERSION_NAME`,
-      `QT_ANDROID_VERSION_CODE`, `QT_ANDROID_MIN_SDK_VERSION = 26`,
-      `QT_ANDROID_TARGET_SDK_VERSION = 34`, `QT_ANDROID_ABIS`.
+      `QT_ANDROID_VERSION_CODE`, `QT_ANDROID_MIN_SDK_VERSION = 28`,
+      `QT_ANDROID_TARGET_SDK_VERSION = 36`, `QT_ANDROID_ABIS`.
 - [x] Set `QT_ANDROID_EXTRA_LIBS` to the OpenSSL `.so`s for every ABI being
       built (KDAB's `openssl.cmake` exposes a helper).
 - [x] Remove `versionName` / `versionCode` literals from
       [android/AndroidManifest.xml](../android/AndroidManifest.xml) — they are
       now injected by Qt at deploy time.
-- [ ] Verify Java glue is picked up via `QT_ANDROID_PACKAGE_SOURCE_DIR =
-      ${CMAKE_SOURCE_DIR}/android` (already the case in qmake).
-- [ ] Build, install on a device, verify FCM token is received and a test
-      push is delivered.
-- [ ] **Regression test**: side‑by‑side compare the qmake‑built APK and the
-      CMake‑built APK with `apkdiff` — same permissions, same activities,
-      same `assets/`, same `lib/<abi>/lib*.so` set.
+- [x] Verify Java glue is picked up via `QT_ANDROID_PACKAGE_SOURCE_DIR =
+      ${CMAKE_SOURCE_DIR}/android`.
+- [x] Build, install on a device, verify FCM token is received and a test
+      push is delivered (phone tests recorded in `docs/BOARD.md`).
+- [x] ~~Regression test: compare the qmake-built APK and the CMake-built APK~~
+      Obsolete: the qmake Android build no longer exists.
 
 ### Phase 3 — iOS working build
 - [x] Create `cmake/iOS.cmake`, included from root when `IOS`.
@@ -410,13 +355,14 @@ plain GitHub Actions because its signing model is simple enough.
       delivery from CI.
 
 ### Phase 5 — Cleanup
-- [ ] Mark [mobile.pro](../mobile.pro), [ios/ios.pri](../ios/ios.pri),
-      [android/android.pri](../android/android.pri) deprecated in their
-      header comment.
+- [x] Android: `android/android.pri` deleted, the `android` branch of
+      [mobile.pro](../mobile.pro) is an `error()` pointing to
+      `tools/build_android.sh` (AND-6).
+- [ ] iOS: mark [mobile.pro](../mobile.pro) and [ios/ios.pri](../ios/ios.pri)
+      deprecated in their header comment.
 - [ ] After one release cycle without bug reports, delete them and remove
       the source‑list duplication test.
-- [ ] Update [AGENTS.md](../AGENTS.md): "Build system: qmake (desktop) +
-      CMake (mobile)".
+- [x] Update [AGENTS.md](../AGENTS.md): Android is CMake only.
 
 ---
 
@@ -434,8 +380,8 @@ plain GitHub Actions because its signing model is simple enough.
    single configure → multi‑ABI build via Qt's host‑target separation. Pin
    minimum Qt to **6.6** and document the host‑Qt requirement
    (`QT_HOST_PATH`).
-4. **Firebase C++ SDK** ships static libs only; ensure `cxx-stl-c++` (libc++)
-   variant is selected to match Qt's NDK build.
+4. **Firebase on Android** is the Java SDK (Gradle); there is no native
+   Firebase library to match against Qt's NDK build.
 5. **Translations**: `qt_add_translations` requires Qt 6.7+ for the
    `LUPDATE_OPTIONS` arg. If pinned at 6.6, fall back to manual
    `qt_add_lrelease`.
@@ -460,7 +406,7 @@ The migration is **done** when all of the following hold:
 3. Push notifications on iOS decrypt and display correctly (proves the
    appex is built, signed, embedded, and shares the keychain).
 4. Push notifications on Android (FCM) deliver and the device token reaches
-   `calaos_server` (proves Firebase linkage).
+   `calaos_server` (proves the Firebase setup).
 5. `desktop.pro` still builds the desktop variant on Linux + macOS exactly
    as before, with no changes to its toolchain.
 6. CI workflows publish to TestFlight and Play Internal Track on tag push.

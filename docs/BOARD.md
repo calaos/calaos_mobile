@@ -103,6 +103,9 @@ Suivis issus des revues (à traiter dans le ticket indiqué) :
 - AND-5 : configurer avec le seul ABI `x86_64` s'arrête sur une erreur CMake non analysée (constaté pendant AND-1).
 - AND-5 : si la minification R8 est activée, ajouter une règle keep pour les helpers Java appelés par nom depuis le JNI (`HardwareUtils.showAlertMessage`, `getNetworkStatus`, `inputtextDialog`, classe `HardwareUtilsNatives`).
 - Nouveau ticket candidat : Android n'émet jamais `networkStatusChanged` (état réseau lu seulement au login) → `QNetworkInformation` ou `NetworkCallback`. Libellés « Confirm »/« Cancel » du dialogue de saisie non traduits.
+- AND-9 : depuis QT-1, `enableOnBackInvokedCallback="true"` (modèle Qt 6.12) et Qt 6.12 appelle `moveTaskToBack()` quand le retour n'est pas accepté ; or `qml/mobile/main.qml:94-97` accepte toujours `Key_Back`, même à la racine → l'app ne passe jamais en arrière-plan. Le correctif AND-9 consiste à ne plus accepter `Key_Back` à la racine.
+- Suivi FIX-3 : un tap mémorisé survit à une déconnexion volontaire et peut s'ouvrir sur une autre maison (besoin d'un chemin « logout utilisateur » distinct du logout iOS sur resign).
+- Suivis QT-1 : passer `targetSdk` à 37 (revue des changements Android 17) ; Reachability iOS → `NWPathMonitor` ; ticket de nettoyage qmllint pour les nouvelles catégories 6.12 (`id-shadows-member`, `unqualified`) ; l'APK Android embarque les plugins QML desktop (androiddeployqt scanne tout le repo) ; tests unitaires non compilables avec `~/Qt/6.11.0/macos` + Xcode 27 (`__yield`), à revérifier avec 6.12.
 - AND-6 : `mobile.pro` liste encore en `DISTFILES` le wrapper Gradle et `libs.xml` supprimés ; `tools/check_sources.sh` ne reconnaît pas les chemins `$$PWD/src/...` de `calaos.pri` (faux positifs).
 - QML (hors P-AND) : `main.qml:128` paramètre `idx` non déclaré ; `AnimatedIcon.qml:31` image `icon_light_00-1.png` introuvable.
 

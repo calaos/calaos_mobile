@@ -114,10 +114,25 @@ Ordre : AND-4 → QT-1 → (IOS-1 ∥ AND-7) → MOB-1 → AND-5 → AND-9 → A
 
 | ID | Titre | Taille | Bloqué par | Groupe | Statut |
 |---|---|---|---|---|---|
-| [QT-1](tasks/QT-1-upgrade-qt-6-12.md) | Migration Qt 6.11.0 → Qt 6.12.0 (iOS + Android) | M | AND-4 | G-ANDROID + G-IOS + G-BUILD | À faire |
+| [QT-1](tasks/QT-1-upgrade-qt-6-12.md) | Migration Qt 6.11.0 → Qt 6.12.0 (iOS + Android) | M | AND-4 | G-ANDROID + G-IOS + G-BUILD | En cours |
 | [IOS-1](tasks/IOS-1-derniers-iphone.md) | Support des derniers iPhone (iOS 27, iPhone 17/18, Air) | M | QT-1 | G-IOS | À faire |
 | [MOB-1](tasks/MOB-1-zones-securite.md) | Zones de sécurité : Dynamic Island iOS et edge-to-edge Android 15+ | M | IOS-1, AND-4 | G-QML-MOBILE | À faire |
 | [AND-9](tasks/AND-9-android-15-16-multiarch.md) | Android 15/16 et matrice multi-architecture | M | AND-5, MOB-1 | G-ANDROID | À faire |
+
+## P-FIX — Petits bugs constatés pendant P-AND
+
+Bugs relevés dans les logs et les revues des tickets P-AND (2026-10-16). Non retenu : l'avertissement `QFAppListener::onMessageReceived` connecté par `SLOT()` vient de `3rd_party/quickflux` (non modifiable, sans effet).
+
+Exécution parallèle : chaque ticket lancé en parallèle travaille dans son propre worktree git (`../calaos_mobile-wt/<ID>`, branche `wt/<ID>`), l'orchestrateur fusionne dans `feat/android-qt6` et tient ce board.
+
+| ID | Titre | Taille | Bloqué par | Groupe | Statut |
+|---|---|---|---|---|---|
+| [FIX-1](tasks/FIX-1-avertissements-qml.md) | Avertissements QML à l'exécution (paramètres injectés, image d'animation) | S | — | G-QML-MOBILE + G-QML-SHARED | En cours |
+| [FIX-2](tasks/FIX-2-pusheventview-busyindicator.md) | PushEventView : ReferenceError `control` dans le BusyIndicator | S | — | G-QML-MOBILE | En cours |
+| [FIX-3](tasks/FIX-3-push-token-partage.md) | Push : tap hors connexion, rotation du jeton, jeton dans les logs | M | AND-4 | G-CONN + G-ANDROID | En cours |
+| [FIX-4](tasks/FIX-4-reseau-android-changements.md) | Android : détecter les changements de réseau en cours d'exécution | S | FIX-3 | G-ANDROID | À faire |
+| [FIX-5](tasks/FIX-5-dialogue-android-i18n.md) | Android : libellés traduits des dialogues natifs | S | FIX-4 | G-ANDROID | À faire |
+| [FIX-6](tasks/FIX-6-check-sources-pwd.md) | tools/check_sources.sh : faux positifs sur les chemins `$$PWD/src/...` | S | — | G-BUILD | En cours |
 
 ## Diagramme de parallélisation
 

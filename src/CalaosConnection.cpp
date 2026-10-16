@@ -238,6 +238,20 @@ void CalaosConnection::suspend()
     emit disconnected();
 }
 
+void CalaosConnection::pause()
+{
+    cancelReconnectTimer();
+    resetTransport();
+    reconnectPolicy.pause();
+    emitStateChanged();
+    emit disconnected();
+}
+
+void CalaosConnection::unpause()
+{
+    reconnectPolicy.unpause();
+}
+
 void CalaosConnection::resume(QString user, QString pass, QString h)
 {
     if (!reconnectPolicy.canResume())
@@ -495,7 +509,8 @@ void CalaosConnection::logout()
 {
     cancelReconnectTimer();
     resetTransport();
-    //Explicit logout: no automatic reconnection is wanted any more.
+    //Explicit logout: no automatic reconnection is wanted any more, and none
+    //of suspend()/resume(), discovery or the retry timer may reopen it.
     reconnectPolicy.stop();
     emitStateChanged();
 

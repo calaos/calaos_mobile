@@ -101,12 +101,23 @@ Android 14 and older keep opaque system bars outside the window: the insets are
 `Application::createQmlApp()` connects to `HardwareUtils` lifecycle signals
 specifically used on mobile:
 
-- `applicationWillResignActive` — issues `logout()` and resets the start-option
-  flag. Mobile *does* drop the connection when backgrounded.
-- `applicationBecomeActive` — re-issues `login()` from the saved keychain
-  credentials.
-- The `disconnected` reconnect timer is **desktop-only**. On mobile the user is
-  taken back to the login screen (`stackView.pop(null, StackView.Immediate)`).
+- `applicationWillResignActive` (iOS only) — drops the connection with
+  `CalaosConnection::pause()` and resets the start-option flag. This is not a
+  logout: the policy remembers whether a session was wanted, and refuses every
+  automatic reconnection (network back, retry timer) while in the background.
+- `applicationBecomeActive` (iOS only) — `unpause()`, then re-issues `login()`
+  from the saved keychain credentials, **unless the user logged out**
+  (`sessionClosedByUser()`): an explicit logout survives the app going to the
+  background and back.
+- `networkStatusChanged` (iOS Reachability, Android `QNetworkInformation`) —
+  `suspend()` when the link is lost, `resume()` when it is back. `resume()`
+  only reconnects a session that is wanted: never after a logout or the login
+  cancel button, never while paused (FIX-7).
+- Reconnection itself (backoff, single retry timer) is the same on all
+  variants, see `ReconnectPolicy` in
+  [CalaosConnection.h](../src/CalaosConnection.h). While it is not connected
+  the mobile UI shows the login screen
+  (`stackView.pop(null, StackView.Immediate)`).
 
 WebSocket / HTTP fallback logic in
 [CalaosConnection](../src/CalaosConnection.cpp) is identical on both variants
@@ -208,6 +219,14 @@ Shared rules (in [src/HardwareUtils.cpp](../src/HardwareUtils.cpp) and
   session that drops before the event is shown hands it back with
   `restorePendingNotif()`, and a delay armed by an earlier login never opens
   anything).
+- **Explicit logout** (Settings → Logout, `Application::userLogout()`, and
+  Settings → Reset all data, `Application::resetAllData()`):
+  after `logout()` hands back a tap taken but not opened yet,
+  `HardwareUtils::forgetPendingUserActions()` drops the deferred tap and the
+  iOS Quick Action start option, so neither fires (possibly stale, possibly
+  for another home) at the next manual login (FIX-7). A lost connection, the
+  login cancel button (plain `logout()`) and the iOS resign-active pause keep
+  them for the next login, as above.
 
 ## 10. Internationalisation
 

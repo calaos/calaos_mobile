@@ -286,6 +286,33 @@ struct FakeApp
         HardwareUtils::Instance()->updateCalaosConnectState(false);
         HardwareUtils::Instance()->restorePendingNotif(gate.loggedOut());
     }
+
+    //Application::userLogout(): logout() (the session goes down as above),
+    //then what the user asked of that session is forgotten (FIX-7).
+    void userLogout()
+    {
+        sessionDown();
+        HardwareUtils::Instance()->forgetPendingUserActions();
+    }
+
+    //Application::resetAllData(): host and credentials wiped (not modelled
+    //here), logout(), then the same forgetting as userLogout() (FIX-7).
+    void resetAllData()
+    {
+        sessionDown();
+        HardwareUtils::Instance()->forgetPendingUserActions();
+    }
+};
+
+/*
+ * The base class with a way to fake an iOS Quick Action launch: startedWithOpt
+ * is only set by platform code.
+ */
+class StartOptionHw: public HardwareUtils
+{
+public:
+    StartOptionHw(): HardwareUtils(nullptr) {}
+    void startWithOption() { startedWithOpt = true; }
 };
 
 class TstPushNotif: public QObject
@@ -319,6 +346,14 @@ private slots:
     void gateNewerTapReplacesTheOneInFlight();
     void tapDuringEveryReconnectionIsOpened();
     void tapTakenButSessionDroppedOpensAtNextLogin();
+
+    //FIX-7: an explicit user logout forgets what was asked of that session.
+    void tapPendingThenUserLogoutOpensNothing();
+    void tapInFlightThenUserLogoutOpensNothing();
+    void tapPendingThenLoginCancelStillOpens();
+    void tapAfterUserLogoutOpensAtNextLogin();
+    void userLogoutForgetsTheStartOption();
+    void resetAllDataOpensNothing();
 
     //HardwareUtils: push token.
     void tokenChangeIsSignalledOnce();
@@ -685,6 +720,108 @@ void TstPushNotif::tapTakenButSessionDroppedOpensAtNextLogin()
     app.sessionDown();
     QVERIFY(!hw()->hasPendingNotif());
     QVERIFY(app.delayExpired(app.homeLoaded()).isEmpty());
+}
+
+//A tap deferred while the session was down (reconnecting), then an explicit
+//logout, then a manual login: nothing opens (it could belong to another
+//home, and the user closed that session on purpose).
+void TstPushNotif::tapPendingThenUserLogoutOpensNothing()
+{
+    FakeApp app;
+    QVERIFY(app.delayExpired(app.homeLoaded()).isEmpty()); //logged in, no tap
+    app.sessionDown(); //connection lost
+    hw()->handleNotificationOpened(QStringLiteral("uuid-stale"));
+    QVERIFY(hw()->hasPendingNotif());
+
+    app.userLogout();
+    QVERIFY(!hw()->hasPendingNotif());
+
+    const quint64 ticket = app.homeLoaded(); //next manual login
+    QCOMPARE(ticket, quint64(0));
+    QVERIFY(app.delayExpired(ticket).isEmpty());
+}
+
+//Taken by homeLoaded() but the user logs out before the 400 ms delay: the
+//armed delay is stale and the tap is not handed to the next login.
+void TstPushNotif::tapInFlightThenUserLogoutOpensNothing()
+{
+    FakeApp app;
+    hw()->handleNotificationOpened(QStringLiteral("uuid-in-flight"));
+    const quint64 t1 = app.homeLoaded();
+    QVERIFY(t1 != 0);
+
+    app.userLogout();
+    QVERIFY(!hw()->hasPendingNotif());
+    QVERIFY(app.delayExpired(t1).isEmpty());
+
+    const quint64 t2 = app.homeLoaded();
+    QCOMPARE(t2, quint64(0));
+    QVERIFY(app.delayExpired(t2).isEmpty());
+}
+
+//Unchanged: the login cancel button (plain logout()) is not a user logout,
+//the tap is still opened by the next login.
+void TstPushNotif::tapPendingThenLoginCancelStillOpens()
+{
+    FakeApp app;
+    hw()->handleNotificationOpened(QStringLiteral("uuid-kept"));
+    const quint64 t1 = app.homeLoaded();
+
+    app.sessionDown(); //Application::logout() from the cancel button
+    QVERIFY(hw()->hasPendingNotif());
+    QVERIFY(app.delayExpired(t1).isEmpty());
+
+    const quint64 t2 = app.homeLoaded();
+    QCOMPARE(app.delayExpired(t2), QStringLiteral("uuid-kept"));
+}
+
+//Only what was pending at the logout is forgotten: a tap made after it is
+//opened by the next login as usual.
+void TstPushNotif::tapAfterUserLogoutOpensAtNextLogin()
+{
+    FakeApp app;
+    hw()->handleNotificationOpened(QStringLiteral("uuid-old"));
+    app.userLogout();
+    hw()->handleNotificationOpened(QStringLiteral("uuid-new"));
+
+    const quint64 ticket = app.homeLoaded();
+    QCOMPARE(app.delayExpired(ticket), QStringLiteral("uuid-new"));
+}
+
+//iOS Quick Action: Application only runs it when hasStartedWithOption() is
+//true at homeLoaded(); after a user logout it must be false.
+void TstPushNotif::userLogoutForgetsTheStartOption()
+{
+    StartOptionHw h;
+    h.startWithOption();
+    h.handleNotificationOpened(QStringLiteral("uuid-x"));
+    QVERIFY(h.hasStartedWithOption());
+    QVERIFY(h.hasPendingNotif());
+
+    h.forgetPendingUserActions();
+    QVERIFY(!h.hasStartedWithOption());
+    QVERIFY(!h.hasPendingNotif());
+}
+
+//Settings -> Reset all data: the next login may be on another home, so a
+//pending or in-flight tap from the old one must not open.
+void TstPushNotif::resetAllDataOpensNothing()
+{
+    FakeApp app;
+    hw()->handleNotificationOpened(QStringLiteral("uuid-old-home-1"));
+    const quint64 t1 = app.homeLoaded(); //taken, delay armed
+    QVERIFY(t1 != 0);
+    app.sessionDown(); //lost before the delay: handed back
+    hw()->handleNotificationOpened(QStringLiteral("uuid-old-home-2"));
+    QVERIFY(hw()->hasPendingNotif());
+
+    app.resetAllData();
+    QVERIFY(!hw()->hasPendingNotif());
+    QVERIFY(app.delayExpired(t1).isEmpty());
+
+    const quint64 t2 = app.homeLoaded(); //login on the new home
+    QCOMPARE(t2, quint64(0));
+    QVERIFY(app.delayExpired(t2).isEmpty());
 }
 
 // ---------------------------------------------------------------- push token

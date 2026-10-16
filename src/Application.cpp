@@ -61,18 +61,33 @@ void Application::createQmlApp()
     connect(HardwareUtils::Instance(), &HardwareUtils::calaosServerDetected,
             this, &Application::calaosServerDetected);
 
+    //Only iOS reports these two. Going to the background drops the session
+    //but is not a logout (FIX-7): a deliberate logout must survive the app
+    //going to the background and back, and a network change seen while in
+    //the background must not reconnect.
     connect(HardwareUtils::Instance(), &HardwareUtils::applicationWillResignActive, this, [=]()
     {
-        qDebug() << "Application is in background, logout";
+        qDebug() << "Application is in background, drop the session";
         startedWithOptHandled = false;
-        logout();
+        stopPushNotifRouting();
+        calaosConnect->pause();
+        update_applicationStatus(Common::NotConnected);
     });
 
     connect(HardwareUtils::Instance(), &HardwareUtils::applicationBecomeActive, this, [=]()
     {
-        qDebug() << "Application is in foreground, login again";
+        calaosConnect->unpause();
         QTimer::singleShot(0, this, [=]()
         {
+            //Logged out on purpose: stay on the login screen until the user
+            //logs in again.
+            if (calaosConnect->sessionClosedByUser())
+            {
+                qDebug() << "Application is in foreground, logged out by the user: no login";
+                return;
+            }
+
+            qDebug() << "Application is in foreground, login again";
             login(get_username(), get_password(), get_hostname());
         });
     });
@@ -394,6 +409,10 @@ void Application::login(QString user, QString pass, QString host)
     //the two flags used to desynchronise and turn a login into a silent no-op.
     //applicationStatus is updated by connectionStateChanged() when (and only
     //when) the attempt actually starts.
+    //UserRequest ignores the iOS pause on purpose (FIX-7): the pause only
+    //blocks automatic attempts, and a login comes from the login screen, the
+    //launch timer or become-active, i.e. with the app on screen (at worst
+    //behind a system prompt); the next resign-active pauses it again.
     calaosConnect->login(user, pass, host);
 }
 
@@ -445,7 +464,11 @@ void Application::logout()
 void Application::userLogout()
 {
     HardwareUtils::Instance()->setSessionActive(false);
+    //logout() first: it hands a tap taken but not opened yet back to
+    //HardwareUtils (DeferredNotifGate::loggedOut() also makes any armed delay
+    //stale), so the line below drops it too (FIX-7).
     logout();
+    HardwareUtils::Instance()->forgetPendingUserActions();
 }
 
 void Application::resetAllData()
@@ -456,6 +479,9 @@ void Application::resetAllData()
     settings.setValue("calaos/host", Common::getDemoHost());
     settings.sync();
     logout();
+    //Host and credentials are gone: a tap or Quick Action left from the old
+    //home must not fire at the next login, possibly on another home (FIX-7).
+    HardwareUtils::Instance()->forgetPendingUserActions();
 }
 
 void Application::homeLoaded(const QVariantMap &homeData)
@@ -671,14 +697,16 @@ void Application::networkStatusChanged()
     {
         //Airplane mode, cable unplugged... Drop the session, but unlike a real
         //logout remember that a session is wanted so the link coming back
-        //reconnects on its own (T14).
+        //reconnects on its own (T14). After a logout nothing is wanted, so
+        //nothing comes back (FIX-7).
         stopPushNotifRouting();
         calaosConnect->suspend();
         return;
     }
 
     //Link is back. resume() is a no-op unless a session was wanted and none is
-    //in flight, so a status change while connected costs nothing.
+    //in flight, so a status change while connected costs nothing. It is also
+    //a no-op after a logout and while the app is in the background (FIX-7).
     loadSettings();
     calaosConnect->resume(get_username(), get_password(), get_hostname());
 }

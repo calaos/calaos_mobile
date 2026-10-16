@@ -237,9 +237,26 @@ the first attempt runs in-process right after the message, while the push
 wake-up still grants network; once the process is cached the system closes
 its sockets (`SocketException`), and the expedited retry runs as a
 scheduler job with its own network access. Any failure (no credentials, unreachable server, HTTP 400 for
-wrong credentials, 404, empty `pic_uid`, undecodable image) leaves the text
-notification in place without any visible error. Nothing logs a URL, a
+wrong credentials, 404, body over the cap, empty `pic_uid`, undecodable
+image) leaves the text notification in place without any visible error. A
+notification the user dismissed while the download ran is not re-posted
+(`NotificationManager.getActiveNotifications()`). Nothing logs a URL, a
 credential or image bytes.
+
+Session semantics (decided for AND-7, reversible):
+
+- **Logout** (Settings → Logout, `Application::userLogout()`): the
+  credentials stay in the store (login screen prefill) but
+  `CredentialStore.setSessionActive(false)` is written and the worker stops
+  downloading pictures: pushes show as **text only** until the next
+  successful login (`Application::homeLoaded()` sets the flag back). The
+  flag is **not** touched by a lost connection, a reconnection, the login
+  cancel button or the iOS-style resign-active logout.
+- **Reset all data** (`Application::resetAllData()` →
+  `resetAuthKeychain()`): full wipe of the store (host, credentials,
+  session flag and Keystore key) and of any QSettings leftovers.
+- A store without the flag (install updated in the background, never logged
+  out explicitly) counts as active.
 
 Limits:
 
@@ -248,9 +265,13 @@ Limits:
   only**; the TOFU pinning of the Qt side (`CalaosConnection`) is not shared
   with the worker. Follow-up: export the pinned fingerprint to Java.
 - The manifest sets `android:usesCleartextTraffic="true"` so a server
-  configured with `http://` / `ws://` works from Java too (the Qt side is not
-  subject to that policy). Credentials in the query over plain HTTP are as
-  exposed as in the app's own HTTP fallback.
+  configured with `http://` / `ws://` works from the Java network stack too
+  (Qt's own sockets are not subject to that policy, so the app already talks
+  to such servers). The flag applies to every Java network use in the app.
+- The worker puts `cn_user`/`cn_pass` in the **query string** (that is what
+  `action=eventlog` / `event_picture` accept, as on iOS), whereas the Qt
+  side sends them in a POST body: servers and reverse proxies may log the
+  URL. Over plain `http://` they travel in clear in both cases.
 - Below Android 12 the work is not expedited (expedited work there means a
   foreground service with its own notification): the first attempt still
   runs in-process right away, only the retries are ordinary scheduled jobs.
@@ -269,8 +290,14 @@ stored on the Java side, in the `calaos_credentials` SharedPreferences:
   ([res/xml/backup_rules.xml](../android/res/xml/backup_rules.xml),
   [data_extraction_rules.xml](../android/res/xml/data_extraction_rules.xml));
 - written by `HardwareUtilsAndroid::saveAuthKeychain()` /
-  `setConfigOption("calaos/host")`, read by `loadAuthKeychain()`, wiped
-  (values **and** Keystore key) by `resetAuthKeychain()` on logout;
+  `setConfigOption("calaos/host")`, read by `loadAuthKeychain()`; wiped
+  (values, session flag **and** Keystore key) by `resetAuthKeychain()`,
+  i.e. "Reset all data". A plain Logout keeps them and only clears the
+  session flag (see 6.3);
+- if the Keystore refuses to encrypt a new pair, `saveAuthKeychain()` first
+  drops the pair held in the store (`clearCredentials()`, host kept), then
+  falls back to QSettings, so the next `loadAuthKeychain()` migrates the
+  **new** pair instead of handing out a stale one;
 - **migration**: on the first `loadAuthKeychain()` after the update, a pair
   found in QSettings (`calaos/cn_user`, `calaos/cn_pass` in
   `files/settings/Calaos/CalaosHome.conf`) is moved to the store and the
@@ -295,8 +322,11 @@ adb shell 'am broadcast -n fr.calaos.calaoshome/.debug.FakePushReceiver \
 adb shell cmd statusbar expand-notifications; adb exec-out screencap -p > /tmp/notif.png
 ```
 
-The receiver refuses to run in a non-debuggable process and does not exist in
-release builds.
+The receiver requires the `android.permission.DUMP` permission (the adb
+shell has it, other apps do not), refuses to run in a non-debuggable process
+and does not exist in release builds. `--ez fail_encrypt true` (alone) makes
+`CredentialStore.save()` fail until `--ez fail_encrypt false` or a process
+restart, to exercise the QSettings fallback.
 
 ### 6.6 Manual checklist on a phone (once calaos_server sends data-only messages)
 
@@ -322,9 +352,14 @@ in with a user that is **not** the demo one. Watch with
    updating the phone, trigger: text only, `server answered HTTP 400`.
 6. **Rule without camera**: trigger a push rule with no picture: text only,
    no `event_uuid` in the log, no worker.
-7. **Logout**: Settings → logout (reset). Then
-   `adb shell run-as fr.calaos.calaoshome ls shared_prefs` must not list
-   `calaos_credentials.xml` (or it is empty), and
+7. **Logout**: Settings → Logout, then trigger the camera rule: text
+   notification only, `Push picture: user logged out` in the log;
+   `run-as fr.calaos.calaoshome cat shared_prefs/calaos_credentials.xml`
+   shows `session_active` false and the credentials still there (prefill).
+   Log in again: the next event has its picture.
+7b. **Reset all data**: Settings → Reset all data. Then
+   `adb shell run-as fr.calaos.calaoshome cat shared_prefs/calaos_credentials.xml`
+   must be an empty map, and
    `run-as fr.calaos.calaoshome cat files/settings/Calaos/CalaosHome.conf`
    must contain no `cn_user` / `cn_pass`.
 8. **Update from a QSettings version**: install the previous build, log in,

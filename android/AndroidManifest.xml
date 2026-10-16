@@ -3,6 +3,7 @@
      The package name is not set here: namespace + applicationId live in build.gradle (AGP 8+).
      Keep the INSERT_* placeholders: androiddeployqt fills them. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:installLocation="auto"
     android:versionCode="-- %%INSERT_VERSION_CODE%% --"
     android:versionName="-- %%INSERT_VERSION_NAME%% --">
@@ -10,11 +11,17 @@
     <!-- %%INSERT_FEATURES -->
     <!-- Runtime permission on Android 13+ (requested by HardwareUtils.onCreate); ignored below. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- usesCleartextTraffic (application tag below): the Java push picture
-         download (PushPictureWorker, HttpURLConnection) must reach a server
-         configured with a plain http:// or ws:// address, as the Qt side
-         (not subject to this policy) already does. -->
-    <!-- Keep the name INSERT_PERMISSIONS placeholder above: androiddeployqt fills it. -->
+    <!-- Declared by androidx.work for its foreground-service and after-reboot
+         paths; neither is used (PushPictureWorker is expedited on Android 12+
+         only, never a foreground service, and a pending picture download is
+         pointless after a reboot). WAKE_LOCK stays. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="remove" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" tools:node="remove" />
+    <!-- usesCleartextTraffic (application tag below) lets the Java network
+         stack (PushPictureWorker, HttpURLConnection) reach a calaos_server
+         configured with a plain http:// or ws:// address; Qt's own sockets
+         are not subject to this policy, so the app already talks to such
+         servers. The flag applies to every Java network use in the app. -->
     <supports-screens
         android:anyDensity="true"
         android:largeScreens="true"

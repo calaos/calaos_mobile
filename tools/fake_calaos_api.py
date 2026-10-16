@@ -117,6 +117,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--port", type=int, default=8080)
+    p.add_argument("--bind", default="127.0.0.1",
+                   help="address to listen on (default loopback; the emulator reaches it as 10.0.2.2)")
     p.add_argument("--user", required=True)
     p.add_argument("--password", required=True)
     p.add_argument("--picture", required=True, help="JPEG file served as the event picture")
@@ -128,7 +130,7 @@ def main():
         args.picture_bytes = f.read()
 
     Handler.args = args
-    server = http.server.ThreadingHTTPServer(("0.0.0.0", args.port), Handler)
+    server = http.server.ThreadingHTTPServer((args.bind, args.port), Handler)
     print(f"fake api.php on port {args.port} (emulator: http://10.0.2.2:{args.port}/api.php)", file=sys.stderr)
     try:
         server.serve_forever()

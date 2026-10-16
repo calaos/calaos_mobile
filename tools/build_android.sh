@@ -167,6 +167,15 @@ if [[ "${CONFIG}" == "Release" ]]; then
             -keystore "${CALAOS_KEYSTORE}" -storepass:env CALAOS_KEYSTORE_PASS \
             -alias "${CALAOS_KEY_ALIAS}" 2>&1)" \
             || fail "cannot open the keystore / alias (wrong CALAOS_KEYSTORE_PASS or CALAOS_KEY_ALIAS?): ${keytool_out}"
+        # PKCS12 has a single password: keytool silently ignores a different -keypass
+        # there (and jarsigner then fails after the build). Detect the type from the
+        # file itself: keytool output is localised, and for JKS it even mentions
+        # "PKCS12" in a migration warning. JKS starts with FE ED FE ED, JCEKS with
+        # CE CE CE CE; a PKCS12 file is a DER SEQUENCE (0x30).
+        ks_magic="$(od -An -tx1 -N4 "${CALAOS_KEYSTORE}" | tr -d ' \n')"
+        if [[ "${ks_magic}" == 30* && -n "${CALAOS_KEY_PASS:-}" && "${CALAOS_KEY_PASS}" != "${CALAOS_KEYSTORE_PASS}" ]]; then
+            fail "CALAOS_KEYSTORE is a PKCS12 keystore: it has a single password, so CALAOS_KEY_PASS must be unset or equal to CALAOS_KEYSTORE_PASS (use a JKS keystore for distinct passwords)"
+        fi
         # -certreq needs the private key: it checks the key password (the store
         # password when CALAOS_KEY_PASS is unset). Nothing is written to the keystore.
         keytool_out="$(CALAOS_KEYSTORE_PASS="${CALAOS_KEYSTORE_PASS}" CALAOS_KEY_PASS="${CALAOS_KEY_PASS:-${CALAOS_KEYSTORE_PASS}}" \

@@ -22,8 +22,8 @@
 #ifdef HAVE_WEBENGINE
 #include <QQuickWebEngineProfile>
 #endif
-#elif defined (Q_OS_ANDROID) || defined (Q_OS_IOS)
-#include <QtGui/qpa/qplatformwindow.h>
+#elif defined (Q_OS_ANDROID)
+#include <QStyleHints>
 #endif
 
 Application::Application(int & argc, char ** argv) :
@@ -278,11 +278,6 @@ void Application::createQmlApp()
     }
 #endif
 
-    engine.rootContext()->setContextProperty("platformMarginsLeft", QVariant(0.0));
-    engine.rootContext()->setContextProperty("platformMarginsRight", QVariant(0.0));
-    engine.rootContext()->setContextProperty("platformMarginsTop", QVariant(0.0));
-    engine.rootContext()->setContextProperty("platformMarginsBottom", QVariant(0.0));
-
     m_netAddresses = new QQmlObjectListModel<NetworkInfo>(this);
 
 #ifdef CALAOS_DESKTOP
@@ -332,25 +327,19 @@ void Application::createQmlApp()
     qmlRegisterUncreatableType<QQmlVariantListModel> ("Calaos", 1, 0, "VariantListModel",  "QQmlVariantListModel not creatable");
 
 #if defined(CALAOS_MOBILE)
-    engine.load(QUrl(QStringLiteral("qrc:///qml/mobile/main.qml")));
-
-#if defined (Q_OS_ANDROID) || defined (Q_OS_IOS)
-    auto rootObjs = engine.rootObjects();
-    QObject *rootObject = rootObjs.first();
-    if (rootObject)
-    {
-        QWindow *w = qobject_cast<QWindow *>(rootObject);
-        if (w)
-        {
-            QPlatformWindow *pw = w->handle();
-            QMargins margins = pw->safeAreaMargins();
-            engine.rootContext()->setContextProperty("platformMarginsLeft", margins.left());
-            engine.rootContext()->setContextProperty("platformMarginsRight", margins.right());
-            engine.rootContext()->setContextProperty("platformMarginsTop", margins.top());
-            engine.rootContext()->setContextProperty("platformMarginsBottom", margins.bottom());
-        }
-    }
+#if defined (Q_OS_ANDROID)
+    //From Android 15 the app is drawn edge to edge, under transparent system
+    //bars whose icons follow the app's colour scheme. The app is dark
+    //whatever the system theme: ask for light icons, or a light system theme
+    //leaves dark icons on our black header. Android 14 and older keep their
+    //opaque system bars, as before.
+    if (QNativeInterface::QAndroidApplication::sdkVersion() >= 35)
+        styleHints()->setColorScheme(Qt::ColorScheme::Dark);
 #endif
+
+    //Safe areas (notch, Dynamic Island, home indicator, Android system bars)
+    //are handled in QML, with the SafeArea attached property.
+    engine.load(QUrl(QStringLiteral("qrc:///qml/mobile/main.qml")));
 
 #elif defined(CALAOS_DESKTOP)
     engine.load(QUrl(QStringLiteral("qrc:///qml/desktop/main.qml")));

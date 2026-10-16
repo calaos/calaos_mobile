@@ -5,8 +5,10 @@ set -euo pipefail
 # build_ios.sh — Configure and build the Calaos Home iOS app with CMake/Xcode
 # Usage: ./build_ios.sh [Debug|Release] [--archive] [--simulator]
 #   --simulator  build for the iOS simulator (arm64, Qt kit ios_simulator_arm64,
-#                build dir build-ios-sim/), signed ad hoc: no team, no provisioning
-#   --archive    archive + export the Release build (device only)
+#                build dir build-ios-sim/), signed ad hoc: no team, no provisioning.
+#                Needs Qt >= 6.12 (the single "ios" kit of older Qt has no
+#                arm64 simulator slice).
+#   --archive    archive + export (device, Release only; Release is implied)
 # Environment overrides: QT_VERSION (default 6.12.0), QT_ROOT (default ~/Qt/$QT_VERSION),
 #   QT_IOS (Qt iOS kit), QT_HOST (Qt macOS host kit), IOS_DEPLOYMENT_TARGET
 # Rolling back to another installed Qt: QT_VERSION=6.11.0 ./tools/build_ios.sh Debug
@@ -17,20 +19,27 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 fail() { echo "ERROR: $1" >&2; exit 1; }
 
-CONFIG="Debug"
+USAGE="usage: $0 [Debug|Release] [--archive] [--simulator]"
+CONFIG=""
 ARCHIVE=false
 SIMULATOR=false
 for arg in "$@"; do
     case "${arg}" in
         --archive) ARCHIVE=true ;;
         --simulator) SIMULATOR=true ;;
-        Debug|Release) CONFIG="${arg}" ;;
-        *) fail "unknown argument: ${arg} (usage: $0 [Debug|Release] [--archive] [--simulator])" ;;
+        Debug|Release)
+            [[ -z "${CONFIG}" ]] || fail "configuration given twice (${CONFIG}, ${arg}); ${USAGE}"
+            CONFIG="${arg}" ;;
+        *) fail "unknown argument: ${arg}; ${USAGE}" ;;
     esac
 done
-if [[ "${ARCHIVE}" == true && "${SIMULATOR}" == true ]]; then
-    fail "--archive is for device builds only"
+if [[ "${ARCHIVE}" == true ]]; then
+    [[ "${SIMULATOR}" == false ]] || fail "--archive is for device builds only"
+    # The archive target always builds Release: refuse a Debug request.
+    [[ "${CONFIG:-Release}" == "Release" ]] || fail "--archive builds Release only (got ${CONFIG})"
+    CONFIG="Release"
 fi
+CONFIG="${CONFIG:-Debug}"
 
 # Qt version: the only place to bump it.
 QT_VERSION="${QT_VERSION:-6.12.0}"
@@ -61,8 +70,14 @@ build_dir_for_sdk() {
 
 if [[ -z "${QT_IOS:-}" ]]; then
     QT_IOS="${QT_ROOT}/$(qt_ios_kit "${IOS_SDK}")"
-    if [[ ! -d "${QT_IOS}" && -d "${QT_ROOT}/ios" ]]; then
-        QT_IOS="${QT_ROOT}/ios"
+    if [[ ! -d "${QT_IOS}" ]]; then
+        # The single "ios" kit of Qt <= 6.11 has no arm64 simulator slice: only
+        # device builds can fall back to it. Simulator builds need Qt >= 6.12.
+        if [[ "${SIMULATOR}" == true ]]; then
+            fail "Qt simulator kit not found: ${QT_IOS} (simulator builds need Qt >= 6.12 and its ios_simulator_arm64 kit)"
+        elif [[ -d "${QT_ROOT}/ios" ]]; then
+            QT_IOS="${QT_ROOT}/ios"
+        fi
     fi
 fi
 QT_HOST="${QT_HOST:-${QT_ROOT}/macos}"

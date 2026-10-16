@@ -46,6 +46,17 @@ private slots:
     void logoutForgetsTheIntent();
     void suspendKeepsTheIntent();
 
+    //FIX-7: a session closed on purpose stays closed.
+    void logoutThenNetworkFlapDoesNotReconnect();
+    void logoutDuringBackoffThenNetworkFlapDoesNotReconnect();
+    void logoutBlocksEveryAutomaticAttempt();
+    void loginAfterLogoutWorks();
+    void activeSessionSurvivesRepeatedNetworkFlaps();
+    void backgroundBlocksTheNetworkComingBack();
+    void backgroundThenForegroundResumesAWantedSession();
+    void logoutThenBackgroundThenForegroundStaysLoggedOut();
+    void backgroundBeforeAnyLoginWantsNothing();
+
 private:
     //One complete failing attempt: start it, then report the failure.
     //Returns what the policy answered, ie "arm the retry timer".
@@ -452,6 +463,191 @@ void TstReconnectPolicy::suspendKeepsTheIntent()
     QVERIFY(!p.canResume()); //not twice
     QVERIFY(p.failed(ReconnectPolicy::TransientFailure));
     QCOMPARE(p.pendingDelayMs(), 1000);
+}
+
+//The ticket's case: Settings -> Logout, then airplane mode on and off.
+//Application calls stop(), then suspend() on Disconnected and asks
+//canResume() on Online: the answer must be no, every time.
+void TstReconnectPolicy::logoutThenNetworkFlapDoesNotReconnect()
+{
+    ReconnectPolicy p;
+    p.beginAttempt(ReconnectPolicy::UserRequest);
+    p.attemptSucceeded();
+
+    p.stop();
+    QVERIFY(p.isStopped());
+    for (int i = 0; i < 3; i++)
+    {
+        p.suspend();
+        QVERIFY(!p.canResume());
+        QVERIFY(!p.wantsConnection());
+        QVERIFY(p.isStopped());
+    }
+    QCOMPARE(p.state(), ReconnectPolicy::Disconnected);
+}
+
+//Same, while a retry was pending: the logout wins over the backoff.
+void TstReconnectPolicy::logoutDuringBackoffThenNetworkFlapDoesNotReconnect()
+{
+    ReconnectPolicy p;
+    p.setJitterEnabled(false);
+    p.beginAttempt(ReconnectPolicy::UserRequest);
+    p.attemptSucceeded();
+    QVERIFY(p.failed(ReconnectPolicy::TransientFailure));
+    QCOMPARE(p.state(), ReconnectPolicy::Reconnecting);
+
+    p.stop();
+    p.suspend();
+    QVERIFY(!p.canResume());
+    QVERIFY(!p.canBeginAttempt(ReconnectPolicy::AutoRetry));
+}
+
+//The network coming back is not the only automatic trigger: the retry timer
+//and the desktop server discovery go through canBeginAttempt(AutoRetry).
+void TstReconnectPolicy::logoutBlocksEveryAutomaticAttempt()
+{
+    ReconnectPolicy p;
+    //Before anything happened, discovery may start the first session (that
+    //is how the desktop logs in).
+    QVERIFY(p.canBeginAttempt(ReconnectPolicy::AutoRetry));
+
+    p.beginAttempt(ReconnectPolicy::AutoRetry);
+    p.attemptSucceeded();
+    p.stop();
+    QVERIFY(!p.canBeginAttempt(ReconnectPolicy::AutoRetry));
+    //A failure report arriving after the logout arms nothing.
+    QVERIFY(!p.failed(ReconnectPolicy::TransientFailure));
+    QCOMPARE(p.state(), ReconnectPolicy::Disconnected);
+}
+
+void TstReconnectPolicy::loginAfterLogoutWorks()
+{
+    ReconnectPolicy p;
+    p.beginAttempt(ReconnectPolicy::UserRequest);
+    p.attemptSucceeded();
+    p.stop();
+
+    QVERIFY(p.canBeginAttempt(ReconnectPolicy::UserRequest));
+    p.beginAttempt(ReconnectPolicy::UserRequest);
+    QVERIFY(!p.isStopped());
+    QVERIFY(p.wantsConnection());
+    p.attemptSucceeded();
+    QCOMPARE(p.state(), ReconnectPolicy::Connected);
+
+    //And that new session is back to the normal rules: a network flap
+    //reconnects it.
+    p.suspend();
+    QVERIFY(p.canResume());
+}
+
+//Kept behaviour (T14): an active session that loses the link reconnects when
+//it comes back, as many times as it happens.
+void TstReconnectPolicy::activeSessionSurvivesRepeatedNetworkFlaps()
+{
+    ReconnectPolicy p;
+    p.beginAttempt(ReconnectPolicy::UserRequest);
+    p.attemptSucceeded();
+
+    for (int i = 0; i < 3; i++)
+    {
+        p.suspend();
+        QVERIFY(p.canResume());
+        //Two "Online" in a row (Android reports reachability and medium):
+        //only one attempt.
+        p.beginAttempt(ReconnectPolicy::AutoRetry);
+        QVERIFY(!p.canResume());
+        p.attemptSucceeded();
+    }
+
+    //Link lost while the attempt is in flight: still wanted.
+    p.suspend();
+    p.beginAttempt(ReconnectPolicy::AutoRetry);
+    p.suspend();
+    QVERIFY(p.canResume());
+}
+
+//iOS resign-active: the session is dropped, and a Reachability change seen
+//while in the background must not reconnect.
+void TstReconnectPolicy::backgroundBlocksTheNetworkComingBack()
+{
+    ReconnectPolicy p;
+    p.setJitterEnabled(false);
+    p.beginAttempt(ReconnectPolicy::UserRequest);
+    p.attemptSucceeded();
+
+    p.pause();
+    QCOMPARE(p.state(), ReconnectPolicy::Disconnected);
+    QVERIFY(p.isPaused());
+    QVERIFY(p.wantsConnection());
+    QVERIFY(!p.canResume());
+
+    p.suspend();
+    QVERIFY(!p.canResume());
+    QVERIFY(p.isPaused());
+    QVERIFY(!p.canBeginAttempt(ReconnectPolicy::AutoRetry));
+}
+
+//iOS become-active: the session that was up when the app left comes back.
+void TstReconnectPolicy::backgroundThenForegroundResumesAWantedSession()
+{
+    ReconnectPolicy p;
+    p.beginAttempt(ReconnectPolicy::UserRequest);
+    p.attemptSucceeded();
+
+    p.pause();
+    p.unpause();
+    QVERIFY(!p.isPaused());
+    QVERIFY(!p.isStopped()); //Application logs in again
+    QVERIFY(p.canResume());
+    QVERIFY(p.canBeginAttempt(ReconnectPolicy::UserRequest));
+    p.beginAttempt(ReconnectPolicy::UserRequest);
+    p.attemptSucceeded();
+    QCOMPARE(p.state(), ReconnectPolicy::Connected);
+
+    //Background while an attempt was in flight (the launch login racing a
+    //permission prompt): same thing.
+    p.pause();
+    p.unpause();
+    p.beginAttempt(ReconnectPolicy::UserRequest);
+    p.pause();
+    p.unpause();
+    QVERIFY(!p.isStopped());
+    QVERIFY(p.canResume());
+}
+
+//iOS: Logout, switch to another app, come back. The logout must hold.
+void TstReconnectPolicy::logoutThenBackgroundThenForegroundStaysLoggedOut()
+{
+    ReconnectPolicy p;
+    p.beginAttempt(ReconnectPolicy::UserRequest);
+    p.attemptSucceeded();
+    p.stop();
+
+    p.pause();
+    p.suspend();
+    QVERIFY(!p.canResume());
+    p.unpause();
+    QVERIFY(p.isStopped()); //Application does not log in again
+    QVERIFY(!p.canResume());
+
+    //The login screen still works.
+    QVERIFY(p.canBeginAttempt(ReconnectPolicy::UserRequest));
+}
+
+//iOS reports become-active at launch too, with nothing paused: the policy
+//neither wants nor forbids a session, Application's launch login applies.
+void TstReconnectPolicy::backgroundBeforeAnyLoginWantsNothing()
+{
+    ReconnectPolicy p;
+    p.unpause();
+    QVERIFY(!p.isStopped());
+    QVERIFY(!p.canResume());
+
+    p.pause();
+    p.unpause();
+    QVERIFY(!p.isStopped());
+    QVERIFY(!p.canResume());
+    QVERIFY(p.canBeginAttempt(ReconnectPolicy::UserRequest));
 }
 
 QTEST_APPLESS_MAIN(TstReconnectPolicy)

@@ -27,4 +27,5 @@ SUBDIRS += \
     tst_pushnotif \
     tst_qqmlhelpers \
     tst_reconnectpolicy \
-    tst_roomfiltermodel
+    tst_roomfiltermodel \
+    tst_sessionlifecycle

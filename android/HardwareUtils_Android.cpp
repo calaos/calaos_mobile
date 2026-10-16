@@ -356,12 +356,29 @@ void HardwareUtilsAndroid::saveAuthKeychain(const QString &email, const QString 
     if (!storeCredentials(email, pass))
     {
         //Keep the user logged in at the next start rather than losing the
-        //pair: the base class copy (QSettings) is migrated again later.
+        //pair: the base class copy (QSettings) is migrated again later. The
+        //store must not keep a previous pair meanwhile, or loadAuthKeychain()
+        //would hand that stale one out and drop the new one from QSettings.
         qWarning() << "Android: credentials kept in settings, secure store unavailable";
+        QJniObject ctx = androidContext();
+        QJniObject::callStaticMethod<void>(kCredentialStoreClass, "clearCredentials",
+                                           "(Landroid/content/Context;)V", ctx.object());
+        clearJavaException("CredentialStore.clearCredentials");
         HardwareUtils::saveAuthKeychain(email, pass);
         return;
     }
     forgetSettingsCredentials();
+}
+
+void HardwareUtilsAndroid::setSessionActive(bool active)
+{
+    //Read by PushPictureWorker: after an explicit logout the stored pair
+    //stays for the login screen but is not used for pictures any more.
+    QJniObject ctx = androidContext();
+    QJniObject::callStaticMethod<void>(kCredentialStoreClass, "setSessionActive",
+                                       "(Landroid/content/Context;Z)V", ctx.object(),
+                                       static_cast<jboolean>(active));
+    clearJavaException("CredentialStore.setSessionActive");
 }
 
 void HardwareUtilsAndroid::loadAuthKeychain(QString &email, QString &pass)
@@ -399,7 +416,7 @@ void HardwareUtilsAndroid::loadAuthKeychain(QString &email, QString &pass)
 
 void HardwareUtilsAndroid::resetAuthKeychain()
 {
-    //Logout: nothing readable stays behind, in Java or in QSettings (the
+    //"Reset all data": nothing stays behind, in Java or in QSettings (the
     //base class would write the demo pair there; loadSettings() falls back
     //to it when the store is empty).
     QJniObject ctx = androidContext();

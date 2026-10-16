@@ -453,6 +453,12 @@ void Application::logout()
     update_applicationStatus(Common::NotConnected);
 }
 
+void Application::userLogout()
+{
+    HardwareUtils::Instance()->setSessionActive(false);
+    logout();
+}
+
 void Application::resetAllData()
 {
     HardwareUtils::Instance()->resetAuthKeychain();
@@ -476,6 +482,7 @@ void Application::homeLoaded(const QVariantMap &homeData)
     favModel->load(favoritesList);
 
     saveSettings();
+    HardwareUtils::Instance()->setSessionActive(true);
 
     if (!startedWithOptHandled)
     {

@@ -39,6 +39,7 @@ public:
     virtual void loadAuthKeychain(QString &email, QString &pass);
     virtual void resetAuthKeychain();
     virtual void setConfigOption(QString key, QString value);
+    virtual void setSessionActive(bool active);
 
 private:
     //Qt's Android backend (ConnectivityManager default-network callback) feeds

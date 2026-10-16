@@ -52,6 +52,12 @@ public:
     virtual void setConfigOption(QString key, QString value);
     virtual QString getConfigOption(QString key);
 
+    //Session boundaries that matter to platform code running without the
+    //app (Android push picture worker): true once home is loaded, false on
+    //an explicit user logout only (Application::userLogout()), never on a
+    //lost connection, a reconnection or the iOS resign-active logout.
+    virtual void setSessionActive(bool active) { Q_UNUSED(active); }
+
     //Called from qml/mobile/main.qml: the QML layer decides when a value has
     //to be typed, the platform decides how. The answer comes back through the
     //dialogTextValid()/dialogCanceled() signals below.

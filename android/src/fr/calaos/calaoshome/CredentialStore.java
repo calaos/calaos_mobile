@@ -34,9 +34,11 @@ import javax.crypto.spec.GCMParameterSpec;
 //
 // Thread-safety: SharedPreferences is thread-safe and every call creates its
 // own Cipher; the Qt thread and a worker thread may use this class at once.
-// All methods are null-safe on failure and never throw: a credential that
-// cannot be read is reported as absent, and nothing here ever logs a
-// credential, a host with credentials, or the ciphertext.
+// All methods are null-safe on failure and never throw (Keystore errors
+// surface as GeneralSecurityException, IOException or ProviderException, a
+// RuntimeException): a credential that cannot be read is reported as absent,
+// and nothing here ever logs a credential, a host with credentials, or the
+// ciphertext.
 public final class CredentialStore
 {
     private static final String TAG = "CalaosHome";
@@ -46,12 +48,20 @@ public final class CredentialStore
     private static final String PREF_HOST = "host";
     private static final String PREF_USER = "cn_user";
     private static final String PREF_PASS = "cn_pass";
+    // False after an explicit user logout: the credentials stay (prefill of
+    // the login screen) but background push processing must not use them.
+    private static final String PREF_SESSION_ACTIVE = "session_active";
 
     private static final String KEYSTORE = "AndroidKeyStore";
     private static final String KEY_ALIAS = "calaos_credentials_v1";
     private static final String TRANSFORMATION = "AES/GCM/NoPadding";
     private static final int GCM_IV_BYTES = 12;
     private static final int GCM_TAG_BITS = 128;
+
+    // Debug builds only (set by fr.calaos.calaoshome.debug.FakePushReceiver,
+    // absent from release): makes save() fail like a broken Keystore would,
+    // to exercise the QSettings fallback of HardwareUtilsAndroid.
+    public static volatile boolean failEncryptForTesting;
 
     private CredentialStore()
     {
@@ -71,13 +81,23 @@ public final class CredentialStore
         prefs(ctx).edit().putString(PREF_HOST, host == null ? "" : host).apply();
     }
 
-    // ── Credentials ──────────────────────────────────────────────────────
+    // ── Session ──────────────────────────────────────────────────────────
 
-    public static boolean hasCredentials(Context ctx)
+    // True while the user is logged in, or has never logged out explicitly
+    // (default, so an install updated in the background keeps working). An
+    // explicit logout sets it false until the next successful login; a lost
+    // connection or a reconnection does not change it.
+    public static boolean isSessionActive(Context ctx)
     {
-        SharedPreferences p = prefs(ctx);
-        return p.contains(PREF_USER) && p.contains(PREF_PASS);
+        return prefs(ctx).getBoolean(PREF_SESSION_ACTIVE, true);
     }
+
+    public static void setSessionActive(Context ctx, boolean active)
+    {
+        prefs(ctx).edit().putBoolean(PREF_SESSION_ACTIVE, active).commit();
+    }
+
+    // ── Credentials ──────────────────────────────────────────────────────
 
     // Empty string when absent or unreadable (key lost, corrupt value).
     public static String user(Context ctx)
@@ -94,8 +114,8 @@ public final class CredentialStore
     // keep its own copy); nothing is written in that case.
     public static boolean save(Context ctx, String user, String password)
     {
-        String u = encrypt(user == null ? "" : user);
-        String p = encrypt(password == null ? "" : password);
+        String u = failEncryptForTesting ? null : encrypt(user == null ? "" : user);
+        String p = failEncryptForTesting ? null : encrypt(password == null ? "" : password);
         if (u == null || p == null)
         {
             Log.w(TAG, "CredentialStore: Keystore encryption failed, credentials not stored");
@@ -107,7 +127,15 @@ public final class CredentialStore
         return prefs(ctx).edit().putString(PREF_USER, u).putString(PREF_PASS, p).commit();
     }
 
-    // Logout: forget everything, including the host and the Keystore key.
+    // Forgets the pair only (host and session flag untouched): used when a
+    // new pair could not be stored, so a stale one is never read back.
+    public static void clearCredentials(Context ctx)
+    {
+        prefs(ctx).edit().remove(PREF_USER).remove(PREF_PASS).commit();
+    }
+
+    // "Reset all data": forget everything, including the host, the session
+    // flag and the Keystore key.
     public static void clear(Context ctx)
     {
         prefs(ctx).edit().clear().commit();
@@ -118,7 +146,7 @@ public final class CredentialStore
             if (ks.containsAlias(KEY_ALIAS))
                 ks.deleteEntry(KEY_ALIAS);
         }
-        catch (GeneralSecurityException | IOException e)
+        catch (GeneralSecurityException | IOException | RuntimeException e)
         {
             // Values are gone already; a stale key only encrypts the next login.
             Log.w(TAG, "CredentialStore: could not delete the Keystore key: " + e.getClass().getSimpleName());
@@ -181,8 +209,10 @@ public final class CredentialStore
             System.arraycopy(ct, 0, out, iv.length, ct.length);
             return Base64.encodeToString(out, Base64.NO_WRAP);
         }
-        catch (GeneralSecurityException | IOException | IllegalStateException e)
+        catch (GeneralSecurityException | IOException | RuntimeException e)
         {
+            // RuntimeException covers the Keystore's ProviderException and
+            // IllegalStateException: this class never throws.
             Log.w(TAG, "CredentialStore: encrypt failed: " + e.getClass().getSimpleName());
             return null;
         }
@@ -204,7 +234,7 @@ public final class CredentialStore
             byte[] clear = cipher.doFinal(in, GCM_IV_BYTES, in.length - GCM_IV_BYTES);
             return new String(clear, StandardCharsets.UTF_8);
         }
-        catch (GeneralSecurityException | IOException | IllegalArgumentException | IllegalStateException e)
+        catch (GeneralSecurityException | IOException | RuntimeException e)
         {
             // Key invalidated/missing or corrupt value: treated as "no
             // credentials"; the user logs in again and the store is rewritten.

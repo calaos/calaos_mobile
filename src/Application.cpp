@@ -395,8 +395,11 @@ void Application::startLogin(QString user, QString pass, QString host, bool user
     user = user.trimmed();
 
     //Before the network check: the properties are what the login screen
-    //shows and what homeLoaded() saves, they must hold the credentials of the
-    //session that will be opened, including one recorded below (FIX-9).
+    //shows and what homeLoaded() saves, so a login recorded below for when
+    //the network is back (FIX-9) is saved with its own credentials. They are
+    //written even when deferLogin() refuses, which is harmless: an automatic
+    //login writes the values it was given from them, and a refused tap on
+    //Login keeps what was typed, as online.
     update_username(user);
     update_password(pass);
     update_hostname(host);

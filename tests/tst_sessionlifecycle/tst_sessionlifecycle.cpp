@@ -181,7 +181,7 @@ private slots:
     void acceptsImmediateReconnectFollowsThePolicy();
 
     void offlineLaunchConnectsWhenTheNetworkIsBack();
-    void logoutThenOfflineLaunchStaysLoggedOut();
+    void logoutThenOfflineAutoLoginStaysLoggedOut();
     void offlineLaunchThenTypedLoginUsesTheTypedCredentials();
 
 private:
@@ -484,7 +484,9 @@ void TstSessionLifecycle::offlineLaunchConnectsWhenTheNetworkIsBack()
 
 //FIX-9: an automatic login refused offline (iOS become-active, the launch
 //login) never reopens a session the user closed.
-void TstSessionLifecycle::logoutThenOfflineLaunchStaysLoggedOut()
+//Out of scope: a cold restart after a logout. The logout is not persisted
+//across restarts, online or offline (follow-up ticket).
+void TstSessionLifecycle::logoutThenOfflineAutoLoginStaysLoggedOut()
 {
     loginAndWait();
     connection->logout();

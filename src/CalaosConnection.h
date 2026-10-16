@@ -42,8 +42,14 @@ public:
 
     enum Trigger
     {
-        UserRequest, //explicit login (login screen, app resume): resets backoff
-        AutoRetry,   //backoff timer, server discovery, network coming back
+        //Explicit login (login screen, launch login and iOS become-active
+        //when online): resets the backoff and any give-up.
+        UserRequest,
+        //Backoff timer, server discovery, network coming back, and the
+        //automatic logins (launch, iOS become-active) deferred offline
+        //(FIX-9). Become-active is deliberately UserRequest online but
+        //AutoRetry offline: a credentials give-up is not undone offline.
+        AutoRetry,
     };
 
     //Backoff: 1s, 2s, 4s, 8s, 16s, then capped at 30s.

@@ -150,8 +150,9 @@ Exécution parallèle : chaque ticket lancé en parallèle travaille dans son pr
 | [FIX-7](tasks/FIX-7-reconnexion-apres-logout.md) | Pas de reconnexion automatique après une déconnexion volontaire | S | AND-7 | G-CONN | En revue |
 | [FIX-8](tasks/FIX-8-identifiants-tapes-ecrases.md) | Un changement de réseau écrase les identifiants tapés sur l'écran de login | S | FIX-7 | G-CONN | En revue |
 | [FIX-9](tasks/FIX-9-demarrage-hors-ligne.md) | App lancée hors ligne : se connecter quand le réseau revient | S | FIX-8 | G-CONN | En revue |
-| [FIX-10](tasks/FIX-10-bandeau-hors-ligne.md) | Bandeau « hors ligne » à la place de l'alerte modale « No network » | S | FIX-11, AND-9 | G-QML-MOBILE + G-CONN | En cours |
+| [FIX-10](tasks/FIX-10-bandeau-hors-ligne.md) | Bandeau « hors ligne » à la place de l'alerte modale « No network » | S | FIX-11, AND-9 | G-QML-MOBILE + G-CONN | En revue |
 | [FIX-11](tasks/FIX-11-deconnexion-persistante.md) | Mémoriser la déconnexion volontaire entre deux lancements | S | FIX-9 | G-CONN + G-ANDROID | En revue |
+| [FIX-12](tasks/FIX-12-effacer-mot-de-passe.md) | Le bouton « effacer » du champ mot de passe n'efface rien | S | FIX-10 | G-QML-MOBILE | À faire |
 
 ## Diagramme de parallélisation
 

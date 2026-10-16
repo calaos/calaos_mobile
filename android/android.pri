@@ -1,21 +1,13 @@
 QT += gui-private
 
-OTHER_FILES += $$PWD/src/fr/calaos/calaoshome/HardwareUtils.java
+OTHER_FILES += $$PWD/src/fr/calaos/calaoshome/HardwareUtils.java \
+               $$PWD/src/fr/calaos/calaoshome/CalaosMessagingService.java
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD
 
 SOURCES += $$PWD/HardwareUtils_Android.cpp
 HEADERS += $$PWD/HardwareUtils_Android.h
 
-FIREBASE_SDK = $$(FIREBASE_CPP_SDK_DIR)
-isEmpty(FIREBASE_SDK) {
-    error("FIREBASE_CPP_SDK_DIR env is not set. Please set it first")
-}
-
-INCLUDEPATH += $$FIREBASE_SDK/include
-LIBS += -L$$FIREBASE_SDK/libs/android/$$ANDROID_TARGET_ARCH \
-        -lfirebase_messaging \
-        -lfirebase_app \
-        -lfirebase_auth
+# Push notifications use the Firebase Java SDK (android/build.gradle), no native SDK.
 
 include(C:/Users/$$(USERNAME)/AppData/Local/Android/Sdk/android_openssl/openssl.pri)
 

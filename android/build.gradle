@@ -15,6 +15,10 @@ buildscript {
         //noinspection AndroidGradlePluginVersion
         classpath 'com.android.tools.build:gradle:9.0.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.0"
+        // Reads google-services.json (copied next to this file by androiddeployqt)
+        // and generates the Firebase resources (google_app_id, ...).
+        // 4.5.0 verified with AGP 9.0.0 / Gradle 9.3.1.
+        classpath 'com.google.gms:google-services:4.5.0'
     }
 }
 
@@ -24,11 +28,18 @@ repositories {
 }
 
 apply plugin: qtGradlePluginType
+if (qtGradlePluginType == 'com.android.application') {
+    apply plugin: 'com.google.gms.google-services'
+}
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
     //noinspection GradleDependency
     implementation 'androidx.core:core:1.17.0'
+
+    // Push notifications (AND-4): Firebase Cloud Messaging, Java SDK.
+    implementation platform('com.google.firebase:firebase-bom:35.0.2')
+    implementation 'com.google.firebase:firebase-messaging'
 }
 
 android {

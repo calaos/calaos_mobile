@@ -3,8 +3,8 @@
 # Included from the root CMakeLists.txt when ANDROID is set.
 
 # ── Options ───────────────────────────────────────────────────────────────────
-# Push notifications are reimplemented in Java (AND-4); no native push SDK.
-option(CALAOS_ANDROID_PUSH "Enable Android push notifications (FCM, Java)" OFF)
+# Push notifications (FCM) live entirely on the Java/Gradle side
+# (android/build.gradle, CalaosMessagingService.java): nothing to enable here.
 
 # ABIs to build. Debug uses arm64-v8a only; release multi-ABI comes with AND-5.
 set(CALAOS_ANDROID_ABIS "arm64-v8a" CACHE STRING

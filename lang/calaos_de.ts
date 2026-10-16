@@ -48,9 +48,8 @@
         <translation>Die Anmeldedaten wurden erfolgreich geändert.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="387"/>
         <source>No network connection found, this application requires a network connection to work.</source>
-        <translation>Keine Netzwerkverbindung gefunden, diese Anwendung benötigt eine Netzwerkverbindung, um zu funktionieren.</translation>
+        <translation type="vanished">Keine Netzwerkverbindung gefunden, diese Anwendung benötigt eine Netzwerkverbindung, um zu funktionieren.</translation>
     </message>
     <message>
         <location filename="../src/Application.cpp" line="544"/>
@@ -1934,6 +1933,14 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <location filename="../src/OSInstaller.cpp" line="37"/>
         <source>Close</source>
         <translation>Schliessen</translation>
+    </message>
+</context>
+<context>
+    <name>OfflineBanner</name>
+    <message>
+        <location filename="../qml/mobile/OfflineBanner.qml" line="62"/>
+        <source>No network, will connect when it is back</source>
+        <translation>Kein Netzwerk, Verbindung sobald es wieder da ist</translation>
     </message>
 </context>
 <context>

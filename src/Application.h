@@ -66,6 +66,11 @@ public:
 
     QML_READONLY_PROPERTY(QString, appVersion)
 
+    //No network while a session is wanted (FIX-10): the mobile UI shows a
+    //banner instead of a modal alert, until the link is back. Always false
+    //on desktop (HardwareUtils reports it always connected).
+    QML_READONLY_PROPERTY(bool, waitingForNetwork)
+
 public:
     Application(int &argc, char **argv);
 
@@ -113,6 +118,11 @@ public:
 
     Q_INVOKABLE void updateNetwork(QString intfName, bool dhcp, QString ipv4, QString netmask, QString gateway, QString dns, QString dnsSearch);
 
+signals:
+    //Login was tapped without network (FIX-10): the login waits for the
+    //network, the banner tells it.
+    void loginWaitsForNetwork();
+
 private slots:
     void homeLoaded(const QVariantMap &homeData);
     void loginFailed();
@@ -159,11 +169,10 @@ private:
     //(true) or automatic (launch, iOS become-active). Offline, the login is
     //not started but recorded so the link coming back connects (FIX-9).
     void startLogin(QString user, QString pass, QString host, bool userAction);
-    //The "no network" alert was shown for an automatic login during the
-    //current offline period: the next automatic ones stay silent until the
-    //link is back (iOS reports become-active on every return to the
-    //foreground, and also at launch, next to the launch login).
-    bool offlineAlertShown = false;
+    //Recomputes waitingForNetwork from the network status and the session
+    //intent kept by CalaosConnection (FIX-10). Called wherever either may
+    //change: network status, login refused offline, connection state, logout.
+    void updateWaitingForNetwork();
 
     //The session is down (logout, lost connection, reconnecting): foreground
     //push notifications stop being routed here, and a notification tapped

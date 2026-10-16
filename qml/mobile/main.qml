@@ -172,11 +172,8 @@ Window {
     Component {
         id: loginView
 
+        //The fields fill themselves from calaosApp (LoginView.syncFromApp()).
         LoginView {
-            username: calaosApp.username
-            password: calaosApp.password
-            hostname: calaosApp.hostname
-
             onLoginClicked: calaosApp.login(username, password, hostname)
             onCancelClicked: calaosApp.logout()
         }
@@ -405,6 +402,26 @@ Window {
                 NumberAnimation { properties: "opacity,anchors.bottomMargin"; easing.type: Easing.InExpo; duration: 500 }
             }
         ]
+    }
+
+    //No network while a session is wanted (FIX-10): at the top of the
+    //content, inside the safe area, under the page header of the logged-in
+    //views (ViewHeader). The login page has no header.
+    OfflineBanner {
+        id: offlineBanner
+        anchors {
+            top: background.top
+            topMargin: stackView.depth > 1 ? Units.dp(45) : 0
+            left: background.left
+            right: background.right
+        }
+    }
+
+    Connections {
+        target: calaosApp
+        function onLoginWaitsForNetwork() {
+            offlineBanner.highlight()
+        }
     }
 
     //Those Rectangles mask the insets around the pages instead of clipping

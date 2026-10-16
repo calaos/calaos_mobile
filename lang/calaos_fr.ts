@@ -48,9 +48,8 @@
         <translation>Les identifiants ont été modifiés avec succès.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="392"/>
         <source>No network connection found, this application requires a network connection to work.</source>
-        <translation>Aucune connexion réseau trouvée, cette application nécessite une connexion réseau pour fonctionner.</translation>
+        <translation type="vanished">Aucune connexion réseau trouvée, cette application nécessite une connexion réseau pour fonctionner.</translation>
     </message>
     <message>
         <location filename="../src/Application.cpp" line="549"/>
@@ -2221,6 +2220,14 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
         <location filename="../src/OSInstaller.cpp" line="37"/>
         <source>Close</source>
         <translation>Fermer</translation>
+    </message>
+</context>
+<context>
+    <name>OfflineBanner</name>
+    <message>
+        <location filename="../qml/mobile/OfflineBanner.qml" line="62"/>
+        <source>No network, will connect when it is back</source>
+        <translation>Pas de réseau, connexion dès son retour</translation>
     </message>
 </context>
 <context>

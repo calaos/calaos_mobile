@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(CalaosHome LANGUAGES CXX OBJC OBJCXX)
+project(CalaosHome LANGUAGES CXX)
+
+# Objective-C/C++ is only needed for the iOS sources.
+if(IOS)
+    enable_language(OBJC OBJCXX)
+endif()
 
 # Guard: this CMake build is for mobile (iOS + Android) only.
 # CMAKE_SYSTEM_NAME is resolved by project(), so check here.

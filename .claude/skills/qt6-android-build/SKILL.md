@@ -32,6 +32,8 @@ export PATH="$ANDROID_SDK_ROOT/platform-tools:$PATH"   # adb
 
 The canonical entry point is `tools/build_android.sh` (created by AND-1; mirrors `tools/build_ios.sh`). Prefer it over hand-written cmake lines, and keep it working.
 
+`./tools/build_android.sh Debug --lib-only` builds only the native `libCalaosHome_arm64-v8a.so` (cmake target `CalaosHome`, skips Gradle). Ninja is taken from Homebrew or `~/Qt/Tools/Ninja`. `Qt6::GuiPrivate` is linked for `qpa/qplatformwindow.h`; the KDAB file is `android_openssl.cmake` (`add_android_openssl_libraries`), Debug uses its `no-asm` libs.
+
 Debug builds target **arm64-v8a only** (fast). Release/AAB builds use all four ABIs.
 
 ## Build / deploy / debug

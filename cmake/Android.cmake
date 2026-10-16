@@ -2,32 +2,26 @@
 # Android-specific build settings.
 # Included from the root CMakeLists.txt when ANDROID is set.
 
-# ── Firebase C++ SDK ──────────────────────────────────────────────────────────
-if(NOT DEFINED ENV{FIREBASE_CPP_SDK_DIR})
-    message(FATAL_ERROR
-        "FIREBASE_CPP_SDK_DIR environment variable is not set.\n"
-        "Download the Firebase C++ SDK from https://firebase.google.com/download/cpp\n"
-        "then: export FIREBASE_CPP_SDK_DIR=/path/to/firebase_cpp_sdk")
+# ── Options ───────────────────────────────────────────────────────────────────
+# Push notifications are reimplemented in Java (AND-4); no native push SDK.
+option(CALAOS_ANDROID_PUSH "Enable Android push notifications (FCM, Java)" OFF)
+
+# ABIs to build. Debug uses arm64-v8a only; release multi-ABI comes with AND-5.
+set(CALAOS_ANDROID_ABIS "arm64-v8a" CACHE STRING
+    "Semicolon-separated Android ABIs to build")
+
+# ── OpenSSL (KDAB android_openssl) ────────────────────────────────────────────
+if(NOT ANDROID_OPENSSL_DIR)
+    if(DEFINED ENV{ANDROID_SDK_ROOT})
+        set(_sdk_root "$ENV{ANDROID_SDK_ROOT}")
+    else()
+        set(_sdk_root "$ENV{HOME}/Library/Android/sdk")
+    endif()
+    set(ANDROID_OPENSSL_DIR "${_sdk_root}/android_openssl"
+        CACHE PATH "KDAB android_openssl root (contains android_openssl.cmake)")
 endif()
 
-set(FIREBASE_SDK "$ENV{FIREBASE_CPP_SDK_DIR}")
-
-target_include_directories(CalaosHome PRIVATE "${FIREBASE_SDK}/include")
-target_link_directories(CalaosHome PRIVATE
-    "${FIREBASE_SDK}/libs/android/${ANDROID_ABI}/cxx-stl-c++")
-target_link_libraries(CalaosHome PRIVATE
-    firebase_messaging
-    firebase_app
-    firebase_auth
-)
-
-# ── Android OpenSSL prebuilt (KDAB android_openssl) ──────────────────────────
-if(NOT DEFINED ANDROID_OPENSSL_DIR)
-    set(ANDROID_OPENSSL_DIR "$ENV{HOME}/Android/Sdk/android_openssl"
-        CACHE PATH "KDAB android_openssl prebuilt root")
-endif()
-
-set(_openssl_cmake "${ANDROID_OPENSSL_DIR}/openssl.cmake")
+set(_openssl_cmake "${ANDROID_OPENSSL_DIR}/android_openssl.cmake")
 if(NOT EXISTS "${_openssl_cmake}")
     message(FATAL_ERROR
         "KDAB android_openssl cmake file not found: ${_openssl_cmake}\n"
@@ -35,16 +29,10 @@ if(NOT EXISTS "${_openssl_cmake}")
         "or pass -DANDROID_OPENSSL_DIR=/custom/path to cmake.")
 endif()
 
+# Defines OpenSSL::SSL / OpenSSL::Crypto and add_android_openssl_libraries().
+# It picks ssl_3 for Qt >= 6.5, and the no-asm variant when CMAKE_BUILD_TYPE=Debug.
 include("${_openssl_cmake}")
-
-# KDAB's openssl.cmake may provide android_add_openssl_modules() (newer) or
-# populate ANDROID_EXTRA_OPENSSL_LIBS (older). Handle both.
-if(COMMAND android_add_openssl_modules)
-    android_add_openssl_modules(CalaosHome)
-elseif(DEFINED ANDROID_EXTRA_OPENSSL_LIBS)
-    set_property(TARGET CalaosHome APPEND PROPERTY
-        QT_ANDROID_EXTRA_LIBS ${ANDROID_EXTRA_OPENSSL_LIBS})
-endif()
+add_android_openssl_libraries(CalaosHome)
 
 # ── Android-specific sources ──────────────────────────────────────────────────
 target_sources(CalaosHome PRIVATE
@@ -60,8 +48,12 @@ set_property(TARGET CalaosHome PROPERTY
 set_property(TARGET CalaosHome PROPERTY
     QT_ANDROID_VERSION_CODE "${CALAOS_VERSION_CODE}")
 set_property(TARGET CalaosHome PROPERTY
-    QT_ANDROID_MIN_SDK_VERSION 26)
+    QT_ANDROID_MIN_SDK_VERSION 28)
 set_property(TARGET CalaosHome PROPERTY
-    QT_ANDROID_TARGET_SDK_VERSION 34)
+    QT_ANDROID_TARGET_SDK_VERSION 36)
 set_property(TARGET CalaosHome PROPERTY
-    QT_ANDROID_ABIS "armeabi-v7a;arm64-v8a;x86;x86_64")
+    QT_ANDROID_ABIS "${CALAOS_ANDROID_ABIS}")
+
+# Application.cpp includes <QtGui/qpa/qplatformwindow.h> (private header).
+find_package(Qt6 REQUIRED COMPONENTS GuiPrivate)
+target_link_libraries(CalaosHome PRIVATE Qt6::GuiPrivate)

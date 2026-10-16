@@ -5,82 +5,8 @@
 #include <jni.h>
 #include <QCoreApplication>
 
-#include <firebase/messaging.h>
-#include <firebase/app.h>
-#include <firebase/util.h>
-
-static ::firebase::InitResult firebaseInitializeMessaging(::firebase::App *app, void *);
-
-class FbListener: public ::firebase::messaging::Listener
-{
-public:
-    FbListener()
-    {
-        QJniObject jniObject = QNativeInterface::QAndroidApplication::context();
-        ::firebase::App *instance = ::firebase::App::GetInstance();
-        if (instance)
-        {
-            fbApp = instance;
-        }
-        else
-        {
-            fbApp = ::firebase::App::Create(QJniEnvironment().jniEnv(), jniObject.object<jobject>());
-        }
-    }
-
-    void initMessaging()
-    {
-        qDebug() << "Initializing Firebase module";
-        fbInitializer.Initialize(fbApp, nullptr, firebaseInitializeMessaging);
-        qDebug() << "Module initialized. Waiting on messaging initialization";
-
-        firebase::messaging::GetToken().OnCompletion([](const firebase::Future<std::string> &completed_future)
-        {
-            if (completed_future.status() != firebase::kFutureStatusComplete)
-            {
-                qDebug() << "FB: GetToken future status not completed";
-                return;
-            }
-
-            std::string token = *completed_future.result();
-            HardwareUtilsAndroid *o = reinterpret_cast<HardwareUtilsAndroid *>(HardwareUtils::Instance());
-            o->setDeviceToken(QString::fromStdString(token));
-        });
-    }
-
-    virtual void OnTokenReceived(const char *token)
-    {
-        HardwareUtilsAndroid *o = reinterpret_cast<HardwareUtilsAndroid *>(HardwareUtils::Instance());
-        o->setDeviceToken(token);
-    }
-
-    virtual void OnMessage(const ::firebase::messaging::Message &message)
-    {
-        Q_UNUSED(message)
-        qDebug() << "Received FCM message";
-    }
-
-private:
-    QJniEnvironment jniEnv;
-    ::firebase::App* fbApp;
-    ::firebase::ModuleInitializer fbInitializer;
-};
-
-static ::firebase::InitResult firebaseInitializeMessaging(::firebase::App *app, void *)
-{
-    qDebug() << "Try to initialize Firebase Messaging";
-    HardwareUtilsAndroid *o = reinterpret_cast<HardwareUtilsAndroid *>(HardwareUtils::Instance());
-    auto res = ::firebase::messaging::Initialize(*app, o->getFbListener());
-    if (res == firebase::kInitResultSuccess)
-        qDebug() << "FB Messaging Init success";
-    if (res == firebase::kInitResultFailedMissingDependency)
-        qWarning() << "FB Messaging init failed: missing dependency (google play services)";
-    return res;
-}
-
 HardwareUtilsAndroid::HardwareUtilsAndroid(QObject *parent):
-    HardwareUtils(parent),
-    fcmListener(new FbListener())
+    HardwareUtils(parent)
 {
 }
 
@@ -91,9 +17,6 @@ HardwareUtilsAndroid::~HardwareUtilsAndroid()
 void HardwareUtilsAndroid::platformInit(QQmlApplicationEngine *e)
 {
     HardwareUtils::platformInit(e);
-
-    //init FCM
-    fcmListener->initMessaging();
 }
 
 void HardwareUtilsAndroid::setDeviceToken(QString t)

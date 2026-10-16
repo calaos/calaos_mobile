@@ -89,7 +89,7 @@ La version Android n'a jamais fonctionné en Qt 6. Analyse et plan validés par 
 
 | ID | Titre | Taille | Bloqué par | Groupe | Statut |
 |---|---|---|---|---|---|
-| [AND-1](tasks/AND-1-toolchain-cmake.md) | Toolchain Android et configuration CMake | M | — | G-ANDROID | En revue |
+| [AND-1](tasks/AND-1-toolchain-cmake.md) | Toolchain Android et configuration CMake | M | — | G-ANDROID | Terminé |
 | [AND-2](tasks/AND-2-packaging-gradle-manifest.md) | Packaging Qt 6.11 : Gradle, manifest, ressources | M | AND-1 | G-ANDROID | À faire |
 | [AND-3](tasks/AND-3-glue-java-jni.md) | Glue Java/JNI au standard Qt 6 | M | AND-2 | G-ANDROID | À faire |
 | [AND-4](tasks/AND-4-push-fcm-java.md) | Notifications push FCM via le SDK Firebase Java | L | AND-3 | G-ANDROID | À faire |

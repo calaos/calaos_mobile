@@ -686,6 +686,10 @@ void CalaosConnection::requestCamFinished(QNetworkReply *reqReply, const QString
     }
 
     reqReply->deleteLater();
+    //Forget it on every path, see requestFinished(): a failed picture is
+    //common, and left listed it was aborted after its deletion by the next
+    //resetTransport() (logout, reconnection, iOS going to the background).
+    reqReplies.removeAll(reqReply);
 
     if (reqReply->error() != QNetworkReply::NoError)
     {
@@ -695,7 +699,6 @@ void CalaosConnection::requestCamFinished(QNetworkReply *reqReply, const QString
     }
 
     QByteArray bytes = reqReply->readAll();
-    reqReplies.removeAll(reqReply);
 
     //we have a new picture
     emit cameraPictureDownloaded(camid, bytes);
@@ -710,6 +713,10 @@ void CalaosConnection::requestAudioCoverFinished(QNetworkReply *reqReply, const 
     }
 
     reqReply->deleteLater();
+    //Forget it on every path, see requestFinished(): a failed picture is
+    //common, and left listed it was aborted after its deletion by the next
+    //resetTransport() (logout, reconnection, iOS going to the background).
+    reqReplies.removeAll(reqReply);
 
     if (reqReply->error() != QNetworkReply::NoError)
     {
@@ -718,7 +725,6 @@ void CalaosConnection::requestAudioCoverFinished(QNetworkReply *reqReply, const 
     }
 
     QByteArray bytes = reqReply->readAll();
-    reqReplies.removeAll(reqReply);
 
     //we have a new picture
     emit audioCoverDownloaded(playerid, bytes);

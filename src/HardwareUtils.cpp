@@ -141,6 +141,17 @@ void HardwareUtils::setDeviceToken(const QString &token)
     emit deviceTokenChanged();
 }
 
+void HardwareUtils::clearDeviceToken()
+{
+    if (deviceToken.isEmpty())
+        return;
+
+    qDebug() << "Push device token cleared";
+    deviceToken.clear();
+    //Nothing is sent for an empty token: the next one is registered as usual.
+    emit deviceTokenChanged();
+}
+
 QString HardwareUtils::describeToken(const QString &token)
 {
     if (token.isEmpty())

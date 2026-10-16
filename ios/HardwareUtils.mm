@@ -434,5 +434,5 @@ void HardwareUtils_iOS::handleRegisterNotifFail(void *err)
     NSLog(@"Did Fail to Register for Remote Notifications");
     NSLog(@"%@, %@", error, error.localizedDescription);
 
-    deviceToken.clear();
+    clearDeviceToken();
 }

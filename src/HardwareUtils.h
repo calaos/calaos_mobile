@@ -88,6 +88,10 @@ public:
     //value actually changes, so the server can be told about it.
     void setDeviceToken(const QString &token);
 
+    //No usable token any more (APNs registration failed). Also lets the unit
+    //tests start a case from "no token yet" on the singleton.
+    void clearDeviceToken();
+
     //A push token is a per-device credential: never log it in full. Returns
     //the first characters and the length, for diagnostics.
     static QString describeToken(const QString &token);

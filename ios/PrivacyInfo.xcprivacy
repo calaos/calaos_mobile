@@ -3,9 +3,11 @@
 <!--
   Privacy manifest of the CalaosHome app binary.
 
-  No tracking and no data collected by the developer: credentials, settings and the
-  push token stay on the device or go to the user's own Calaos server only
-  (see PRIVACY_POLICY.md).
+  No tracking and no data collected by the developer: credentials and settings stay
+  on the device or go to the user's own Calaos server only (see PRIVACY_POLICY.md).
+  The push token goes to the user's own Calaos server, which forwards it with each
+  notification to the Calaos push relay (gorush, stateless) for delivery to APNs
+  only; the relay does not store it.
 
   Qt is linked statically on iOS, so the PrivacyInfo.xcprivacy files shipped in the
   Qt frameworks are not copied into the bundle: the required-reason APIs that the

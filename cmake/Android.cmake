@@ -102,11 +102,13 @@ qt_import_plugins(CalaosHome
 # source directory, i.e. the repository root, so the desktop QML, the QML tests
 # and the 3rd-party examples were scanned too (VirtualKeyboard, QtTest,
 # Dialogs, FolderListModel... in the APK). Call this after
-# qt_finalize_executable(): it replaces the generated list with the QML that the
-# mobile .qrc files embed (same list as cmake/qml_imports for iOS: keep both in
-# sync with qml_mobile.qrc and qml_shared.qrc). The deployment settings read
-# this internal property through a generator expression; if a Qt upgrade drops
-# it the scan falls back to the whole repository (bigger APK, nothing missing).
+# qt_finalize_executable(): it drops the repository root from the generated
+# list and adds the directories of the QML that the mobile .qrc files embed
+# (same list as cmake/qml_imports for iOS: keep both in sync with
+# qml_mobile.qrc and qml_shared.qrc). Any other root (QT_QML_ROOT_PATH, QML
+# modules) is kept. The deployment settings read this internal property
+# through a generator expression; if a Qt upgrade drops it the scan falls back
+# to the whole repository (bigger APK, nothing missing).
 function(calaos_android_limit_qml_scan target)
     get_target_property(_roots ${target} _qt_android_native_qml_root_paths)
     if(NOT _roots)
@@ -114,8 +116,11 @@ function(calaos_android_limit_qml_scan target)
             "the Android QML import scan covers the whole repository again")
         return()
     endif()
-    set_property(TARGET ${target} PROPERTY _qt_android_native_qml_root_paths
-        "${CMAKE_SOURCE_DIR}/qml/mobile"
-        "${CMAKE_SOURCE_DIR}/qml/SharedComponents"
-        "${CMAKE_SOURCE_DIR}/qml/quickflux")
+    file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}" _repo_root)
+    list(REMOVE_ITEM _roots "${_repo_root}" "${_repo_root}/")
+    list(APPEND _roots
+        "${_repo_root}/qml/mobile"
+        "${_repo_root}/qml/SharedComponents"
+        "${_repo_root}/qml/quickflux")
+    set_property(TARGET ${target} PROPERTY _qt_android_native_qml_root_paths "${_roots}")
 endfunction()

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Auto Backup rules, Android 11 and below (android:fullBackupContent).
+     Keep in sync with data_extraction_rules.xml. Add here anything that is
+     bound to this device/app instance (push token, AND-7 credentials). -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="calaos_push.xml" />
+</full-backup-content>

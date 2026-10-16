@@ -83,6 +83,20 @@ Note : T04/T05/T06 sont parallélisables entre eux (fichiers disjoints, seule co
 Ouvert après P3 : c'est le dernier couplage inverse du modèle, celui qui oblige
 encore trois tests à lier `HardwareUtils` ou une doublure de `RoomModel`.
 
+## P-AND — Android Qt 6
+
+La version Android n'a jamais fonctionné en Qt 6. Analyse et plan validés par Raoul le 2026-10-16 (push via SDK Firebase Java, tests sur téléphone USB, branche `feat/android-qt6`). Skills dédiés dans `.claude/skills/` : `qt6-android-build`, `qt6-android-jni`, `calaos-board`, `calaos-android-review`. Tous les tickets sont séquentiels (mêmes fichiers `android/`).
+
+| ID | Titre | Taille | Bloqué par | Groupe | Statut |
+|---|---|---|---|---|---|
+| [AND-1](tasks/AND-1-toolchain-cmake.md) | Toolchain Android et configuration CMake | M | — | G-ANDROID | À faire |
+| [AND-2](tasks/AND-2-packaging-gradle-manifest.md) | Packaging Qt 6.11 : Gradle, manifest, ressources | M | AND-1 | G-ANDROID | À faire |
+| [AND-3](tasks/AND-3-glue-java-jni.md) | Glue Java/JNI au standard Qt 6 | M | AND-2 | G-ANDROID | À faire |
+| [AND-4](tasks/AND-4-push-fcm-java.md) | Notifications push FCM via le SDK Firebase Java | L | AND-3 | G-ANDROID | À faire |
+| [AND-7](tasks/AND-7-push-image-camera.md) | Image de caméra dans les notifications push | L | AND-4 | G-ANDROID | À faire |
+| [AND-5](tasks/AND-5-release-aab-signature.md) | Build release : AAB multi-ABI et signature | S | AND-4 | G-ANDROID | À faire |
+| [AND-6](tasks/AND-6-doc-nettoyage.md) | Documentation Android et nettoyage legacy | S | AND-5, AND-7 | G-ANDROID + G-DOC | À faire |
+
 ## Diagramme de parallélisation
 
 Chaque colonne est une lane exécutable par un agent indépendant ; `→` = séquence obligatoire, `‖` = parallèle.

@@ -1,9 +1,9 @@
 ---
 name: qt6-ios-build
-description: How to build, sign, install and test the Calaos Home iOS app (Qt 6.11 + CMake + Xcode 27) on this Mac — build script, signing, device install with devicectl, simulators, Info.plist / asset catalog / privacy manifest rules, and known pitfalls. Use for any task that builds or changes the iOS app or its PushNotif extension.
+description: How to build, sign, install and test the Calaos Home iOS app (Qt 6.12 + CMake + Xcode 27) on this Mac — build script, signing, device install with devicectl, simulators, Info.plist / asset catalog / privacy manifest rules, and known pitfalls. Use for any task that builds or changes the iOS app or its PushNotif extension.
 ---
 
-# Qt 6.11 iOS build — Calaos Home
+# Qt 6.12 iOS build — Calaos Home
 
 Keep this file accurate: if a fact here is wrong, fix it in the same commit.
 
@@ -12,8 +12,8 @@ Keep this file accurate: if a fact here is wrong, fix it in the same commit.
 | Item | Value |
 |---|---|
 | Xcode | 27.1 (SDK iOS 27.1) — check with `xcodebuild -version` |
-| Qt | `~/Qt/6.11.0/ios` (+ host `~/Qt/6.11.0/macos`); Qt iOS libs are built for iOS 17 |
-| Deployment target | 17.0 (`cmake/iOS.cmake`, `tools/build_ios.sh`) |
+| Qt | 6.12.0: one kit per SDK, `~/Qt/6.12.0/ios_device` (iphoneos) and `~/Qt/6.12.0/ios_simulator_arm64` (iphonesimulator), host `~/Qt/6.12.0/macos`. Qt <= 6.11 has a single `ios` kit (the script falls back to it). Rollback: `QT_VERSION=6.11.0 ./tools/build_ios.sh Debug` |
+| Deployment target | 18.0 — Qt 6.12 floor (`CMAKE_OSX_DEPLOYMENT_TARGET` in the kit's `lib/cmake/Qt6/qt.toolchain.cmake`). Set once in `tools/build_ios.sh` (`IOS_DEPLOYMENT_TARGET`, the script refuses a value below the kit's); `cmake/iOS.cmake` and the PushNotif extension follow `CMAKE_OSX_DEPLOYMENT_TARGET` |
 | Bundle ids | `fr.calaos.CalaosMobile`, extension `fr.calaos.CalaosMobile.PushNotif` |
 | Team | `9WYC46992U`, automatic signing (`-allowProvisioningUpdates`) |
 | App Group / keychain group | `group.fr.calaos.CalaosMobile` / `9WYC46992U.fr.calaos.CalaosMobile` |
@@ -30,7 +30,7 @@ xcrun devicectl device process launch --terminate-existing --device 00008130-000
 ./tools/build_ios.sh Release --archive          # archive, no upload
 ```
 
-Simulators: `xcrun simctl list devices available`, `xcrun simctl boot <udid>`, `xcrun simctl install booted <app>`, `xcrun simctl launch booted fr.calaos.CalaosMobile`, `xcrun simctl io booted screenshot /tmp/x.png`. A simulator build needs simulator slices in the Qt kit (check `lipo -info`/`vtool` on a Qt framework binary) and `CMAKE_OSX_SYSROOT=iphonesimulator`; use a separate build dir (e.g. `build-ios-sim/`) so the device build cache is not clobbered.
+Simulators: `xcrun simctl list devices available`, `xcrun simctl boot <udid>`, `xcrun simctl install booted <app>`, `xcrun simctl launch booted fr.calaos.CalaosMobile`, `xcrun simctl io booted screenshot /tmp/x.png`. A simulator build needs the `ios_simulator_arm64` kit and `CMAKE_OSX_SYSROOT=iphonesimulator`; use a separate build dir (`build-ios-sim/`, already mapped by `build_dir_for_sdk` in `tools/build_ios.sh`) so the device build cache is not clobbered.
 
 ## Pitfalls
 
@@ -41,3 +41,5 @@ Simulators: `xcrun simctl list devices available`, `xcrun simctl boot <udid>`, `
 5. Signing errors mentioning the Program License Agreement mean the Apple developer account must accept a new agreement on developer.apple.com — only the user can do that.
 6. The extension must not link Qt.
 7. Do not log credentials or push tokens.
+8. Static QML plugins come from `cmake/qml_imports/` (an INTERFACE target that runs `qt_import_qml_plugins` on `qml/mobile`, `qml/SharedComponents`, `qml/quickflux` only); `CalaosHome` has `QT_QML_MODULE_NO_IMPORT_SCAN`. Without it, qmlimportscanner walks the whole repo (desktop QML, tests, widgets) and Qt 6.12's VirtualKeyboard plugin fails the generate step (`Qt6::Multimedia` not found). A new QML import used by mobile code must live under those directories.
+9. The script clears `build-ios/CMakeCache.txt` + `CMakeFiles` by itself when the cached `Qt6_DIR` belongs to another kit.

@@ -93,8 +93,8 @@ La version Android n'a jamais fonctionné en Qt 6. Analyse et plan validés par 
 | [AND-2](tasks/AND-2-packaging-gradle-manifest.md) | Packaging Qt 6.11 : Gradle, manifest, ressources | M | AND-1 | G-ANDROID | Terminé |
 | [AND-3](tasks/AND-3-glue-java-jni.md) | Glue Java/JNI au standard Qt 6 | M | AND-2 | G-ANDROID | Terminé |
 | [AND-4](tasks/AND-4-push-fcm-java.md) | Notifications push FCM via le SDK Firebase Java | L | AND-3 | G-ANDROID | En revue |
-| [AND-7](tasks/AND-7-push-image-camera.md) | Image de caméra dans les notifications push | L | AND-4 | G-ANDROID | En cours |
-| [AND-5](tasks/AND-5-release-aab-signature.md) | Build release : AAB multi-ABI et signature | S | AND-4 | G-ANDROID | À faire |
+| [AND-7](tasks/AND-7-push-image-camera.md) | Image de caméra dans les notifications push | L | AND-4 | G-ANDROID | En revue |
+| [AND-5](tasks/AND-5-release-aab-signature.md) | Build release : AAB multi-ABI et signature | S | AND-4 | G-ANDROID | En cours |
 | [AND-6](tasks/AND-6-doc-nettoyage.md) | Documentation Android et nettoyage legacy | S | AND-5, AND-7 | G-ANDROID + G-DOC | À faire |
 | [AND-8](tasks/AND-8-clavier-apres-login.md) | Le clavier reste ouvert après le login | S | — | G-QML-MOBILE | Terminé |
 
@@ -141,7 +141,7 @@ Exécution parallèle : chaque ticket lancé en parallèle travaille dans son pr
 | [FIX-4](tasks/FIX-4-reseau-android-changements.md) | Android : détecter les changements de réseau en cours d'exécution | S | FIX-3 | G-ANDROID | En revue |
 | [FIX-5](tasks/FIX-5-dialogue-android-i18n.md) | Android : libellés traduits des dialogues natifs | S | FIX-4 | G-ANDROID | En revue |
 | [FIX-6](tasks/FIX-6-check-sources-pwd.md) | tools/check_sources.sh : faux positifs sur les chemins `$$PWD/src/...` | S | — | G-BUILD | Terminé |
-| [FIX-7](tasks/FIX-7-reconnexion-apres-logout.md) | Pas de reconnexion automatique après une déconnexion volontaire | S | AND-7 | G-CONN | À faire |
+| [FIX-7](tasks/FIX-7-reconnexion-apres-logout.md) | Pas de reconnexion automatique après une déconnexion volontaire | S | AND-7 | G-CONN | En cours |
 
 ## Diagramme de parallélisation
 

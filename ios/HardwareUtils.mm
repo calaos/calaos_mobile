@@ -102,8 +102,8 @@
 {
     Q_UNUSED(application);
 
-    NSLog(@"%@", deviceToken);
-
+    //No NSLog of the token: it is a per-device credential (logged redacted
+    //by HardwareUtils::setDeviceToken()).
     HardwareUtils_iOS *o = dynamic_cast<HardwareUtils_iOS *>(HardwareUtils::Instance());
     o->handleRegisterNotif(deviceToken);
 }
@@ -126,11 +126,12 @@
     NSString *uuid = userInfo[@"event_uuid"];
     if (uuid != nil)
     {
-        HardwareUtils_iOS *o = dynamic_cast<HardwareUtils_iOS *>(HardwareUtils::Instance());
-        if (o->isCalaosConnected())
-            o->emitPushNotifReceived(QString::fromNSString(uuid));
-        else
-            o->handleStartedWithPushNotif(QString::fromNSString(uuid));
+        //Not a tap: a push *arriving* (iOS hands remote notifications to
+        //the app here, in the foreground or woken in the background). The
+        //app has always opened its event like a tap: right away if logged
+        //in, otherwise once home is loaded again. Kept as is on purpose
+        //(product behaviour predating FIX-3), see doc/ios.md section 4.
+        HardwareUtils::Instance()->handleNotificationOpened(QString::fromNSString(uuid));
     }
 
     completionHandler(UIBackgroundFetchResultNoData);
@@ -161,8 +162,10 @@
     NSString *uuid = response.notification.request.content.userInfo[@"event_uuid"];
     if (uuid != nil)
     {
-        HardwareUtils_iOS *o = dynamic_cast<HardwareUtils_iOS *>(HardwareUtils::Instance());
-        o->handleStartedWithPushNotif(QString::fromNSString(uuid));
+        //Opened now if logged in, otherwise once home is loaded again (a tap
+        //from the background arrives while the session is down: the app
+        //logs out when it resigns active).
+        HardwareUtils::Instance()->handleNotificationOpened(QString::fromNSString(uuid));
     }
     completionHandler();
 }
@@ -424,9 +427,9 @@ void HardwareUtils_iOS::handleRegisterNotif(void *data)
             ntohl(tokenBytes[0]), ntohl(tokenBytes[1]), ntohl(tokenBytes[2]),
             ntohl(tokenBytes[3]), ntohl(tokenBytes[4]), ntohl(tokenBytes[5]),
             ntohl(tokenBytes[6]), ntohl(tokenBytes[7])];
-    deviceToken = QString::fromNSString(tokenStr);
-
-    qDebug() << "Device token is: " << deviceToken;
+    //Emits deviceTokenChanged() when the token is new or rotated, so that a
+    //token reported after the login still reaches calaos_server.
+    setDeviceToken(QString::fromNSString(tokenStr));
 }
 
 void HardwareUtils_iOS::handleRegisterNotifFail(void *err)
@@ -435,12 +438,5 @@ void HardwareUtils_iOS::handleRegisterNotifFail(void *err)
     NSLog(@"Did Fail to Register for Remote Notifications");
     NSLog(@"%@, %@", error, error.localizedDescription);
 
-    deviceToken.clear();
-}
-
-void HardwareUtils_iOS::handleStartedWithPushNotif(const QString &uuid)
-{
-    if (!uuid.isEmpty())
-        startedWithNotif = true;
-    notifUuid = uuid;
+    clearDeviceToken();
 }

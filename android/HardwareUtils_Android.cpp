@@ -29,14 +29,6 @@ bool clearJavaException(const char *call)
     return false;
 }
 
-//A push token is a per-device credential: never log it in full.
-QString describeToken(const QString &token)
-{
-    if (token.isEmpty())
-        return QStringLiteral("<empty>");
-    return QStringLiteral("%1... (%2 chars)").arg(token.left(8)).arg(token.size());
-}
-
 //Called from Android threads (UI thread, the FCM SDK's intent-handler
 //executor thread): only hop to the Qt thread from here.
 void jniEmitDialogTextValid(JNIEnv *, jclass, jstring text)
@@ -149,35 +141,9 @@ void HardwareUtilsAndroid::platformInit(QQmlApplicationEngine *e)
         if (!uuid.isEmpty())
         {
             qDebug() << "Android: started from notification, event" << uuid;
-            startedWithNotif = true;
-            notifUuid = uuid;
+            //Not logged in yet: kept until home is loaded.
+            handleNotificationOpened(uuid);
         }
-    }
-}
-
-void HardwareUtilsAndroid::setDeviceToken(QString t)
-{
-    if (t.isEmpty() || t == deviceToken)
-        return;
-
-    qDebug() << "Android: FCM device token" << describeToken(t);
-    deviceToken = t;
-}
-
-void HardwareUtilsAndroid::handleNotificationOpened(const QString &uuid)
-{
-    if (uuid.isEmpty())
-        return;
-
-    qDebug() << "Android: notification opened, event" << uuid
-             << (isCalaosConnected() ? "(connected)" : "(deferred until home is loaded)");
-
-    if (isCalaosConnected())
-        emitPushNotifReceived(uuid);
-    else
-    {
-        startedWithNotif = true;
-        notifUuid = uuid;
     }
 }
 

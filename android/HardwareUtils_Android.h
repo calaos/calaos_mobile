@@ -26,14 +26,10 @@ public:
 
     virtual void inputTextDialog(const QString &title, const QString &message);
 
-    //FCM registration token (from Java: persisted value at startup, then
-    //FirebaseMessaging.getToken() and every onNewToken()).
-    void setDeviceToken(QString t);
-
-    //The user tapped a push notification carrying a Calaos event uuid while
-    //the activity was alive. Same policy as iOS: open it now if logged in,
-    //otherwise keep it for Application to open once home is loaded.
-    void handleNotificationOpened(const QString &uuid);
+    //The FCM registration token (from Java: persisted value at startup, then
+    //FirebaseMessaging.getToken() and every onNewToken()) goes through
+    //HardwareUtils::setDeviceToken(), and notification taps through
+    //HardwareUtils::handleNotificationOpened(): same policy as iOS.
 };
 
 #endif // HARDWAREUTILS_ANDROID_H

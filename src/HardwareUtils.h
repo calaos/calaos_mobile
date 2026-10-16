@@ -15,8 +15,6 @@ protected:
     bool appIsBackground = false;
 
     bool startedWithOpt = false;
-    bool startedWithNotif = false;
-    QString notifUuid;
     QQmlApplicationEngine *qmlEngine = nullptr;
 
     //Device unique id used for push notifications
@@ -24,6 +22,10 @@ protected:
 
     //state of calaos connection (logged in/out)
     bool calaosConnected = false;
+
+private:
+    //Event uuid of a notification tapped while not logged in
+    QString pendingNotifUuid;
 
 public:
     static HardwareUtils *Instance(QObject *parent = NULL);
@@ -61,15 +63,38 @@ public:
     virtual QString getStartOption(const QString &key) { Q_UNUSED(key); return QString(); }
     void resetStartedWithOption() { startedWithOpt = false; }
 
-    //Used when user clicked on a notification
-    //It should open the app and load the notif
-    bool hasStartedWithNotif() { return startedWithNotif; }
-    QString getNotifUuid() { return notifUuid; }
-    void resetStartedWithNotif() { startedWithNotif = false; }
+    //The user tapped a push notification carrying a Calaos event uuid (cold
+    //start or app already running). Logged in: pushNotifReceived() is emitted
+    //right away. Otherwise the uuid is kept, the latest tap wins, until
+    //Application takes it once home is loaded again (takePendingNotif()).
+    void handleNotificationOpened(const QString &uuid);
+
+    //Returns the deferred notification uuid, if any, and forgets it: a
+    //deferred tap is opened exactly once.
+    QString takePendingNotif();
+    bool hasPendingNotif() const { return !pendingNotifUuid.isEmpty(); }
+
+    //Puts back a deferred uuid that was taken but not opened yet because the
+    //session dropped first (see DeferredNotifGate). A newer tap already
+    //waiting wins.
+    void restorePendingNotif(const QString &uuid);
 
     virtual void setQuickLinks(QVariantList quicklinks) { Q_UNUSED(quicklinks); }
 
     QString getDeviceToken() { return deviceToken; }
+
+    //Platform code reports the current push token here (APNs / FCM, at
+    //startup and on every rotation). deviceTokenChanged() is emitted when the
+    //value actually changes, so the server can be told about it.
+    void setDeviceToken(const QString &token);
+
+    //No usable token any more (APNs registration failed). Also lets the unit
+    //tests start a case from "no token yet" on the singleton.
+    void clearDeviceToken();
+
+    //A push token is a per-device credential: never log it in full. Returns
+    //the first characters and the length, for diagnostics.
+    static QString describeToken(const QString &token);
 
     //let the HardwareUtils class know about the connection state
     void updateCalaosConnectState(bool connected) { calaosConnected = connected; }
@@ -96,6 +121,60 @@ signals:
 
     //emited when in foreground and a push notif has been received
     void pushNotifReceived(const QString &uuid);
+
+    //emited when the push token changed (see setDeviceToken())
+    void deviceTokenChanged();
+};
+
+//When Application opens a deferred notification tap (FIX-3).
+//
+//At every login, homeLoaded() takes the deferred uuid from HardwareUtils and
+//opens it a little later, once the home page is shown. Each login starts a
+//new generation: a timer armed by an earlier login is void, and a uuid taken
+//but not opened yet when the session drops is handed back, so the next login
+//opens it instead. The tap is therefore opened exactly once, by the session
+//that is up when it is opened.
+//
+//Header-only, no timer and no QObject, so that tests/tst_pushnotif can drive
+//it; Application only owns the QTimer.
+class DeferredNotifGate
+{
+public:
+    //Home is loaded. uuid is what HardwareUtils::takePendingNotif() returned.
+    //Returns the ticket to hand back to fire() when the delay expires, 0 when
+    //there is nothing to open.
+    quint64 loggedIn(const QString &uuid)
+    {
+        ++m_generation;
+        if (!uuid.isEmpty())
+            m_inFlight = uuid;
+        return m_inFlight.isEmpty() ? 0 : m_generation;
+    }
+
+    //The delay armed with ticket expired. Returns the uuid to open now, or an
+    //empty string when the ticket belongs to an earlier login.
+    QString fire(quint64 ticket)
+    {
+        if (ticket == 0 || ticket != m_generation)
+            return QString();
+        QString uuid;
+        uuid.swap(m_inFlight);
+        return uuid;
+    }
+
+    //The session is down. Every armed delay becomes stale; returns the uuid
+    //that was taken but not opened yet, for HardwareUtils::restorePendingNotif().
+    QString loggedOut()
+    {
+        ++m_generation;
+        QString uuid;
+        uuid.swap(m_inFlight);
+        return uuid;
+    }
+
+private:
+    quint64 m_generation = 0;
+    QString m_inFlight;
 };
 
 #endif // HARDWAREUTILS_H

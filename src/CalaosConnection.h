@@ -215,6 +215,53 @@ private:
     bool m_jitterEnabled = true;
 };
 
+//Decides when the push token must be (re)sent to calaos_server with
+//"register_push" (FIX-3).
+//
+//The token is registered once per session, when the session is established,
+//and again whenever the platform reports a new token while the session is up
+//(FCM/APNs rotation, or a token that arrives after the login). A token that
+//changes while no session is up is simply picked up by the next login, and
+//the same token is never sent twice in one session.
+//
+//Header-only and free of QObject/network code for the same reason as
+//ReconnectPolicy: tests/tst_pushnotif drives it without a server.
+class PushRegistration
+{
+public:
+    bool isSessionUp() const { return m_sessionUp; }
+    QString registeredToken() const { return m_registered; }
+
+    //The transport is logged in. Nothing was registered in this session yet.
+    void sessionStarted()
+    {
+        m_sessionUp = true;
+        m_registered.clear();
+    }
+
+    //The transport is gone (logout, lost connection, new attempt).
+    void sessionEnded()
+    {
+        m_sessionUp = false;
+        m_registered.clear();
+    }
+
+    //Called both at the start of a session and on every token change.
+    //Returns true when register_push must be sent for this token now; the
+    //token is then considered registered for the rest of the session.
+    bool shouldRegister(const QString &token)
+    {
+        if (!m_sessionUp || token.isEmpty() || token == m_registered)
+            return false;
+        m_registered = token;
+        return true;
+    }
+
+private:
+    bool m_sessionUp = false;
+    QString m_registered;
+};
+
 //QObject first, as Q_OBJECT requires; IOConnection is the read-only view the
 //IO models are given, see src/IOConnection.h.
 class CalaosConnection : public QObject, public IOConnection
@@ -348,6 +395,12 @@ private:
     //Since the last attempt was started, used to rate limit the "shortcut the
     //pending delay" requests coming from network discovery.
     QElapsedTimer lastAttemptTimer;
+
+    //When to send register_push, see PushRegistration.
+    PushRegistration pushRegistration;
+    //Sends register_push over the current transport if pushRegistration says
+    //the current token is not registered in this session yet.
+    void registerPushToken();
 
     //Set as soon as one of onWsDisconnected()/onWsError() switched to HTTP, so
     //a socket that errors *and* then closes cannot start two HTTP logins.

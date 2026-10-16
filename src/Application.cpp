@@ -424,18 +424,31 @@ void Application::connectionStateChanged(int state)
     case ReconnectPolicy::Reconnecting:
     case ReconnectPolicy::Disconnected:
     default:
+        //A connection lost on its own (server down, ping timeout) goes
+        //through here, not through logout(): without this a notification
+        //tapped while reconnecting was "opened" on a dead session (FIX-3).
+        stopPushNotifRouting();
         update_applicationStatus(Common::NotConnected);
         update_settingsLocked(false);
         break;
     }
 }
 
-void Application::logout()
+void Application::stopPushNotifRouting()
 {
     disconnect(HardwareUtils::Instance(), &HardwareUtils::pushNotifReceived,
                this, &Application::pushNotificationReceived);
 
     HardwareUtils::Instance()->updateCalaosConnectState(false);
+
+    //A deferred tap taken by homeLoaded() but not opened yet goes back to
+    //HardwareUtils: the next login opens it, the pending delay will not.
+    HardwareUtils::Instance()->restorePendingNotif(deferredNotif.loggedOut());
+}
+
+void Application::logout()
+{
+    stopPushNotifRouting();
     calaosConnect->logout();
     update_applicationStatus(Common::NotConnected);
 }
@@ -481,19 +494,24 @@ void Application::homeLoaded(const QVariantMap &homeData)
             else
                 iosc->sendTrue(); //Start scenario
         }
+    }
 
-        if (HardwareUtils::Instance()->hasStartedWithNotif())
+    //A notification tapped while not logged in (cold start, app in the
+    //background, or during a reconnection) is opened now, exactly once.
+    //Deliberately outside the startedWithOptHandled block: that flag is only
+    //reset when the app resigns active, which Android never reports, so a
+    //tap during a reconnection used to be dropped there (FIX-3).
+    //The short delay lets the home page show first. A session that drops
+    //meanwhile voids the ticket (stopPushNotifRouting()).
+    const quint64 notifTicket = deferredNotif.loggedIn(HardwareUtils::Instance()->takePendingNotif());
+    if (notifTicket != 0)
+    {
+        QTimer::singleShot(400, this, [this, notifTicket]()
         {
-            HardwareUtils::Instance()->resetStartedWithNotif();
-
-            //If app has been started with notification option, it should open it
-            QTimer::singleShot(400, this, [=]()
-            {
-                QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(&engine);
-                QVariantMap m = {{ "notifUuid", HardwareUtils::Instance()->getNotifUuid() }};
-                appDispatcher->dispatch("openEventPushViewerUuid", m);
-            });
-        }
+            const QString uuid = deferredNotif.fire(notifTicket);
+            if (!uuid.isEmpty())
+                pushNotificationReceived(uuid);
+        });
     }
 
     //Export 4 first scenarios to hardware (for QuickLinks on iOS)
@@ -508,8 +526,10 @@ void Application::homeLoaded(const QVariantMap &homeData)
     }
     HardwareUtils::Instance()->setQuickLinks(scenariosLinks);
 
+    //UniqueConnection: homeLoaded() runs again after every reconnection, and a
+    //duplicate connection would open each notification twice.
     connect(HardwareUtils::Instance(), &HardwareUtils::pushNotifReceived,
-            this, &Application::pushNotificationReceived);
+            this, &Application::pushNotificationReceived, Qt::UniqueConnection);
 
     //We are now connected, tell HardwareUtils
     HardwareUtils::Instance()->updateCalaosConnectState(true);
@@ -656,9 +676,7 @@ void Application::networkStatusChanged()
         //Airplane mode, cable unplugged... Drop the session, but unlike a real
         //logout remember that a session is wanted so the link coming back
         //reconnects on its own (T14).
-        disconnect(HardwareUtils::Instance(), &HardwareUtils::pushNotifReceived,
-                   this, &Application::pushNotificationReceived);
-        HardwareUtils::Instance()->updateCalaosConnectState(false);
+        stopPushNotifRouting();
         calaosConnect->suspend();
         return;
     }

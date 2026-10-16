@@ -30,18 +30,29 @@ Drawer {
     //press lets the release reach the page below, which then goes back too.
     closePolicy: Popup.CloseOnPressOutside
     focus: true
+    //System insets of the window (home indicator, navigation bar, landscape
+    //notch): the sheet's colour runs under them, its content does not.
+    readonly property real insetTop: parent ? parent.SafeArea.margins.top : 0
+    readonly property real insetBottom: parent ? parent.SafeArea.margins.bottom : 0
+    readonly property real insetLeft: parent ? parent.SafeArea.margins.left : 0
+    readonly property real insetRight: parent ? parent.SafeArea.margins.right : 0
+
     width: parent ? parent.width : 0
+    //Never taller than the window below the status bar / Dynamic Island
+    readonly property real maxHeight: parent ? Math.min(parent.height * 0.9,
+                                                        parent.height - insetTop - Units.dp(16))
+                                             : 0
     height: !parent ? 0
-            : heightRatio > 0 ? parent.height * heightRatio
-            : Math.min(parent.height * 0.9, headerHeight + fitHeight + Units.dp(24))
+            : heightRatio > 0 ? Math.min(maxHeight, parent.height * heightRatio)
+            : Math.min(maxHeight, headerHeight + fitHeight + Units.dp(24) + insetBottom)
 
     readonly property real headerHeight: Units.dp(14) + Units.dp(4) + Units.dp(14) +
                                          (titleText.visible ? titleText.height + Units.dp(8) : 0)
 
     topPadding: 0
-    leftPadding: Units.dp(16)
-    rightPadding: Units.dp(16)
-    bottomPadding: Units.dp(24)
+    leftPadding: Units.dp(16) + insetLeft
+    rightPadding: Units.dp(16) + insetRight
+    bottomPadding: Units.dp(24) + insetBottom
 
     //The sheet lives on the window overlay, outside the pages: going back to the
     //login page does not take it away. Every sheet of the app goes through here.

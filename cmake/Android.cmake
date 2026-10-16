@@ -73,6 +73,3 @@ set_property(TARGET CalaosHome PROPERTY
 set_property(TARGET CalaosHome PROPERTY
     QT_ANDROID_ABIS "${CALAOS_ANDROID_ABIS}")
 
-# Application.cpp includes <QtGui/qpa/qplatformwindow.h> (private header).
-find_package(Qt6 REQUIRED COMPONENTS GuiPrivate)
-target_link_libraries(CalaosHome PRIVATE Qt6::GuiPrivate)

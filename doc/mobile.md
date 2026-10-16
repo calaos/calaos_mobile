@@ -83,10 +83,18 @@ because the system already provides one (`needBackButton = false`).
 | `hasInstall` | false | false | only if live medium markers exist |
 | `density` | 1.0 (or 2.0 with `--force-hdpi`) | 1.0 | 1.0/2.0 |
 
-Additionally, the C++ side sets the QML context properties
-`platformMarginsTop/Bottom/Left/Right` (notch / safe-area). On mobile they are
-populated from `qpa/qplatformwindow.h` via Qt; the QML layer applies them as
-margins around the background image.
+Safe areas (notch / Dynamic Island, home indicator, Android system bars) are
+handled in QML only: `qml/mobile/main.qml` reads the `SafeArea` attached
+property of the window (`safeTop/Bottom/Left/Right`, in item units, updated on
+rotation and iPad window resizing). Pages and their text stay inside; the top
+inset is painted in the header colour and the menu bar (`MainMenuBar`
+`bottomInset`) and bottom sheets (`BottomSheet`) run their background under the
+bottom inset. On iOS the window sets `Qt.ExpandedClientAreaHint` (without it
+Qt 6.9+ stops the window at the safe area and iOS shows black bands). Android
+15+ (targetSdk 35+) is always edge to edge; there the app also requests the
+dark colour scheme so that the transparent status bar gets light icons.
+Android 14 and older keep opaque system bars outside the window: the insets are
+0.
 
 ## 5. Networking & lifecycle differences vs. desktop
 

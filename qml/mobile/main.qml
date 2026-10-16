@@ -23,9 +23,24 @@ Window {
 
     color: "#080808"
 
-    //flags: Qt.platform.os === "ios"? Qt.MaximizeUsingFullscreenGeometryHint : undefined
+    //On iOS the window stops at the safe area unless it asks for the whole
+    //screen; the plain black bands the system leaves above and below it look
+    //letterboxed. Android 15+ always gives the whole screen (edge to edge);
+    //older Android keeps the system bars outside the window, as before.
+    flags: Qt.platform.os === "ios"? Qt.Window | Qt.ExpandedClientAreaHint : Qt.Window
 
     property bool isLandscape: rootWindow.width > rootWindow.height
+
+    //Insets of the system UI: status bar, notch / Dynamic Island, home
+    //indicator, and the Android system bars once the app is laid out edge to
+    //edge (enforced from Android 15 with targetSdk 35+). SafeArea is in the
+    //same units as the items and follows rotation and iPad window resizing;
+    //it is 0 wherever the system keeps the window clear of its bars (Android
+    //14 and older). Backgrounds run under the bars, text and controls do not.
+    readonly property real safeTop: SafeArea.margins.top
+    readonly property real safeBottom: SafeArea.margins.bottom
+    readonly property real safeLeft: SafeArea.margins.left
+    readonly property real safeRight: SafeArea.margins.right
 
     property variant roomModel
     property string currentRoomName
@@ -42,10 +57,10 @@ Window {
                                               "background")
         anchors {
             fill: parent
-            topMargin: platformMarginsTop
-            bottomMargin: platformMarginsBottom
-            leftMargin: platformMarginsLeft
-            rightMargin: platformMarginsRight
+            topMargin: rootWindow.safeTop
+            bottomMargin: rootWindow.safeBottom
+            leftMargin: rootWindow.safeLeft
+            rightMargin: rootWindow.safeRight
         }
         fillMode: Image.PreserveAspectCrop
     }
@@ -85,6 +100,9 @@ Window {
             left: background.left
             right: background.right
             bottom: menuBar.top
+            //While the menu bar is hidden (login page) the pages still stop
+            //above the bottom inset
+            bottomMargin: Math.max(0, rootWindow.safeBottom - (rootWindow.height - menuBar.y))
         }
 
         initialItem: loginView
@@ -274,14 +292,19 @@ Window {
         }
     }
 
+    //The bar runs from edge to edge and down to the bottom of the screen,
+    //under the home indicator / navigation bar; its buttons stay inside.
     MainMenuBar {
         id: menuBar
 
         anchors {
-            left: background.left
-            right: background.right
-            bottom: background.bottom
+            left: parent.left
+            right: parent.right
+            bottom: parent.bottom
         }
+        bottomInset: rootWindow.safeBottom
+        leftInset: rootWindow.safeLeft
+        rightInset: rootWindow.safeRight
 
         onButtonHomeClicked: {
             menuBar.menuType = Common.MenuBack
@@ -314,7 +337,7 @@ Window {
             State {
                 name: "invisible"
                 PropertyChanges { target: menuBar; opacity: 0.2 }
-                PropertyChanges { target: menuBar; anchors.bottomMargin: -(menuBar.height + platformMarginsBottom) }
+                PropertyChanges { target: menuBar; anchors.bottomMargin: -menuBar.height }
             }
         ]
 
@@ -332,7 +355,10 @@ Window {
         ]
     }
 
-    //Those Rectangles are for masking top and bottom instead of using clipping
+    //Those Rectangles mask the insets around the pages instead of clipping
+    //them. The top one is the colour of the page headers, which therefore
+    //appear to run up under the status bar. Below the pages, the menu bar
+    //already covers the bottom inset.
     Rectangle {
         color: "#080808"
         anchors {
@@ -344,9 +370,17 @@ Window {
     Rectangle {
         color: "#080808"
         anchors {
-            top: menuBar.bottom
-            bottom: parent.bottom
-            left: parent.left; right: parent.right
+            top: background.top
+            bottom: menuBar.top
+            left: parent.left; right: background.left
+        }
+    }
+    Rectangle {
+        color: "#080808"
+        anchors {
+            top: background.top
+            bottom: menuBar.top
+            left: background.right; right: parent.right
         }
     }
 

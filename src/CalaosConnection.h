@@ -262,6 +262,36 @@ private:
     QString m_registered;
 };
 
+//The "data" object of register_push (AND-7).
+//
+//Android asks calaos_server for data-only FCM messages: the system never
+//displays those itself, so CalaosMessagingService.onMessageReceived() runs
+//in every app state (foreground, background, killed) and can post the
+//notification with the camera picture. Without the field the server keeps
+//the legacy notification+data format, which only reaches the app in the
+//foreground (older app versions). iOS has its own APNs path and sends
+//nothing. The contract with calaos_base is kept in this one place: the key
+//is JsonKeys::PushFormat, the value AndroidPushFormat.
+//
+//Header-only so tests/tst_pushnotif checks the payload for each hardware
+//without a Q_OS_ANDROID build.
+namespace PushFormat
+{
+inline constexpr QLatin1StringView AndroidHardware{"android"};
+inline constexpr QLatin1StringView AndroidPushFormat{"data"};
+
+inline QJsonObject registration(const QString &token, const QString &hardware)
+{
+    QJsonObject o = {
+        { JsonKeys::Token, token },
+        { JsonKeys::Hardware, hardware }
+    };
+    if (hardware == AndroidHardware)
+        o[JsonKeys::PushFormat] = AndroidPushFormat;
+    return o;
+}
+}
+
 //QObject first, as Q_OBJECT requires; IOConnection is the read-only view the
 //IO models are given, see src/IOConnection.h.
 class CalaosConnection : public QObject, public IOConnection

@@ -27,7 +27,7 @@ Detailed, LLM-oriented documentation lives under [doc/](doc):
   shared in [calaos.pri](calaos.pri)
 - **Variant switch**: `CALAOS_DESKTOP` vs `CALAOS_MOBILE` preprocessor defines
 - **Docker image** (desktop): `ghcr.io/calaos/calaos_home`
-- **No automated test suite** — validate by building both `.pro` files
+- **Tests**: standalone Qt Test / Qt Quick Test project in [tests/](tests), see [Tests](#tests); also validate by building both `.pro` files
 
 ## Repository map (high level)
 
@@ -71,3 +71,20 @@ lang/               Qt Linguist .ts/.qm + Go auto-translate tool
 
 For deeper architecture, build instructions, CI specifics, and
 platform-by-platform deployment workflow, read the docs under [doc/](doc).
+
+## Tests
+
+`tests/tests.pro` is a standalone qmake project (not included by `desktop.pro` / `mobile.pro`): Qt Test suites in `tests/tst_*`, plus QML cases under `tst_climatewidget` (Qt Quick Test). Build out of tree and run `make check`; CI does the same with `QT_QPA_PLATFORM=offscreen` (`.github/workflows/pr-ci.yml:100-112`). Details in [tests/README.md](tests/README.md).
+
+```sh
+mkdir -p <build dir outside the repo> && cd <build dir>
+qmake6 <repo>/tests/tests.pro && make -j"$(nproc)" && QT_QPA_PLATFORM=offscreen make check
+```
+
+## Pitfalls
+
+Cross-repo notes (wire format, capabilities, rules): [calaos_base/docs/18_stack_notes.md](https://github.com/calaos/calaos_base/blob/master/docs/18_stack_notes.md) (in French).
+
+- **Overlays are not children of the page.** `qml/mobile/BottomSheet.qml:22` sets `parent: Overlay.overlay` and `qml/desktop/PopupBase.qml:35` reparents the popup to the overlay layer. A `StackView` pop therefore does not close them: close them explicitly.
+- `qml/desktop/OverlayLayer.qml:15` keeps the stack of open popups (the last one is on top). `closeOnDisconnect` (`PopupBase.qml:20`) is honoured by `OverlayLayer.qml:43-45` when the app leaves the logged-in state; it is off by default so a reconnect does not discard what the user is typing.
+- Climate: build the mode chooser from `capabilities.modes` and show the range only with `target_temp_range` (`qml/SharedComponents/ClimateLogic.js`); never hardcode the modes.

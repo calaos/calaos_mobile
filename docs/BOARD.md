@@ -95,7 +95,7 @@ La version Android n'a jamais fonctionné en Qt 6. Analyse et plan validés par 
 | [AND-4](tasks/AND-4-push-fcm-java.md) | Notifications push FCM via le SDK Firebase Java | L | AND-3 | G-ANDROID | Terminé |
 | [AND-7](tasks/AND-7-push-image-camera.md) | Image de caméra dans les notifications push | L | AND-4 | G-ANDROID | En revue |
 | [AND-5](tasks/AND-5-release-aab-signature.md) | Build release : AAB multi-ABI et signature | S | AND-4 | G-ANDROID | Terminé |
-| [AND-6](tasks/AND-6-doc-nettoyage.md) | Documentation Android et nettoyage legacy | S | AND-5, AND-7 | G-ANDROID + G-DOC | À faire |
+| [AND-6](tasks/AND-6-doc-nettoyage.md) | Documentation Android et nettoyage legacy | S | AND-5, AND-7 | G-ANDROID + G-DOC | Terminé |
 | [AND-8](tasks/AND-8-clavier-apres-login.md) | Le clavier reste ouvert après le login | S | — | G-QML-MOBILE | Terminé |
 
 Suivis issus des revues (à traiter dans le ticket indiqué) :
@@ -117,7 +117,6 @@ Suivis issus des revues (à traiter dans le ticket indiqué) :
 - Constaté pendant la revue AND-9 (Qt 6.12, Android 16, chemin « key event » uniquement : `adb input keyevent BACK` / touche retour matérielle) : Qt appelle parfois `moveTaskToBack()` alors que le QML a accepté le relâchement ; déjà présent avant AND-9 ; un second retour a une fois terminé l'activité avec un SIGABRT FORTIFY (`hwuiTask0`) à la sortie. Geste et barre 3 boutons non affectés. Candidat à un rapport de bug Qt.
 - Test externe (gwarf, PR #32, 2026-10-16) sur `6bc67db` : Pixel 11 Pro XL, Android 16, build Linux via `tools/build_android.sh Debug` (Qt 6.12.0, NDK 27.2, JDK 17) — démarrage, connexion à un vrai serveur, commande des lumières OK ; push : `POST_NOTIFICATIONS` accordée, canal `calaos_events` créé, jeton FCM obtenu et transmis au C++, `register_push` envoyé après login. Réception réelle d'une notification non vérifiée. Valide AND-2/AND-3/AND-4 (partie jeton/permission) et QT-1 sur un vrai appareil Android 16, et le script de build sous Linux.
 - Passage appareil Redmi 9 (Android 12, 2026-10-16, build `6a3bfd4`) : démarrage, connexion wss, migration des identifiants vers le Keystore, jeton push, reconnexion automatique après coupure, lancement hors ligne puis connexion, push reçus au premier plan (image de caméra ajoutée) et en arrière-plan, tap → événement, bouton retour, dialogue en français ; 0 crash, aucune erreur JNI, aucun avertissement FIX-1/FIX-2. Non vérifiés sur appareil (laissés « En revue ») : FIX-8 (identifiants tapés) et FIX-11 (déconnexion après relance), FIX-3 (tap pendant une reconnexion), FIX-7/FIX-9 côté iOS, IOS-1/MOB-1/QT-1 sur iPhone, AND-9 en armv7, AND-7 avec le futur format data seul (changement calaos_base).
-- AND-6 : `mobile.pro` liste encore en `DISTFILES` le wrapper Gradle et `libs.xml` supprimés ; `tools/check_sources.sh` ne reconnaît pas les chemins `$$PWD/src/...` de `calaos.pri` (faux positifs).
 - QML (hors P-AND) : `main.qml:128` paramètre `idx` non déclaré ; `AnimatedIcon.qml:31` image `icon_light_00-1.png` introuvable.
 
 ## P-DEV — Derniers appareils et dernière version de Qt
@@ -150,8 +149,9 @@ Exécution parallèle : chaque ticket lancé en parallèle travaille dans son pr
 | [FIX-7](tasks/FIX-7-reconnexion-apres-logout.md) | Pas de reconnexion automatique après une déconnexion volontaire | S | AND-7 | G-CONN | En revue |
 | [FIX-8](tasks/FIX-8-identifiants-tapes-ecrases.md) | Un changement de réseau écrase les identifiants tapés sur l'écran de login | S | FIX-7 | G-CONN | En revue |
 | [FIX-9](tasks/FIX-9-demarrage-hors-ligne.md) | App lancée hors ligne : se connecter quand le réseau revient | S | FIX-8 | G-CONN | En revue |
-| [FIX-10](tasks/FIX-10-bandeau-hors-ligne.md) | Bandeau « hors ligne » à la place de l'alerte modale « No network » | S | FIX-11, AND-9 | G-QML-MOBILE + G-CONN | En cours |
+| [FIX-10](tasks/FIX-10-bandeau-hors-ligne.md) | Bandeau « hors ligne » à la place de l'alerte modale « No network » | S | FIX-11, AND-9 | G-QML-MOBILE + G-CONN | En revue |
 | [FIX-11](tasks/FIX-11-deconnexion-persistante.md) | Mémoriser la déconnexion volontaire entre deux lancements | S | FIX-9 | G-CONN + G-ANDROID | En revue |
+| [FIX-12](tasks/FIX-12-effacer-mot-de-passe.md) | Le bouton « effacer » du champ mot de passe n'efface rien | S | FIX-10 | G-QML-MOBILE | En revue |
 
 ## Diagramme de parallélisation
 
@@ -196,8 +196,8 @@ Explicitement exclus de ce backlog, à traiter dans une phase dédiée :
 
 - **Sweep couleurs : tokens Theme partout** (ex-T28, spec conservée dans `docs/tasks/T28-sweep-theme-couleurs.md`) — écarté par Raoul le 2026-08-11. 328 couleurs en dur et une dérive de casse `#3ab4d7` / `#3AB4D7`, mais c'est le plus gros sweep du backlog, il figure dans la table des risques avec campagne de screenshots obligatoire, et il ne corrige aucun défaut. T29 et T30 n'en dépendaient pas sur le fond : ils traitent les imports et les logs, ils n'étaient sérialisés derrière lui que par le groupe G-QML-SWEEP. T29 passe derrière T27, T30 derrière T29.
 - **TLS TOFU / pinning d'empreinte certificat** (ex-T12, spec conservée dans `docs/tasks/T12-tls-tofu.md`) — écarté par Raoul le 2026-08-10 : verrouiller le certificat est trop risqué pour le parc installé, un renouvellement côté serveur couperait les clients. `ignoreSslErrors` reste donc en place. T13 et T14 n'en dépendaient pas sur le fond : ils n'étaient sérialisés derrière lui que parce que les trois touchent `CalaosConnection.cpp` (groupe G-CONN). T13 est repositionné derrière T08.
-- **Migration CMake** (qmake est déprécié pour Qt6) — préalable recommandé au split transport complet de CalaosConnection.
-- **Android** : `targetSdkVersion 29` (bloque les mises à jour Play Store, minimum requis 34), **OpenSSL 1.0.2r embarqué (EOL 2019, critique)**, toolchain Gradle 2021 + `jcenter()` mort, credentials en clair dans QSettings (chantier Keystore).
+- **Migration CMake** : faite pour Android (qmake n'y est plus supporté) et pour le build iOS ; reste le build desktop (`desktop.pro`), préalable recommandé au split transport complet de CalaosConnection.
+- **Android** : traité par la phase P-AND (build CMake seul via `tools/build_android.sh`, Qt 6.12, `targetSdkVersion` 36 / `minSdkVersion` 28, OpenSSL 3 KDAB, AGP 9.2.1 / Gradle 9.5.1 sans `jcenter()`, push FCM par le SDK Java Firebase, identifiants dans le Keystore Android). Il ne reste hors périmètre que : le pinning TLS côté worker de notification Java (serveur à certificat auto-signé → notification texte seule, voir `doc/android.md` §6.3), un éventuel workflow CI de release Android (`doc/cmake.md` §6.2), l'activation de R8/minify (`doc/android.md` §7.2) et un rapport de bug Qt sur la course du bouton retour en chemin « key event » (`doc/android.md` §7.3).
 - **iOS** : APIs UIKit dépréciées (`UIAlertView`…), `KeychainItemWrapper` mort à supprimer, étapes Xcode manuelles non scriptables.
 - **Docker** : image de base non pinnée, fetch AUR sans checksum.
 - **Version applicative** : `src/version.h` codé en dur à `"git"` — injecter la vraie version au build.

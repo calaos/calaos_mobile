@@ -14,7 +14,7 @@ Detailed, LLM-oriented documentation lives under [doc/](doc):
 | Desktop / Calaos OS kiosk | [doc/desktop.md](doc/desktop.md) |
 | Mobile (iOS + Android, common architecture) | [doc/mobile.md](doc/mobile.md) |
 | iOS specifics (build, signing, push, App Store) | [doc/ios.md](doc/ios.md) |
-| Android specifics (build, Firebase, Play Store) | [doc/android.md](doc/android.md) |
+| Android specifics (CMake build, install, FCM push, Play Store) | [doc/android.md](doc/android.md) |
 | **CMake migration plan (mobile)** — in progress | [doc/cmake.md](doc/cmake.md) |
 
 ## Quick facts
@@ -23,8 +23,12 @@ Detailed, LLM-oriented documentation lives under [doc/](doc):
 - **License**: GPLv3+ with App Store / Google Play exception
   (see [COPYING](COPYING) / [COPYING.GPL](COPYING.GPL))
 - **Main branch**: `master`
-- **Build system**: qmake — [desktop.pro](desktop.pro), [mobile.pro](mobile.pro),
-  shared in [calaos.pri](calaos.pri)
+- **Build system**: qmake for desktop and iOS — [desktop.pro](desktop.pro),
+  [mobile.pro](mobile.pro), shared in [calaos.pri](calaos.pri); **Android is
+  CMake only** ([CMakeLists.txt](CMakeLists.txt),
+  [tools/build_android.sh](tools/build_android.sh), see
+  [doc/android.md](doc/android.md)); iOS also builds with CMake
+  ([tools/build_ios.sh](tools/build_ios.sh))
 - **Variant switch**: `CALAOS_DESKTOP` vs `CALAOS_MOBILE` preprocessor defines
 - **Docker image** (desktop): `ghcr.io/calaos/calaos_home`
 - **Tests**: standalone Qt Test / Qt Quick Test project in [tests/](tests), see [Tests](#tests); also validate by building both `.pro` files
@@ -50,7 +54,9 @@ lang/               Qt Linguist .ts/.qm + Go auto-translate tool
 
 - **Add a new C++ source**: shared → [calaos.pri](calaos.pri); desktop-only →
   [desktop.pro](desktop.pro); iOS-only → [ios/ios.pri](ios/ios.pri); Android-only →
-  [android/android.pri](android/android.pri).
+  [cmake/Android.cmake](cmake/Android.cmake) (CMake only; also keep shared
+  sources in sync with [cmake/CalaosHomeSources.cmake](cmake/CalaosHomeSources.cmake),
+  checked by `tools/check_sources.sh`).
 - **Add a new QML/asset file**: register in the matching `.qrc`
   ([qml_desktop.qrc](qml_desktop.qrc), [qml_mobile.qrc](qml_mobile.qrc),
   [qml_shared.qrc](qml_shared.qrc), [img_desktop.qrc](img_desktop.qrc),

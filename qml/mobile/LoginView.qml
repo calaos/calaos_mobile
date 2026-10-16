@@ -28,14 +28,13 @@ Item {
     }
 
     // The fields show the credentials of calaosApp when the view comes on
-    // screen, then belong to the user (FIX-8). The caller binds username/
-    // password/hostname to calaosApp, but a binding on a TextField survives
-    // typing: a later change of calaosApp would overwrite what is being
-    // typed, and a value that did not change would leave a stale text after a
-    // logout. So the fields are refreshed here, explicitly, when the view is
-    // created and every time it comes back (logout, session lost, reset), and
-    // nothing replaces them while it is on screen. Assigning the text also
-    // drops the caller's binding, on purpose.
+    // screen, then belong to the user (FIX-8). They are not bound to
+    // calaosApp: a binding on a TextField survives typing, so a later change
+    // of calaosApp would overwrite what is being typed, and a value that did
+    // not change would leave a stale text after a logout. So the fields are
+    // refreshed here, explicitly, when the view is created and every time it
+    // comes back (logout, session lost, reset), and nothing replaces them
+    // while it is on screen.
     function syncFromApp() {
         userField.text = calaosApp.username
         passField.text = calaosApp.password
@@ -110,7 +109,6 @@ Item {
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Username")
                 enabled: !loginButton.loadingEnabled
-                onClearButtonClicked: { userField.selectAll(); userField.cut() }
             }
 
             CalaosTextField {
@@ -120,7 +118,6 @@ Item {
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Password")
                 enabled: !loginButton.loadingEnabled
-                onClearButtonClicked: { passField.selectAll(); passField.cut() }
             }
 
             CalaosTextField {
@@ -129,7 +126,6 @@ Item {
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Hostname")
                 enabled: !loginButton.loadingEnabled
-                onClearButtonClicked: { hostField.selectAll(); hostField.cut() }
             }
 
             ButtonLogin {

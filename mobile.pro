@@ -12,7 +12,8 @@ include(calaos.pri)
 include(lang/lang.pri)
 
 android {
-    include(android/android.pri)
+    # Android is built with CMake only (Qt 6, Gradle, Firebase Java SDK).
+    error("Android is not supported by qmake any more: use ./tools/build_android.sh (see doc/android.md).")
 } else:ios {
     include(ios/ios.pri)
 } else {
@@ -30,12 +31,3 @@ QML_IMPORT_PATH = $$PWD/qml
 
 # Default rules for deployment.
 include(deployment.pri)
-#android: include(C:/Users/raoul/AppData/Local/Android/Sdk/android_openssl/openssl.pri)
-
-#ANDROID_EXTRA_LIBS = C:/Users/raoul/AppData/Local/Android/Sdk/android_openssl/no-asm/latest/arm/libcrypto_1_1.so C:/Users/raoul/AppData/Local/Android/Sdk/android_openssl/no-asm/latest/arm/libssl_1_1.so C:/Users/raoul/AppData/Local/Android/Sdk/android_openssl/no-asm/latest/arm64/libcrypto_1_1.so C:/Users/raoul/AppData/Local/Android/Sdk/android_openssl/no-asm/latest/arm64/libssl_1_1.so C:/Users/raoul/AppData/Local/Android/Sdk/android_openssl/no-asm/latest/x86/libcrypto_1_1.so C:/Users/raoul/AppData/Local/Android/Sdk/android_openssl/no-asm/latest/x86/libssl_1_1.so C:/Users/raoul/AppData/Local/Android/Sdk/android_openssl/no-asm/latest/x86_64/libcrypto_1_1.so C:/Users/raoul/AppData/Local/Android/Sdk/android_openssl/no-asm/latest/x86_64/libssl_1_1.so
-
-DISTFILES += \
-    android/gradle/wrapper/gradle-wrapper.jar \
-    android/gradlew \
-    android/gradlew.bat \
-    android/res/values/libs.xml

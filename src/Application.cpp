@@ -138,6 +138,7 @@ void Application::createQmlApp()
 #endif
 
     update_appVersion(PKG_VERSION_STR);
+    update_waitingForNetwork(false);
 
     update_hasInstall(QFile::exists("/.calaos-live") ||
                       QFile::exists("/run/calaos/calaos-live") ||
@@ -416,18 +417,13 @@ void Application::startLogin(QString user, QString pass, QString host, bool user
                                                                    : ReconnectPolicy::AutoRetry);
         qDebug() << "No network, login" << (recorded ? "deferred until the network is back" : "not deferred");
 
-        //Asynchronous alert, the app keeps running behind it. A tap on Login
-        //always gets an answer; the automatic logins show it once per
-        //offline period.
-        if (userAction || !offlineAlertShown)
-        {
-            offlineAlertShown = true;
-            HardwareUtils::Instance()->showAlertMessage(tr("Network error"),
-                                                        tr("No network connection found, "
-                                                           "this application requires a "
-                                                           "network connection to work."),
-                                                        tr("Close"));
-        }
+        //No modal alert any more (FIX-10): it stayed on screen after the
+        //network came back and the app had connected. The banner shows the
+        //wait instead, and hides by itself. A tap on Login also gets the
+        //banner highlighted, as an answer to the tap.
+        updateWaitingForNetwork();
+        if (userAction)
+            emit loginWaitsForNetwork();
         return;
     }
 
@@ -469,6 +465,9 @@ void Application::connectionStateChanged(int state)
         update_settingsLocked(false);
         break;
     }
+
+    //A credentials give-up ends the wait too (nothing would reconnect).
+    updateWaitingForNetwork();
 }
 
 void Application::stopPushNotifRouting()
@@ -488,6 +487,14 @@ void Application::logout()
     stopPushNotifRouting();
     calaosConnect->logout();
     update_applicationStatus(Common::NotConnected);
+    //Nothing is wanted any more: no banner, even offline.
+    updateWaitingForNetwork();
+}
+
+void Application::updateWaitingForNetwork()
+{
+    const bool linkDown = HardwareUtils::Instance()->getNetworkStatus() == HardwareUtils::NotConnected;
+    update_waitingForNetwork(calaosConnect->waitsForNetwork(linkDown));
 }
 
 void Application::userLogout()
@@ -737,11 +744,12 @@ void Application::networkStatusChanged()
         //nothing comes back (FIX-7).
         stopPushNotifRouting();
         calaosConnect->suspend();
+        updateWaitingForNetwork();
         return;
     }
 
-    //The next login refused offline may tell the user again.
-    offlineAlertShown = false;
+    //Hidden as soon as the link is back, before resume() starts connecting.
+    updateWaitingForNetwork();
 
     //Link is back. resume() is a no-op unless a session was wanted and none is
     //in flight, so a status change while connected costs nothing. It is also

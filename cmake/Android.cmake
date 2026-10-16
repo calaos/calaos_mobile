@@ -73,3 +73,54 @@ set_property(TARGET CalaosHome PROPERTY
 set_property(TARGET CalaosHome PROPERTY
     QT_ANDROID_ABIS "${CALAOS_ANDROID_ABIS}")
 
+
+# ── Deployed Qt plugins ───────────────────────────────────────────────────────
+# androiddeployqt packages every plugin of the linked Qt modules (it cannot tell
+# which ones load at run time), for each ABI. Leave out those this app never
+# uses. Kept on purpose: the Android platform plugin, the OpenSSL TLS backend,
+# the Android network-information backend, and the jpeg, gif, svg and webp
+# image formats (camera snapshots, music covers and the app's own images).
+# QML debugging plugins (qmltooling) stay in Debug builds for Qt Creator.
+set(_calaos_excluded_plugin_types platforminputcontexts iconengines)
+if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+    list(APPEND _calaos_excluded_plugin_types qmltooling)
+endif()
+qt_import_plugins(CalaosHome
+    EXCLUDE_BY_TYPE ${_calaos_excluded_plugin_types}
+    EXCLUDE
+        Qt6::QOffscreenIntegrationPlugin
+        Qt6::QICNSPlugin
+        Qt6::QICOPlugin
+        Qt6::QTgaPlugin
+        Qt6::QTiffPlugin
+        Qt6::QWbmpPlugin
+)
+
+# ── Deployed QML modules ──────────────────────────────────────────────────────
+# androiddeployqt runs qmlimportscanner over the QML root paths and packages
+# (and loads at startup) every QML module it finds. Qt always adds the target's
+# source directory, i.e. the repository root, so the desktop QML, the QML tests
+# and the 3rd-party examples were scanned too (VirtualKeyboard, QtTest,
+# Dialogs, FolderListModel... in the APK). Call this after
+# qt_finalize_executable(): it drops the repository root from the generated
+# list and adds the directories of the QML that the mobile .qrc files embed
+# (same list as cmake/qml_imports for iOS: keep both in sync with
+# qml_mobile.qrc and qml_shared.qrc). Any other root (QT_QML_ROOT_PATH, QML
+# modules) is kept. The deployment settings read this internal property
+# through a generator expression; if a Qt upgrade drops it the scan falls back
+# to the whole repository (bigger APK, nothing missing).
+function(calaos_android_limit_qml_scan target)
+    get_target_property(_roots ${target} _qt_android_native_qml_root_paths)
+    if(NOT _roots)
+        message(WARNING "Qt no longer sets _qt_android_native_qml_root_paths: "
+            "the Android QML import scan covers the whole repository again")
+        return()
+    endif()
+    file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}" _repo_root)
+    list(REMOVE_ITEM _roots "${_repo_root}" "${_repo_root}/")
+    list(APPEND _roots
+        "${_repo_root}/qml/mobile"
+        "${_repo_root}/qml/SharedComponents"
+        "${_repo_root}/qml/quickflux")
+    set_property(TARGET ${target} PROPERTY _qt_android_native_qml_root_paths "${_roots}")
+endfunction()

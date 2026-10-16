@@ -7,12 +7,15 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
+import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.WindowInsetsController;
 import android.widget.EditText;
 import com.google.firebase.messaging.FirebaseMessaging;
 import org.qtproject.qt.android.bindings.QtActivity;
@@ -66,8 +69,53 @@ public class HardwareUtils extends QtActivity
             rememberEventUuid(getIntent());
         super.onCreate(savedInstanceState);
 
+        // Edge to edge (Android 15+), the 3-button navigation bar gets a light
+        // translucent scrim over the app by default. The app draws its own
+        // dark menu bar under it: let the bar stay transparent.
+        if (Build.VERSION.SDK_INT >= 29)
+            getWindow().setNavigationBarContrastEnforced(false);
+        useLightNavigationBarIcons();
+
         CalaosMessagingService.ensureNotificationChannel(this);
         requestNotificationPermission();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig)
+    {
+        super.onConfigurationChanged(newConfig);
+        // Qt applies the system light/dark mode to the system bar icons here
+        useLightNavigationBarIcons();
+    }
+
+    // From Android 15 the navigation bar is transparent over the app, which is
+    // dark whatever the system theme. Qt follows the system theme for the
+    // navigation bar icons (the status bar follows the app's dark colour
+    // scheme, see Application.cpp): in a light system theme the 3-button
+    // navigation icons came out grey on our dark menu bar.
+    @SuppressWarnings("deprecation") // setNavigationBarColor, still read by the system
+    private void useLightNavigationBarIcons()
+    {
+        if (Build.VERSION.SDK_INT < 35)
+            return;
+        // The system also forces dark icons while the requested bar colour is
+        // light (Qt sets the light theme's one). Edge to edge the colour is not
+        // drawn, it only drives the icons: give the app's dark background (with
+        // a transparent colour the icons came out dimmed on the API 36
+        // emulator).
+        getWindow().setNavigationBarColor(Color.rgb(8, 8, 8));
+        WindowInsetsController controller = getWindow().getInsetsController();
+        if (controller != null)
+            controller.setSystemBarsAppearance(0, WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus)
+    {
+        super.onWindowFocusChanged(hasFocus);
+        // Qt sets the system bars up again once its window is shown
+        if (hasFocus)
+            useLightNavigationBarIcons();
     }
 
     // The activity is singleTop: a notification tapped while it exists lands

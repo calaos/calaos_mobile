@@ -112,6 +112,7 @@ Suivis issus des revues (à traiter dans le ticket indiqué) :
 - Suivi FIX-5 : `lang/calaos_de.ts` a 51 chaînes non traduites et 2 entrées obsolètes (constat lupdate 2026-10-16) ; lancer lupdate via `lang/lang.pro` (un arbre CMake iOS ou Android ne voit que ses propres sources et supprimerait les entrées de l'autre plateforme) ; les `.qm` embarqués via `lang.qrc` sont versionnés et doivent être régénérés avec les `.ts`.
 - Suivis MOB-1 : (a) `LoginView` trop haute en paysage téléphone (logo coupé, bouton Login sous la barre gestuelle) → Flickable ou mise en page compacte ; (b) iPad en mode fenêtré (iPadOS 26+) : les contrôles de fenêtre en haut à gauche peuvent chevaucher l'icône d'en-tête (zone d'adaptation des coins non couverte par `safeAreaInsets`), à vérifier sur un vrai iPad ; (c) Android paysage : bande #080808 côté encoche et séparateur d'en-tête interrompu (letterbox unilatéral) → laisser fond et séparateur passer sous les marges latérales ; (d) Android 15+ en navigation 3 boutons : vérifier le voile de la barre de navigation au-dessus de la barre de menu. Preuves manquantes pour MOB-1 (passage appareils) : iPad paysage, pièce et scénarios peuplés, non-régression Android 12.
 - FIX-7 (correction du contexte du ticket) : la cause annoncée (`ReconnectPolicy::suspend()` qui réarme après `stop()`) était fausse ; le cas Android ne se reproduit pas sur le code de base (probablement un démarrage à froid après logout, qui se reconnecte par conception). Les vrais chemins corrigés : iOS (logout → arrière-plan → premier plan reconnectait) et découverte desktop (latent). iOS met désormais la session en pause en arrière-plan au lieu d'un logout.
+- Suivis FIX-8 : sur iOS, le retour au premier plan se connecte avec les propriétés `calaosApp` (`Application.cpp:91`), pas avec des valeurs tapées mais non validées dans l'écran de login ; `qml/mobile/main.qml:124-126` (`username: calaosApp.username` etc.) est du code mort depuis `LoginView.syncFromApp()` — à retirer après AND-9.
 - AND-6 : `mobile.pro` liste encore en `DISTFILES` le wrapper Gradle et `libs.xml` supprimés ; `tools/check_sources.sh` ne reconnaît pas les chemins `$$PWD/src/...` de `calaos.pri` (faux positifs).
 - QML (hors P-AND) : `main.qml:128` paramètre `idx` non déclaré ; `AnimatedIcon.qml:31` image `icon_light_00-1.png` introuvable.
 
@@ -143,8 +144,8 @@ Exécution parallèle : chaque ticket lancé en parallèle travaille dans son pr
 | [FIX-5](tasks/FIX-5-dialogue-android-i18n.md) | Android : libellés traduits des dialogues natifs | S | FIX-4 | G-ANDROID | En revue |
 | [FIX-6](tasks/FIX-6-check-sources-pwd.md) | tools/check_sources.sh : faux positifs sur les chemins `$$PWD/src/...` | S | — | G-BUILD | Terminé |
 | [FIX-7](tasks/FIX-7-reconnexion-apres-logout.md) | Pas de reconnexion automatique après une déconnexion volontaire | S | AND-7 | G-CONN | En revue |
-| [FIX-8](tasks/FIX-8-identifiants-tapes-ecrases.md) | Un changement de réseau écrase les identifiants tapés sur l'écran de login | S | FIX-7 | G-CONN | En cours |
-| [FIX-9](tasks/FIX-9-demarrage-hors-ligne.md) | App lancée hors ligne : se connecter quand le réseau revient | S | FIX-8 | G-CONN | À faire |
+| [FIX-8](tasks/FIX-8-identifiants-tapes-ecrases.md) | Un changement de réseau écrase les identifiants tapés sur l'écran de login | S | FIX-7 | G-CONN | En revue |
+| [FIX-9](tasks/FIX-9-demarrage-hors-ligne.md) | App lancée hors ligne : se connecter quand le réseau revient | S | FIX-8 | G-CONN | En cours |
 
 ## Diagramme de parallélisation
 

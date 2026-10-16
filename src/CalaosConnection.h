@@ -418,9 +418,9 @@ public:
     void suspend();
     //The link is back: reconnect immediately if a session was wanted, unless
     //it was deliberately closed or the app is in the background.
-    //It reconnects with the credentials and host of that session, i.e. those
-    //of the last explicit login (or of the last accepted credentials change),
-    //exactly like the backoff timer does. Never with whatever the login
+    //It reconnects with the credentials and host of the last attempt (explicit
+    //login, accepted credentials change or desktop discovery), exactly like
+    //the backoff timer does. Never with whatever the login
     //screen or the stored settings hold at that moment: a network change must
     //not log in with other credentials (FIX-8).
     void resume();

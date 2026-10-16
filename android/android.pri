@@ -17,7 +17,7 @@ LIBS += -L$$FIREBASE_SDK/libs/android/$$ANDROID_TARGET_ARCH \
         -lfirebase_app \
         -lfirebase_auth
 
-include($$(ANDROID_OPENSSL)/openssl.pri)
+include(C:/Users/$$(USERNAME)/AppData/Local/Android/Sdk/android_openssl/openssl.pri)
 
 DISTFILES += \
         $$PWD/gradle.properties \

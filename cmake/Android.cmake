@@ -14,7 +14,7 @@ set(FIREBASE_SDK "$ENV{FIREBASE_CPP_SDK_DIR}")
 
 target_include_directories(CalaosHome PRIVATE "${FIREBASE_SDK}/include")
 target_link_directories(CalaosHome PRIVATE
-    "${FIREBASE_SDK}/libs/android/${ANDROID_ABI}/cxx-stl-c++")
+    "${FIREBASE_SDK}/libs/android/${ANDROID_ABI}")
 target_link_libraries(CalaosHome PRIVATE
     firebase_messaging
     firebase_app
@@ -27,7 +27,7 @@ if(NOT DEFINED ANDROID_OPENSSL_DIR)
         CACHE PATH "KDAB android_openssl prebuilt root")
 endif()
 
-set(_openssl_cmake "${ANDROID_OPENSSL_DIR}/openssl.cmake")
+set(_openssl_cmake "${ANDROID_OPENSSL_DIR}/android_openssl.cmake")
 if(NOT EXISTS "${_openssl_cmake}")
     message(FATAL_ERROR
         "KDAB android_openssl cmake file not found: ${_openssl_cmake}\n"
@@ -37,10 +37,10 @@ endif()
 
 include("${_openssl_cmake}")
 
-# KDAB's openssl.cmake may provide android_add_openssl_modules() (newer) or
+# KDAB's android_openssl.cmake may provide add_android_openssl_libraries() (newer) or
 # populate ANDROID_EXTRA_OPENSSL_LIBS (older). Handle both.
-if(COMMAND android_add_openssl_modules)
-    android_add_openssl_modules(CalaosHome)
+if(COMMAND add_android_openssl_libraries)
+    add_android_openssl_libraries(CalaosHome)
 elseif(DEFINED ANDROID_EXTRA_OPENSSL_LIBS)
     set_property(TARGET CalaosHome APPEND PROPERTY
         QT_ANDROID_EXTRA_LIBS ${ANDROID_EXTRA_OPENSSL_LIBS})
@@ -51,6 +51,10 @@ target_sources(CalaosHome PRIVATE
     android/HardwareUtils_Android.cpp
     android/HardwareUtils_Android.h
 )
+
+# Qt gui-private is needed by Application.cpp (qpa/qplatformwindow.h)
+find_package(Qt6 REQUIRED COMPONENTS GuiPrivate)
+target_link_libraries(CalaosHome PRIVATE Qt6::GuiPrivate)
 
 # ── Android target properties ─────────────────────────────────────────────────
 set_property(TARGET CalaosHome PROPERTY

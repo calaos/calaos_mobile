@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(CalaosHome LANGUAGES CXX OBJC OBJCXX)
+project(CalaosHome LANGUAGES CXX)
 
 # Guard: this CMake build is for mobile (iOS + Android) only.
 # CMAKE_SYSTEM_NAME is resolved by project(), so check here.
@@ -8,6 +8,10 @@ if(NOT (IOS OR ANDROID))
     message(FATAL_ERROR
         "This CMakeLists.txt targets mobile builds only (iOS or Android).\n"
         "For the desktop variant: qmake desktop.pro")
+endif()
+
+if(IOS)
+    enable_language(OBJC OBJCXX)
 endif()
 
 include(cmake/Versioning.cmake)

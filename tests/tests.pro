@@ -23,6 +23,7 @@ SUBDIRS += \
     tst_homemodel \
     tst_httpapiversion \
     tst_iobase \
+    tst_pushnotif \
     tst_qqmlhelpers \
     tst_reconnectpolicy \
     tst_roomfiltermodel

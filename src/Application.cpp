@@ -9,9 +9,6 @@
 
 #include "version.h"
 
-#ifdef Q_OS_ANDROID
-#include <QJniObject>
-#endif
 #include <QProcess>
 #include <qfappdispatcher.h>
 #include <QScreen>
@@ -83,13 +80,12 @@ void Application::createQmlApp()
     Common::registerQml();
 
 #ifdef Q_OS_ANDROID
-    QJniObject activity = QJniObject::callStaticObjectMethod("org/qtproject/qt/android/QtNative", "activity", "()Landroid/app/Activity;");
-    QJniObject resource = activity.callObjectMethod("getResources","()Landroid/content/res/Resources;");
-    QJniObject metrics = resource.callObjectMethod("getDisplayMetrics","()Landroid/util/DisplayMetrics;");
-    //update_density(metrics.getField<float>("density"));
+    //The density stays forced to 1: Qt 6 already scales by the device pixel
+    //ratio (the Android DisplayMetrics density), applying it again here would
+    //double the scale.
     update_density(1);
 
-    qDebug() << "Using density from JNI: " << get_density() << " Value from QScreen: " << primaryScreen()->devicePixelRatio();
+    qDebug() << "Using forced density: " << get_density() << " Value from QScreen: " << primaryScreen()->devicePixelRatio();
 
     update_needBackButton(false);
     // Need to fix a bug on Android where text is scratched at runtime on some devices

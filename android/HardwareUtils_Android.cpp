@@ -1,9 +1,47 @@
-
 #include "HardwareUtils_Android.h"
 #include <QJniObject>
 #include <QJniEnvironment>
+#include <QDebug>
 #include <jni.h>
-#include <QCoreApplication>
+
+namespace
+{
+
+constexpr char kHardwareUtilsClass[] = "fr/calaos/calaoshome/HardwareUtils";
+constexpr char kNativesClass[] = "fr/calaos/calaoshome/HardwareUtilsNatives";
+
+//Describe (in logcat) and clear any pending Java exception left by the last
+//JNI call. Returns true if there was one.
+bool clearJavaException(const char *call)
+{
+    QJniEnvironment env;
+    if (env.checkAndClearExceptions(QJniEnvironment::OutputMode::Verbose))
+    {
+        qWarning() << "Android: JNI call failed:" << call;
+        return true;
+    }
+    return false;
+}
+
+//Called from the Android UI thread: only hop to the Qt thread from here.
+void jniEmitDialogTextValid(JNIEnv *, jclass, jstring text)
+{
+    const QString s = QJniObject(text).toString();
+    QMetaObject::invokeMethod(HardwareUtils::Instance(), [s]()
+    {
+        HardwareUtils::Instance()->emitDialogTextValid(s);
+    }, Qt::QueuedConnection);
+}
+
+void jniEmitDialogCancel(JNIEnv *, jclass)
+{
+    QMetaObject::invokeMethod(HardwareUtils::Instance(), []()
+    {
+        HardwareUtils::Instance()->emitDialogCancel();
+    }, Qt::QueuedConnection);
+}
+
+} // namespace
 
 HardwareUtilsAndroid::HardwareUtilsAndroid(QObject *parent):
     HardwareUtils(parent)
@@ -17,6 +55,17 @@ HardwareUtilsAndroid::~HardwareUtilsAndroid()
 void HardwareUtilsAndroid::platformInit(QQmlApplicationEngine *e)
 {
     HardwareUtils::platformInit(e);
+
+    //QJniEnvironment resolves the class through Qt's class loader, which
+    //a plain FindClass from a native thread does not.
+    QJniEnvironment env;
+    const bool ok = env.registerNativeMethods(kNativesClass, {
+        { "emitDialogTextValid", "(Ljava/lang/String;)V", reinterpret_cast<void *>(jniEmitDialogTextValid) },
+        { "emitDialogCancel", "()V", reinterpret_cast<void *>(jniEmitDialogCancel) },
+    });
+    clearJavaException("registerNativeMethods");
+    if (!ok)
+        qWarning() << "Android: failed to register native methods on" << kNativesClass;
 }
 
 void HardwareUtilsAndroid::setDeviceToken(QString t)
@@ -30,37 +79,24 @@ void HardwareUtilsAndroid::showAlertMessage(QString title, QString message, QStr
     QJniObject jTitle = QJniObject::fromString(title);
     QJniObject jMessage = QJniObject::fromString(message);
     QJniObject jButtontext = QJniObject::fromString(buttontext);
-    QJniObject::callStaticMethod<void>("fr/calaos/calaoshome/HardwareUtils",
+    QJniObject::callStaticMethod<void>(kHardwareUtilsClass,
                                        "showAlertMessage",
                                        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
                                        jTitle.object<jstring>(),
                                        jMessage.object<jstring>(),
                                        jButtontext.object<jstring>());
-
-    //Clear exception if any
-    QJniEnvironment env;
-    if (env->ExceptionCheck())
-    {
-        qDebug() << "JNI call failed";
-        env->ExceptionDescribe();
-        env->ExceptionClear();
-    }
+    clearJavaException("HardwareUtils.showAlertMessage");
 }
 
 int HardwareUtilsAndroid::getNetworkStatus()
 {
-    jint status = QJniObject::callStaticMethod<jint>("fr/calaos/calaoshome/HardwareUtils",
-                                                     "getNetworkStatus");
+    jint status = QJniObject::callStaticMethod<jint>(kHardwareUtilsClass,
+                                                     "getNetworkStatus",
+                                                     "()I");
+    if (clearJavaException("HardwareUtils.getNetworkStatus"))
+        status = ConnectedWWAN; //We don't know. Say it's connected.
 
     qDebug() << "Android: HardwareUtilsAndroid::getNetworkStatus(): " << status;
-    //Clear exception if any
-    QJniEnvironment env;
-    if (env->ExceptionCheck())
-    {
-        qDebug() << "JNI call failed";
-        env->ExceptionDescribe();
-        env->ExceptionClear();
-    }
 
     return status;
 }
@@ -70,64 +106,15 @@ void HardwareUtilsAndroid::inputTextDialog(const QString &title, const QString &
     QJniObject jTitle = QJniObject::fromString(title);
     QJniObject jMessage = QJniObject::fromString(message);
 
-    QJniObject::callStaticMethod<void>("fr/calaos/calaoshome/HardwareUtils",
-                                       "inputtextDialog",
-                                       "(Ljava/lang/String;Ljava/lang/String;)V",
-                                       jTitle.object<jstring>(),
-                                       jMessage.object<jstring>());
-}
+    const jboolean shown = QJniObject::callStaticMethod<jboolean>(kHardwareUtilsClass,
+                                                                  "inputtextDialog",
+                                                                  "(Ljava/lang/String;Ljava/lang/String;)Z",
+                                                                  jTitle.object<jstring>(),
+                                                                  jMessage.object<jstring>());
+    const bool failed = clearJavaException("HardwareUtils.inputtextDialog");
 
-static void emitDialogTextValid(JNIEnv *env, jobject obj, jstring text)
-{
-    Q_UNUSED(env);
-    Q_UNUSED(obj);
-    QJniObject jnitext(text);
-    QMetaObject::invokeMethod(HardwareUtils::Instance(),
-                              "emitDialogTextValid",
-                              Qt::QueuedConnection,
-                              Q_ARG(QString, jnitext.toString()));
-}
-
-static void emitDialogCancel(JNIEnv *env, jobject obj)
-{
-    Q_UNUSED(env);
-    Q_UNUSED(obj);
-    QMetaObject::invokeMethod(HardwareUtils::Instance(),
-                              "emitDialogCancel",
-                              Qt::QueuedConnection);
-}
-
-static JNINativeMethod jniMethods[] =
-{
-    { "emitDialogTextValid", "(Ljava/lang/String;)V", reinterpret_cast<void *>(emitDialogTextValid) },
-    { "emitDialogCancel", "()V", reinterpret_cast<void *>(emitDialogCancel) },
-};
-
-// this method is called automatically by Java after the .so file is loaded
-JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void */*reserved*/)
-{
-    JNIEnv *env;
-    // get the JNIEnv pointer.
-    if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK)
-        return JNI_ERR;
-
-    // search for Java class which declares the native methods
-    jclass javaClass = env->FindClass("fr/calaos/calaoshome/HardwareUtilsNatives");
-    if (!javaClass)
-        return JNI_ERR;
-
-    // register our native methods
-    jint res;
-    res = env->RegisterNatives(javaClass,
-                             jniMethods,
-                             sizeof(jniMethods) / sizeof(jniMethods[0]));
-    if (res < 0)
-    {
-        qDebug() << "RegisterNatives failed with code: " << res;
-        env->DeleteLocalRef(javaClass);
-        return JNI_ERR;
-    }
-
-    env->DeleteLocalRef(javaClass);
-    return JNI_VERSION_1_6;
+    //No dialog means no answer will ever come back: report a cancel so the
+    //caller does not keep waiting for one.
+    if (failed || !shown)
+        emitDialogCancel();
 }

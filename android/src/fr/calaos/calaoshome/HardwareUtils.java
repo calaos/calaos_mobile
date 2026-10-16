@@ -1,14 +1,20 @@
-
 package fr.calaos.calaoshome;
 
-import android.content.Context;
+import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.os.Bundle;
+import android.util.Log;
 import android.widget.EditText;
 import org.qtproject.qt.android.bindings.QtActivity;
 
+// Native callbacks implemented in android/HardwareUtils_Android.cpp. They are
+// registered by HardwareUtilsAndroid::platformInit() through
+// QJniEnvironment::registerNativeMethods, so they only exist once Qt runs.
 class HardwareUtilsNatives
 {
     public static native void emitDialogTextValid(String text);
@@ -17,130 +23,189 @@ class HardwareUtilsNatives
 
 public class HardwareUtils extends QtActivity
 {
-    private static HardwareUtils _context;
+    private static final String TAG = "CalaosHome";
 
-    public HardwareUtils()
+    // Must match HardwareUtils::NetworkStatus in src/HardwareUtils.h
+    private static final int NETWORK_NOT_CONNECTED = 0;
+    private static final int NETWORK_WWAN = 1;
+    private static final int NETWORK_WIFI = 2;
+
+    // The running activity. Null before onCreate() and after onDestroy(); it
+    // is read from the Qt thread, hence volatile. Static helpers must copy it
+    // to a local and check it before use.
+    private static volatile HardwareUtils _context;
+
+    @Override
+    public void onCreate(Bundle savedInstanceState)
     {
+        // Set before super.onCreate(): that call starts the Qt application,
+        // which may call the static helpers right away.
         _context = this;
+        super.onCreate(savedInstanceState);
     }
 
-    public static void showAlertMessage(String _title, String _message, String _buttontext)
+    @Override
+    protected void onDestroy()
     {
-        final String title = _title;
-        final String msg = _message;
-        final String bt = _buttontext;
-        _context.runOnUiThread(new Runnable()
+        if (_context == this)
+            _context = null;
+        super.onDestroy();
+    }
+
+    private static boolean isUsable(Activity activity)
+    {
+        return activity != null && !activity.isFinishing() && !activity.isDestroyed();
+    }
+
+    public static void showAlertMessage(final String title, final String message, final String buttonText)
+    {
+        final HardwareUtils activity = _context;
+        if (!isUsable(activity))
+        {
+            Log.w(TAG, "showAlertMessage: no activity, alert dropped");
+            return;
+        }
+
+        activity.runOnUiThread(new Runnable()
         {
             public void run()
             {
-                final AlertDialog alertDialog = new AlertDialog.Builder(_context).create();
-                alertDialog.setTitle(title);
-                alertDialog.setMessage(msg);
-                alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, bt, new DialogInterface.OnClickListener()
-                {
-                    public void onClick(DialogInterface dialog, int which)
+                if (!isUsable(activity))
+                    return;
+
+                new AlertDialog.Builder(activity)
+                    .setTitle(title)
+                    .setMessage(message)
+                    .setIcon(R.drawable.icon)
+                    .setPositiveButton(buttonText, new DialogInterface.OnClickListener()
                     {
-                        alertDialog.dismiss();
-                    }
-                });
-                alertDialog.setIcon(R.drawable.icon);
-                alertDialog.show();
+                        public void onClick(DialogInterface dialog, int which)
+                        {
+                            dialog.dismiss();
+                        }
+                    })
+                    .show();
             }
         });
     }
 
+    // Returns NETWORK_WIFI for Wi-Fi/Ethernet, NETWORK_WWAN for cellular (and
+    // any other connected transport), NETWORK_NOT_CONNECTED when there is no
+    // default network (airplane mode, ...).
     public static int getNetworkStatus()
     {
-        NetworkInfo networkInfo = null;
-        ConnectivityManager connectivityManager = (ConnectivityManager) _context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        if (connectivityManager != null)
+        final Context ctx = _context;
+        if (ctx == null)
+            return NETWORK_WWAN; // We don't know. Say it's connected.
+
+        try
         {
-            networkInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-            if (networkInfo.isAvailable() &&
-                networkInfo.isConnected())
-            {
-                return 2; //Wifi
-            }
+            ConnectivityManager cm = (ConnectivityManager) ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm == null)
+                return NETWORK_WWAN;
 
-            networkInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
-            if (networkInfo.isAvailable() &&
-                networkInfo.isConnected())
-            {
-                return 1; //WWAN
-            }
+            Network network = cm.getActiveNetwork();
+            if (network == null)
+                return NETWORK_NOT_CONNECTED;
 
-            return 0; //Not connected
+            NetworkCapabilities caps = cm.getNetworkCapabilities(network);
+            if (caps == null)
+                return NETWORK_NOT_CONNECTED;
+
+            if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET))
+                return NETWORK_WIFI;
+
+            return NETWORK_WWAN;
         }
-
-        return 1; //We don't know. Say it's connected.
+        catch (SecurityException e)
+        {
+            Log.e(TAG, "getNetworkStatus: ACCESS_NETWORK_STATE denied", e);
+            return NETWORK_WWAN;
+        }
     }
 
-    public static void inputtextDialog(String _title, String _message)
+    // Returns false when no dialog can be shown; the caller then reports a
+    // cancel itself so the QML side does not wait for an answer forever.
+    public static boolean inputtextDialog(final String title, final String message)
     {
-        final String title = _title;
-        final String msg = _message;
-        _context.runOnUiThread(new Runnable()
+        final HardwareUtils activity = _context;
+        if (!isUsable(activity))
+        {
+            Log.w(TAG, "inputtextDialog: no activity");
+            return false;
+        }
+
+        activity.runOnUiThread(new Runnable()
         {
             public void run()
             {
-                final AlertDialog.Builder builder = new AlertDialog.Builder(_context);
+                if (!isUsable(activity))
+                {
+                    notifyDialogCancel();
+                    return;
+                }
+
                 // Set an EditText view to get user input
-                final EditText input = new EditText(_context);
+                final EditText input = new EditText(activity);
 
-                builder.setTitle(title);
-                builder.setMessage(msg);
-                builder.setView(input);
-
-                builder.setPositiveButton("Confirm", new DialogInterface.OnClickListener()
-                {
-                    public void onClick(DialogInterface dialog, int which)
+                new AlertDialog.Builder(activity)
+                    .setTitle(title)
+                    .setMessage(message)
+                    .setView(input)
+                    .setIcon(R.drawable.icon)
+                    .setPositiveButton("Confirm", new DialogInterface.OnClickListener()
                     {
-                        HardwareUtilsNatives.emitDialogTextValid(input.getText().toString());
-                        dialog.dismiss();
-                    }
-                });
-                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener()
-                {
-                    public void onClick(DialogInterface dialog, int which)
+                        public void onClick(DialogInterface dialog, int which)
+                        {
+                            notifyDialogTextValid(input.getText().toString());
+                            dialog.dismiss();
+                        }
+                    })
+                    .setNegativeButton("Cancel", new DialogInterface.OnClickListener()
                     {
-                        HardwareUtilsNatives.emitDialogCancel();
-                        dialog.dismiss();
-                    }
-                });
-
-                builder.setIcon(R.drawable.icon);
-                builder.show();
+                        public void onClick(DialogInterface dialog, int which)
+                        {
+                            notifyDialogCancel();
+                            dialog.dismiss();
+                        }
+                    })
+                    // Back key or tap outside the dialog
+                    .setOnCancelListener(new DialogInterface.OnCancelListener()
+                    {
+                        public void onCancel(DialogInterface dialog)
+                        {
+                            notifyDialogCancel();
+                        }
+                    })
+                    .show();
             }
         });
+
+        return true;
     }
 
-
-
-/*
-
-//Qt example for showing the user a notification in the notif center
-//Maybe use that later.
-
-    private static NotificationManager m_notificationManager;
-    private static Notification.Builder m_builder;
-    private static NotificationClient m_instance;
-
-    public NotificationClient()
+    private static void notifyDialogTextValid(String text)
     {
-        m_instance = this;
-    }
-
-    public static void notify(String s)
-    {
-        if (m_notificationManager == null) {
-            m_notificationManager = (NotificationManager)m_instance.getSystemService(Context.NOTIFICATION_SERVICE);
-            m_builder = new Notification.Builder(m_instance);
-            m_builder.setSmallIcon(R.drawable.icon);
-            m_builder.setContentTitle("A message from Qt!");
+        try
+        {
+            HardwareUtilsNatives.emitDialogTextValid(text);
         }
-
-        m_builder.setContentText(s);
-        m_notificationManager.notify(1, m_builder.build());
+        catch (UnsatisfiedLinkError e)
+        {
+            Log.e(TAG, "emitDialogTextValid: native method not registered", e);
+        }
     }
-*/
+
+    private static void notifyDialogCancel()
+    {
+        try
+        {
+            HardwareUtilsNatives.emitDialogCancel();
+        }
+        catch (UnsatisfiedLinkError e)
+        {
+            Log.e(TAG, "emitDialogCancel: native method not registered", e);
+        }
+    }
 }

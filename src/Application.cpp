@@ -88,7 +88,7 @@ void Application::createQmlApp()
             }
 
             qDebug() << "Application is in foreground, login again";
-            login(get_username(), get_password(), get_hostname());
+            startLogin(get_username(), get_password(), get_hostname(), false);
         });
     });
 
@@ -379,30 +379,59 @@ void Application::createQmlApp()
         }
 
         if (!demoMode)
-            login(user, pass, h);
+            startLogin(user, pass, h, false);
     });
 #endif
 }
 
 void Application::login(QString user, QString pass, QString host)
 {
-    if (HardwareUtils::Instance()->getNetworkStatus() == HardwareUtils::NotConnected)
-    {
-        HardwareUtils::Instance()->showAlertMessage(tr("Network error"),
-                                                    tr("No network connection found, "
-                                                       "this application requires a "
-                                                       "network connection to work."),
-                                                    tr("Close"));
-        return;
-    }
+    startLogin(user, pass, host, true);
+}
 
+void Application::startLogin(QString user, QString pass, QString host, bool userAction)
+{
     host = host.trimmed();
     user = user.trimmed();
-    qDebug() << "Try to login to host: " << host;
 
+    //Before the network check: the properties are what the login screen
+    //shows and what homeLoaded() saves, so a login recorded below for when
+    //the network is back (FIX-9) is saved with its own credentials. They are
+    //written even when deferLogin() refuses, which is harmless: an automatic
+    //login writes the values it was given from them, and a refused tap on
+    //Login keeps what was typed, as online.
     update_username(user);
     update_password(pass);
     update_hostname(host);
+
+    if (HardwareUtils::Instance()->getNetworkStatus() == HardwareUtils::NotConnected)
+    {
+        //Launched in airplane mode, or Login tapped without network: the
+        //login cannot start, but the intent is recorded with these
+        //credentials so networkStatusChanged() -> resume() connects when the
+        //link is back (FIX-9). An automatic login never reopens a session the
+        //user closed: deferLogin() refuses it.
+        const bool recorded = calaosConnect->deferLogin(user, pass, host,
+                                                        userAction ? ReconnectPolicy::UserRequest
+                                                                   : ReconnectPolicy::AutoRetry);
+        qDebug() << "No network, login" << (recorded ? "deferred until the network is back" : "not deferred");
+
+        //Asynchronous alert, the app keeps running behind it. A tap on Login
+        //always gets an answer; the automatic logins show it once per
+        //offline period.
+        if (userAction || !offlineAlertShown)
+        {
+            offlineAlertShown = true;
+            HardwareUtils::Instance()->showAlertMessage(tr("Network error"),
+                                                        tr("No network connection found, "
+                                                           "this application requires a "
+                                                           "network connection to work."),
+                                                        tr("Close"));
+        }
+        return;
+    }
+
+    qDebug() << "Try to login to host: " << host;
 
     //T14: no applicationStatus guard here any more. There is exactly one
     //anti double-login guard and it lives in CalaosConnection/ReconnectPolicy;
@@ -707,6 +736,9 @@ void Application::networkStatusChanged()
         return;
     }
 
+    //The next login refused offline may tell the user again.
+    offlineAlertShown = false;
+
     //Link is back. resume() is a no-op unless a session was wanted and none is
     //in flight, so a status change while connected costs nothing. It is also
     //a no-op after a logout and while the app is in the background (FIX-7).
@@ -714,7 +746,9 @@ void Application::networkStatusChanged()
     //that was not accepted (yet) by the stored ones, which overwrote what the
     //user had typed on the login screen and could even log in to another home
     //(the demo one). resume() reconnects with the credentials of the session
-    //it resumes, kept by CalaosConnection.
+    //it resumes, kept by CalaosConnection. That includes a login refused
+    //while offline (launch in airplane mode, FIX-9): it was recorded by
+    //deferLogin(), with the credentials of the latest such login.
     calaosConnect->resume();
 }
 

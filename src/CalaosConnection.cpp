@@ -263,11 +263,31 @@ void CalaosConnection::unpause()
 void CalaosConnection::resume()
 {
     //canResume() implies a session was wanted, hence that startConnection()
-    //already ran and stored its credentials and host.
+    //or deferLogin() (login refused offline, FIX-9) already ran and stored
+    //the credentials and host.
     if (!reconnectPolicy.canResume())
         return;
 
     startConnection(username, password, lasthost, ReconnectPolicy::AutoRetry);
+}
+
+bool CalaosConnection::deferLogin(QString user, QString pass, QString h, ReconnectPolicy::Trigger trigger)
+{
+    if (!reconnectPolicy.deferAttempt(trigger))
+        return false;
+
+    //Nothing is in flight (deferAttempt() refuses otherwise), but a retry may
+    //be pending: the new intent replaces it, resume() starts the attempt.
+    cancelReconnectTimer();
+    resetTransport();
+
+    //What resume() will use, like an attempt started now would have stored.
+    username = user;
+    password = pass;
+    lasthost = h;
+
+    emitStateChanged();
+    return true;
 }
 
 void CalaosConnection::login(QString user, QString pass, QString h)

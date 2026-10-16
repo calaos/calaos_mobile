@@ -5,8 +5,11 @@ set -euo pipefail
 # build_android.sh — Configure and build the Calaos Home Android app (Qt 6 + CMake + Ninja)
 # Usage: ./build_android.sh [Debug|Release] [--lib-only]
 #   --lib-only  build only the native library (skip Gradle/APK packaging)
-# Environment overrides: JAVA_HOME, ANDROID_SDK_ROOT, ANDROID_NDK_ROOT, QT_ROOT,
+# Environment overrides: QT_VERSION (default 6.12.0), QT_ROOT (default ~/Qt/$QT_VERSION),
+#   QT_ANDROID, QT_HOST, JAVA_HOME, ANDROID_SDK_ROOT, ANDROID_NDK_ROOT,
 #   ANDROID_OPENSSL_DIR, CALAOS_ANDROID_ABIS
+# Rolling back to another installed Qt: QT_VERSION=6.11.0 ./tools/build_android.sh
+#   (a cache configured against another kit is cleared automatically).
 # ---------------------------------------------------------------------------
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -46,7 +49,9 @@ kit_to_abi() {
     esac
 }
 
-QT_ROOT="${QT_ROOT:-$HOME/Qt/6.11.0}"
+# Qt version: the only place to bump it. The NDK defaults to the kit's ndk_version.
+QT_VERSION="${QT_VERSION:-6.12.0}"
+QT_ROOT="${QT_ROOT:-$HOME/Qt/${QT_VERSION}}"
 CALAOS_ANDROID_ABIS="${CALAOS_ANDROID_ABIS:-arm64-v8a}"
 FIRST_ABI="${CALAOS_ANDROID_ABIS%%;*}"
 if [[ -z "${QT_ANDROID:-}" ]]; then
@@ -63,7 +68,9 @@ esac
 QT_HOST="${QT_HOST:-${QT_ROOT}/macos}"
 
 export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}"
-export ANDROID_NDK_ROOT="${ANDROID_NDK_ROOT:-${ANDROID_SDK_ROOT}/ndk/27.2.12479018}"
+# NDK version the Qt kit was built with ("ndk_version" in modules/Core.json).
+QT_NDK_VERSION="$(sed -n 's/.*"ndk_version": *"\([^"]*\)".*/\1/p' "${QT_ANDROID}/modules/Core.json" 2>/dev/null | head -1)"
+export ANDROID_NDK_ROOT="${ANDROID_NDK_ROOT:-${ANDROID_SDK_ROOT}/ndk/${QT_NDK_VERSION:-27.2.12479018}}"
 if [[ -z "${JAVA_HOME:-}" ]] && command -v brew >/dev/null 2>&1; then
     JAVA_HOME="$(brew --prefix openjdk@17 2>/dev/null || true)/libexec/openjdk.jdk/Contents/Home"
 fi
@@ -85,7 +92,20 @@ java_major="$("${JAVA_HOME}/bin/java" -version 2>&1 | sed -n '1s/.*version "\([0
 command -v ninja >/dev/null 2>&1 || fail "ninja not found in PATH"
 command -v cmake >/dev/null 2>&1 || fail "cmake not found in PATH"
 
+# A cache configured against another Qt kit (version bump/rollback) keeps the old
+# Qt6_DIR and toolchain paths: start from a clean cache in that case.
+if [[ -f "${BUILD_DIR}/CMakeCache.txt" ]]; then
+    cached_qt="$(sed -n 's/^Qt6_DIR:[A-Z]*=//p' "${BUILD_DIR}/CMakeCache.txt")"
+    if [[ -n "${cached_qt}" && "${cached_qt}" != "${QT_ANDROID}/"* ]]; then
+        echo "==> Qt kit changed (cache: ${cached_qt}): clearing the CMake cache"
+        rm -rf "${BUILD_DIR}/CMakeCache.txt" "${BUILD_DIR}/CMakeFiles"
+    fi
+fi
+
 echo "==> Configuring for Android (${CONFIG}, ABI: ${ANDROID_ABI}, ABIs: ${CALAOS_ANDROID_ABIS})"
+echo "    Qt kit: ${QT_ANDROID}"
+echo "    Qt host: ${QT_HOST}"
+echo "    NDK: ${ANDROID_NDK_ROOT}"
 cmake -S "${SCRIPT_DIR}" -B "${BUILD_DIR}" \
     -G Ninja \
     -DCMAKE_BUILD_TYPE="${CONFIG}" \

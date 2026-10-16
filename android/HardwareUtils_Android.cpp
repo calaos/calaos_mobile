@@ -2,6 +2,7 @@
 #include <QJniObject>
 #include <QJniEnvironment>
 #include <QDebug>
+#include <QPointer>
 #include <jni.h>
 
 namespace
@@ -9,6 +10,11 @@ namespace
 
 constexpr char kHardwareUtilsClass[] = "fr/calaos/calaoshome/HardwareUtils";
 constexpr char kNativesClass[] = "fr/calaos/calaoshome/HardwareUtilsNatives";
+
+//The live instance, read by the native callbacks. Becomes null once the
+//object is destroyed (Application teardown), so a late callback is dropped
+//instead of touching a dangling pointer.
+QPointer<HardwareUtilsAndroid> s_instance;
 
 //Describe (in logcat) and clear any pending Java exception left by the last
 //JNI call. Returns true if there was one.
@@ -26,18 +32,26 @@ bool clearJavaException(const char *call)
 //Called from the Android UI thread: only hop to the Qt thread from here.
 void jniEmitDialogTextValid(JNIEnv *, jclass, jstring text)
 {
+    HardwareUtilsAndroid *hw = s_instance.data();
+    if (!hw)
+        return;
+
     const QString s = QJniObject(text).toString();
-    QMetaObject::invokeMethod(HardwareUtils::Instance(), [s]()
+    QMetaObject::invokeMethod(hw, [hw, s]()
     {
-        HardwareUtils::Instance()->emitDialogTextValid(s);
+        hw->emitDialogTextValid(s);
     }, Qt::QueuedConnection);
 }
 
 void jniEmitDialogCancel(JNIEnv *, jclass)
 {
-    QMetaObject::invokeMethod(HardwareUtils::Instance(), []()
+    HardwareUtilsAndroid *hw = s_instance.data();
+    if (!hw)
+        return;
+
+    QMetaObject::invokeMethod(hw, [hw]()
     {
-        HardwareUtils::Instance()->emitDialogCancel();
+        hw->emitDialogCancel();
     }, Qt::QueuedConnection);
 }
 
@@ -46,6 +60,7 @@ void jniEmitDialogCancel(JNIEnv *, jclass)
 HardwareUtilsAndroid::HardwareUtilsAndroid(QObject *parent):
     HardwareUtils(parent)
 {
+    s_instance = this;
 }
 
 HardwareUtilsAndroid::~HardwareUtilsAndroid()
@@ -114,7 +129,13 @@ void HardwareUtilsAndroid::inputTextDialog(const QString &title, const QString &
     const bool failed = clearJavaException("HardwareUtils.inputtextDialog");
 
     //No dialog means no answer will ever come back: report a cancel so the
-    //caller does not keep waiting for one.
+    //caller does not keep waiting for one. Queued like every other dialog
+    //answer, so it never arrives inside the caller's own call.
     if (failed || !shown)
-        emitDialogCancel();
+    {
+        QMetaObject::invokeMethod(this, [this]()
+        {
+            emitDialogCancel();
+        }, Qt::QueuedConnection);
+    }
 }

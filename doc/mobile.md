@@ -172,8 +172,23 @@ platform-specific:
 - **Android**: Firebase Cloud Messaging via the Firebase C++ SDK. See
   [android.md](android.md).
 
-`HardwareUtils::deviceToken` holds the device push token; `CalaosConnection`
-will register it with `calaos_server` upon login.
+Shared rules (in [src/HardwareUtils.cpp](../src/HardwareUtils.cpp) and
+[src/CalaosConnection.cpp](../src/CalaosConnection.cpp)):
+
+- **Push token**: platform code reports it with `HardwareUtils::setDeviceToken()`,
+  which emits `deviceTokenChanged()` when the value changes. `CalaosConnection`
+  sends `register_push` once the login is accepted (websocket or HTTP), and
+  again when the token changes while the session is up (FCM rotation, APNs
+  token arriving after the login). The same token is never sent twice in one
+  session (`PushRegistration` in `CalaosConnection.h`). The token is a
+  per-device credential: it is only ever logged truncated
+  (`HardwareUtils::describeToken()`), and redacted from the HTTP debug dumps.
+- **Notification tap**: platform code calls
+  `HardwareUtils::handleNotificationOpened(uuid)`. Logged in → opened right away
+  through `pushNotifReceived(uuid)`. Not logged in (cold start, app in the
+  background, reconnection in progress) → kept, the latest tap wins, and
+  `Application::homeLoaded()` opens it once at the next login
+  (`takePendingNotif()`).
 
 ## 10. Internationalisation
 

@@ -129,11 +129,11 @@ embedded via `QMAKE_BUNDLE_DATA += splash`.
 | Step | Code |
 |---|---|
 | Request authorization, register with APNs | [ios/HardwareUtils.mm](../ios/HardwareUtils.mm) — `application:didFinishLaunchingWithOptions:` (override of `QIOSApplicationDelegate`) |
-| Receive APNs token | `application:didRegisterForRemoteNotificationsWithDeviceToken:` → `HardwareUtils_iOS::handleRegisterNotif()` |
-| Token forwarded to QML / `CalaosConnection` | via `HardwareUtils::deviceToken` |
+| Receive APNs token | `application:didRegisterForRemoteNotificationsWithDeviceToken:` → `HardwareUtils_iOS::handleRegisterNotif()` → `HardwareUtils::setDeviceToken()` |
+| Token registered with `calaos_server` | `CalaosConnection` sends `register_push` at login, and again on `HardwareUtils::deviceTokenChanged()` while logged in (token arriving after the login) |
 | Encrypted payload received in background | `PushNotif.appex` (`ios/PushNotif/NotificationService.m`) — decrypts using keys stored in the shared keychain (`A0SimpleKeychain+KeyPair`) and rewrites the `UNNotificationContent` before display |
-| User taps notification while app is foreground | `HardwareUtils_iOS::handleStartedWithPushNotif(uuid)` → `Application::pushNotificationReceived(uuid)` → QuickFlux dispatch |
-| User taps notification while app is closed | Same path on `applicationBecomeActive`, with `startedWithNotif` flag |
+| User taps notification while logged in | `userNotificationCenter:didReceiveNotificationResponse:` → `HardwareUtils::handleNotificationOpened(uuid)` → `pushNotifReceived(uuid)` → `Application::pushNotificationReceived(uuid)` → QuickFlux dispatch |
+| User taps notification while not logged in (closed, background, reconnecting) | Same entry point; the uuid is kept and `Application::homeLoaded()` opens it once at the next login (`HardwareUtils::takePendingNotif()`) |
 
 Background mode `remote-notification` is declared in
 [ios/AppInfo.plist](../ios/AppInfo.plist) (`UIBackgroundModes`).

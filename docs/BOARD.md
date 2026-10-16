@@ -92,7 +92,7 @@ La version Android n'a jamais fonctionné en Qt 6. Analyse et plan validés par 
 | [AND-1](tasks/AND-1-toolchain-cmake.md) | Toolchain Android et configuration CMake | M | — | G-ANDROID | Terminé |
 | [AND-2](tasks/AND-2-packaging-gradle-manifest.md) | Packaging Qt 6.11 : Gradle, manifest, ressources | M | AND-1 | G-ANDROID | Terminé |
 | [AND-3](tasks/AND-3-glue-java-jni.md) | Glue Java/JNI au standard Qt 6 | M | AND-2 | G-ANDROID | Terminé |
-| [AND-4](tasks/AND-4-push-fcm-java.md) | Notifications push FCM via le SDK Firebase Java | L | AND-3 | G-ANDROID | En revue |
+| [AND-4](tasks/AND-4-push-fcm-java.md) | Notifications push FCM via le SDK Firebase Java | L | AND-3 | G-ANDROID | Terminé |
 | [AND-7](tasks/AND-7-push-image-camera.md) | Image de caméra dans les notifications push | L | AND-4 | G-ANDROID | En revue |
 | [AND-5](tasks/AND-5-release-aab-signature.md) | Build release : AAB multi-ABI et signature | S | AND-4 | G-ANDROID | Terminé |
 | [AND-6](tasks/AND-6-doc-nettoyage.md) | Documentation Android et nettoyage legacy | S | AND-5, AND-7 | G-ANDROID + G-DOC | À faire |
@@ -116,6 +116,7 @@ Suivis issus des revues (à traiter dans le ticket indiqué) :
 - Suivis FIX-9 (Raoul a validé les deux le 2026-10-16 → FIX-10 et FIX-11) : (a) l'alerte « No network » reste affichée au-dessus de l'accueil après la connexion automatique → la fermer sur `homeLoaded` ou la remplacer par un bandeau « hors ligne » non modal (préféré par la revue) ; (b) la déconnexion n'est pas mémorisée entre deux lancements : après « Se déconnecter », un relancement à froid se reconnecte automatiquement (en ligne comme hors ligne, comportement ancien) → drapeau « déconnecté » persistant lu par l'auto-login de lancement (Android : réutiliser `CredentialStore.isSessionActive` d'AND-7 ; iOS à créer). Le critère FIX-9 « logout puis démarrage hors ligne ⇒ aucune » n'est vrai qu'au sein d'un même processus.
 - Constaté pendant la revue AND-9 (Qt 6.12, Android 16, chemin « key event » uniquement : `adb input keyevent BACK` / touche retour matérielle) : Qt appelle parfois `moveTaskToBack()` alors que le QML a accepté le relâchement ; déjà présent avant AND-9 ; un second retour a une fois terminé l'activité avec un SIGABRT FORTIFY (`hwuiTask0`) à la sortie. Geste et barre 3 boutons non affectés. Candidat à un rapport de bug Qt.
 - Test externe (gwarf, PR #32, 2026-10-16) sur `6bc67db` : Pixel 11 Pro XL, Android 16, build Linux via `tools/build_android.sh Debug` (Qt 6.12.0, NDK 27.2, JDK 17) — démarrage, connexion à un vrai serveur, commande des lumières OK ; push : `POST_NOTIFICATIONS` accordée, canal `calaos_events` créé, jeton FCM obtenu et transmis au C++, `register_push` envoyé après login. Réception réelle d'une notification non vérifiée. Valide AND-2/AND-3/AND-4 (partie jeton/permission) et QT-1 sur un vrai appareil Android 16, et le script de build sous Linux.
+- Passage appareil Redmi 9 (Android 12, 2026-10-16, build `6a3bfd4`) : démarrage, connexion wss, migration des identifiants vers le Keystore, jeton push, reconnexion automatique après coupure, lancement hors ligne puis connexion, push reçus au premier plan (image de caméra ajoutée) et en arrière-plan, tap → événement, bouton retour, dialogue en français ; 0 crash, aucune erreur JNI, aucun avertissement FIX-1/FIX-2. Non vérifiés sur appareil (laissés « En revue ») : FIX-8 (identifiants tapés) et FIX-11 (déconnexion après relance), FIX-3 (tap pendant une reconnexion), FIX-7/FIX-9 côté iOS, IOS-1/MOB-1/QT-1 sur iPhone, AND-9 en armv7, AND-7 avec le futur format data seul (changement calaos_base).
 - AND-6 : `mobile.pro` liste encore en `DISTFILES` le wrapper Gradle et `libs.xml` supprimés ; `tools/check_sources.sh` ne reconnaît pas les chemins `$$PWD/src/...` de `calaos.pri` (faux positifs).
 - QML (hors P-AND) : `main.qml:128` paramètre `idx` non déclaré ; `AnimatedIcon.qml:31` image `icon_light_00-1.png` introuvable.
 
@@ -140,11 +141,11 @@ Exécution parallèle : chaque ticket lancé en parallèle travaille dans son pr
 
 | ID | Titre | Taille | Bloqué par | Groupe | Statut |
 |---|---|---|---|---|---|
-| [FIX-1](tasks/FIX-1-avertissements-qml.md) | Avertissements QML à l'exécution (paramètres injectés, image d'animation) | S | — | G-QML-MOBILE + G-QML-SHARED | En revue |
-| [FIX-2](tasks/FIX-2-pusheventview-busyindicator.md) | PushEventView : ReferenceError `control` dans le BusyIndicator | S | — | G-QML-MOBILE | En revue |
+| [FIX-1](tasks/FIX-1-avertissements-qml.md) | Avertissements QML à l'exécution (paramètres injectés, image d'animation) | S | — | G-QML-MOBILE + G-QML-SHARED | Terminé |
+| [FIX-2](tasks/FIX-2-pusheventview-busyindicator.md) | PushEventView : ReferenceError `control` dans le BusyIndicator | S | — | G-QML-MOBILE | Terminé |
 | [FIX-3](tasks/FIX-3-push-token-partage.md) | Push : tap hors connexion, rotation du jeton, jeton dans les logs | M | AND-4 | G-CONN + G-ANDROID | En revue |
-| [FIX-4](tasks/FIX-4-reseau-android-changements.md) | Android : détecter les changements de réseau en cours d'exécution | S | FIX-3 | G-ANDROID | En revue |
-| [FIX-5](tasks/FIX-5-dialogue-android-i18n.md) | Android : libellés traduits des dialogues natifs | S | FIX-4 | G-ANDROID | En revue |
+| [FIX-4](tasks/FIX-4-reseau-android-changements.md) | Android : détecter les changements de réseau en cours d'exécution | S | FIX-3 | G-ANDROID | Terminé |
+| [FIX-5](tasks/FIX-5-dialogue-android-i18n.md) | Android : libellés traduits des dialogues natifs | S | FIX-4 | G-ANDROID | Terminé |
 | [FIX-6](tasks/FIX-6-check-sources-pwd.md) | tools/check_sources.sh : faux positifs sur les chemins `$$PWD/src/...` | S | — | G-BUILD | Terminé |
 | [FIX-7](tasks/FIX-7-reconnexion-apres-logout.md) | Pas de reconnexion automatique après une déconnexion volontaire | S | AND-7 | G-CONN | En revue |
 | [FIX-8](tasks/FIX-8-identifiants-tapes-ecrases.md) | Un changement de réseau écrase les identifiants tapés sur l'écran de login | S | FIX-7 | G-CONN | En revue |

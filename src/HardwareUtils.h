@@ -85,7 +85,8 @@ public:
     //waiting wins.
     void restorePendingNotif(const QString &uuid);
 
-    //The user logged out on purpose (Application::userLogout()): what was
+    //The user logged out on purpose (Application::userLogout(), and
+    //Application::resetAllData() which also wipes host and credentials): what was
     //asked of the previous session (a notification tapped but not opened
     //yet, an iOS Quick Action) must not fire, possibly stale or on another
     //home, at the next manual login. Not called on a lost connection, the

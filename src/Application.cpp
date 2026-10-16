@@ -479,6 +479,9 @@ void Application::resetAllData()
     settings.setValue("calaos/host", Common::getDemoHost());
     settings.sync();
     logout();
+    //Host and credentials are gone: a tap or Quick Action left from the old
+    //home must not fire at the next login, possibly on another home (FIX-7).
+    HardwareUtils::Instance()->forgetPendingUserActions();
 }
 
 void Application::homeLoaded(const QVariantMap &homeData)

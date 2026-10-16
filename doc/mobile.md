@@ -219,7 +219,8 @@ Shared rules (in [src/HardwareUtils.cpp](../src/HardwareUtils.cpp) and
   session that drops before the event is shown hands it back with
   `restorePendingNotif()`, and a delay armed by an earlier login never opens
   anything).
-- **Explicit logout** (Settings → Logout, `Application::userLogout()` only):
+- **Explicit logout** (Settings → Logout, `Application::userLogout()`, and
+  Settings → Reset all data, `Application::resetAllData()`):
   after `logout()` hands back a tap taken but not opened yet,
   `HardwareUtils::forgetPendingUserActions()` drops the deferred tap and the
   iOS Quick Action start option, so neither fires (possibly stale, possibly

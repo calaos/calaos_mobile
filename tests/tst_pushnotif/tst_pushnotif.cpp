@@ -294,6 +294,14 @@ struct FakeApp
         sessionDown();
         HardwareUtils::Instance()->forgetPendingUserActions();
     }
+
+    //Application::resetAllData(): host and credentials wiped (not modelled
+    //here), logout(), then the same forgetting as userLogout() (FIX-7).
+    void resetAllData()
+    {
+        sessionDown();
+        HardwareUtils::Instance()->forgetPendingUserActions();
+    }
 };
 
 /*
@@ -345,6 +353,7 @@ private slots:
     void tapPendingThenLoginCancelStillOpens();
     void tapAfterUserLogoutOpensAtNextLogin();
     void userLogoutForgetsTheStartOption();
+    void resetAllDataOpensNothing();
 
     //HardwareUtils: push token.
     void tokenChangeIsSignalledOnce();
@@ -792,6 +801,27 @@ void TstPushNotif::userLogoutForgetsTheStartOption()
     h.forgetPendingUserActions();
     QVERIFY(!h.hasStartedWithOption());
     QVERIFY(!h.hasPendingNotif());
+}
+
+//Settings -> Reset all data: the next login may be on another home, so a
+//pending or in-flight tap from the old one must not open.
+void TstPushNotif::resetAllDataOpensNothing()
+{
+    FakeApp app;
+    hw()->handleNotificationOpened(QStringLiteral("uuid-old-home-1"));
+    const quint64 t1 = app.homeLoaded(); //taken, delay armed
+    QVERIFY(t1 != 0);
+    app.sessionDown(); //lost before the delay: handed back
+    hw()->handleNotificationOpened(QStringLiteral("uuid-old-home-2"));
+    QVERIFY(hw()->hasPendingNotif());
+
+    app.resetAllData();
+    QVERIFY(!hw()->hasPendingNotif());
+    QVERIFY(app.delayExpired(t1).isEmpty());
+
+    const quint64 t2 = app.homeLoaded(); //login on the new home
+    QCOMPARE(t2, quint64(0));
+    QVERIFY(app.delayExpired(t2).isEmpty());
 }
 
 // ---------------------------------------------------------------- push token

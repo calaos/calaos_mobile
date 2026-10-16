@@ -2,7 +2,7 @@ import QtQuick
 import Calaos
 import SharedComponents
 
-Image {
+Item {
     id: menuBar
 
     //System insets the bar runs under (home indicator, navigation bar,
@@ -20,12 +20,25 @@ Image {
 
     Behavior on height { NumberAnimation { easing.type: Easing.OutExpo; duration: 500 } }
 
-    fillMode: Image.TileHorizontally
-    verticalAlignment: Image.AlignLeft
-
-    source: "qrc:/img/menu_footer_background.png"
-
     property int menuType: Common.MenuMain
+
+    //The bar texture keeps its own height...
+    Image {
+        id: barBackground
+        anchors { top: parent.top; left: parent.left; right: parent.right }
+        height: parent.height - menuBar.bottomInset
+
+        fillMode: Image.TileHorizontally
+        verticalAlignment: Image.AlignLeft
+
+        source: "qrc:/img/menu_footer_background.png"
+    }
+
+    //...and the bottom inset continues in the colour of its bottom edge
+    Rectangle {
+        anchors { top: barBackground.bottom; left: parent.left; right: parent.right; bottom: parent.bottom }
+        color: "#262626"
+    }
 
     signal buttonHomeClicked()
     signal buttonMediaClicked()

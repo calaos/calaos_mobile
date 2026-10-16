@@ -2225,7 +2225,7 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>OfflineBanner</name>
     <message>
-        <location filename="../qml/mobile/OfflineBanner.qml" line="62"/>
+        <location filename="../qml/mobile/OfflineBanner.qml" line="67"/>
         <source>No network, will connect when it is back</source>
         <translation>Pas de réseau, connexion dès son retour</translation>
     </message>

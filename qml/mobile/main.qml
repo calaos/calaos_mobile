@@ -405,13 +405,12 @@ Window {
     }
 
     //No network while a session is wanted (FIX-10): at the top of the
-    //content, inside the safe area, under the page header of the logged-in
-    //views (ViewHeader). The login page has no header.
+    //content, inside the safe area. It only shows on the login page: losing
+    //the network ends the session, which pops back to it.
     OfflineBanner {
         id: offlineBanner
         anchors {
             top: background.top
-            topMargin: stackView.depth > 1 ? Units.dp(45) : 0
             left: background.left
             right: background.right
         }

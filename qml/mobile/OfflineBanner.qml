@@ -15,7 +15,12 @@ Item {
     // answer without a blocking dialog.
     function highlight() {
         flash.restart()
+        Accessible.announce(label.text)
     }
+
+    // A height change is not announced by TalkBack/VoiceOver, unlike the
+    // native alert this banner replaces: say it when it appears.
+    onShownChanged: if (shown) Accessible.announce(label.text)
 
     height: shown ? content.height : 0
     clip: true
@@ -52,7 +57,7 @@ Item {
                 width: Units.dp(16); height: Units.dp(16)
                 anchors.verticalCenter: parent.verticalCenter
                 sourceSize { width: Units.dp(16); height: Units.dp(16) }
-                source: calaosApp.getPictureSized("icon_wifi_off")
+                source: calaosApp.getPictureSized("icon_warning") // amber, like the accent
             }
 
             Text {

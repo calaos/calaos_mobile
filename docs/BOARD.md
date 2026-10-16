@@ -142,8 +142,8 @@ Exécution parallèle : chaque ticket lancé en parallèle travaille dans son pr
 | [FIX-4](tasks/FIX-4-reseau-android-changements.md) | Android : détecter les changements de réseau en cours d'exécution | S | FIX-3 | G-ANDROID | En revue |
 | [FIX-5](tasks/FIX-5-dialogue-android-i18n.md) | Android : libellés traduits des dialogues natifs | S | FIX-4 | G-ANDROID | En revue |
 | [FIX-6](tasks/FIX-6-check-sources-pwd.md) | tools/check_sources.sh : faux positifs sur les chemins `$$PWD/src/...` | S | — | G-BUILD | Terminé |
-| [FIX-7](tasks/FIX-7-reconnexion-apres-logout.md) | Pas de reconnexion automatique après une déconnexion volontaire | S | AND-7 | G-CONN | En cours |
-| [FIX-8](tasks/FIX-8-identifiants-tapes-ecrases.md) | Un changement de réseau écrase les identifiants tapés sur l'écran de login | S | FIX-7 | G-CONN | À faire |
+| [FIX-7](tasks/FIX-7-reconnexion-apres-logout.md) | Pas de reconnexion automatique après une déconnexion volontaire | S | AND-7 | G-CONN | En revue |
+| [FIX-8](tasks/FIX-8-identifiants-tapes-ecrases.md) | Un changement de réseau écrase les identifiants tapés sur l'écran de login | S | FIX-7 | G-CONN | En cours |
 | [FIX-9](tasks/FIX-9-demarrage-hors-ligne.md) | App lancée hors ligne : se connecter quand le réseau revient | S | FIX-8 | G-CONN | À faire |
 
 ## Diagramme de parallélisation

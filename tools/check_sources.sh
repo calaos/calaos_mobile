@@ -53,7 +53,7 @@ cmake_sources() {
     {
         line = $0
         sub(/#.*/, "", line)
-        if (!inblk && line ~ /^[[:space:]]*set[[:space:]]*\([[:space:]]*CALAOS_(SOURCES|HEADERS)/) {
+        if (!inblk && line ~ /^[[:space:]]*set[[:space:]]*\([[:space:]]*CALAOS_(SOURCES|HEADERS)([[:space:]]|\)|$)/) {
             inblk = 1
             sub(/^[[:space:]]*set[[:space:]]*\([[:space:]]*CALAOS_(SOURCES|HEADERS)/, "", line)
         }

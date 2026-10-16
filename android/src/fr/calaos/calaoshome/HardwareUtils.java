@@ -229,7 +229,8 @@ public class HardwareUtils extends QtActivity
 
     // Returns false when no dialog can be shown; the caller then reports a
     // cancel itself so the QML side does not wait for an answer forever.
-    public static boolean inputtextDialog(final String title, final String message)
+    public static boolean inputtextDialog(final String title, final String message,
+                                         final String confirmText, final String cancelText)
     {
         final HardwareUtils activity = _context;
         if (!isUsable(activity))
@@ -256,7 +257,7 @@ public class HardwareUtils extends QtActivity
                     .setMessage(message)
                     .setView(input)
                     .setIcon(R.drawable.icon)
-                    .setPositiveButton("Confirm", new DialogInterface.OnClickListener()
+                    .setPositiveButton(confirmText, new DialogInterface.OnClickListener()
                     {
                         public void onClick(DialogInterface dialog, int which)
                         {
@@ -264,7 +265,7 @@ public class HardwareUtils extends QtActivity
                             dialog.dismiss();
                         }
                     })
-                    .setNegativeButton("Cancel", new DialogInterface.OnClickListener()
+                    .setNegativeButton(cancelText, new DialogInterface.OnClickListener()
                     {
                         public void onClick(DialogInterface dialog, int which)
                         {

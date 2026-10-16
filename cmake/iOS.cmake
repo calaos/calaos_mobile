@@ -46,6 +46,13 @@ set_source_files_properties(ios/Splash.storyboard PROPERTIES
     MACOSX_PACKAGE_LOCATION Resources)
 target_sources(CalaosHome PRIVATE ios/Splash.storyboard)
 
+# ── Privacy manifest ──────────────────────────────────────────────────────────
+# Required-reason APIs of the app binary (see the comments in the file). Must land
+# at the root of CalaosHome.app: the Resources build phase puts it there.
+set_source_files_properties(ios/PrivacyInfo.xcprivacy PROPERTIES
+    MACOSX_PACKAGE_LOCATION Resources)
+target_sources(CalaosHome PRIVATE ios/PrivacyInfo.xcprivacy)
+
 # ── Frameworks ────────────────────────────────────────────────────────────────
 target_link_libraries(CalaosHome PRIVATE
     "-framework SystemConfiguration"

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Privacy manifest of the CalaosHome app binary.
+
+  No tracking and no data collected by the developer: credentials and settings stay
+  on the device or go to the user's own Calaos server only (see PRIVACY_POLICY.md).
+  The push token goes to the user's own Calaos server, which forwards it with each
+  notification to the Calaos push relay (gorush, stateless) for delivery to APNs
+  only; the relay does not store it.
+
+  Qt is linked statically on iOS, so the PrivacyInfo.xcprivacy files shipped in the
+  Qt frameworks are not copied into the bundle: the required-reason APIs that the
+  linked Qt code calls are declared here, next to the app's own. The list matches
+  the undefined symbols of the linked binary (nm -u); check it again after a Qt bump.
+
+  - UserDefaults CA92.1: QSettings (CFPreferences) stores the app settings, readable
+    by the app only.
+  - UserDefaults 1C8F.1: HardwareUtils.mm writes the Calaos host name to the
+    "group.fr.calaos.CalaosMobile" App Group suite for the PushNotif extension.
+  - FileTimestamp C617.1: Qt file APIs (stat/fstat/lstat through QFileInfo, QDir,
+    QSettings, QML cache) read the metadata of files inside the app container.
+  - SystemBootTime 35F9.1: Qt GUI timestamps touch events with
+    -[NSProcessInfo systemUptime] to measure the time between events.
+-->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+				<string>1C8F.1</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>C617.1</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategorySystemBootTime</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>35F9.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

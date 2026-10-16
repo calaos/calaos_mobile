@@ -1634,6 +1634,19 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     </message>
 </context>
 <context>
+    <name>HardwareUtilsAndroid</name>
+    <message>
+        <location filename="../android/HardwareUtils_Android.cpp" line="275"/>
+        <source>Confirm</source>
+        <translation>Valider</translation>
+    </message>
+    <message>
+        <location filename="../android/HardwareUtils_Android.cpp" line="277"/>
+        <source>Cancel</source>
+        <translation>Annuler</translation>
+    </message>
+</context>
+<context>
     <name>HardwareUtils_iOS</name>
     <message>
         <location filename="../ios/HardwareUtils.mm" line="356"/>

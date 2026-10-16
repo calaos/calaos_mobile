@@ -3,6 +3,10 @@
 
 #include "../src/HardwareUtils.h"
 
+//Push: the FCM registration token (from Java: persisted value at startup, then
+//FirebaseMessaging.getToken() and every onNewToken()) goes through
+//HardwareUtils::setDeviceToken(), and notification taps through
+//HardwareUtils::handleNotificationOpened(): same policy as iOS.
 class HardwareUtilsAndroid: public HardwareUtils
 {
 private:
@@ -36,10 +40,17 @@ public:
     virtual void resetAuthKeychain();
     virtual void setConfigOption(QString key, QString value);
 
-    //The FCM registration token (from Java: persisted value at startup, then
-    //FirebaseMessaging.getToken() and every onNewToken()) goes through
-    //HardwareUtils::setDeviceToken(), and notification taps through
-    //HardwareUtils::handleNotificationOpened(): same policy as iOS.
+private:
+    //Qt's Android backend (ConnectivityManager default-network callback) feeds
+    //QNetworkInformation; its changes become networkStatusChanged(), like
+    //Reachability does on iOS.
+    void setupNetworkMonitoring();
+    int networkStatusFromQt(bool *known) const;
+    void emitNetworkStatusIfChanged();
+
+    //Last status handed out, so one network event reported through both
+    //reachabilityChanged and transportMediumChanged emits only once.
+    int m_lastNetworkStatus = -1;
 };
 
 #endif // HARDWAREUTILS_ANDROID_H

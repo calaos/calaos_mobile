@@ -108,6 +108,8 @@ Suivis issus des revues (à traiter dans le ticket indiqué) :
 - Suivis QT-1 : passer `targetSdk` à 37 (revue des changements Android 17) ; Reachability iOS → `NWPathMonitor` ; ticket de nettoyage qmllint pour les nouvelles catégories 6.12 (`id-shadows-member`, `unqualified`) ; l'APK Android embarque les plugins QML desktop (androiddeployqt scanne tout le repo) ; tests unitaires non compilables avec `~/Qt/6.11.0/macos` + Xcode 27 (`__yield`), à revérifier avec 6.12.
 - AND-7 : le changement serveur (messages FCM data seuls) est confié le 2026-10-16 à la session Happier « Calaos: Climate devices » (calaos_base). Contrat proposé : l'app envoie `"push_format": "data"` dans `register_push` (WS et HTTP), le serveur réserve le data seul (+ `android.priority=high`) aux jetons enregistrés ainsi ; l'app Play Store actuelle (Qt 5, Firebase C++) garde le format notification+data. AND-7 doit implémenter le contrat final documenté côté calaos_base.
 - PR GitHub #31 (gwarf, 2026-10-16) « android: fix the Qt 6 build and launch crash » recoupe AND-1/AND-2 (Qt 6.10, Firebase C++ conservé) ; PR #18 (2021) « image preview in notification for Android » recoupe AND-7. À traiter avec Raoul avant de pousser `feat/android-qt6`.
+- Suivis FIX-4 : sur un passage Wi-Fi → 4G l'app reste « connectée » alors que le websocket/long-poll de l'ancien réseau est mort (attente du timeout ping/poll ; iOS identique) → forcer une reconnexion sur changement de médium ; Android n'émet jamais `applicationWillResignActive` (session gardée en arrière-plan, reconnexion en arrière-plan) ; une app démarrée hors ligne ne se connecte pas automatiquement au retour du réseau (iOS identique).
+- Suivi FIX-5 : `lang/calaos_de.ts` a 51 chaînes non traduites et 2 entrées obsolètes (constat lupdate 2026-10-16) ; lancer lupdate via `lang/lang.pro` (un arbre CMake iOS ou Android ne voit que ses propres sources et supprimerait les entrées de l'autre plateforme) ; les `.qm` embarqués via `lang.qrc` sont versionnés et doivent être régénérés avec les `.ts`.
 - AND-6 : `mobile.pro` liste encore en `DISTFILES` le wrapper Gradle et `libs.xml` supprimés ; `tools/check_sources.sh` ne reconnaît pas les chemins `$$PWD/src/...` de `calaos.pri` (faux positifs).
 - QML (hors P-AND) : `main.qml:128` paramètre `idx` non déclaré ; `AnimatedIcon.qml:31` image `icon_light_00-1.png` introuvable.
 
@@ -120,8 +122,8 @@ Ordre : AND-4 → QT-1 → (IOS-1 ∥ AND-7) → MOB-1 → AND-5 → AND-9 → A
 | ID | Titre | Taille | Bloqué par | Groupe | Statut |
 |---|---|---|---|---|---|
 | [QT-1](tasks/QT-1-upgrade-qt-6-12.md) | Migration Qt 6.11.0 → Qt 6.12.0 (iOS + Android) | M | AND-4 | G-ANDROID + G-IOS + G-BUILD | En revue |
-| [IOS-1](tasks/IOS-1-derniers-iphone.md) | Support des derniers iPhone (iOS 27, iPhone 17/18, Air) | M | QT-1 | G-IOS | En cours |
-| [MOB-1](tasks/MOB-1-zones-securite.md) | Zones de sécurité : Dynamic Island iOS et edge-to-edge Android 15+ | M | IOS-1, AND-4 | G-QML-MOBILE | À faire |
+| [IOS-1](tasks/IOS-1-derniers-iphone.md) | Support des derniers iPhone (iOS 27, iPhone 17/18, Air) | M | QT-1 | G-IOS | En revue |
+| [MOB-1](tasks/MOB-1-zones-securite.md) | Zones de sécurité : Dynamic Island iOS et edge-to-edge Android 15+ | M | IOS-1, AND-4 | G-QML-MOBILE | En cours |
 | [AND-9](tasks/AND-9-android-15-16-multiarch.md) | Android 15/16 et matrice multi-architecture | M | AND-5, MOB-1 | G-ANDROID | À faire |
 
 ## P-FIX — Petits bugs constatés pendant P-AND
@@ -135,8 +137,8 @@ Exécution parallèle : chaque ticket lancé en parallèle travaille dans son pr
 | [FIX-1](tasks/FIX-1-avertissements-qml.md) | Avertissements QML à l'exécution (paramètres injectés, image d'animation) | S | — | G-QML-MOBILE + G-QML-SHARED | En revue |
 | [FIX-2](tasks/FIX-2-pusheventview-busyindicator.md) | PushEventView : ReferenceError `control` dans le BusyIndicator | S | — | G-QML-MOBILE | En revue |
 | [FIX-3](tasks/FIX-3-push-token-partage.md) | Push : tap hors connexion, rotation du jeton, jeton dans les logs | M | AND-4 | G-CONN + G-ANDROID | En revue |
-| [FIX-4](tasks/FIX-4-reseau-android-changements.md) | Android : détecter les changements de réseau en cours d'exécution | S | FIX-3 | G-ANDROID | En cours |
-| [FIX-5](tasks/FIX-5-dialogue-android-i18n.md) | Android : libellés traduits des dialogues natifs | S | FIX-4 | G-ANDROID | À faire |
+| [FIX-4](tasks/FIX-4-reseau-android-changements.md) | Android : détecter les changements de réseau en cours d'exécution | S | FIX-3 | G-ANDROID | En revue |
+| [FIX-5](tasks/FIX-5-dialogue-android-i18n.md) | Android : libellés traduits des dialogues natifs | S | FIX-4 | G-ANDROID | En revue |
 | [FIX-6](tasks/FIX-6-check-sources-pwd.md) | tools/check_sources.sh : faux positifs sur les chemins `$$PWD/src/...` | S | — | G-BUILD | Terminé |
 
 ## Diagramme de parallélisation

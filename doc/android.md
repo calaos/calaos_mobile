@@ -2,175 +2,248 @@
 
 > LLM-oriented reference for the **Android** build of `CalaosHome`.
 > See [mobile.md](mobile.md) for the cross-platform mobile architecture.
+>
+> Android is built with **CMake only** (Qt 6, Gradle through `androiddeployqt`).
+> The single entry point is [tools/build_android.sh](../tools/build_android.sh).
+> qmake no longer supports Android: `qmake mobile.pro` on an Android kit stops
+> with an error pointing here. Push notifications use the Firebase Java SDK.
 
-## 1. Identifiers
+## 1. Identifiers and version matrix
 
 | Setting | Value | Source |
 |---|---|---|
-| Application id / package | `fr.calaos.calaoshome` | [android/build.gradle](../android/build.gradle), [android/AndroidManifest.xml](../android/AndroidManifest.xml) |
-| Activity | `fr.calaos.calaoshome.HardwareUtils` (extends `QtActivity`) | [android/src/fr/calaos/calaoshome/HardwareUtils.java](../android/src/fr/calaos/calaoshome/HardwareUtils.java) |
-| Min SDK | 26 (Android 8.0) | [android/build.gradle](../android/build.gradle) |
-| Target SDK | 29 (Android 10) | [android/build.gradle](../android/build.gradle) |
-| Java compatibility | 1.8 | `build.gradle` `compileOptions` |
-| App label | `CalaosHome` | `AndroidManifest.xml` |
-| Icon | `@drawable/icon` | [android/res/](../android/res) |
-| AndroidX | enabled | [android/gradle.properties](../android/gradle.properties) |
+| Application id / namespace | `fr.calaos.calaoshome` | [android/build.gradle](../android/build.gradle) |
+| Activity | `fr.calaos.calaoshome.HardwareUtils` (extends `QtActivity`) | [android/AndroidManifest.xml](../android/AndroidManifest.xml), [HardwareUtils.java](../android/src/fr/calaos/calaoshome/HardwareUtils.java) |
+| App label / icon | `CalaosHome`, `@drawable/icon` | `AndroidManifest.xml`, [android/res/](../android/res) |
+| `versionName` / `versionCode` | from [VERSION.txt](../VERSION.txt): semver, and `MAJOR*10000 + MINOR*100 + PATCH` (4.0.0 → 40000) | [cmake/Versioning.cmake](../cmake/Versioning.cmake), injected through `QT_ANDROID_VERSION_NAME/_CODE` |
+| Qt | **6.12.0** (kits `android_arm64_v8a`, `android_armv7`, `android_x86`, `android_x86_64` + the host kit `macos`) | `QT_VERSION` in [tools/build_android.sh](../tools/build_android.sh) |
+| NDK | **27.2.12479018** (the one the Qt kit was built with: `ndk_version` in the kit's `modules/Core.json`) | read by the script |
+| JDK | **17** (Homebrew `openjdk@17`) | the script refuses any other major version |
+| Android Gradle Plugin / Gradle | AGP 9.2.1 (`com.google.gms:google-services` 4.5.0) / Gradle 9.5.1 (the wrapper Qt ships in its kit) | [android/build.gradle](../android/build.gradle) |
+| minSdk / targetSdk / compileSdk | **28** / **36** / **37.0** (write `37.0`, not `37`: from API 37 platforms carry a minor level) | [cmake/Android.cmake](../cmake/Android.cmake) |
+| Java | 17 | `compileOptions` in `build.gradle` |
+| OpenSSL | OpenSSL 3, KDAB `android_openssl` (`no-asm` libraries in Debug) | [cmake/Android.cmake](../cmake/Android.cmake) |
+| Firebase | Java SDK, BoM 35.0.2 (`firebase-messaging`), `androidx.work:work-runtime` 2.11.2 | `build.gradle` |
+| CMake / Ninja | CMake >= 3.25 | [CMakeLists.txt](../CMakeLists.txt) |
 
-`versionName` / `versionCode` are kept in
-[android/AndroidManifest.xml](../android/AndroidManifest.xml). Bump them before
-each Play Store release.
+`android/build.gradle` and `AndroidManifest.xml` are ported from the Qt 6.12
+Android templates, so the Qt kit, AGP and Gradle move together (see 7.1 and
+"Rolling back Qt" in 3.4).
 
-## 2. Required external SDKs
+## 2. Prerequisites
 
-The Android build pulls **two** out-of-tree dependencies that must be installed
-before running qmake:
+The script and the defaults below are written for a **macOS** host (Qt host kit
+`macos`, Homebrew JDK, SDK in `~/Library/Android/sdk`). Every location can be
+overridden by environment variables (3.3); other hosts are not tested.
 
-### 2.1 Firebase C++ SDK
+1. **Homebrew tools**: `brew install cmake ninja openjdk@17`. Ninja is also found
+   in `~/Qt/Tools/Ninja`.
+2. **Qt 6.12.0**, installed with the Qt online installer under `~/Qt/6.12.0`
+   (or point `QT_ROOT` at it): the *macOS* host kit plus the Android kits
+   *Arm64-v8a*, *ARMv7*, *x86* and *x86_64*. A Debug build needs only
+   `android_arm64_v8a`; a Release build needs all four. Qt Creator is optional.
+3. **Android SDK** in `~/Library/Android/sdk` (`ANDROID_SDK_ROOT`): install Android
+   Studio, or only the command-line tools, then:
 
-[android/android.pri](../android/android.pri) requires the env var
-`FIREBASE_CPP_SDK_DIR`:
+   ```bash
+   SDK=~/Library/Android/sdk
+   "$SDK"/cmdline-tools/latest/bin/sdkmanager \
+       "platform-tools" "platforms;android-37.0" "build-tools;36.0.0" "ndk;27.2.12479018"
+   ```
 
-```qmake
-FIREBASE_SDK = $$(FIREBASE_CPP_SDK_DIR)
-isEmpty(FIREBASE_SDK) {
-    error("FIREBASE_CPP_SDK_DIR env is not set. Please set it first")
-}
+   `platforms;android-37.0` is mandatory (CMake configure fails with this exact
+   `sdkmanager` command if it is missing). Qt takes the newest installed
+   `build-tools`. The NDK must be the one of the Qt kit; the script derives it
+   from the kit and fails with "Android NDK not found" otherwise.
+4. **KDAB `android_openssl`** (TLS for `QtNetwork` / `QtWebSockets`; the Qt
+   Android kits do not ship OpenSSL):
 
-INCLUDEPATH += $$FIREBASE_SDK/include
-LIBS += -L$$FIREBASE_SDK/libs/android/$$ANDROID_TARGET_ARCH \
-        -lfirebase_messaging -lfirebase_app -lfirebase_auth
-```
+   ```bash
+   git clone https://github.com/KDAB/android_openssl.git ~/Library/Android/sdk/android_openssl
+   ```
 
-Download from <https://firebase.google.com/download/cpp>. Set:
-
-```bash
-export FIREBASE_CPP_SDK_DIR=/path/to/firebase_cpp_sdk
-```
-
-[android/build.gradle](../android/build.gradle) reads the same variable through
-`System.getenv('FIREBASE_CPP_SDK_DIR')` and applies
-`firebase_dependencies.gradle` from it; it then declares only the `messaging`
-component.
-
-### 2.2 Android OpenSSL prebuilt
-
-```qmake
-include(C:/Users/$$(USERNAME)/AppData/Local/Android/Sdk/android_openssl/openssl.pri)
-```
-
-The path is hard-coded for Windows. On Linux/macOS, edit it to your local copy
-of [`android_openssl`](https://github.com/KDAB/android_openssl) before building,
-e.g.:
-
-```qmake
-include($$(HOME)/Android/Sdk/android_openssl/openssl.pri)
-```
-
-This is required so that `QtNetwork` / `QtWebSockets` can perform TLS to
-`calaos_server`.
-
-### 2.3 Firebase configuration
-
-[android/google-services.json](../android/google-services.json) is shipped in
-the repo. Replace it with your own if you fork — the bundled file is bound to
-the Calaos Firebase project that holds the FCM sender id and APNs forwarding
-config.
+   Any other location works with `ANDROID_OPENSSL_DIR=/path` (the directory that
+   contains `android_openssl.cmake`).
+5. **Firebase**: [android/google-services.json](../android/google-services.json)
+   is in the repo and is bound to the Calaos Firebase project (sender id).
+   Replace it with your own if you fork the app, regenerating it from the Firebase
+   console; do not hand-edit it. No Firebase SDK has to be installed: Gradle
+   downloads the Java libraries (internet access needed on the first build).
 
 ## 3. Build
 
-### 3.1 qmake / androiddeployqt flow
-
-The Qt build pipeline produces a `libCalaosHome_<arch>.so` per ABI, then
-invokes `androiddeployqt` to assemble an APK / AAB by combining:
-
-- [android/AndroidManifest.xml](../android/AndroidManifest.xml)
-- [android/build.gradle](../android/build.gradle)
-- [android/gradle.properties](../android/gradle.properties),
-  [android/settings.gradle](../android/settings.gradle)
-- [android/res/](../android/res) (icons, drawables, libs.xml)
-- Java sources in [android/src/](../android/src) and the Qt-shipped
-  `qt5AndroidDir + '/src'`.
-
-`ANDROID_PACKAGE_SOURCE_DIR = $$PWD` is set in
-[android/android.pri](../android/android.pri) so all those files are picked up.
-
-### 3.2 Command-line build
+### 3.1 Commands
 
 ```bash
-export ANDROID_HOME=/opt/android-sdk
-export ANDROID_NDK_ROOT=/opt/android-ndk
-export FIREBASE_CPP_SDK_DIR=/opt/firebase_cpp_sdk
-# Edit the openssl include path in android/android.pri to match your system.
-
-# Set up a Qt 6 Android shadow build:
-mkdir -p build-android && cd build-android
-~/Qt/<ver>/android_arm64_v8a/bin/qmake ../mobile.pro \
-    "ANDROID_ABIS=arm64-v8a" CONFIG+=release
-make -j$(nproc)
-make apk          # produces build/outputs/apk/...
-# or:
-make aab          # produces an Android App Bundle for the Play Store
+cd calaos_mobile
+./tools/build_android.sh Debug             # APK, arm64-v8a only (default config)
+./tools/build_android.sh Release           # APK, 4 ABIs, unsigned unless the CALAOS_* variables are set (5)
+./tools/build_android.sh Release --aab     # Play Store bundle, 4 ABIs (5)
+./tools/build_android.sh Debug --lib-only  # native libCalaosHome_arm64-v8a.so only, no Gradle
 ```
 
-For multi-ABI builds set `ANDROID_ABIS="armeabi-v7a arm64-v8a x86 x86_64"`.
+Usage: `build_android.sh [Debug|Release] [--aab] [--lib-only]` (`--aab` and
+`--lib-only` are mutually exclusive; any other argument is an error). The
+build directory is `build-android/` (git-ignored). The script checks its
+prerequisites first (Qt kits, SDK, NDK, JDK 17, KDAB OpenSSL, ninja, cmake)
+and stops with a precise `ERROR:` line; then it runs `cmake` with the NDK
+toolchain (`ANDROID_PLATFORM=android-28`) and `cmake --build`.
 
-### 3.3 Qt Creator build
+### 3.2 Outputs
 
-Qt Creator manages `gradle.properties`, `qt5AndroidDir`,
-`androidBuildToolsVersion`, `androidCompileSdkVersion` automatically. The
-warning at the top of [android/build.gradle](../android/build.gradle) is
-explicit: do not edit those values manually.
-
-## 4. Manifest highlights
-
-[android/AndroidManifest.xml](../android/AndroidManifest.xml):
-
-```xml
-<application android:hardwareAccelerated="true"
-             android:name="org.qtproject.qt.android.bindings.QtApplication"
-             android:label="CalaosHome"
-             android:requestLegacyExternalStorage="true"
-             android:allowNativeHeapPointerTagging="false"
-             android:icon="@drawable/icon">
-    <activity android:name="fr.calaos.calaoshome.HardwareUtils"
-              android:launchMode="singleTop"
-              android:exported="true"
-              android:configChanges="orientation|uiMode|screenLayout|...">
-        ...
-        <meta-data android:name="android.app.background_running" android:value="false"/>
-        <meta-data android:name="android.app.extract_android_style" android:value="minimal"/>
-    </activity>
-</application>
-```
-
-- `allowNativeHeapPointerTagging=false` is required for older Firebase / Qt
-  combos.
-- `requestLegacyExternalStorage=true` — kept for compatibility with Calaos
-  servers that expose media via legacy paths.
-- `extract_android_style = minimal` — recommended for Quick Controls 2 apps.
-- The `<!-- %%INSERT_PERMISSIONS -->` placeholder is filled by
-  `androiddeployqt` based on Qt module dependencies; do not hand-edit
-  permissions.
-
-## 5. Java glue layer
-
-[android/src/fr/calaos/calaoshome/HardwareUtils.java](../android/src/fr/calaos/calaoshome/HardwareUtils.java)
-extends `QtActivity` and is set as the launcher activity. It exposes static
-helpers callable from C++ via JNI:
-
-| Java method | C++ caller |
+| Command | Output (the script prints the path at the end) |
 |---|---|
-| `showAlertMessage(title, msg, button)` | `HardwareUtilsAndroid::showAlertMessage` |
-| `getNetworkStatus()` | `HardwareUtilsAndroid::getNetworkStatus` |
-| `inputtextDialog(title, msg)` | `HardwareUtilsAndroid::inputTextDialog` |
+| `Debug` | `build-android/android-build/build/outputs/apk/debug/android-build-debug.apk` (debug key) |
+| `Release` | an unsigned APK under `build-android/android-build/build/outputs/apk/release/`, or `build-android/CalaosHome-<version>-release.apk` when signed |
+| `Release --aab` | `build-android/CalaosHome-<version>-release.aab` when signed; unsigned: `build-android/android-build/build/outputs/bundle/release/` |
+| `--lib-only` | `build-android/libCalaosHome_<abi>.so` |
 
-Java → C++ callbacks go through native methods declared on
-`HardwareUtilsNatives` (`emitDialogTextValid`, `emitDialogCancel`).
+ABIs: Debug builds `arm64-v8a` (fast); Release builds
+`arm64-v8a;armeabi-v7a;x86;x86_64`. `CALAOS_ANDROID_ABIS` (semicolon list,
+**main ABI first**, its Qt kit is the one CMake is configured with; Qt
+configures the others as external projects) overrides it, e.g.
+`CALAOS_ANDROID_ABIS=x86_64 ./tools/build_android.sh Debug` for an x86_64
+emulator on an Intel host.
+
+### 3.3 Environment overrides
+
+| Variable | Default |
+|---|---|
+| `QT_VERSION` | `6.12.0` (the only place to bump the Qt version) |
+| `QT_ROOT` | `~/Qt/$QT_VERSION` |
+| `QT_ANDROID` | `$QT_ROOT/android_<abi of the first CALAOS_ANDROID_ABIS>` |
+| `QT_HOST` | `$QT_ROOT/macos` |
+| `ANDROID_SDK_ROOT` | `~/Library/Android/sdk` |
+| `ANDROID_NDK_ROOT` | `$ANDROID_SDK_ROOT/ndk/<ndk_version of the Qt kit>` |
+| `JAVA_HOME` | Homebrew `openjdk@17` |
+| `ANDROID_OPENSSL_DIR` | `$ANDROID_SDK_ROOT/android_openssl` |
+| `CALAOS_ANDROID_ABIS` | `arm64-v8a` (Debug), four ABIs (Release) |
+| `CALAOS_KEYSTORE`, `CALAOS_KEYSTORE_PASS`, `CALAOS_KEY_ALIAS`, `CALAOS_KEY_PASS` | release signing, see 5 |
+
+### 3.4 Good to know
+
+- Switching Qt kit (version bump or rollback): the script detects it and deletes
+  `build-android/CMakeCache.txt`, `CMakeFiles`, `android-build/` and
+  `android_abi_builds/` itself. After an SDK/NDK change that breaks configure,
+  delete them by hand (the toolchain paths are cached).
+- `androiddeployqt` never removes stale files. After removing something from
+  `android/` or changing what is deployed, `rm -rf build-android/android-build`.
+- **Rolling back Qt** is not knob-only on Android: `android/build.gradle` is
+  ported from the 6.12 template (AGP 9.2.1, needs Gradle >= 9.4.1, whereas the
+  6.11 kit ships Gradle 9.3.1). For 6.11: revert the commit "build: port the Qt
+  6.12 Android templates (QT-1)", then `QT_VERSION=6.11.0 ./tools/build_android.sh`.
+  The script refuses a kit whose template AGP differs from `android/build.gradle`.
+  iOS rolls back with `QT_VERSION` alone.
+- Qt Creator can open [CMakeLists.txt](../CMakeLists.txt) with the Android kits,
+  but the script is the reference (kit/NDK/JDK checks, multi-ABI, signing).
+
+## 4. Install, run and debug
+
+### 4.1 On a phone
+
+Enable *Developer options* → *USB debugging* (Xiaomi/MIUI/HyperOS: also *Install
+via USB*, and accept the on-screen confirmation of each install of a new
+package, otherwise `INSTALL_FAILED_USER_RESTRICTED: Install canceled by user`).
+
+```bash
+export PATH="$HOME/Library/Android/sdk/platform-tools:$PATH"      # adb
+adb devices                                  # must say "device", not "unauthorized"
+adb install -r build-android/android-build/build/outputs/apk/debug/android-build-debug.apk
+adb shell am start -n fr.calaos.calaoshome/fr.calaos.calaoshome.HardwareUtils
+```
+
+If the Play Store build of `fr.calaos.calaoshome` (release-signed) is installed,
+`adb install -r` fails with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`; uninstalling
+it deletes the app data (host, credentials), so only do it knowingly.
+
+### 4.2 On an emulator
+
+Create an AVD from Android Studio's Device Manager (API 28 or newer) with an
+image whose ABI you built: arm64-v8a on Apple Silicon (the default Debug build),
+x86_64 on Intel hosts (`CALAOS_ANDROID_ABIS=x86_64 ./tools/build_android.sh Debug`).
+Start it and install as above. From the emulator the host machine is `10.0.2.2`.
+
+### 4.3 Logs
+
+```bash
+adb logcat -c; adb logcat --pid="$(adb shell pidof -s fr.calaos.calaoshome)"   # app only
+adb logcat -s CalaosHome                    # the app's Java and C++ log tag
+adb logcat -b crash                         # native / Java crashes
+```
+
+Never paste logs containing credentials: the app does not log `cn_user`,
+`cn_pass`, full push tokens or URLs carrying them, and new code must not either.
+
+### 4.4 Useful checks on a built package
+
+```bash
+APK=build-android/android-build/build/outputs/apk/debug/android-build-debug.apk
+BT=$HOME/Library/Android/sdk/build-tools/36.0.0
+"$BT"/aapt2 dump permissions "$APK"                 # permissions of the merged manifest
+"$BT"/zipalign -c -P 16 -v 4 "$APK" | tail -1       # 16 KB page-size alignment
+```
+
+16 KB pages (Play Store requirement for Android 15+): 64-bit libraries
+(arm64-v8a, x86_64) are linked with `LOAD` alignment `0x4000`; the 32-bit ones
+(armeabi-v7a, x86) stay `0x1000`, which is fine because 16 KB devices are
+64-bit only. Check a library with
+`$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-readelf -lW lib.so | grep LOAD`.
+
+## 5. Release: AAB and signing
+
+There is no GitHub Actions workflow for Android: releases are built locally
+and uploaded by hand.
+
+1. Bump [VERSION.txt](../VERSION.txt) (`versionName` = the semver string,
+   `versionCode` derived, both injected into the manifest by CMake).
+2. Have an **upload keystore** outside the repository (never commit it nor its
+   passwords). For a throwaway test key use `keytool -genkeypair -storetype
+   PKCS12 ...` in `/tmp` and delete it afterwards. A PKCS12 keystore has a
+   single password: the script rejects a `CALAOS_KEY_PASS` different from the
+   store password (only a JKS store can have distinct passwords).
+3. Build and sign:
+
+   ```bash
+   export CALAOS_KEYSTORE=/path/to/upload.jks      # never committed
+   export CALAOS_KEY_ALIAS=upload
+   read -rs CALAOS_KEYSTORE_PASS; export CALAOS_KEYSTORE_PASS   # prompts, no echo
+   # optional, defaults to the store password: CALAOS_KEY_PASS
+   ./tools/build_android.sh Release --aab
+   ```
+
+   Output: `build-android/CalaosHome-<version>-release.aab`, about 127 MB (Qt
+   libraries stored uncompressed, four ABIs); Play delivers per-ABI splits
+   (about 31 MB for arm64-v8a). `Release` without `--aab` signs the APK with
+   `apksigner` instead (`build-android/CalaosHome-<version>-release.apk`).
+4. Signing is done **by the script after the build**, not by Gradle or
+   `androiddeployqt`: a Gradle `signingConfig` renames the APK and makes
+   `androiddeployqt` fail, and would hand the passwords to the long-lived
+   Gradle daemon. The script validates keystore, alias and key password with
+   `keytool` **before** the build, then signs a copy with `jarsigner`
+   (`-storepass:env`, AAB) or `apksigner` (`--ks-pass env:`, APK); the passwords
+   only travel through the signer's own environment, never on a command line.
+   The `CALAOS_*` variables are all-or-nothing (`CALAOS_KEY_PASS` optional): a
+   partial set is an error; none at all gives a loud warning and an unsigned,
+   non-uploadable package.
+5. Check: `"$JAVA_HOME"/bin/jarsigner -verify build-android/CalaosHome-*-release.aab`
+   (the script already does it), and `aapt2 dump permissions` on a release APK
+   (`WRITE_EXTERNAL_STORAGE` is removed from release builds by
+   [android/release/AndroidManifest.xml](../android/release/AndroidManifest.xml);
+   debug keeps it). Release builds contain no `FakePushReceiver` (6.5).
+6. Upload the AAB to the Google Play Console → CalaosHome. Play App Signing is
+   enabled: this key is only the *upload* key.
+
+To install a release bundle on a phone, create a universal APK with
+[bundletool](https://github.com/google/bundletool) (`build-apks --mode=universal`
+with a keystore of your choice); signing it with `~/.android/debug.keystore`
+(alias `androiddebugkey`, password `android`) lets it replace a debug build
+with `adb install -r` without losing app data. Or simply
+`./tools/build_android.sh Release` and `adb install -r` the APK.
 
 ## 6. Push notifications (FCM)
 
-Firebase Cloud Messaging through the **Firebase Java SDK** (AND-4; the C++ SDK
-is gone). Everything lives in Java under
+Firebase Cloud Messaging through the **Firebase Java SDK** (AND-4).
+Everything lives in Java under
 [android/src/fr/calaos/calaoshome/](../android/src/fr/calaos/calaoshome/);
 [android/build.gradle](../android/build.gradle) applies
 `com.google.gms.google-services` and depends on `firebase-messaging` (BoM) and
@@ -371,110 +444,145 @@ in with a user that is **not** the demo one. Watch with
 9. **Self-signed server** (if applicable): text notification only; note it
    as the documented limit.
 
-## 7. Signing & deploy
+## 7. Project layout and packaging
 
-There is **no GitHub Actions workflow** for the Android app — releases are
-built locally / via Qt Creator and uploaded by hand. The release flow is
-typically:
+### 7.1 What is in `android/`
 
-1. Bump [VERSION.txt](../VERSION.txt): `versionName` is the semver string,
-   `versionCode` is `MAJOR*10000 + MINOR*100 + PATCH` (both injected into the
-   manifest by `cmake/Versioning.cmake`).
-2. Build and sign the release AAB for the four ABIs (CMake build):
+`QT_ANDROID_PACKAGE_SOURCE_DIR` is [android/](../android): every file there
+**replaces** the file Qt would generate. Keep only what is customised:
 
-   ```bash
-   export CALAOS_KEYSTORE=/path/to/upload.jks      # never committed
-   export CALAOS_KEY_ALIAS=upload
-   read -rs CALAOS_KEYSTORE_PASS; export CALAOS_KEYSTORE_PASS   # prompts, no echo
-   # optional, defaults to the store password: CALAOS_KEY_PASS
-   ./tools/build_android.sh Release --aab
-   ```
+| Path | Role |
+|---|---|
+| `AndroidManifest.xml` | Qt 6.12 template + our components; no `package=` attribute (AGP 8+ uses `namespace`); keep the `-- %%INSERT_...%% --` placeholders and the `<!-- %%INSERT_PERMISSIONS -->` / `<!-- %%INSERT_FEATURES -->` markers that `androiddeployqt` fills (permissions come from the Qt modules, do not hand-edit them; custom ones go next to the markers). No `--` inside XML comments (it breaks `androiddeployqt`) |
+| `build.gradle` | Qt 6.12 template + Firebase / WorkManager dependencies, `debug` and `release` source sets. It must consume the values `androiddeployqt` writes into `gradle.properties` (`androidCompileSdkVersion`, `androidBuildToolsVersion`, `androidNdkVersion`, `qtMinSdkVersion`, `qtTargetSdkVersion`, `qtTargetAbiList`, `qtAndroidDir`, ...), never hard-code them |
+| `src/fr/calaos/calaoshome/*.java` | `HardwareUtils` (activity), `CalaosMessagingService`, `PushPictureWorker`, `CredentialStore` (8, 6) |
+| `debug/` | debug-only `AndroidManifest.xml` + `FakePushReceiver.java` (6.5) |
+| `release/AndroidManifest.xml` | release-only overlay removing `WRITE_EXTERNAL_STORAGE` |
+| `res/` | icons, `ic_stat_calaos` notification icon, colours, backup rules (`res/xml/backup_rules.xml`, `data_extraction_rules.xml`) |
+| `google-services.json` | Firebase configuration (2) |
+| `HardwareUtils_Android.cpp/.h` | the C++ side of the JNI bridge, registered in [cmake/Android.cmake](../cmake/Android.cmake) |
 
-   Output: `build-android/CalaosHome-<version>-release.aab`, signed with
-   `jarsigner` (passwords go through the environment, never on a command line).
-   Without the `CALAOS_*` variables the script warns and leaves the AAB
-   unsigned (`build-android/android-build/build/outputs/bundle/release/`).
-   `Release` without `--aab` builds the (apksigner-signed) APK instead.
-3. Upload to Google Play Console -> CalaosHome (Play App Signing: this is the
-   *upload* key).
+Never add a Gradle wrapper, `settings.gradle`, `gradle.properties`,
+`project.properties` or `res/values/libs.xml` to `android/`: Qt 6 generates its
+own, and a stale copy breaks the build or the loading of the Qt libraries.
 
-For local install of a release build: `bundletool build-apks --mode=universal`
-on the AAB, or `./tools/build_android.sh Release` and `adb install -r` the APK.
+### 7.2 Android specifics of the build
 
-## 8. Things an LLM should remember
+- **Compile/target SDK**: set as target properties in `cmake/Android.cmake`
+  (`QT_ANDROID_MIN_SDK_VERSION` 28, `QT_ANDROID_TARGET_SDK_VERSION` 36,
+  `QT_ANDROID_COMPILE_SDK_VERSION` 37.0). Raising the target SDK needs a review of
+  the Android behaviour changes of that release.
+- **Deployed plugins and QML modules**: `qt_import_plugins(... EXCLUDE ...)` drops
+  plugins the app never loads (qmltooling outside Debug, virtual keyboard input
+  context, icon engines, offscreen platform, icns/ico/tga/tiff/wbmp).
+  `calaos_android_limit_qml_scan()` restricts the `androiddeployqt` QML import
+  scan to `qml/mobile`, `qml/SharedComponents` and `qml/quickflux` (same list as
+  `cmake/qml_imports` for iOS; keep both in sync with `qml_mobile.qrc` and
+  `qml_shared.qrc`). Check the result in
+  `build-android/android-CalaosHome-deployment-settings.json`
+  (`android-deploy-plugins`, `qml-root-path`). The four unused Quick Controls
+  styles stay: they are listed in the generated `libs.xml` and loaded at startup.
+- **Shared sources** stay shared: a new C++ file goes in `calaos.pri` **and**
+  `cmake/CalaosHomeSources.cmake` (`tools/check_sources.sh` checks they match);
+  Android-only C++ goes in `android/` and `cmake/Android.cmake`.
+- **R8 / minify is off** (`minifyEnabled false`): Qt's Java is resolved by name
+  from native code. If enabled, keep every JNI-by-name target (`HardwareUtils`
+  static helpers, `HardwareUtilsNatives`, `CredentialStore`, the manifest
+  components `CalaosMessagingService`, `PushPictureWorker`) and test a release
+  APK on a device.
+- **Native libs are stored uncompressed and page-aligned** in the APK
+  (`legacyPackaging=false`, Qt 6.12): a debug APK is larger than with Qt 6.11,
+  Play compresses downloads anyway.
 
-1. The Android target **requires both** `FIREBASE_CPP_SDK_DIR` and a working
-   `android_openssl` include — without them, qmake fails immediately. The
-   `openssl.pri` path is hard-coded for Windows and **must** be adapted on
-   Linux/macOS.
+### 7.3 Behaviours worth knowing
+
+- **Back key**: Qt delivers back as `Qt::Key_Back`; if QML does not accept the
+  *release*, Qt moves the task to the background instead of finishing the activity
+  (`qml/mobile/main.qml` leaves it unaccepted at the root on purpose). On Android
+  13+ a back sent as a key event (`adb shell input keyevent KEYCODE_BACK`)
+  arrives twice (press, press, release, release), which `main.qml` handles by
+  counting non-repeat presses and acting on the last release. A rare Qt 6.12 race
+  can still background the task although QML accepted the release; gesture and
+  navigation-bar back are not affected. Test with `input keyevent`, an edge swipe
+  (`adb shell input swipe 2 1200 600 1200 300`, gesture mode) and 3-button mode
+  (`adb shell cmd overlay enable com.android.internal.systemui.navbar.threebutton`,
+  `...navbar.gestural` to go back).
+- **Navigation bar**: `HardwareUtils` turns off the navigation-bar contrast scrim
+  (API 29+) and, from API 35, keeps light navigation icons on the dark menu bar.
+  Check with `adb shell dumpsys window | grep mLastAppearance` (no
+  `LIGHT_NAVIGATION_BARS` in system light mode: `adb shell cmd uimode night no`).
+  Safe areas / edge-to-edge are described in [mobile.md](mobile.md).
+- **Network changes**: `HardwareUtilsAndroid` uses Qt's `QNetworkInformation`
+  Android backend and falls back to the Java `ConnectivityManager` query when it
+  reports `Unknown` (handovers). The emulated network can flap under heavy host load.
+- **Single instance**: the activity is `singleTop`; a push intent re-entering the
+  running app reuses the instance.
+
+## 8. Java ↔ C++ bridge
+
+Conventions (QJniObject, native-method registration, threading, code that runs
+without Qt) are in the `qt6-android-jni` skill. The Java helpers called from
+C++ (`HardwareUtilsAndroid`, [android/HardwareUtils_Android.cpp](../android/HardwareUtils_Android.cpp))
+are static methods of `HardwareUtils`:
+
+| Java method | C++ caller / purpose |
+|---|---|
+| `showAlertMessage(title, msg, button)` | `HardwareUtilsAndroid::showAlertMessage` |
+| `getNetworkStatus()` | `HardwareUtilsAndroid::getNetworkStatus` (fallback) |
+| `inputtextDialog(title, msg, ...)` | `HardwareUtilsAndroid::inputTextDialog` |
+| `getStoredPushToken()`, `requestPushToken()` | push token at startup (6.1) |
+| `takePendingEventUuid()` | event of the notification that started the app (6.3) |
+| `setNativesReady()` | Qt is up: Java may call back |
+
+Java → C++ callbacks are the `native` methods of `HardwareUtilsNatives`
+(`emitDialogTextValid`, `emitDialogCancel`, `emitDeviceToken`,
+`emitNotificationOpened`), registered by `HardwareUtilsAndroid::platformInit()`
+with `QJniEnvironment::registerNativeMethods`. They only exist once Qt runs:
+code that can run in a process started for a push (`CalaosMessagingService`,
+`PushPictureWorker`) must not call them unguarded (6.1, 6.4). Keystore-backed
+credentials are described in 6.4.
+
+## 9. Troubleshooting
+
+| Symptom | Cause / fix |
+|---|---|
+| `ERROR: Qt Android kit not found` / `Qt kit for ABI ... not found` | install the missing Qt 6.12 Android kit, or set `QT_ROOT` / `CALAOS_ANDROID_ABIS` |
+| `ERROR: JDK 17 not found` / `JDK 17 required, found major version ...` | `brew install openjdk@17`, or `JAVA_HOME` of a JDK 17 |
+| `ERROR: Android NDK not found` | `sdkmanager "ndk;27.2.12479018"` (or the NDK version of your kit) |
+| `ERROR: KDAB android_openssl not found` | clone it (2, step 4) or set `ANDROID_OPENSSL_DIR` |
+| CMake: `platform android-37.0 not found` | `sdkmanager "platforms;android-37.0"` |
+| `android/build.gradle uses AGP ... but the Qt kit template ...` | the Qt kit and the ported templates differ: see "Rolling back Qt" (3.4) |
+| Configure fails after an SDK/NDK/Qt change | `rm -rf build-android/CMakeCache.txt build-android/CMakeFiles build-android/android-build` |
+| Strange Gradle / library-loading failure after removing files from `android/` | `rm -rf build-android/android-build` |
+| `Expected '>', but got ' '` from `androiddeployqt` | a `--` inside an XML comment of `AndroidManifest.xml` |
+| `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | a differently signed build is installed (4.1) |
+| `INSTALL_FAILED_USER_RESTRICTED` (MIUI) | accept the install prompt on the phone; enable *Install via USB* |
+| Release build says UNSIGNED | the `CALAOS_*` variables are not set (5) |
+| `incomplete signing setup` / `cannot open the keystore` | all of `CALAOS_KEYSTORE`, `CALAOS_KEYSTORE_PASS`, `CALAOS_KEY_ALIAS` are needed; check store password and alias |
+
+## 10. Things an LLM should remember
+
+1. Android builds **only** through `tools/build_android.sh` (CMake +
+   `androiddeployqt` + Gradle). `mobile.pro` has no Android branch: it ends with
+   an `error()` pointing to the script. Desktop (`desktop.pro`) and iOS are
+   untouched by Android changes; guard platform code with `if(ANDROID)` in CMake
+   and `#ifdef Q_OS_ANDROID` in C++.
 2. New Java sources go under
-   [android/src/fr/calaos/calaoshome/](../android/src/fr/calaos/calaoshome/) and
-   are picked up automatically because of `ANDROID_PACKAGE_SOURCE_DIR = $$PWD`.
-3. New native files (C++/JNI bridges) must be added to
-   [android/android.pri](../android/android.pri), not to
-   [calaos.pri](../calaos.pri).
-4. Manifest permissions are auto-generated by `androiddeployqt`; if you need a
-   *custom* permission, add it next to (not inside) the
-   `<!-- %%INSERT_PERMISSIONS -->` placeholder.
-5. `compileSdkVersion` / `buildToolsVersion` come from
-   [android/gradle.properties](../android/gradle.properties) — Qt Creator
-   rewrites them, so do not commit local edits.
-6. `min/targetSdkVersion` are static in
-   [android/build.gradle](../android/build.gradle) — bumping them may require
-   adapting Java glue (e.g., notification channels).
-7. The native activity is `singleTop` — when the app is already running and a
-   push intent re-enters it, the existing instance is reused. Lifecycle
-   handling in `Application` (pause on resign-active, login on become-active
-   unless the user logged out; both iOS only) relies on this.
-8. Don’t hand-edit [android/google-services.json](../android/google-services.json)
-   unless you regenerate it from the Firebase console.
-## 9. CMake build (preferred)
-
-The CMake path is the new canonical build. It replaces the qmake +
-`androiddeployqt` flow and requires no platform-specific path tweaks.
-
-### 9.1 Prerequisites
-
-- Android SDK + NDK (the NDK the Qt kit was built with: 27.2.12479018 for Qt 6.12; see `ndk_version` in the kit's `modules/Core.json`).
-- Qt 6.6+ for Android (tested with Qt 6.12): install the `android_arm64_v8a`
-  target at minimum, plus the host Qt for your machine.
-- `FIREBASE_CPP_SDK_DIR` env set to the Firebase C++ SDK root.
-- KDAB [`android_openssl`](https://github.com/KDAB/android_openssl) prebuilt
-  cloned to `$HOME/Android/Sdk/android_openssl` (or pass
-  `-DANDROID_OPENSSL_DIR=/custom/path`).
-
-### 9.2 Configure (single ABI example)
-
-```bash
-export FIREBASE_CPP_SDK_DIR=/path/to/firebase_cpp_sdk
-
-cmake -S . -B build-android -G Ninja \
-      -DCMAKE_PREFIX_PATH=/path/to/Qt/6.12.0/android_arm64_v8a \
-      -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake \
-      -DANDROID_PLATFORM=android-26 \
-      -DANDROID_ABI=arm64-v8a \
-      -DQT_HOST_PATH=/path/to/Qt/6.12.0/macos
-```
-
-For multi-ABI fat APK add `-DQT_ANDROID_ABIS="armeabi-v7a;arm64-v8a;x86;x86_64"`.
-
-### 9.3 Build APK / AAB
-
-```bash
-cmake --build build-android --target apk   # unsigned debug APK
-cmake --build build-android --target aab   # unsigned AAB for Play Store signing
-```
-
-### 9.4 What CMake handles automatically
-
-- Firebase linkage via `cmake/Android.cmake` (fails fast if
-  `FIREBASE_CPP_SDK_DIR` is unset).
-- OpenSSL extra libs via KDAB's `openssl.cmake`.
-- Version name/code injected from [VERSION](../VERSION).
-- `ANDROID_PACKAGE_SOURCE_DIR` pointing at [android/](../android/) so
-  manifest, Gradle files and Java glue are all picked up as before.
-
-## Legacy qmake build
-
-Sections 2–7 above document the legacy qmake path. It remains functional
-during the transition period. New development should target the CMake path.
+   [android/src/fr/calaos/calaoshome/](../android/src/fr/calaos/calaoshome/) and are
+   picked up automatically (`QT_ANDROID_PACKAGE_SOURCE_DIR`). New native files are
+   added to `cmake/Android.cmake`, not to `calaos.pri`.
+3. `android/` overrides Qt's templates (7.1): do not add Gradle wrapper,
+   `libs.xml`, `settings.gradle` or `gradle.properties`.
+4. Manifest permissions are generated from the Qt modules; the app adds
+   `POST_NOTIFICATIONS` itself and removes `FOREGROUND_SERVICE`,
+   `RECEIVE_BOOT_COMPLETED` (and `WRITE_EXTERNAL_STORAGE` in release).
+5. SDK levels are set in `cmake/Android.cmake`, not in `build.gradle`; bumping
+   the target SDK may need Java glue changes (notification channels,
+   foreground-service rules, back handling).
+6. Don't hand-edit [android/google-services.json](../android/google-services.json);
+   regenerate it from the Firebase console.
+7. Any change touching `HardwareUtils`, `CredentialStore`, the push classes or the
+   manifest: run the checklist of 6.6 on a phone, and re-check the `release`
+   build (no R8, JNI names 7.2).
+8. Never commit keystores or passwords, never log credentials, full push tokens
+   or URLs carrying `cn_user` / `cn_pass`.

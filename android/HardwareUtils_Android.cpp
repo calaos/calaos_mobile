@@ -3,6 +3,7 @@
 #include <QJniEnvironment>
 #include <QDebug>
 #include <QPointer>
+#include <QNetworkInformation>
 #include <jni.h>
 
 namespace
@@ -98,6 +99,10 @@ void HardwareUtilsAndroid::platformInit(QQmlApplicationEngine *e)
 {
     HardwareUtils::platformInit(e);
 
+    //Independent of the JNI registration below: a failure there must not also
+    //disable network monitoring.
+    setupNetworkMonitoring();
+
     //QJniEnvironment resolves the class through Qt's class loader, which
     //a plain FindClass from a native thread does not.
     QJniEnvironment env;
@@ -161,15 +166,99 @@ void HardwareUtilsAndroid::showAlertMessage(QString title, QString message, QStr
     clearJavaException("HardwareUtils.showAlertMessage");
 }
 
+void HardwareUtilsAndroid::setupNetworkMonitoring()
+{
+    //The backend plugin (libplugins_networkinformation_qandroidnetworkinformation)
+    //is deployed by androiddeployqt along with Qt6::Network.
+    if (!QNetworkInformation::loadBackendByFeatures(QNetworkInformation::Feature::Reachability |
+                                                    QNetworkInformation::Feature::TransportMedium) &&
+        !QNetworkInformation::loadBackendByFeatures(QNetworkInformation::Feature::Reachability))
+    {
+        qWarning() << "Android: no QNetworkInformation backend, network changes will not be reported";
+        return;
+    }
+
+    QNetworkInformation *ni = QNetworkInformation::instance();
+    m_lastNetworkStatus = getNetworkStatus();
+    qInfo() << "Android: network monitoring backend" << ni->backendName()
+            << "reachability" << ni->reachability()
+            << "medium" << ni->transportMedium();
+
+    //Reachability covers airplane mode / link lost / link back; a medium
+    //change covers Wi-Fi <-> cellular handovers that keep us "online".
+    connect(ni, &QNetworkInformation::reachabilityChanged, this,
+            [this](QNetworkInformation::Reachability r)
+    {
+        qInfo() << "Android: reachability changed" << r;
+        emitNetworkStatusIfChanged();
+    });
+    connect(ni, &QNetworkInformation::transportMediumChanged, this,
+            [this](QNetworkInformation::TransportMedium m)
+    {
+        qInfo() << "Android: transport medium changed" << m;
+        emitNetworkStatusIfChanged();
+    });
+}
+
+//Status as seen by QNetworkInformation, the source of the emitted changes, so
+//getNetworkStatus() never contradicts the last networkStatusChanged().
+int HardwareUtilsAndroid::networkStatusFromQt(bool *known) const
+{
+    *known = false;
+    QNetworkInformation *ni = QNetworkInformation::instance();
+    if (!ni)
+        return NotConnected;
+
+    switch (ni->reachability())
+    {
+    case QNetworkInformation::Reachability::Disconnected:
+        *known = true;
+        return NotConnected;
+    case QNetworkInformation::Reachability::Unknown:
+        return NotConnected; //not known yet, caller falls back on Java
+    default:
+        break;
+    }
+
+    *known = true;
+    switch (ni->transportMedium())
+    {
+    case QNetworkInformation::TransportMedium::WiFi:
+    case QNetworkInformation::TransportMedium::Ethernet:
+        return ConnectedWiFi;
+    default:
+        return ConnectedWWAN;
+    }
+}
+
+//Reachability and transport medium often both change for a single network
+//event; the status is what the app acts on, so emit once per actual change.
+void HardwareUtilsAndroid::emitNetworkStatusIfChanged()
+{
+    const int status = getNetworkStatus();
+    if (status == m_lastNetworkStatus)
+        return;
+
+    m_lastNetworkStatus = status;
+    emitNetworkStatusChanged();
+}
+
 int HardwareUtilsAndroid::getNetworkStatus()
 {
-    jint status = QJniObject::callStaticMethod<jint>(kHardwareUtilsClass,
-                                                     "getNetworkStatus",
-                                                     "()I");
-    if (clearJavaException("HardwareUtils.getNetworkStatus"))
-        status = ConnectedWWAN; //We don't know. Say it's connected.
+    bool known = false;
+    int status = networkStatusFromQt(&known);
 
-    qDebug() << "Android: HardwareUtilsAndroid::getNetworkStatus(): " << status;
+    if (!known)
+    {
+        status = QJniObject::callStaticMethod<jint>(kHardwareUtilsClass,
+                                                    "getNetworkStatus",
+                                                    "()I");
+        if (clearJavaException("HardwareUtils.getNetworkStatus"))
+            status = ConnectedWWAN; //We don't know. Say it's connected.
+    }
+
+    qDebug() << "Android: HardwareUtilsAndroid::getNetworkStatus(): " << status
+             << (known ? "(qt)" : "(java)");
 
     return status;
 }

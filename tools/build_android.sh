@@ -143,20 +143,36 @@ if [[ "${LIB_ONLY}" == false ]]; then
 fi
 
 # Release signing: applied after the build. All or nothing,
-# so a typo cannot silently produce an unsigned upload. Values are never printed.
+# so a typo cannot silently produce an unsigned upload. Values are never printed,
+# and the passwords are kept out of the environment of every child process (Gradle,
+# androiddeployqt...): they are handed to the signer commands one-off, via
+# "VAR=value command", and never appear in a command line.
 SIGNED=false
 if [[ "${CONFIG}" == "Release" ]]; then
-    if [[ -n "${CALAOS_KEYSTORE:-}" || -n "${CALAOS_KEYSTORE_PASS:-}" || -n "${CALAOS_KEY_ALIAS:-}" ]]; then
+    if [[ -n "${CALAOS_KEYSTORE:-}" || -n "${CALAOS_KEYSTORE_PASS:-}" || -n "${CALAOS_KEY_ALIAS:-}" || -n "${CALAOS_KEY_PASS:-}" ]]; then
         [[ -n "${CALAOS_KEYSTORE:-}" && -n "${CALAOS_KEYSTORE_PASS:-}" && -n "${CALAOS_KEY_ALIAS:-}" ]] \
             || fail "incomplete signing setup: CALAOS_KEYSTORE, CALAOS_KEYSTORE_PASS and CALAOS_KEY_ALIAS must all be set (CALAOS_KEY_PASS is optional)"
         [[ -f "${CALAOS_KEYSTORE}" ]] || fail "CALAOS_KEYSTORE does not point to a file"
         CALAOS_KEYSTORE="$(cd "$(dirname "${CALAOS_KEYSTORE}")" && pwd -P)/$(basename "${CALAOS_KEYSTORE}")"
-        export CALAOS_KEYSTORE CALAOS_KEYSTORE_PASS CALAOS_KEY_ALIAS
-        [[ -z "${CALAOS_KEY_PASS:-}" ]] || export CALAOS_KEY_PASS
+        # The caller may have exported them: stop passing them to child processes.
+        export -n CALAOS_KEYSTORE_PASS CALAOS_KEY_PASS 2>/dev/null || true
         SIGNED=true
-        [[ -x "${JAVA_HOME}/bin/jarsigner" ]] || fail "jarsigner not found in JAVA_HOME"
+        [[ -x "${JAVA_HOME}/bin/jarsigner" && -x "${JAVA_HOME}/bin/keytool" ]] || fail "jarsigner/keytool not found in JAVA_HOME"
         APKSIGNER="$(ls -d "${ANDROID_SDK_ROOT}"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)"
         [[ "${AAB}" == true || -x "${APKSIGNER}" ]] || fail "apksigner not found in ${ANDROID_SDK_ROOT}/build-tools"
+
+        # Check the store, alias and passwords now: not after a long build.
+        # (keytool errors are safe to print: they never contain the passwords.)
+        keytool_out="$(CALAOS_KEYSTORE_PASS="${CALAOS_KEYSTORE_PASS}" "${JAVA_HOME}/bin/keytool" -list \
+            -keystore "${CALAOS_KEYSTORE}" -storepass:env CALAOS_KEYSTORE_PASS \
+            -alias "${CALAOS_KEY_ALIAS}" 2>&1)" \
+            || fail "cannot open the keystore / alias (wrong CALAOS_KEYSTORE_PASS or CALAOS_KEY_ALIAS?): ${keytool_out}"
+        # -certreq needs the private key: it checks the key password (the store
+        # password when CALAOS_KEY_PASS is unset). Nothing is written to the keystore.
+        keytool_out="$(CALAOS_KEYSTORE_PASS="${CALAOS_KEYSTORE_PASS}" CALAOS_KEY_PASS="${CALAOS_KEY_PASS:-${CALAOS_KEYSTORE_PASS}}" \
+            "${JAVA_HOME}/bin/keytool" -certreq -keystore "${CALAOS_KEYSTORE}" \
+            -storepass:env CALAOS_KEYSTORE_PASS -alias "${CALAOS_KEY_ALIAS}" -keypass:env CALAOS_KEY_PASS 2>&1)" \
+            || fail "cannot read the private key (wrong CALAOS_KEY_PASS? with a PKCS12 keystore it must equal the store password): ${keytool_out}"
     else
         echo "WARNING: CALAOS_KEYSTORE / CALAOS_KEYSTORE_PASS / CALAOS_KEY_ALIAS not set: the Release build will be UNSIGNED (not uploadable to the Play Store)." >&2
     fi
@@ -174,8 +190,9 @@ if [[ -f "${BUILD_DIR}/CMakeCache.txt" ]]; then
         cached_qt="$(cd "${cached_qt}" && pwd -P)"
     fi
     if [[ -n "${cached_qt}" && "${cached_qt}" != "${QT_ANDROID}/"* ]]; then
-        echo "==> Qt kit changed (cache: ${cached_qt}): clearing the CMake cache and android-build/"
-        rm -rf "${BUILD_DIR}/CMakeCache.txt" "${BUILD_DIR}/CMakeFiles" "${BUILD_DIR}/android-build"
+        echo "==> Qt kit changed (cache: ${cached_qt}): clearing the CMake cache, android-build/ and android_abi_builds/"
+        rm -rf "${BUILD_DIR}/CMakeCache.txt" "${BUILD_DIR}/CMakeFiles" "${BUILD_DIR}/android-build" \
+            "${BUILD_DIR}/android_abi_builds"
     fi
 fi
 
@@ -239,24 +256,34 @@ if [[ "${SIGNED}" == true ]]; then
     if [[ "${AAB}" == true ]]; then
         # Gradle may leave a previously signed bundle in place when nothing changed.
         zip -q -d "${PKG_OUT}" 'META-INF/*.SF' 'META-INF/*.RSA' 'META-INF/*.DSA' 'META-INF/*.EC' >/dev/null 2>&1 || true
+        # Passwords only through the environment of the signer itself (-storepass:env).
         keypass_args=()
         [[ -z "${CALAOS_KEY_PASS:-}" ]] || keypass_args=(-keypass:env CALAOS_KEY_PASS)
-        "${JAVA_HOME}/bin/jarsigner" -keystore "${CALAOS_KEYSTORE}" \
+        sign_out="$(CALAOS_KEYSTORE_PASS="${CALAOS_KEYSTORE_PASS}" CALAOS_KEY_PASS="${CALAOS_KEY_PASS:-}" \
+            "${JAVA_HOME}/bin/jarsigner" -digestalg SHA-256 -keystore "${CALAOS_KEYSTORE}" \
             -storepass:env CALAOS_KEYSTORE_PASS ${keypass_args[@]+"${keypass_args[@]}"} \
-            "${PKG_OUT}" "${CALAOS_KEY_ALIAS}" >/dev/null
-        "${JAVA_HOME}/bin/jarsigner" -verify "${PKG_OUT}" | grep -m1 "jar verified" || fail "jarsigner -verify failed"
+            "${PKG_OUT}" "${CALAOS_KEY_ALIAS}" 2>&1)" \
+            || fail "jarsigner failed: ${sign_out}"
+        "${JAVA_HOME}/bin/jarsigner" -verify "${PKG_OUT}" 2>&1 | grep -m1 "jar verified" || fail "jarsigner -verify failed"
     else
         keypass_args=()
         [[ -z "${CALAOS_KEY_PASS:-}" ]] || keypass_args=(--key-pass env:CALAOS_KEY_PASS)
-        PATH="${JAVA_HOME}/bin:${PATH}" "${APKSIGNER}" sign --ks "${CALAOS_KEYSTORE}" \
+        sign_out="$(PATH="${JAVA_HOME}/bin:${PATH}" CALAOS_KEYSTORE_PASS="${CALAOS_KEYSTORE_PASS}" CALAOS_KEY_PASS="${CALAOS_KEY_PASS:-}" \
+            "${APKSIGNER}" sign --ks "${CALAOS_KEYSTORE}" --v4-signing-enabled false \
             --ks-key-alias "${CALAOS_KEY_ALIAS}" --ks-pass env:CALAOS_KEYSTORE_PASS \
-            ${keypass_args[@]+"${keypass_args[@]}"} "${PKG_OUT}"
-        PATH="${JAVA_HOME}/bin:${PATH}" "${APKSIGNER}" verify "${PKG_OUT}"
+            ${keypass_args[@]+"${keypass_args[@]}"} "${PKG_OUT}" 2>&1)" \
+            || fail "apksigner failed: ${sign_out}"
+        PATH="${JAVA_HOME}/bin:${PATH}" "${APKSIGNER}" verify "${PKG_OUT}" || fail "apksigner verify failed"
     fi
     echo "==> Done. Signed package:"
     echo "${PKG_OUT}"
 else
-    rm -f "${BUILD_DIR}"/CalaosHome-*-release.${PKG_EXT}   # stale signed copy of an older build
-    echo "==> Done. Package ($([[ "${CONFIG}" == Release ]] && echo "UNSIGNED, not uploadable" || echo "debug key")):"
+    if [[ "${CONFIG}" == "Release" ]]; then
+        # An older signed copy must not be mistaken for this unsigned build.
+        rm -f "${BUILD_DIR}"/CalaosHome-*-release.${PKG_EXT}
+        echo "==> Done. Package (UNSIGNED, not uploadable):"
+    else
+        echo "==> Done. Package (debug key):"
+    fi
     echo "${PKG_SRC}"
 fi

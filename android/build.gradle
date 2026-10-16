@@ -106,9 +106,10 @@ android {
         release {
             // No signingConfig on purpose: androiddeployqt only accepts the
             // "-unsigned" APK name Gradle gives an unsigned release, and signing
-            // through Gradle would keep the passwords in the Gradle daemon. The
-            // upload key is applied afterwards by tools/build_android.sh
-            // (jarsigner on the AAB, apksigner on the APK).
+            // through Gradle would hand the passwords to the long-lived Gradle
+            // daemon. The upload key is applied afterwards by
+            // tools/build_android.sh (jarsigner on the AAB, apksigner on the
+            // APK), which keeps the passwords out of every build process.
             // R8 / resource shrinking stay off on purpose (AND-5): the Java
             // code is tiny and Qt's own Java classes (org.qtproject.qt.android.*)
             // are looked up by name from libQt6*.so without shipping any

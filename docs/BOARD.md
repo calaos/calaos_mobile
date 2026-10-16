@@ -109,6 +109,7 @@ Suivis issus des revues (à traiter dans le ticket indiqué) :
 - AND-7 : le changement serveur (messages FCM data seuls) est confié le 2026-10-16 à la session Happier « Calaos: Climate devices » (calaos_base). Contrat proposé : l'app envoie `"push_format": "data"` dans `register_push` (WS et HTTP), le serveur réserve le data seul (+ `android.priority=high`) aux jetons enregistrés ainsi ; l'app Play Store actuelle (Qt 5, Firebase C++) garde le format notification+data. AND-7 doit implémenter le contrat final documenté côté calaos_base.
 - PR GitHub #31 (gwarf, 2026-10-16) « android: fix the Qt 6 build and launch crash » recoupe AND-1/AND-2 (Qt 6.10, Firebase C++ conservé) ; PR #18 (2021) « image preview in notification for Android » recoupe AND-7. À traiter avec Raoul avant de pousser `feat/android-qt6`.
 - Suivis FIX-4 : sur un passage Wi-Fi → 4G l'app reste « connectée » alors que le websocket/long-poll de l'ancien réseau est mort (attente du timeout ping/poll ; iOS identique) → forcer une reconnexion sur changement de médium ; Android n'émet jamais `applicationWillResignActive` (session gardée en arrière-plan, reconnexion en arrière-plan) ; une app démarrée hors ligne ne se connecte pas automatiquement au retour du réseau (iOS identique).
+- Suivi FIX-5 : `lang/calaos_de.ts` a 51 chaînes non traduites et 2 entrées obsolètes (constat lupdate 2026-10-16) ; lancer lupdate via `lang/lang.pro` (un arbre CMake iOS ou Android ne voit que ses propres sources et supprimerait les entrées de l'autre plateforme) ; les `.qm` embarqués via `lang.qrc` sont versionnés et doivent être régénérés avec les `.ts`.
 - AND-6 : `mobile.pro` liste encore en `DISTFILES` le wrapper Gradle et `libs.xml` supprimés ; `tools/check_sources.sh` ne reconnaît pas les chemins `$$PWD/src/...` de `calaos.pri` (faux positifs).
 - QML (hors P-AND) : `main.qml:128` paramètre `idx` non déclaré ; `AnimatedIcon.qml:31` image `icon_light_00-1.png` introuvable.
 
@@ -137,7 +138,7 @@ Exécution parallèle : chaque ticket lancé en parallèle travaille dans son pr
 | [FIX-2](tasks/FIX-2-pusheventview-busyindicator.md) | PushEventView : ReferenceError `control` dans le BusyIndicator | S | — | G-QML-MOBILE | En revue |
 | [FIX-3](tasks/FIX-3-push-token-partage.md) | Push : tap hors connexion, rotation du jeton, jeton dans les logs | M | AND-4 | G-CONN + G-ANDROID | En revue |
 | [FIX-4](tasks/FIX-4-reseau-android-changements.md) | Android : détecter les changements de réseau en cours d'exécution | S | FIX-3 | G-ANDROID | En revue |
-| [FIX-5](tasks/FIX-5-dialogue-android-i18n.md) | Android : libellés traduits des dialogues natifs | S | FIX-4 | G-ANDROID | En cours |
+| [FIX-5](tasks/FIX-5-dialogue-android-i18n.md) | Android : libellés traduits des dialogues natifs | S | FIX-4 | G-ANDROID | En revue |
 | [FIX-6](tasks/FIX-6-check-sources-pwd.md) | tools/check_sources.sh : faux positifs sur les chemins `$$PWD/src/...` | S | — | G-BUILD | Terminé |
 
 ## Diagramme de parallélisation

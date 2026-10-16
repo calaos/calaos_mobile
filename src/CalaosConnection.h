@@ -225,7 +225,7 @@ private:
 //the same token is never sent twice in one session.
 //
 //Header-only and free of QObject/network code for the same reason as
-//ReconnectPolicy: tests/tst_pushregistration drives it without a server.
+//ReconnectPolicy: tests/tst_pushnotif drives it without a server.
 class PushRegistration
 {
 public:

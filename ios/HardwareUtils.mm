@@ -126,7 +126,11 @@
     NSString *uuid = userInfo[@"event_uuid"];
     if (uuid != nil)
     {
-        //Opened now if logged in, otherwise once home is loaded again.
+        //Not a tap: a push *arriving* (iOS hands remote notifications to
+        //the app here, in the foreground or woken in the background). The
+        //app has always opened its event like a tap: right away if logged
+        //in, otherwise once home is loaded again. Kept as is on purpose
+        //(product behaviour predating FIX-3), see doc/ios.md section 4.
         HardwareUtils::Instance()->handleNotificationOpened(QString::fromNSString(uuid));
     }
 

@@ -133,7 +133,8 @@ embedded via `QMAKE_BUNDLE_DATA += splash`.
 | Token registered with `calaos_server` | `CalaosConnection` sends `register_push` at login, and again on `HardwareUtils::deviceTokenChanged()` while logged in (token arriving after the login) |
 | Encrypted payload received in background | `PushNotif.appex` (`ios/PushNotif/NotificationService.m`) — decrypts using keys stored in the shared keychain (`A0SimpleKeychain+KeyPair`) and rewrites the `UNNotificationContent` before display |
 | User taps notification while logged in | `userNotificationCenter:didReceiveNotificationResponse:` → `HardwareUtils::handleNotificationOpened(uuid)` → `pushNotifReceived(uuid)` → `Application::pushNotificationReceived(uuid)` → QuickFlux dispatch |
-| User taps notification while not logged in (closed, background, reconnecting) | Same entry point; the uuid is kept and `Application::homeLoaded()` opens it once at the next login (`HardwareUtils::takePendingNotif()`) |
+| User taps notification while not logged in (closed, background, reconnecting) | Same entry point; the uuid is kept and `Application::homeLoaded()` opens it once at the next login (`HardwareUtils::takePendingNotif()`, `DeferredNotifGate`: a session that drops before the event is shown hands it back to the next login) |
+| Push **arrives** (no tap), app in the foreground or woken in the background | `application:didReceiveRemoteNotification:fetchCompletionHandler:` → `HardwareUtils::handleNotificationOpened(uuid)`: the event is opened as if tapped, right away when logged in, otherwise at the next login. Long-standing product behaviour, deliberately unchanged by FIX-3 |
 
 Background mode `remote-notification` is declared in
 [ios/AppInfo.plist](../ios/AppInfo.plist) (`UIBackgroundModes`).

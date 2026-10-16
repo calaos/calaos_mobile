@@ -180,7 +180,8 @@ Shared rules (in [src/HardwareUtils.cpp](../src/HardwareUtils.cpp) and
   sends `register_push` once the login is accepted (websocket or HTTP), and
   again when the token changes while the session is up (FCM rotation, APNs
   token arriving after the login). The same token is never sent twice in one
-  session (`PushRegistration` in `CalaosConnection.h`). The token is a
+  session (`PushRegistration` in `CalaosConnection.h`). Over HTTP the request
+  carries `cn_user`/`cn_pass` like every api.php call. The token is a
   per-device credential: it is only ever logged truncated
   (`HardwareUtils::describeToken()`), and redacted from the HTTP debug dumps.
 - **Notification tap**: platform code calls
@@ -188,7 +189,10 @@ Shared rules (in [src/HardwareUtils.cpp](../src/HardwareUtils.cpp) and
   through `pushNotifReceived(uuid)`. Not logged in (cold start, app in the
   background, reconnection in progress) → kept, the latest tap wins, and
   `Application::homeLoaded()` opens it once at the next login
-  (`takePendingNotif()`).
+  (`takePendingNotif()`, then `DeferredNotifGate` in `HardwareUtils.h`: a
+  session that drops before the event is shown hands it back with
+  `restorePendingNotif()`, and a delay armed by an earlier login never opens
+  anything).
 
 ## 10. Internationalisation
 

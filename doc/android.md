@@ -34,7 +34,12 @@ Android templates, so the Qt kit, AGP and Gradle move together (see 7.1 and
 
 The script and the defaults below are written for a **macOS** host (Qt host kit
 `macos`, Homebrew JDK, SDK in `~/Library/Android/sdk`). Every location can be
-overridden by environment variables (3.3); other hosts are not tested.
+overridden by environment variables (3.3). Linux works too (external test of
+`tools/build_android.sh Debug`, Qt 6.12.0, NDK 27.2, JDK 17): set
+`QT_HOST=$QT_ROOT/gcc_64`, `ANDROID_SDK_ROOT` and `JAVA_HOME` (a JDK 17;
+the script only looks for Homebrew when `JAVA_HOME` is unset), and use the
+`linux-x86_64` NDK prebuilt directory where this document says `darwin-x86_64`
+(4.4). Windows hosts are not supported.
 
 1. **Homebrew tools**: `brew install cmake ninja openjdk@17`. Ninja is also found
    in `~/Qt/Tools/Ninja`.
@@ -75,7 +80,7 @@ overridden by environment variables (3.3); other hosts are not tested.
 ### 3.1 Commands
 
 ```bash
-cd calaos_mobile
+git clone https://github.com/calaos/calaos_mobile.git && cd calaos_mobile
 ./tools/build_android.sh Debug             # APK, arm64-v8a only (default config)
 ./tools/build_android.sh Release           # APK, 4 ABIs, unsigned unless the CALAOS_* variables are set (5)
 ./tools/build_android.sh Release --aab     # Play Store bundle, 4 ABIs (5)
@@ -115,7 +120,7 @@ emulator on an Intel host.
 | `QT_HOST` | `$QT_ROOT/macos` |
 | `ANDROID_SDK_ROOT` | `~/Library/Android/sdk` |
 | `ANDROID_NDK_ROOT` | `$ANDROID_SDK_ROOT/ndk/<ndk_version of the Qt kit>` |
-| `JAVA_HOME` | Homebrew `openjdk@17` |
+| `JAVA_HOME` | Homebrew `openjdk@17`, **only when `JAVA_HOME` is unset**: an exported JDK of another major version (for example the JBR 21 of Android Studio) makes the script fail with "JDK 17 required" |
 | `ANDROID_OPENSSL_DIR` | `$ANDROID_SDK_ROOT/android_openssl` |
 | `CALAOS_ANDROID_ABIS` | `arm64-v8a` (Debug), four ABIs (Release) |
 | `CALAOS_KEYSTORE`, `CALAOS_KEYSTORE_PASS`, `CALAOS_KEY_ALIAS`, `CALAOS_KEY_PASS` | release signing, see 5 |
@@ -187,7 +192,8 @@ BT=$HOME/Library/Android/sdk/build-tools/36.0.0
 (arm64-v8a, x86_64) are linked with `LOAD` alignment `0x4000`; the 32-bit ones
 (armeabi-v7a, x86) stay `0x1000`, which is fine because 16 KB devices are
 64-bit only. Check a library with
-`$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-readelf -lW lib.so | grep LOAD`.
+`$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-readelf -lW lib.so | grep LOAD`
+(`linux-x86_64` instead of `darwin-x86_64` on Linux).
 
 ## 5. Release: AAB and signing
 
@@ -197,10 +203,17 @@ and uploaded by hand.
 1. Bump [VERSION.txt](../VERSION.txt) (`versionName` = the semver string,
    `versionCode` derived, both injected into the manifest by CMake).
 2. Have an **upload keystore** outside the repository (never commit it nor its
-   passwords). For a throwaway test key use `keytool -genkeypair -storetype
-   PKCS12 ...` in `/tmp` and delete it afterwards. A PKCS12 keystore has a
-   single password: the script rejects a `CALAOS_KEY_PASS` different from the
-   store password (only a JKS store can have distinct passwords).
+   passwords). To create one:
+
+   ```bash
+   keytool -genkeypair -v -storetype PKCS12 -keystore upload.p12 -alias upload \
+       -keyalg RSA -keysize 2048 -validity 10000
+   ```
+
+   (for a throwaway test key do it in `/tmp` and delete it afterwards). A PKCS12
+   keystore has a single password: the script rejects a `CALAOS_KEY_PASS`
+   different from the store password (only a JKS store can have distinct
+   passwords).
 3. Build and sign:
 
    ```bash
@@ -249,7 +262,7 @@ Everything lives in Java under
 `com.google.gms.google-services` and depends on `firebase-messaging` (BoM) and
 `androidx.work:work-runtime`.
 
-### 6.1 Token
+### 6.1 Token and notification tap
 
 `CalaosMessagingService.onNewToken()` persists the token in the
 `calaos_push` SharedPreferences (excluded from backup) and forwards it to C++
@@ -258,6 +271,17 @@ only when Qt is running (`HardwareUtils.deliverPushToken`). At startup
 `FirebaseMessaging.getToken()`, and reports it with
 `HardwareUtils::setDeviceToken()`; `CalaosConnection::registerPushToken()`
 then sends `register_push` (see [mobile.md](mobile.md) section 9).
+
+**Tap hand-off.** Tapping a notification starts (or re-enters, the activity is
+`singleTop`) `HardwareUtils` with the event uuid as intent extra. The extra is
+untrusted (the activity is exported): it is validated, and an intent replayed
+from Recents is ignored. If Qt is already running (`setNativesReady()` was
+called) the activity calls `HardwareUtilsNatives.emitNotificationOpened()`
+straight away. On a cold start it parks the uuid in a static field instead;
+`HardwareUtilsAndroid::platformInit()` takes it with `takePendingEventUuid()`
+(cleared on read). Both paths end in `HardwareUtils::handleNotificationOpened()`,
+which emits `pushNotifReceived` at once when connected, or keeps the uuid until
+the home is loaded (not logged in yet).
 
 ### 6.2 Contract with calaos_server: data-only messages (AND-7)
 
@@ -269,7 +293,7 @@ messages. The whole contract is held in `PushFormat` in
 
 - `register_push` (websocket and HTTP `api.php`), Android only, adds the field
   **`"push_format": "data"`** next to `token` and `hardware: "android"`.
-  iOS and older Android versions send no field and keep the legacy format.
+  iOS and older app versions send no field and keep the legacy format.
 - For a token registered with `push_format: "data"`, calaos_server sends an
   FCM **data message** with `android.priority = "high"` and no
   `notification` block:
@@ -387,7 +411,7 @@ injects a data message into `CalaosMessagingService.handleMessage()`:
 
 ```bash
 # fake api.php on the Mac (reachable from the emulator as 10.0.2.2)
-tools/fake_calaos_api.py --user demo --password demo --picture /tmp/cam.jpg   # --no-picture for the "no pic_uid" case
+tools/fake_calaos_api.py --user demo --password demo --picture /tmp/cam.jpg   # any JPEG; --picture stays required with --no-picture (the "no pic_uid" case)
 # in the app: host http://10.0.2.2:8080/api.php, user demo, password demo, then
 # (one quoted remote command: adb shell splits words again on the device)
 adb shell 'am broadcast -n fr.calaos.calaoshome/.debug.FakePushReceiver \
@@ -424,24 +448,24 @@ in with a user that is **not** the demo one. Watch with
 5. **Wrong credentials**: change the user's password on the server without
    updating the phone, trigger: text only, `server answered HTTP 400`.
 6. **Rule without camera**: trigger a push rule with no picture: text only,
-   no `event_uuid` in the log, no worker.
+   `event uuid: <none>` in the log, no worker.
 7. **Logout**: Settings → Logout, then trigger the camera rule: text
    notification only, `Push picture: user logged out` in the log;
-   `run-as fr.calaos.calaoshome cat shared_prefs/calaos_credentials.xml`
+   `adb shell run-as fr.calaos.calaoshome cat shared_prefs/calaos_credentials.xml`
    shows `session_active` false and the credentials still there (prefill).
    Log in again: the next event has its picture.
-7b. **Reset all data**: Settings → Reset all data. Then
+8. **Reset all data**: Settings → Reset all data. Then
    `adb shell run-as fr.calaos.calaoshome cat shared_prefs/calaos_credentials.xml`
    must be an empty map, and
-   `run-as fr.calaos.calaoshome cat files/settings/Calaos/CalaosHome.conf`
+   `adb shell run-as fr.calaos.calaoshome cat files/settings/Calaos/CalaosHome.conf`
    must contain no `cn_user` / `cn_pass`.
-8. **Update from a QSettings version**: install the previous build, log in,
+9. **Update from a QSettings version**: install the previous build, log in,
    check `cn_user`/`cn_pass` are in `CalaosHome.conf`; install this build
    over it (`adb install -r`), start it: still logged in,
    `credentials migrated to the secure store` in the log, the `.conf` no
    longer has the pair, `shared_prefs/calaos_credentials.xml` holds
    base64 blobs only.
-9. **Self-signed server** (if applicable): text notification only; note it
+10. **Self-signed server** (if applicable): text notification only; note it
    as the documented limit.
 
 ## 7. Project layout and packaging
@@ -531,7 +555,7 @@ are static methods of `HardwareUtils`:
 | `getNetworkStatus()` | `HardwareUtilsAndroid::getNetworkStatus` (fallback) |
 | `inputtextDialog(title, msg, ...)` | `HardwareUtilsAndroid::inputTextDialog` |
 | `getStoredPushToken()`, `requestPushToken()` | push token at startup (6.1) |
-| `takePendingEventUuid()` | event of the notification that started the app (6.3) |
+| `takePendingEventUuid()` | event of the notification that started the app (6.1, tap hand-off) |
 | `setNativesReady()` | Qt is up: Java may call back |
 
 Java → C++ callbacks are the `native` methods of `HardwareUtilsNatives`

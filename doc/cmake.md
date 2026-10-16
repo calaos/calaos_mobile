@@ -232,7 +232,10 @@ After local builds work, add two workflows under
   written for macOS: on `ubuntu-24.04` set `QT_HOST` to the Linux host kit
   (`$QT_ROOT/gcc_64`), `ANDROID_SDK_ROOT` and `JAVA_HOME` (JDK 17), and map
   the CI secrets to the `CALAOS_KEYSTORE` (decode `KEYSTORE_BASE64` to a file),
-  `CALAOS_KEYSTORE_PASS`, `CALAOS_KEY_ALIAS`, `CALAOS_KEY_PASS` variables.
+  `CALAOS_KEYSTORE_PASS`, `CALAOS_KEY_ALIAS`, `CALAOS_KEY_PASS` variables
+  (with a PKCS12 upload keystore, leave `CALAOS_KEY_PASS` unset or equal to
+  the store password: PKCS12 has a single password and the script refuses a
+  different one).
 - Secrets: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`,
   `KEY_PASSWORD`, `PLAY_SERVICE_ACCOUNT_JSON`.
 

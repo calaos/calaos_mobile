@@ -4,20 +4,22 @@
  * Bugs covered:
  *  1. A notification tapped while the session was down (reconnection) was
  *     lost: the deferred tap was only consumed on the very first login of the
- *     process. HardwareUtils now keeps it until Application takes it, once,
- *     at the next homeLoaded() (takePendingNotif()). The Application side is
- *     a single call to takePendingNotif() and needs the whole QML app, it is
- *     checked on device; the HardwareUtils rules are checked here.
+ *     process. HardwareUtils now keeps it, and Application opens it once at
+ *     the next homeLoaded() through DeferredNotifGate. The gate is driven here
+ *     exactly the way Application drives it (see FakeApp), timers aside.
  *  2. A rotated push token only reached calaos_server at the next login.
  *     HardwareUtils emits deviceTokenChanged() and CalaosConnection sends
  *     register_push again while the session is up, never twice for the same
- *     token in one session (PushRegistration).
+ *     token in one session (PushRegistration). Over HTTP the request carries
+ *     the credentials, which calaos_server checks before any action.
  *  3. The push token was dumped in clear by the debug log of the HTTP
  *     fallback (sendHttp()): "token" is now a redacted key.
  *
  * The CalaosConnection cases run a real connection against in-process fake
- * servers (HTTP api.php and websocket /api): no calaos_server, no network
- * outside the loopback.
+ * servers (HTTP api.php, websocket /api, and TLS for the websocket -> HTTP
+ * fallback): no calaos_server, no network outside the loopback.
+ *
+ * Every test function sets up its own token and can run alone.
  */
 
 #include <QtTest>
@@ -25,17 +27,26 @@
 #include <QHostAddress>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QSslConfiguration>
+#include <QSslKey>
+#include <QSslSocket>
 #include <QTcpServer>
 #include <QTcpSocket>
+#include <QTemporaryDir>
 #include <QWebSocket>
 #include <QWebSocketServer>
 
 #include "CalaosConnection.h"
 #include "HardwareUtils.h"
 
+static const QString TestUser = QStringLiteral("user");
+static const QString TestPass = QStringLiteral("s3cret-pass");
+
 //Every log line of the process, to check that no push token leaks in clear.
 static QStringList s_logLines;
 static QtMessageHandler s_previousHandler = nullptr;
+//register_push accepted by an HTTP fake during the run (any test).
+static int s_httpRegistrations = 0;
 
 static void captureMessages(QtMsgType type, const QMessageLogContext &ctx, const QString &msg)
 {
@@ -45,21 +56,33 @@ static void captureMessages(QtMsgType type, const QMessageLogContext &ctx, const
 }
 
 /*
- * Plays calaos_server's api.php: answers the get_home login, records every
- * register_push, hands out a polling uuid and then holds the long-poll open
- * (a quiet installation), so the session stays up without any traffic.
+ * Plays calaos_server's api.php: like the real one (JsonApiHandlerHttp), any
+ * request without the right cn_user/cn_pass is answered 400 before the action
+ * is even looked at. Answers the get_home login, records every register_push,
+ * hands out a polling uuid and then holds the long-poll open (a quiet
+ * installation), so the session stays up without any traffic. Speaks TLS when
+ * given a configuration.
  */
 class FakeHttpServer: public QTcpServer
 {
     Q_OBJECT
 
 public:
-    using QTcpServer::QTcpServer;
+    explicit FakeHttpServer(const QSslConfiguration *tls = nullptr):
+        tlsConfig(tls ? *tls : QSslConfiguration()),
+        useTls(tls != nullptr)
+    {
+    }
 
     //Delay before the login (get_home) is answered.
     int loginDelayMs = 0;
     int logins = 0;
+    //register_push requests that passed the credentials check.
     QList<QJsonObject> registrations;
+    //Actions refused for missing/wrong credentials.
+    QStringList rejected;
+    //Plain GET requests (a websocket upgrade attempt), refused with 400.
+    int getRequests = 0;
 
     QString baseUrl() const
     {
@@ -69,8 +92,21 @@ public:
 protected:
     void incomingConnection(qintptr handle) override
     {
-        QTcpSocket *sock = new QTcpSocket(this);
-        sock->setSocketDescriptor(handle);
+        QTcpSocket *sock = nullptr;
+        if (useTls)
+        {
+            QSslSocket *ssl = new QSslSocket(this);
+            ssl->setSslConfiguration(tlsConfig);
+            ssl->setSocketDescriptor(handle);
+            ssl->startServerEncryption();
+            sock = ssl;
+        }
+        else
+        {
+            sock = new QTcpSocket(this);
+            sock->setSocketDescriptor(handle);
+        }
+
         QByteArray *buf = new QByteArray();
         connect(sock, &QTcpSocket::readyRead, this, [this, sock, buf]()
         {
@@ -78,8 +114,9 @@ protected:
             const int hdrEnd = buf->indexOf("\r\n\r\n");
             if (hdrEnd < 0)
                 return;
+            const QByteArray hdr = buf->left(hdrEnd);
             int contentLength = 0;
-            for (const QByteArray &line: buf->left(hdrEnd).split('\n'))
+            for (const QByteArray &line: hdr.split('\n'))
             {
                 if (line.toLower().startsWith("content-length:"))
                     contentLength = line.mid(line.indexOf(':') + 1).trimmed().toInt();
@@ -88,6 +125,13 @@ protected:
             if (body.size() < contentLength)
                 return;
             buf->clear();
+
+            if (hdr.startsWith("GET "))
+            {
+                getRequests++;
+                reply(sock, 400, "text/html", "<html>Bad request</html>");
+                return;
+            }
             handleRequest(sock, QJsonDocument::fromJson(body).object());
         });
         connect(sock, &QTcpSocket::disconnected, this, [sock, buf]()
@@ -102,12 +146,21 @@ private:
     {
         const QString action = j.value(QStringLiteral("action")).toString();
 
+        if (j.value(QStringLiteral("cn_user")).toString() != TestUser ||
+            j.value(QStringLiteral("cn_pass")).toString() != TestPass)
+        {
+            rejected << action;
+            reply(sock, 400, "text/html", "<html>Bad request</html>");
+            return;
+        }
+
         if (action == QLatin1String("get_home"))
         {
             logins++;
             QTimer::singleShot(loginDelayMs, sock, [sock]()
             {
-                reply(sock, "{\"success\":\"true\",\"home\":[],\"cameras\":[],\"audio\":[]}");
+                reply(sock, 200, "application/json",
+                      "{\"success\":\"true\",\"home\":[],\"cameras\":[],\"audio\":[]}");
             });
             return;
         }
@@ -115,26 +168,29 @@ private:
         if (action == QLatin1String("register_push"))
         {
             registrations << j;
-            reply(sock, "{\"success\":\"true\"}");
+            s_httpRegistrations++;
+            reply(sock, 200, "application/json", "{\"success\":\"true\"}");
             return;
         }
 
         if (action == QLatin1String("poll_listen"))
         {
             if (j.value(QStringLiteral("type")).toString() == QLatin1String("register"))
-                reply(sock, "{\"success\":\"true\",\"uuid\":\"fake-poll-uuid\"}");
+                reply(sock, 200, "application/json", "{\"success\":\"true\",\"uuid\":\"fake-poll-uuid\"}");
             //"get": never answered, like a long-poll with no event.
             return;
         }
 
-        reply(sock, "{\"success\":\"true\"}");
+        reply(sock, 200, "application/json", "{\"success\":\"true\"}");
     }
 
-    static void reply(QTcpSocket *sock, const QByteArray &body)
+    static void reply(QTcpSocket *sock, int code, const char *mime, const QByteArray &body)
     {
         if (sock->state() != QAbstractSocket::ConnectedState)
             return;
-        QByteArray out = "HTTP/1.1 200 OK\r\nContent-Type: application/json";
+        QByteArray out = "HTTP/1.1 " + QByteArray::number(code)
+                         + (code == 200 ? " OK" : " Bad Request")
+                         + "\r\nContent-Type: " + mime;
         out += "\r\nContent-Length: " + QByteArray::number(body.size());
         out += "\r\nConnection: close\r\n\r\n";
         out += body;
@@ -142,6 +198,9 @@ private:
         sock->flush();
         sock->disconnectFromHost();
     }
+
+    QSslConfiguration tlsConfig;
+    bool useTls = false;
 };
 
 /*
@@ -204,6 +263,31 @@ private:
     }
 };
 
+/*
+ * What Application does with the deferred tap, minus the QTimer and the QML
+ * dispatch: homeLoaded() (take + gate + "connected"), the 400 ms delay
+ * expiring (fire) and stopPushNotifRouting() (session down).
+ */
+struct FakeApp
+{
+    DeferredNotifGate gate;
+
+    quint64 homeLoaded()
+    {
+        const quint64 ticket = gate.loggedIn(HardwareUtils::Instance()->takePendingNotif());
+        HardwareUtils::Instance()->updateCalaosConnectState(true);
+        return ticket;
+    }
+
+    QString delayExpired(quint64 ticket) { return gate.fire(ticket); }
+
+    void sessionDown()
+    {
+        HardwareUtils::Instance()->updateCalaosConnectState(false);
+        HardwareUtils::Instance()->restorePendingNotif(gate.loggedOut());
+    }
+};
+
 class TstPushNotif: public QObject
 {
     Q_OBJECT
@@ -226,9 +310,19 @@ private slots:
     void latestDeferredTapWins();
     void tapWhileConnectedIsOpenedNow();
     void emptyTapIsIgnored();
+    void restoredTapLosesToANewerOne();
+
+    //DeferredNotifGate, alone and driven like Application drives it.
+    void gateNothingToOpen();
+    void gateOpensOnceAfterTheDelay();
+    void gateStaleDelayNeverOpensAfterANewLogin();
+    void gateNewerTapReplacesTheOneInFlight();
+    void tapDuringEveryReconnectionIsOpened();
+    void tapTakenButSessionDroppedOpensAtNextLogin();
 
     //HardwareUtils: push token.
     void tokenChangeIsSignalledOnce();
+    void clearedTokenIsSignalled();
     void describedTokenIsTruncated();
 
     //CalaosConnection over HTTP (the transport whose debug log leaked).
@@ -237,6 +331,7 @@ private slots:
     void httpTokenArrivingAfterLoginIsRegistered();
     void httpTokenChangeDuringLoginIsSentOnce();
     void httpTokenChangeWhileLoggedOutWaitsForLogin();
+    void httpFallbackFromWebsocketRegistersOnce();
 
     //CalaosConnection over websocket.
     void wsRegistersAfterTheLoginIsAccepted();
@@ -248,26 +343,70 @@ private slots:
 private:
     static HardwareUtils *hw() { return HardwareUtils::Instance(); }
     static void pump(int ms);
-    //A token never used before in this run (HardwareUtils is a singleton
-    //and ignores a token equal to the current one).
+    //A token never used before in this run, recorded to scan the logs.
     static QString freshToken();
-    //Every token handed to HardwareUtils, to scan the logs at the end.
     static QStringList &usedTokens();
+    //The register_push of an HTTP fake carries the right credentials.
+    static void verifyAuthenticated(const QJsonObject &registration);
+
+    void startConnection(const QString &host);
 
     FakeHttpServer *http = nullptr;
     FakeWsServer *ws = nullptr;
     CalaosConnection *connection = nullptr;
+
+    QTemporaryDir certDir;
+    QSslConfiguration tlsConfig;
+    bool tlsReady = false;
 };
 
 void TstPushNotif::initTestCase()
 {
     s_previousHandler = qInstallMessageHandler(captureMessages);
+
+    //TLS for the websocket -> HTTP fallback case only: the mobile build
+    //derives wss:// and https:// from a bare host. A throwaway self-signed
+    //certificate is generated for the run (no key in the repository); the
+    //OpenSSL backend is preferred for its PEM support in server mode.
+    if (QSslSocket::availableBackends().contains(QStringLiteral("openssl")))
+        QSslSocket::setActiveBackend(QStringLiteral("openssl"));
+    if (!QSslSocket::supportsSsl() || !certDir.isValid())
+        return;
+
+    const QString key = certDir.filePath(QStringLiteral("key.pem"));
+    const QString crt = certDir.filePath(QStringLiteral("crt.pem"));
+    QProcess openssl;
+    openssl.start(QStringLiteral("openssl"),
+                  { QStringLiteral("req"), QStringLiteral("-x509"),
+                    QStringLiteral("-newkey"), QStringLiteral("rsa:2048"),
+                    QStringLiteral("-nodes"), QStringLiteral("-days"), QStringLiteral("1"),
+                    QStringLiteral("-subj"), QStringLiteral("/CN=127.0.0.1"),
+                    QStringLiteral("-keyout"), key, QStringLiteral("-out"), crt });
+    if (!openssl.waitForFinished(30000) || openssl.exitStatus() != QProcess::NormalExit ||
+        openssl.exitCode() != 0)
+        return;
+
+    QFile kf(key), cf(crt);
+    if (!kf.open(QIODevice::ReadOnly) || !cf.open(QIODevice::ReadOnly))
+        return;
+    const QSslKey sslKey(kf.readAll(), QSsl::Rsa, QSsl::Pem);
+    const QList<QSslCertificate> certs = QSslCertificate::fromData(cf.readAll(), QSsl::Pem);
+    if (sslKey.isNull() || certs.isEmpty())
+        return;
+
+    tlsConfig = QSslConfiguration::defaultConfiguration();
+    tlsConfig.setLocalCertificate(certs.first());
+    tlsConfig.setPrivateKey(sslKey);
+    tlsConfig.setPeerVerifyMode(QSslSocket::VerifyNone);
+    tlsReady = true;
 }
 
 void TstPushNotif::init()
 {
+    //Every case starts logged out, with no deferred tap and no token.
     hw()->updateCalaosConnectState(false);
     hw()->takePendingNotif();
+    hw()->clearDeviceToken();
 }
 
 void TstPushNotif::cleanup()
@@ -306,6 +445,18 @@ QString TstPushNotif::freshToken()
                       + QString(140, QLatin1Char('x'));
     usedTokens() << t;
     return t;
+}
+
+void TstPushNotif::verifyAuthenticated(const QJsonObject &registration)
+{
+    QCOMPARE(registration.value(QStringLiteral("cn_user")).toString(), TestUser);
+    QCOMPARE(registration.value(QStringLiteral("cn_pass")).toString(), TestPass);
+}
+
+void TstPushNotif::startConnection(const QString &host)
+{
+    connection = new CalaosConnection();
+    connection->login(TestUser, TestPass, host);
 }
 
 // ---------------------------------------------------------------- PushRegistration
@@ -384,14 +535,6 @@ void TstPushNotif::deferredTapIsTakenOnce()
 
     //Any later homeLoaded() of the same process must not reopen it.
     QVERIFY(hw()->takePendingNotif().isEmpty());
-
-    //And the same holds for a second disconnection/reconnection cycle: this
-    //is the case that used to be dropped after the first login.
-    hw()->updateCalaosConnectState(true);
-    hw()->updateCalaosConnectState(false);
-    hw()->handleNotificationOpened(QStringLiteral("uuid-2"));
-    QCOMPARE(hw()->takePendingNotif(), QStringLiteral("uuid-2"));
-    QVERIFY(hw()->takePendingNotif().isEmpty());
 }
 
 void TstPushNotif::latestDeferredTapWins()
@@ -429,6 +572,113 @@ void TstPushNotif::emptyTapIsIgnored()
     QVERIFY(!hw()->hasPendingNotif());
 }
 
+void TstPushNotif::restoredTapLosesToANewerOne()
+{
+    hw()->restorePendingNotif(QString());
+    QVERIFY(!hw()->hasPendingNotif());
+
+    hw()->restorePendingNotif(QStringLiteral("uuid-restored"));
+    QCOMPARE(hw()->takePendingNotif(), QStringLiteral("uuid-restored"));
+
+    hw()->handleNotificationOpened(QStringLiteral("uuid-newer"));
+    hw()->restorePendingNotif(QStringLiteral("uuid-restored"));
+    QCOMPARE(hw()->takePendingNotif(), QStringLiteral("uuid-newer"));
+}
+
+// ---------------------------------------------------------------- DeferredNotifGate
+
+void TstPushNotif::gateNothingToOpen()
+{
+    DeferredNotifGate g;
+    QCOMPARE(g.loggedIn(QString()), quint64(0));
+    QVERIFY(g.fire(0).isEmpty());
+    QVERIFY(g.loggedOut().isEmpty());
+}
+
+void TstPushNotif::gateOpensOnceAfterTheDelay()
+{
+    DeferredNotifGate g;
+    const quint64 t = g.loggedIn(QStringLiteral("uuid-1"));
+    QVERIFY(t != 0);
+    QCOMPARE(g.fire(t), QStringLiteral("uuid-1"));
+    QVERIFY(g.fire(t).isEmpty());
+    //Already opened: nothing to hand back when the session drops.
+    QVERIFY(g.loggedOut().isEmpty());
+}
+
+void TstPushNotif::gateStaleDelayNeverOpensAfterANewLogin()
+{
+    DeferredNotifGate g;
+    const quint64 t1 = g.loggedIn(QStringLiteral("uuid-1"));
+    //The session drops before the delay expires: the uuid is handed back...
+    QCOMPARE(g.loggedOut(), QStringLiteral("uuid-1"));
+    //...and the next login takes it with a new ticket.
+    const quint64 t2 = g.loggedIn(QStringLiteral("uuid-1"));
+    QVERIFY(t2 != t1);
+
+    //The delay of the first login fires during the second one: void.
+    QVERIFY(g.fire(t1).isEmpty());
+    QCOMPARE(g.fire(t2), QStringLiteral("uuid-1"));
+    QVERIFY(g.fire(t2).isEmpty());
+}
+
+void TstPushNotif::gateNewerTapReplacesTheOneInFlight()
+{
+    DeferredNotifGate g;
+    const quint64 t1 = g.loggedIn(QStringLiteral("uuid-old"));
+    //homeLoaded() again without a drop (it can be reported twice).
+    const quint64 t2 = g.loggedIn(QStringLiteral("uuid-new"));
+    QVERIFY(g.fire(t1).isEmpty());
+    QCOMPARE(g.fire(t2), QStringLiteral("uuid-new"));
+
+    //Without a newer tap the one in flight is kept by the new login.
+    const quint64 t3 = g.loggedIn(QStringLiteral("uuid-a"));
+    const quint64 t4 = g.loggedIn(QString());
+    QVERIFY(g.fire(t3).isEmpty());
+    QCOMPARE(g.fire(t4), QStringLiteral("uuid-a"));
+}
+
+void TstPushNotif::tapDuringEveryReconnectionIsOpened()
+{
+    //The FIX-3 regression: before, only the first login of the process
+    //consumed a deferred tap, so the one tapped during a later reconnection
+    //was silently dropped.
+    FakeApp app;
+    QVERIFY(app.delayExpired(app.homeLoaded()).isEmpty()); //first login, no tap
+
+    for (int cycle = 1; cycle <= 3; cycle++)
+    {
+        app.sessionDown();
+        const QString uuid = QStringLiteral("uuid-cycle-%1").arg(cycle);
+        hw()->handleNotificationOpened(uuid);
+
+        const quint64 ticket = app.homeLoaded();
+        QVERIFY2(ticket != 0, qPrintable(uuid));
+        QCOMPARE(app.delayExpired(ticket), uuid);
+        QVERIFY(app.delayExpired(ticket).isEmpty());
+        QVERIFY(!hw()->hasPendingNotif());
+    }
+}
+
+void TstPushNotif::tapTakenButSessionDroppedOpensAtNextLogin()
+{
+    FakeApp app;
+    hw()->handleNotificationOpened(QStringLiteral("uuid-1"));
+
+    const quint64 t1 = app.homeLoaded();
+    //Lost again before the 400 ms delay expired.
+    app.sessionDown();
+    QVERIFY(hw()->hasPendingNotif());
+    QVERIFY(app.delayExpired(t1).isEmpty());
+
+    const quint64 t2 = app.homeLoaded();
+    QCOMPARE(app.delayExpired(t2), QStringLiteral("uuid-1"));
+    //Opened exactly once over the two logins.
+    app.sessionDown();
+    QVERIFY(!hw()->hasPendingNotif());
+    QVERIFY(app.delayExpired(app.homeLoaded()).isEmpty());
+}
+
 // ---------------------------------------------------------------- push token
 
 void TstPushNotif::tokenChangeIsSignalledOnce()
@@ -448,6 +698,19 @@ void TstPushNotif::tokenChangeIsSignalledOnce()
     hw()->setDeviceToken(QString());
     QCOMPARE(changed.count(), 1);
     QCOMPARE(hw()->getDeviceToken(), t);
+}
+
+void TstPushNotif::clearedTokenIsSignalled()
+{
+    hw()->setDeviceToken(freshToken());
+    QSignalSpy changed(hw(), &HardwareUtils::deviceTokenChanged);
+
+    hw()->clearDeviceToken();
+    QCOMPARE(changed.count(), 1);
+    QVERIFY(hw()->getDeviceToken().isEmpty());
+
+    hw()->clearDeviceToken();
+    QCOMPARE(changed.count(), 1);
 }
 
 void TstPushNotif::describedTokenIsTruncated()
@@ -470,16 +733,17 @@ void TstPushNotif::httpRegistersAtLogin()
 
     http = new FakeHttpServer();
     QVERIFY(http->listen(QHostAddress::LocalHost, 0));
-    connection = new CalaosConnection();
-    connection->login(QStringLiteral("user"), QStringLiteral("pass"), http->baseUrl());
+    startConnection(http->baseUrl());
 
     QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
     QTRY_COMPARE(http->registrations.size(), 1);
     QCOMPARE(http->registrations.at(0).value(QStringLiteral("token")).toString(), t);
+    verifyAuthenticated(http->registrations.at(0));
 
-    //Nothing else is sent on its own.
+    //Nothing else is sent on its own, and nothing was refused.
     pump(200);
     QCOMPARE(http->registrations.size(), 1);
+    QCOMPARE(http->rejected, QStringList());
 }
 
 void TstPushNotif::httpRotationWhileConnectedRegistersAgain()
@@ -488,39 +752,44 @@ void TstPushNotif::httpRotationWhileConnectedRegistersAgain()
 
     http = new FakeHttpServer();
     QVERIFY(http->listen(QHostAddress::LocalHost, 0));
-    connection = new CalaosConnection();
-    connection->login(QStringLiteral("user"), QStringLiteral("pass"), http->baseUrl());
+    startConnection(http->baseUrl());
     QTRY_COMPARE(http->registrations.size(), 1);
+    verifyAuthenticated(http->registrations.at(0));
 
     //FCM onNewToken() while logged in.
     const QString rotated = freshToken();
     hw()->setDeviceToken(rotated);
     QTRY_COMPARE(http->registrations.size(), 2);
     QCOMPARE(http->registrations.at(1).value(QStringLiteral("token")).toString(), rotated);
+    verifyAuthenticated(http->registrations.at(1));
 
     //Same token reported again (stored value + getToken()): no duplicate.
     hw()->setDeviceToken(rotated);
     pump(200);
     QCOMPARE(http->registrations.size(), 2);
     QCOMPARE(http->logins, 1);
+    QCOMPARE(http->rejected, QStringList());
 }
 
 void TstPushNotif::httpTokenArrivingAfterLoginIsRegistered()
 {
-    //iOS cold start: APNs answers after the login completed. Simulated with
-    //a token change right after login, the previous token being already
-    //registered by an earlier session of the process.
+    //iOS cold start: APNs answers after the login completed. No token at all
+    //when the session starts (init() cleared it).
+    QVERIFY(hw()->getDeviceToken().isEmpty());
+
     http = new FakeHttpServer();
     QVERIFY(http->listen(QHostAddress::LocalHost, 0));
-    connection = new CalaosConnection();
-    connection->login(QStringLiteral("user"), QStringLiteral("pass"), http->baseUrl());
+    startConnection(http->baseUrl());
     QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
-    QTRY_COMPARE(http->registrations.size(), 1);
+    pump(200);
+    QCOMPARE(http->registrations.size(), 0);
 
     const QString late = freshToken();
     hw()->setDeviceToken(late);
-    QTRY_COMPARE(http->registrations.size(), 2);
-    QCOMPARE(http->registrations.last().value(QStringLiteral("token")).toString(), late);
+    QTRY_COMPARE(http->registrations.size(), 1);
+    QCOMPARE(http->registrations.at(0).value(QStringLiteral("token")).toString(), late);
+    verifyAuthenticated(http->registrations.at(0));
+    QCOMPARE(http->logins, 1);
 }
 
 void TstPushNotif::httpTokenChangeDuringLoginIsSentOnce()
@@ -530,8 +799,7 @@ void TstPushNotif::httpTokenChangeDuringLoginIsSentOnce()
     http = new FakeHttpServer();
     http->loginDelayMs = 1000;
     QVERIFY(http->listen(QHostAddress::LocalHost, 0));
-    connection = new CalaosConnection();
-    connection->login(QStringLiteral("user"), QStringLiteral("pass"), http->baseUrl());
+    startConnection(http->baseUrl());
 
     //The token rotates while the login is in flight: nothing can be sent
     //yet, and the login must register the newest token, once.
@@ -553,8 +821,7 @@ void TstPushNotif::httpTokenChangeWhileLoggedOutWaitsForLogin()
 
     http = new FakeHttpServer();
     QVERIFY(http->listen(QHostAddress::LocalHost, 0));
-    connection = new CalaosConnection();
-    connection->login(QStringLiteral("user"), QStringLiteral("pass"), http->baseUrl());
+    startConnection(http->baseUrl());
     QTRY_COMPARE(http->registrations.size(), 1);
 
     connection->logout();
@@ -563,11 +830,41 @@ void TstPushNotif::httpTokenChangeWhileLoggedOutWaitsForLogin()
     pump(200);
     QCOMPARE(http->registrations.size(), 1);
 
-    connection->login(QStringLiteral("user"), QStringLiteral("pass"), http->baseUrl());
+    connection->login(TestUser, TestPass, http->baseUrl());
     QTRY_COMPARE(http->registrations.size(), 2);
     QCOMPARE(http->registrations.at(1).value(QStringLiteral("token")).toString(), rotated);
+    verifyAuthenticated(http->registrations.at(1));
     pump(200);
     QCOMPARE(http->registrations.size(), 2);
+}
+
+void TstPushNotif::httpFallbackFromWebsocketRegistersOnce()
+{
+    if (!tlsReady)
+        QSKIP("No TLS backend or no openssl CLI to make a test certificate");
+
+    const QString t = freshToken();
+    hw()->setDeviceToken(t);
+
+    //A bare host: the mobile build tries wss://<host>/api first and falls
+    //back to https://<host>/api.php. This server refuses the websocket
+    //upgrade (400, like a calaos_server without websocket), so the HTTP
+    //fallback logs in and must register the token exactly once.
+    http = new FakeHttpServer(&tlsConfig);
+    QVERIFY(http->listen(QHostAddress::LocalHost, 0));
+    startConnection(QStringLiteral("127.0.0.1:%1").arg(http->serverPort()));
+
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
+    QVERIFY(connection->isHttp());
+    QVERIFY(http->getRequests >= 1);
+    QTRY_COMPARE(http->registrations.size(), 1);
+    QCOMPARE(http->registrations.at(0).value(QStringLiteral("token")).toString(), t);
+    verifyAuthenticated(http->registrations.at(0));
+
+    pump(300);
+    QCOMPARE(http->registrations.size(), 1);
+    QCOMPARE(http->logins, 1);
+    QCOMPARE(http->rejected, QStringList());
 }
 
 // ---------------------------------------------------------------- websocket transport
@@ -582,8 +879,7 @@ void TstPushNotif::wsRegistersAfterTheLoginIsAccepted()
     //blindly: that frame was dropped, the socket not being logged in yet.
     ws->loginDelayMs = 400;
     QVERIFY(ws->listen(QHostAddress::LocalHost, 0));
-    connection = new CalaosConnection();
-    connection->login(QStringLiteral("user"), QStringLiteral("pass"), ws->url());
+    startConnection(ws->url());
 
     QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
     QTRY_COMPARE(ws->registrations.size(), 1);
@@ -601,8 +897,7 @@ void TstPushNotif::wsRotationWhileConnectedRegistersAgain()
 
     ws = new FakeWsServer();
     QVERIFY(ws->listen(QHostAddress::LocalHost, 0));
-    connection = new CalaosConnection();
-    connection->login(QStringLiteral("user"), QStringLiteral("pass"), ws->url());
+    startConnection(ws->url());
     QTRY_COMPARE(ws->registrations.size(), 1);
 
     const QString rotated = freshToken();
@@ -621,25 +916,31 @@ void TstPushNotif::cleanupTestCase()
 {
     qInstallMessageHandler(s_previousHandler);
 
-    QVERIFY(!usedTokens().isEmpty());
+    //Whatever subset of the functions ran: no token and no password in clear.
     for (const QString &line: std::as_const(s_logLines))
     {
         for (const QString &t: std::as_const(usedTokens()))
-            QVERIFY2(!line.contains(t), qPrintable(QStringLiteral("token in clear in: ")
-                                                   + line.left(120)));
+            QVERIFY2(!line.contains(t), qPrintable(QStringLiteral("token in clear in a log line of %1 chars")
+                                                   .arg(line.size())));
+        QVERIFY2(!line.contains(TestPass), "password in clear in a log line");
     }
 
 #ifdef QT_DEBUG
-    //The HTTP fallback really dumped register_push, redacted.
-    bool sawRedactedRegister = false;
-    for (const QString &line: std::as_const(s_logLines))
+    //When the HTTP fallback really sent register_push, its debug dump is
+    //there, redacted.
+    if (s_httpRegistrations > 0)
     {
-        if (line.startsWith(QLatin1String("SEND:")) &&
-            line.contains(QLatin1String("register_push")) &&
-            line.contains(QLatin1String("\"token\": \"***\"")))
-            sawRedactedRegister = true;
+        bool sawRedactedRegister = false;
+        for (const QString &line: std::as_const(s_logLines))
+        {
+            if (line.startsWith(QLatin1String("SEND:")) &&
+                line.contains(QLatin1String("register_push")) &&
+                line.contains(QLatin1String("\"token\": \"***\"")) &&
+                line.contains(QLatin1String("\"cn_pass\": \"***\"")))
+                sawRedactedRegister = true;
+        }
+        QVERIFY(sawRedactedRegister);
     }
-    QVERIFY(sawRedactedRegister);
 #endif
 }
 

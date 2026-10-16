@@ -29,7 +29,16 @@ bool clearJavaException(const char *call)
     return false;
 }
 
-//Called from the Android UI thread: only hop to the Qt thread from here.
+//A push token is a per-device credential: never log it in full.
+QString describeToken(const QString &token)
+{
+    if (token.isEmpty())
+        return QStringLiteral("<empty>");
+    return QStringLiteral("%1... (%2 chars)").arg(token.left(8)).arg(token.size());
+}
+
+//Called from Android threads (UI thread, FCM binder thread): only hop to
+//the Qt thread from here.
 void jniEmitDialogTextValid(JNIEnv *, jclass, jstring text)
 {
     HardwareUtilsAndroid *hw = s_instance.data();
@@ -55,6 +64,32 @@ void jniEmitDialogCancel(JNIEnv *, jclass)
     }, Qt::QueuedConnection);
 }
 
+void jniEmitDeviceToken(JNIEnv *, jclass, jstring token)
+{
+    HardwareUtilsAndroid *hw = s_instance.data();
+    if (!hw)
+        return;
+
+    const QString s = QJniObject(token).toString();
+    QMetaObject::invokeMethod(hw, [hw, s]()
+    {
+        hw->setDeviceToken(s);
+    }, Qt::QueuedConnection);
+}
+
+void jniEmitNotificationOpened(JNIEnv *, jclass, jstring uuid)
+{
+    HardwareUtilsAndroid *hw = s_instance.data();
+    if (!hw)
+        return;
+
+    const QString s = QJniObject(uuid).toString();
+    QMetaObject::invokeMethod(hw, [hw, s]()
+    {
+        hw->handleNotificationOpened(s);
+    }, Qt::QueuedConnection);
+}
+
 } // namespace
 
 HardwareUtilsAndroid::HardwareUtilsAndroid(QObject *parent):
@@ -77,16 +112,73 @@ void HardwareUtilsAndroid::platformInit(QQmlApplicationEngine *e)
     const bool ok = env.registerNativeMethods(kNativesClass, {
         { "emitDialogTextValid", "(Ljava/lang/String;)V", reinterpret_cast<void *>(jniEmitDialogTextValid) },
         { "emitDialogCancel", "()V", reinterpret_cast<void *>(jniEmitDialogCancel) },
+        { "emitDeviceToken", "(Ljava/lang/String;)V", reinterpret_cast<void *>(jniEmitDeviceToken) },
+        { "emitNotificationOpened", "(Ljava/lang/String;)V", reinterpret_cast<void *>(jniEmitNotificationOpened) },
     });
     clearJavaException("registerNativeMethods");
     if (!ok)
+    {
         qWarning() << "Android: failed to register native methods on" << kNativesClass;
+        return;
+    }
+
+    //From now on Java forwards token refreshes and notification taps.
+    QJniObject::callStaticMethod<void>(kHardwareUtilsClass, "setNativesReady", "()V");
+    clearJavaException("HardwareUtils.setNativesReady");
+
+    //Token saved by a previous run (or by the messaging service while Qt was
+    //not loaded): available right away, so the first login can register it.
+    QJniObject jtoken = QJniObject::callStaticObjectMethod(kHardwareUtilsClass,
+                                                           "getStoredPushToken",
+                                                           "()Ljava/lang/String;");
+    if (!clearJavaException("HardwareUtils.getStoredPushToken") && jtoken.isValid())
+        setDeviceToken(jtoken.toString());
+
+    //Then ask Firebase for the current one; it comes back through
+    //emitDeviceToken() (first run, or rotated token).
+    QJniObject::callStaticMethod<void>(kHardwareUtilsClass, "requestPushToken", "()V");
+    clearJavaException("HardwareUtils.requestPushToken");
+
+    //Cold start from a notification tap: the activity parked the uuid.
+    QJniObject juuid = QJniObject::callStaticObjectMethod(kHardwareUtilsClass,
+                                                          "takePendingEventUuid",
+                                                          "()Ljava/lang/String;");
+    if (!clearJavaException("HardwareUtils.takePendingEventUuid") && juuid.isValid())
+    {
+        const QString uuid = juuid.toString();
+        if (!uuid.isEmpty())
+        {
+            qDebug() << "Android: started from notification, event" << uuid;
+            startedWithNotif = true;
+            notifUuid = uuid;
+        }
+    }
 }
 
 void HardwareUtilsAndroid::setDeviceToken(QString t)
 {
-    qDebug() << "Received device token: " << t;
+    if (t.isEmpty() || t == deviceToken)
+        return;
+
+    qDebug() << "Android: FCM device token" << describeToken(t);
     deviceToken = t;
+}
+
+void HardwareUtilsAndroid::handleNotificationOpened(const QString &uuid)
+{
+    if (uuid.isEmpty())
+        return;
+
+    qDebug() << "Android: notification opened, event" << uuid
+             << (isCalaosConnected() ? "(connected)" : "(deferred until home is loaded)");
+
+    if (isCalaosConnected())
+        emitPushNotifReceived(uuid);
+    else
+    {
+        startedWithNotif = true;
+        notifUuid = uuid;
+    }
 }
 
 void HardwareUtilsAndroid::showAlertMessage(QString title, QString message, QString buttontext)

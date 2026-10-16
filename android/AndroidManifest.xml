@@ -8,6 +8,8 @@
     android:versionName="-- %%INSERT_VERSION_NAME%% --">
     <!-- %%INSERT_PERMISSIONS -->
     <!-- %%INSERT_FEATURES -->
+    <!-- Runtime permission on Android 13+ (requested by HardwareUtils.onCreate); ignored below. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <supports-screens
         android:anyDensity="true"
         android:largeScreens="true"
@@ -41,6 +43,28 @@
                 android:name="android.app.arguments"
                 android:value="-- %%INSERT_APP_ARGUMENTS%% --" />
         </activity>
+
+        <!-- Push notifications (FCM, AND-4). The service also runs in a process
+             without Qt: see CalaosMessagingService.java. The meta-data below
+             applies to messages displayed by the system while the app is in the
+             background (notification messages); keep the channel id in sync
+             with CalaosMessagingService.CHANNEL_ID. -->
+        <service
+            android:name="fr.calaos.calaoshome.CalaosMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="calaos_events" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_calaos" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/calaos_notification" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

@@ -30,7 +30,7 @@ xcrun devicectl device process launch --terminate-existing --device 00008130-000
 ./tools/build_ios.sh Release --archive          # archive, no upload
 ```
 
-Simulator build: `./tools/build_ios.sh Debug --simulator` → `build-ios-sim/Debug-iphonesimulator/CalaosHome.app` (arm64, ad hoc signed, no team; `--archive` is device-only). iOS 27.0 is the runtime that has the iPhone 17/18/Air device types (the 27.1 runtime lists none: `xcrun simctl create` fails with "Incompatible device"). With the default demo credentials the app opens straight on the home (Favoris) screen.
+Simulator build: `./tools/build_ios.sh Debug --simulator` → `build-ios-sim/Debug-iphonesimulator/CalaosHome.app` (arm64, ad hoc signed, no team; needs Qt >= 6.12, the script stops early on an older kit; `--archive` is device-only and implies Release). iOS 27.0 is the runtime that has the iPhone 17/18/Air device types (the 27.1 runtime lists none: `xcrun simctl create` fails with "Incompatible device"). With the default demo credentials the app opens straight on the home (Favoris) screen.
 
 Simulators: `xcrun simctl list devices available`, `xcrun simctl boot <udid>`, `xcrun simctl install booted <app>`, `xcrun simctl launch booted fr.calaos.CalaosMobile`, `xcrun simctl io booted screenshot /tmp/x.png`. The script passes `CMAKE_OSX_SYSROOT=iphonesimulator` and uses its own build dir (`build-ios-sim/`) so the device build cache is not clobbered.
 
@@ -44,6 +44,6 @@ Simulators: `xcrun simctl list devices available`, `xcrun simctl boot <udid>`, `
 6. The extension must not link Qt.
 7. Do not log credentials or push tokens.
 8. Static QML plugins come from `cmake/qml_imports/` (an INTERFACE target that runs `qt_import_qml_plugins` on `qml/mobile`, `qml/SharedComponents`, `qml/quickflux` only; keep that list in sync with the directories referenced by `qml_mobile.qrc` / `qml_shared.qrc`); `CalaosHome` has `QT_QML_MODULE_NO_IMPORT_SCAN`. Without it, qmlimportscanner walks the whole repo (desktop QML, tests, widgets) and Qt 6.12's VirtualKeyboard plugin fails the generate step (`Qt6::Multimedia` not found). A new QML import used by mobile code must live under those directories.
-9. Privacy manifests (`ios/PrivacyInfo.xcprivacy`, `ios/PushNotif/PrivacyInfo.xcprivacy`): Qt is static, its frameworks' manifests never reach the bundle, so the app manifest declares the required-reason APIs of the linked Qt code too (see the comment in the file). Re-check with `nm -u` / `strings` on the binary after a Qt bump or a new API.
+9. Privacy manifests (`ios/PrivacyInfo.xcprivacy`, `ios/PushNotif/PrivacyInfo.xcprivacy`): Qt is static, its frameworks' manifests never reach the bundle, so the app manifest declares the required-reason APIs of the linked Qt code too (see the comment in the file). Re-check after a Qt bump or a new API: `nm -u CalaosHome.app/CalaosHome | grep -E '^_(f|l)?stat$|statv?fs|getattrlist|mach_absolute_time|CFPreferences|NSUserDefaults'` and `strings -a CalaosHome.app/CalaosHome | grep -xE 'systemUptime|activeInputModes'`.
 10. `NSPhotoLibraryUsageDescription` must stay: `libqios.a` (`qiosfiledialog.mm`) references `PHPhotoLibrary` even though the app never uses photos.
 11. The script clears `build-ios/CMakeCache.txt` + `CMakeFiles` by itself when the cached `Qt6_DIR` belongs to another kit.

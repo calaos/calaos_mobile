@@ -159,8 +159,8 @@ Background mode `remote-notification` is declared in
   (extension). Qt is linked statically, so the manifests inside the Qt frameworks do
   not reach the bundle: the app manifest also declares the required-reason APIs of the
   linked Qt code. Re-check after a Qt bump with
-  `nm -u CalaosHome.app/CalaosHome | grep -E 'stat|statfs|CFPreferences|NSUserDefaults'`
-  and `strings -a CalaosHome.app/CalaosHome | grep -x systemUptime`.
+  `nm -u CalaosHome.app/CalaosHome | grep -E '^_(f|l)?stat$|statv?fs|getattrlist|mach_absolute_time|CFPreferences|NSUserDefaults'`
+  and `strings -a CalaosHome.app/CalaosHome | grep -xE 'systemUptime|activeInputModes'`.
 - Native alerts go through [ios/AlertPrompt.m](../ios/AlertPrompt.m).
 - 3D Touch / Quick Actions are forwarded through
   `application:performActionForShortcutItem:` → `handlePerformActionForShortcutItem`,
@@ -233,7 +233,7 @@ requires no manual Xcode-side steps.
 ### 9.1 Prerequisites
 
 - Xcode 15+ with command-line tools.
-- Qt 6.6+ for iOS (tested with Qt 6.12): `qt-unified-installer` targets `ios_device` (+ `ios_simulator_arm64`); Qt <= 6.11 ships a single `ios` kit.
+- Qt 6.6+ for iOS (tested with Qt 6.12): `qt-unified-installer` targets `ios_device` (+ `ios_simulator_arm64`); Qt <= 6.11 ships a single `ios` kit. Simulator builds need Qt >= 6.12 (`ios_simulator_arm64`); the script stops early otherwise.
 - Apple Developer account with team id `9WYC46992U`.
 
 ### 9.2 Configure
@@ -252,10 +252,11 @@ cmake -S . -B build-ios -G Xcode \
 ```bash
 ./tools/build_ios.sh Debug                 # device (build-ios/)
 ./tools/build_ios.sh Debug --simulator     # simulator, arm64 (build-ios-sim/), ad hoc signed
-./tools/build_ios.sh Release --archive     # archive + export, see 9.4
+./tools/build_ios.sh --archive             # Release archive + export, see 9.4
 ```
 
-The simulator build uses the Qt `ios_simulator_arm64` kit and needs no team or
+The simulator build uses the Qt `ios_simulator_arm64` kit (Qt >= 6.12: the single
+`ios` kit of Qt <= 6.11 has no arm64 simulator slice, the script stops early) and needs no team or
 provisioning profile (ad hoc "Sign to Run Locally"; the entitlements are still
 embedded, so the keychain group and App Group work in the simulator).
 

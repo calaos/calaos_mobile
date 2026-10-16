@@ -90,13 +90,19 @@ La version Android n'a jamais fonctionné en Qt 6. Analyse et plan validés par 
 | ID | Titre | Taille | Bloqué par | Groupe | Statut |
 |---|---|---|---|---|---|
 | [AND-1](tasks/AND-1-toolchain-cmake.md) | Toolchain Android et configuration CMake | M | — | G-ANDROID | Terminé |
-| [AND-2](tasks/AND-2-packaging-gradle-manifest.md) | Packaging Qt 6.11 : Gradle, manifest, ressources | M | AND-1 | G-ANDROID | En revue |
+| [AND-2](tasks/AND-2-packaging-gradle-manifest.md) | Packaging Qt 6.11 : Gradle, manifest, ressources | M | AND-1 | G-ANDROID | Terminé |
 | [AND-3](tasks/AND-3-glue-java-jni.md) | Glue Java/JNI au standard Qt 6 | M | AND-2 | G-ANDROID | À faire |
 | [AND-4](tasks/AND-4-push-fcm-java.md) | Notifications push FCM via le SDK Firebase Java | L | AND-3 | G-ANDROID | À faire |
 | [AND-7](tasks/AND-7-push-image-camera.md) | Image de caméra dans les notifications push | L | AND-4 | G-ANDROID | À faire |
 | [AND-5](tasks/AND-5-release-aab-signature.md) | Build release : AAB multi-ABI et signature | S | AND-4 | G-ANDROID | À faire |
 | [AND-6](tasks/AND-6-doc-nettoyage.md) | Documentation Android et nettoyage legacy | S | AND-5, AND-7 | G-ANDROID + G-DOC | À faire |
 | [AND-8](tasks/AND-8-clavier-apres-login.md) | Le clavier reste ouvert après le login | S | — | G-QML-MOBILE | À faire |
+
+Suivis issus des revues (à traiter dans le ticket indiqué) :
+- AND-5 : `android/build.gradle` `useLegacyPackaging = legacyPackaging` reçoit la chaîne `"false"`, évaluée à vrai par Groovy → les `.so` sont compressés dans l'APK (`extractNativeLibs=true`). Trancher (`.toBoolean()` ou compression assumée) avant la release ; la permission `WRITE_EXTERNAL_STORAGE` insérée par Qt est inutile (`tools:node="remove"` ou `maxSdkVersion`).
+- AND-5 : configurer avec le seul ABI `x86_64` s'arrête sur une erreur CMake non analysée (constaté pendant AND-1).
+- AND-6 : `mobile.pro` liste encore en `DISTFILES` le wrapper Gradle et `libs.xml` supprimés ; `tools/check_sources.sh` ne reconnaît pas les chemins `$$PWD/src/...` de `calaos.pri` (faux positifs).
+- QML (hors P-AND) : `main.qml:128` paramètre `idx` non déclaré ; `AnimatedIcon.qml:31` image `icon_light_00-1.png` introuvable.
 
 ## Diagramme de parallélisation
 

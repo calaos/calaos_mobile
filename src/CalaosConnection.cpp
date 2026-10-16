@@ -602,9 +602,18 @@ void CalaosConnection::registerPushToken()
     };
 
     if (isWebsocket())
+    {
         sendWebsocket(QStringLiteral("register_push"), o);
+    }
     else
+    {
+        //api.php checks the credentials before looking at the action, like
+        //for every other HTTP request: without them the server answers 400
+        //and the device is never registered. Redacted in the debug dump.
+        o[JsonKeys::CnUser] = username;
+        o[JsonKeys::CnPass] = password;
         sendHttp(QStringLiteral("register_push"), o);
+    }
 }
 
 void CalaosConnection::emitHomeLoaded(const QVariantMap &home)

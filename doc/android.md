@@ -251,7 +251,7 @@ Session semantics (decided for AND-7, reversible):
   downloading pictures: pushes show as **text only** until the next
   successful login (`Application::homeLoaded()` sets the flag back). The
   flag is **not** touched by a lost connection, a reconnection, the login
-  cancel button or the iOS-style resign-active logout.
+  cancel button or the iOS resign-active pause.
 - **Reset all data** (`Application::resetAllData()` →
   `resetAuthKeychain()`): full wipe of the store (host, credentials,
   session flag and Keystore key) and of any QSettings leftovers.
@@ -424,8 +424,8 @@ on the AAB, or `./tools/build_android.sh Release` and `adb install -r` the APK.
    adapting Java glue (e.g., notification channels).
 7. The native activity is `singleTop` — when the app is already running and a
    push intent re-enters it, the existing instance is reused. Lifecycle
-   handling in `Application` (logout on resign-active, login on become-active)
-   relies on this.
+   handling in `Application` (pause on resign-active, login on become-active
+   unless the user logged out; both iOS only) relies on this.
 8. Don’t hand-edit [android/google-services.json](../android/google-services.json)
    unless you regenerate it from the Firebase console.
 ## 9. CMake build (preferred)

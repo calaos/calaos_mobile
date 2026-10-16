@@ -217,13 +217,21 @@ void CalaosConnection::connectionLost(const QString &reason, ReconnectPolicy::Fa
         armReconnectTimer();
 }
 
-void CalaosConnection::requestImmediateReconnect(QString user, QString pass, QString h)
+bool CalaosConnection::acceptsImmediateReconnect() const
 {
     //Discovery fires once per announce datagram, so it can be chatty. It is
     //allowed to short-circuit the delay currently pending, but not more than
     //once per second: otherwise a talkative LAN would defeat the backoff.
     if (lastAttemptTimer.isValid() &&
         lastAttemptTimer.elapsed() < ReconnectPolicy::BaseDelayMs)
+        return false;
+
+    return reconnectPolicy.canBeginAttempt(ReconnectPolicy::AutoRetry);
+}
+
+void CalaosConnection::requestImmediateReconnect(QString user, QString pass, QString h)
+{
+    if (!acceptsImmediateReconnect())
         return;
 
     startConnection(user, pass, h, ReconnectPolicy::AutoRetry);
@@ -238,12 +246,48 @@ void CalaosConnection::suspend()
     emit disconnected();
 }
 
-void CalaosConnection::resume(QString user, QString pass, QString h)
+void CalaosConnection::pause()
 {
+    cancelReconnectTimer();
+    resetTransport();
+    reconnectPolicy.pause();
+    emitStateChanged();
+    emit disconnected();
+}
+
+void CalaosConnection::unpause()
+{
+    reconnectPolicy.unpause();
+}
+
+void CalaosConnection::resume()
+{
+    //canResume() implies a session was wanted, hence that startConnection()
+    //or deferLogin() (login refused offline, FIX-9) already ran and stored
+    //the credentials and host.
     if (!reconnectPolicy.canResume())
         return;
 
-    startConnection(user, pass, h, ReconnectPolicy::AutoRetry);
+    startConnection(username, password, lasthost, ReconnectPolicy::AutoRetry);
+}
+
+bool CalaosConnection::deferLogin(QString user, QString pass, QString h, ReconnectPolicy::Trigger trigger)
+{
+    if (!reconnectPolicy.deferAttempt(trigger))
+        return false;
+
+    //Nothing is in flight (deferAttempt() refuses otherwise), but a retry may
+    //be pending: the new intent replaces it, resume() starts the attempt.
+    cancelReconnectTimer();
+    resetTransport();
+
+    //What resume() will use, like an attempt started now would have stored.
+    username = user;
+    password = pass;
+    lasthost = h;
+
+    emitStateChanged();
+    return true;
 }
 
 void CalaosConnection::login(QString user, QString pass, QString h)
@@ -495,7 +539,8 @@ void CalaosConnection::logout()
 {
     cancelReconnectTimer();
     resetTransport();
-    //Explicit logout: no automatic reconnection is wanted any more.
+    //Explicit logout: no automatic reconnection is wanted any more, and none
+    //of suspend()/resume(), discovery or the retry timer may reopen it.
     reconnectPolicy.stop();
     emitStateChanged();
 

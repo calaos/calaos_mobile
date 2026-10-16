@@ -61,19 +61,34 @@ void Application::createQmlApp()
     connect(HardwareUtils::Instance(), &HardwareUtils::calaosServerDetected,
             this, &Application::calaosServerDetected);
 
+    //Only iOS reports these two. Going to the background drops the session
+    //but is not a logout (FIX-7): a deliberate logout must survive the app
+    //going to the background and back, and a network change seen while in
+    //the background must not reconnect.
     connect(HardwareUtils::Instance(), &HardwareUtils::applicationWillResignActive, this, [=]()
     {
-        qDebug() << "Application is in background, logout";
+        qDebug() << "Application is in background, drop the session";
         startedWithOptHandled = false;
-        logout();
+        stopPushNotifRouting();
+        calaosConnect->pause();
+        update_applicationStatus(Common::NotConnected);
     });
 
     connect(HardwareUtils::Instance(), &HardwareUtils::applicationBecomeActive, this, [=]()
     {
-        qDebug() << "Application is in foreground, login again";
+        calaosConnect->unpause();
         QTimer::singleShot(0, this, [=]()
         {
-            login(get_username(), get_password(), get_hostname());
+            //Logged out on purpose: stay on the login screen until the user
+            //logs in again.
+            if (calaosConnect->sessionClosedByUser())
+            {
+                qDebug() << "Application is in foreground, logged out by the user: no login";
+                return;
+            }
+
+            qDebug() << "Application is in foreground, login again";
+            startLogin(get_username(), get_password(), get_hostname(), false);
         });
     });
 
@@ -364,36 +379,69 @@ void Application::createQmlApp()
         }
 
         if (!demoMode)
-            login(user, pass, h);
+            startLogin(user, pass, h, false);
     });
 #endif
 }
 
 void Application::login(QString user, QString pass, QString host)
 {
-    if (HardwareUtils::Instance()->getNetworkStatus() == HardwareUtils::NotConnected)
-    {
-        HardwareUtils::Instance()->showAlertMessage(tr("Network error"),
-                                                    tr("No network connection found, "
-                                                       "this application requires a "
-                                                       "network connection to work."),
-                                                    tr("Close"));
-        return;
-    }
+    startLogin(user, pass, host, true);
+}
 
+void Application::startLogin(QString user, QString pass, QString host, bool userAction)
+{
     host = host.trimmed();
     user = user.trimmed();
-    qDebug() << "Try to login to host: " << host;
 
+    //Before the network check: the properties are what the login screen
+    //shows and what homeLoaded() saves, so a login recorded below for when
+    //the network is back (FIX-9) is saved with its own credentials. They are
+    //written even when deferLogin() refuses, which is harmless: an automatic
+    //login writes the values it was given from them, and a refused tap on
+    //Login keeps what was typed, as online.
     update_username(user);
     update_password(pass);
     update_hostname(host);
+
+    if (HardwareUtils::Instance()->getNetworkStatus() == HardwareUtils::NotConnected)
+    {
+        //Launched in airplane mode, or Login tapped without network: the
+        //login cannot start, but the intent is recorded with these
+        //credentials so networkStatusChanged() -> resume() connects when the
+        //link is back (FIX-9). An automatic login never reopens a session the
+        //user closed: deferLogin() refuses it.
+        const bool recorded = calaosConnect->deferLogin(user, pass, host,
+                                                        userAction ? ReconnectPolicy::UserRequest
+                                                                   : ReconnectPolicy::AutoRetry);
+        qDebug() << "No network, login" << (recorded ? "deferred until the network is back" : "not deferred");
+
+        //Asynchronous alert, the app keeps running behind it. A tap on Login
+        //always gets an answer; the automatic logins show it once per
+        //offline period.
+        if (userAction || !offlineAlertShown)
+        {
+            offlineAlertShown = true;
+            HardwareUtils::Instance()->showAlertMessage(tr("Network error"),
+                                                        tr("No network connection found, "
+                                                           "this application requires a "
+                                                           "network connection to work."),
+                                                        tr("Close"));
+        }
+        return;
+    }
+
+    qDebug() << "Try to login to host: " << host;
 
     //T14: no applicationStatus guard here any more. There is exactly one
     //anti double-login guard and it lives in CalaosConnection/ReconnectPolicy;
     //the two flags used to desynchronise and turn a login into a silent no-op.
     //applicationStatus is updated by connectionStateChanged() when (and only
     //when) the attempt actually starts.
+    //UserRequest ignores the iOS pause on purpose (FIX-7): the pause only
+    //blocks automatic attempts, and a login comes from the login screen, the
+    //launch timer or become-active, i.e. with the app on screen (at worst
+    //behind a system prompt); the next resign-active pauses it again.
     calaosConnect->login(user, pass, host);
 }
 
@@ -445,7 +493,11 @@ void Application::logout()
 void Application::userLogout()
 {
     HardwareUtils::Instance()->setSessionActive(false);
+    //logout() first: it hands a tap taken but not opened yet back to
+    //HardwareUtils (DeferredNotifGate::loggedOut() also makes any armed delay
+    //stale), so the line below drops it too (FIX-7).
     logout();
+    HardwareUtils::Instance()->forgetPendingUserActions();
 }
 
 void Application::resetAllData()
@@ -455,7 +507,13 @@ void Application::resetAllData()
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
     settings.setValue("calaos/host", Common::getDemoHost());
     settings.sync();
+    //The login screen shown by the logout below must show what is stored now,
+    //not the credentials and host that were just erased (FIX-8).
+    loadSettings();
     logout();
+    //Host and credentials are gone: a tap or Quick Action left from the old
+    //home must not fire at the next login, possibly on another home (FIX-7).
+    HardwareUtils::Instance()->forgetPendingUserActions();
 }
 
 void Application::homeLoaded(const QVariantMap &homeData)
@@ -671,16 +729,27 @@ void Application::networkStatusChanged()
     {
         //Airplane mode, cable unplugged... Drop the session, but unlike a real
         //logout remember that a session is wanted so the link coming back
-        //reconnects on its own (T14).
+        //reconnects on its own (T14). After a logout nothing is wanted, so
+        //nothing comes back (FIX-7).
         stopPushNotifRouting();
         calaosConnect->suspend();
         return;
     }
 
+    //The next login refused offline may tell the user again.
+    offlineAlertShown = false;
+
     //Link is back. resume() is a no-op unless a session was wanted and none is
-    //in flight, so a status change while connected costs nothing.
-    loadSettings();
-    calaosConnect->resume(get_username(), get_password(), get_hostname());
+    //in flight, so a status change while connected costs nothing. It is also
+    //a no-op after a logout and while the app is in the background (FIX-7).
+    //No loadSettings() here (FIX-8): it replaced the credentials of a login
+    //that was not accepted (yet) by the stored ones, which overwrote what the
+    //user had typed on the login screen and could even log in to another home
+    //(the demo one). resume() reconnects with the credentials of the session
+    //it resumes, kept by CalaosConnection. That includes a login refused
+    //while offline (launch in airplane mode, FIX-9): it was recorded by
+    //deferLogin(), with the credentials of the latest such login.
+    calaosConnect->resume();
 }
 
 void Application::calaosServerDetected()
@@ -689,6 +758,13 @@ void Application::calaosServerDetected()
     //CalaosConnection refuses the call while a session is up or an attempt is
     //in flight; when a backoff delay is pending it short-circuits it instead
     //of stacking one more timer.
+    //Discovery is how the desktop finds its server, so the stored settings
+    //(credentials and the discovered host) are read here, but only when an
+    //attempt will actually start: a refused request must not touch the
+    //username/password/hostname properties (FIX-8).
+    if (!calaosConnect->acceptsImmediateReconnect())
+        return;
+
     loadSettings();
     calaosConnect->requestImmediateReconnect(get_username(), get_password(), get_hostname());
 }

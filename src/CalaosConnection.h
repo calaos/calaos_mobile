@@ -42,8 +42,14 @@ public:
 
     enum Trigger
     {
-        UserRequest, //explicit login (login screen, app resume): resets backoff
-        AutoRetry,   //backoff timer, server discovery, network coming back
+        //Explicit login (login screen, launch login and iOS become-active
+        //when online): resets the backoff and any give-up.
+        UserRequest,
+        //Backoff timer, server discovery, network coming back, and the
+        //automatic logins (launch, iOS become-active) deferred offline
+        //(FIX-9). Become-active is deliberately UserRequest online but
+        //AutoRetry offline: a credentials give-up is not undone offline.
+        AutoRetry,
     };
 
     //Backoff: 1s, 2s, 4s, 8s, 16s, then capped at 30s.
@@ -64,6 +70,12 @@ public:
     int pollFailureCount() const { return m_pollFailures; }
     bool hasGivenUp() const { return m_givenUp; }
     bool wantsConnection() const { return m_wantsConnection; }
+    //The session was deliberately closed (logout, login cancelled): only an
+    //explicit login may open one again (FIX-7).
+    bool isStopped() const { return m_stopped; }
+    //The application is in the background (iOS resign-active): nothing may
+    //reconnect on its own until it comes back (FIX-7).
+    bool isPaused() const { return m_paused; }
     //Delay decided for the retry the caller must arm, in ms.
     int pendingDelayMs() const { return m_pendingDelayMs; }
 
@@ -81,11 +93,14 @@ public:
     }
 
     //THE anti double-login guard: one attempt at a time, ever.
+    //It is also the guard of every automatic attempt (retry timer, network
+    //coming back, server discovery): none may reopen a session that was given
+    //up on, deliberately closed, or that belongs to an app in the background.
     bool canBeginAttempt(Trigger t) const
     {
         if (m_state == Connecting || m_state == Connected)
             return false;
-        if (t == AutoRetry && m_givenUp)
+        if (t == AutoRetry && (m_givenUp || m_stopped || m_paused))
             return false;
         return true;
     }
@@ -100,6 +115,9 @@ public:
             m_failures = 0;
             m_authFailures = 0;
             m_givenUp = false;
+            //An explicit login reopens a deliberately closed session. It does
+            //not lift a pause: only the app coming back to the foreground does.
+            m_stopped = false;
         }
         m_pollFailures = 0;
         m_pendingDelayMs = 0;
@@ -149,7 +167,10 @@ public:
         return true;
     }
 
-    //Explicit logout: forget everything, including that a session was wanted.
+    //Deliberate close (Settings -> Logout, login cancelled, reset): forget
+    //everything, including that a session was wanted. The session stays
+    //closed whatever happens next (link lost and back, server discovered,
+    //app sent to the background and back) until an explicit login.
     void stop()
     {
         m_state = Disconnected;
@@ -159,11 +180,13 @@ public:
         m_givenUp = false;
         m_pendingDelayMs = 0;
         m_wantsConnection = false;
+        m_stopped = true;
     }
 
     //The link is known to be down (airplane mode, cable unplugged): drop the
-    //session but remember that one is wanted, so canResume() says yes when the
-    //link comes back.
+    //session but remember whether one is wanted, so canResume() says yes when
+    //the link comes back. It only ever drops: it never turns a stopped or
+    //paused policy back into one that wants a session.
     void suspend()
     {
         m_state = Disconnected;
@@ -172,6 +195,53 @@ public:
         m_pendingDelayMs = 0;
     }
 
+    //A login refused because the device has no network (FIX-9): nothing
+    //starts, but the session is now wanted, so canResume() says yes when the
+    //link comes back. UserRequest (login screen) counts as an explicit login:
+    //it resets the backoff and the give-up and reopens a deliberately closed
+    //session. AutoRetry (launch login, iOS become-active) does neither: it is
+    //refused after a deliberate close or a give-up, so it can never bring
+    //back a session the user closed. Like beginAttempt(), it does not lift a
+    //pause. Returns false (nothing changed) when refused, or when an attempt
+    //is in flight or a session is up.
+    bool deferAttempt(Trigger t)
+    {
+        if (m_state == Connecting || m_state == Connected)
+            return false;
+        if (t == AutoRetry && (m_givenUp || m_stopped))
+            return false;
+
+        if (t == UserRequest)
+        {
+            m_failures = 0;
+            m_authFailures = 0;
+            m_givenUp = false;
+            m_stopped = false;
+        }
+        m_pollFailures = 0;
+        m_pendingDelayMs = 0;
+        m_wantsConnection = true;
+        m_state = Disconnected;
+        return true;
+    }
+
+    //The application goes to the background (iOS resign-active): drop the
+    //session like suspend(), and refuse every automatic attempt until
+    //unpause(), so a network change seen in the background cannot reconnect.
+    //Unlike stop() the intent is kept: if a session was wanted, the app
+    //coming back to the foreground opens it again.
+    void pause()
+    {
+        suspend();
+        m_paused = true;
+    }
+
+    //The application is back in the foreground.
+    void unpause() { m_paused = false; }
+
+    //True when the app may reconnect on its own now: a session is wanted and
+    //nothing (an attempt in flight, a give-up, a deliberate close, a pause)
+    //forbids an automatic attempt.
     bool canResume() const
     {
         return m_wantsConnection && canBeginAttempt(AutoRetry);
@@ -212,6 +282,8 @@ private:
     int m_pendingDelayMs = 0;
     bool m_givenUp = false;
     bool m_wantsConnection = false;
+    bool m_stopped = false;
+    bool m_paused = false;
     bool m_jitterEnabled = true;
 };
 
@@ -373,11 +445,40 @@ public:
     //the guard in ReconnectPolicy refuses the call when an attempt is already
     //in flight or when we gave up on the credentials.
     void requestImmediateReconnect(QString user, QString pass, QString host);
+    //True when requestImmediateReconnect() would start an attempt right now.
+    //Lets the caller skip reading the stored settings when nothing would use
+    //them (FIX-8).
+    bool acceptsImmediateReconnect() const;
 
     //The link is known to be down: drop the session but remember it is wanted.
     void suspend();
-    //The link is back: reconnect immediately if a session was wanted.
-    void resume(QString user, QString pass, QString host);
+    //The link is back: reconnect immediately if a session was wanted, unless
+    //it was deliberately closed or the app is in the background.
+    //It reconnects with the credentials and host of the last attempt (explicit
+    //login, accepted credentials change or desktop discovery) or of the last
+    //login refused offline (deferLogin(), FIX-9), exactly like
+    //the backoff timer does. Never with whatever the login
+    //screen or the stored settings hold at that moment: a network change must
+    //not log in with other credentials (FIX-8).
+    void resume();
+    //A login refused because the device has no network (FIX-9): start
+    //nothing, but remember the session is wanted with these credentials and
+    //host, so resume() connects with them when the link is back. The latest
+    //recorded intent wins. trigger is UserRequest for the login screen and
+    //AutoRetry for the automatic logins (launch, iOS become-active), which
+    //never reopen a session closed by the user, see
+    //ReconnectPolicy::deferAttempt(). Returns true when the intent was
+    //recorded.
+    bool deferLogin(QString user, QString pass, QString h, ReconnectPolicy::Trigger trigger);
+    //The app goes to the background (iOS resign-active): drop the session,
+    //keep the intent, and let nothing reconnect until unpause().
+    void pause();
+    //The app is back in the foreground. Reconnecting is up to the caller,
+    //see sessionClosedByUser().
+    void unpause();
+    //The session was deliberately closed (logout() since the last explicit
+    //login): coming back to the foreground must not log in again.
+    bool sessionClosedByUser() const { return reconnectPolicy.isStopped(); }
 
 private:
     QNetworkAccessManager *accessManager;

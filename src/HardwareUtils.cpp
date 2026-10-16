@@ -131,6 +131,15 @@ void HardwareUtils::restorePendingNotif(const QString &uuid)
     pendingNotifUuid = uuid;
 }
 
+void HardwareUtils::forgetPendingUserActions()
+{
+    if (!pendingNotifUuid.isEmpty() || startedWithOpt)
+        qDebug() << "Explicit logout: pending notification tap and start option dropped";
+
+    pendingNotifUuid.clear();
+    startedWithOpt = false;
+}
+
 void HardwareUtils::setDeviceToken(const QString &token)
 {
     if (token.isEmpty() || token == deviceToken)

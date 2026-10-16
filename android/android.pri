@@ -20,12 +20,9 @@ LIBS += -L$$FIREBASE_SDK/libs/android/$$ANDROID_TARGET_ARCH \
 include(C:/Users/$$(USERNAME)/AppData/Local/Android/Sdk/android_openssl/openssl.pri)
 
 DISTFILES += \
-        $$PWD/gradle.properties \
         $$PWD/res/drawable-hdpi/icon.png \
         $$PWD/res/drawable-ldpi/icon.png \
         $$PWD/res/drawable-mdpi/icon.png \
         $$PWD/google-services.json \
         $$PWD/AndroidManifest.xml \
-        $$PWD/build.gradle \
-        $$PWD/gradle/wrapper/gradle-wrapper.properties \
-        $$PWD/settings.gradle
+        $$PWD/build.gradle

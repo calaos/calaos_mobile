@@ -23,14 +23,24 @@ import java.util.regex.Pattern;
 // activity reported that Qt registered them.
 //
 // Payload, as relayed by push.calaos.fr (gorush) from calaos_server
-// (NotifManager::sendPushNotification): a notification + data message,
-//   notification: { title: "Calaos", body: <message> }
-//   data:         { title, body, message, [event_uuid] }
-// With a notification block, onMessageReceived() only runs while the app is
-// in the foreground; in the background the system tray shows the message and
-// the data keys arrive as extras of the activity intent when it is tapped
-// (see HardwareUtils.eventUuidFromIntent). Both paths end in the same
-// notification layout and the same tap intent.
+// (NotifManager::sendPushNotification). Two shapes are handled:
+//
+//  - data-only message (android.priority=high), sent to tokens registered
+//    with push_format "data" (this app, see PushFormat in CalaosConnection.h):
+//      data: { title, body, message, [event_uuid] }
+//    onMessageReceived() runs in every app state (foreground, background,
+//    killed), so the notification is always built here, picture included.
+//
+//  - legacy notification + data message (older app versions, or a server
+//    that does not know push_format yet):
+//      notification: { title: "Calaos", body: <message> }
+//      data:         { title, body, message, [event_uuid] }
+//    onMessageReceived() only runs while the app is in the foreground; in the
+//    background the system tray shows the message (text only) and the data
+//    keys arrive as extras of the activity intent when it is tapped (see
+//    HardwareUtils.eventUuidFromIntent).
+//
+// Both paths end in the same notification layout and the same tap intent.
 public class CalaosMessagingService extends FirebaseMessagingService
 {
     private static final String TAG = "CalaosHome";
@@ -163,19 +173,28 @@ public class CalaosMessagingService extends FirebaseMessagingService
     @Override
     public void onMessageReceived(RemoteMessage message)
     {
+        handleMessage(this, message);
+    }
+
+    // Both payload shapes end here: the data-only message (every app state)
+    // and the legacy notification+data one (foreground only, see above). The
+    // text notification is posted right away; when the event has a uuid the
+    // camera picture is fetched by an expedited worker that re-posts the
+    // notification with the same id (onMessageReceived() has ~10 s, too short
+    // to download on this thread). Static so the debug-only fake push
+    // receiver (android/debug/) can drive exactly this path.
+    public static void handleMessage(Context ctx, RemoteMessage message)
+    {
         PushPayload payload = PushPayload.from(message);
-        Log.i(TAG, "FCM message received, event uuid: "
+        Log.i(TAG, "FCM " + (message.getNotification() != null ? "notification+data" : "data")
+              + " message received, event uuid: "
               + (payload.eventUuid != null ? payload.eventUuid : "<none>"));
 
         int id = notificationId(payload.eventUuid);
-        showNotification(this, id, buildNotification(this, payload).build());
+        showNotification(ctx, id, buildNotification(ctx, payload).build());
 
-        // AND-7 extension point: when payload.eventUuid is set, enqueue the
-        // expedited picture worker here. It must rebuild the notification with
-        // buildNotification(), add the BigPictureStyle / largeIcon, and call
-        // showNotification() again with the same id so the text notification
-        // posted above is replaced in place. onMessageReceived() has ~10 s:
-        // never download from this thread.
+        if (payload.eventUuid != null)
+            PushPictureWorker.enqueue(ctx, id, payload);
     }
 
     // ── Notification helpers (shared with the activity and AND-7) ────────

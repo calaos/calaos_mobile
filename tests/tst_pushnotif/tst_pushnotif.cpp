@@ -325,6 +325,12 @@ private slots:
     void clearedTokenIsSignalled();
     void describedTokenIsTruncated();
 
+    //register_push payload (AND-7): Android asks for data-only FCM messages,
+    //no other hardware does. The connection tests below also check that this
+    //host build (hardware unknown) never sends the field.
+    void payloadAsksDataFormatForAndroid();
+    void payloadHasNoFormatForOtherHardware();
+
     //CalaosConnection over HTTP (the transport whose debug log leaked).
     void httpRegistersAtLogin();
     void httpRotationWhileConnectedRegistersAgain();
@@ -451,6 +457,8 @@ void TstPushNotif::verifyAuthenticated(const QJsonObject &registration)
 {
     QCOMPARE(registration.value(QStringLiteral("cn_user")).toString(), TestUser);
     QCOMPARE(registration.value(QStringLiteral("cn_pass")).toString(), TestPass);
+    //Not an Android build: no push_format (see payloadAsksDataFormatForAndroid).
+    QVERIFY(!registration.contains(QStringLiteral("push_format")));
 }
 
 void TstPushNotif::startConnection(const QString &host)
@@ -884,6 +892,7 @@ void TstPushNotif::wsRegistersAfterTheLoginIsAccepted()
     QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
     QTRY_COMPARE(ws->registrations.size(), 1);
     QCOMPARE(ws->registrations.at(0).value(QStringLiteral("token")).toString(), t);
+    QVERIFY(!ws->registrations.at(0).contains(QStringLiteral("push_format")));
     QVERIFY(ws->received.indexOf(QStringLiteral("login")) <
             ws->received.indexOf(QStringLiteral("register_push")));
 
@@ -908,6 +917,34 @@ void TstPushNotif::wsRotationWhileConnectedRegistersAgain()
     hw()->setDeviceToken(rotated);
     pump(200);
     QCOMPARE(ws->registrations.size(), 2);
+}
+
+// ---------------------------------------------------------------- push format
+
+//The Android build of registerPushToken() (hardware "android") asks
+//calaos_server for data-only FCM messages: the one field of the contract, in
+//the one place that builds the payload.
+void TstPushNotif::payloadAsksDataFormatForAndroid()
+{
+    const QJsonObject o = PushFormat::registration(QStringLiteral("tok"), QStringLiteral("android"));
+    QCOMPARE(o.value(QStringLiteral("token")).toString(), QStringLiteral("tok"));
+    QCOMPARE(o.value(QStringLiteral("hardware")).toString(), QStringLiteral("android"));
+    QCOMPARE(o.value(QStringLiteral("push_format")).toString(), QStringLiteral("data"));
+    QCOMPARE(o.size(), 3);
+}
+
+//iOS keeps its APNs path, and an unknown hardware (desktop, these tests)
+//sends the legacy payload untouched.
+void TstPushNotif::payloadHasNoFormatForOtherHardware()
+{
+    for (const QString &hw: { QStringLiteral("ios"), QString() })
+    {
+        const QJsonObject o = PushFormat::registration(QStringLiteral("tok"), hw);
+        QCOMPARE(o.value(QStringLiteral("token")).toString(), QStringLiteral("tok"));
+        QCOMPARE(o.value(QStringLiteral("hardware")).toString(), hw);
+        QVERIFY(!o.contains(QStringLiteral("push_format")));
+        QCOMPARE(o.size(), 2);
+    }
 }
 
 // ---------------------------------------------------------------- logs

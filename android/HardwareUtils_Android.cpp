@@ -1,10 +1,11 @@
 #include "HardwareUtils_Android.h"
 #include <QJniObject>
 #include <QJniEnvironment>
-#include <QDebug>
 #include <QCoreApplication>
+#include <QDebug>
 #include <QPointer>
 #include <QNetworkInformation>
+#include <QSettings>
 #include <jni.h>
 
 namespace
@@ -12,6 +13,43 @@ namespace
 
 constexpr char kHardwareUtilsClass[] = "fr/calaos/calaoshome/HardwareUtils";
 constexpr char kNativesClass[] = "fr/calaos/calaoshome/HardwareUtilsNatives";
+constexpr char kCredentialStoreClass[] = "fr/calaos/calaoshome/CredentialStore";
+
+//QSettings keys of the clear-text credentials written by the base class
+//(and by this app before AND-7): read once for the migration, then removed.
+const QLatin1StringView kSettingsUser("calaos/cn_user");
+const QLatin1StringView kSettingsPass("calaos/cn_pass");
+
+QJniObject androidContext()
+{
+    return QNativeInterface::QAndroidApplication::context();
+}
+
+QString credentialStoreString(const char *method)
+{
+    QJniObject ctx = androidContext();
+    QJniObject s = QJniObject::callStaticObjectMethod(kCredentialStoreClass, method,
+                                                      "(Landroid/content/Context;)Ljava/lang/String;",
+                                                      ctx.object());
+    QJniEnvironment env;
+    if (env.checkAndClearExceptions(QJniEnvironment::OutputMode::Verbose) || !s.isValid())
+    {
+        qWarning() << "Android: CredentialStore call failed:" << method;
+        return QString();
+    }
+    return s.toString();
+}
+
+//Removes the clear-text pair from QSettings, if any is left.
+void forgetSettingsCredentials()
+{
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    if (!settings.contains(kSettingsUser) && !settings.contains(kSettingsPass))
+        return;
+    settings.remove(kSettingsUser);
+    settings.remove(kSettingsPass);
+    settings.sync();
+}
 
 //The live instance, read by the native callbacks. Becomes null once the
 //object is destroyed (Application teardown), so a late callback is dropped
@@ -295,4 +333,112 @@ void HardwareUtilsAndroid::inputTextDialog(const QString &title, const QString &
             emitDialogCancel();
         }, Qt::QueuedConnection);
     }
+}
+
+//Returns false when Java could not store the pair (Keystore failure).
+static bool storeCredentials(const QString &user, const QString &pass)
+{
+    QJniObject ctx = androidContext();
+    QJniObject juser = QJniObject::fromString(user);
+    QJniObject jpass = QJniObject::fromString(pass);
+    const jboolean ok = QJniObject::callStaticMethod<jboolean>(kCredentialStoreClass, "save",
+                                                               "(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)Z",
+                                                               ctx.object(),
+                                                               juser.object<jstring>(),
+                                                               jpass.object<jstring>());
+    if (clearJavaException("CredentialStore.save"))
+        return false;
+    return ok;
+}
+
+void HardwareUtilsAndroid::saveAuthKeychain(const QString &email, const QString &pass)
+{
+    if (!storeCredentials(email, pass))
+    {
+        //Keep the user logged in at the next start rather than losing the
+        //pair: the base class copy (QSettings) is migrated again later. The
+        //store must not keep a previous pair meanwhile, or loadAuthKeychain()
+        //would hand that stale one out and drop the new one from QSettings.
+        qWarning() << "Android: credentials kept in settings, secure store unavailable";
+        QJniObject ctx = androidContext();
+        QJniObject::callStaticMethod<void>(kCredentialStoreClass, "clearCredentials",
+                                           "(Landroid/content/Context;)V", ctx.object());
+        clearJavaException("CredentialStore.clearCredentials");
+        HardwareUtils::saveAuthKeychain(email, pass);
+        return;
+    }
+    forgetSettingsCredentials();
+}
+
+void HardwareUtilsAndroid::setSessionActive(bool active)
+{
+    //Read by PushPictureWorker: after an explicit logout the stored pair
+    //stays for the login screen but is not used for pictures any more.
+    QJniObject ctx = androidContext();
+    QJniObject::callStaticMethod<void>(kCredentialStoreClass, "setSessionActive",
+                                       "(Landroid/content/Context;Z)V", ctx.object(),
+                                       static_cast<jboolean>(active));
+    clearJavaException("CredentialStore.setSessionActive");
+}
+
+void HardwareUtilsAndroid::loadAuthKeychain(QString &email, QString &pass)
+{
+    email = credentialStoreString("user");
+    pass = credentialStoreString("password");
+
+    if (email.isEmpty() && pass.isEmpty())
+    {
+        //First start after the update (or a failed save, see above): the pair
+        //is still in QSettings. Move it, and only then drop the clear copy.
+        QString u, p;
+        HardwareUtils::loadAuthKeychain(u, p);
+        if (!u.isEmpty() || !p.isEmpty())
+        {
+            if (storeCredentials(u, p))
+            {
+                qDebug() << "Android: credentials migrated to the secure store";
+                forgetSettingsCredentials();
+            }
+            email = u;
+            pass = p;
+        }
+    }
+    else
+    {
+        forgetSettingsCredentials();
+    }
+
+    //The worker also needs the server address; setConfigOption() keeps it
+    //up to date from now on, this covers the install being updated.
+    if (credentialStoreString("host").isEmpty())
+        setConfigOption(QStringLiteral("calaos/host"), getServerHost());
+}
+
+void HardwareUtilsAndroid::resetAuthKeychain()
+{
+    //"Reset all data": nothing stays behind, in Java or in QSettings (the
+    //base class would write the demo pair there; loadSettings() falls back
+    //to it when the store is empty).
+    QJniObject ctx = androidContext();
+    QJniObject::callStaticMethod<void>(kCredentialStoreClass, "clear",
+                                       "(Landroid/content/Context;)V", ctx.object());
+    clearJavaException("CredentialStore.clear");
+    forgetSettingsCredentials();
+}
+
+void HardwareUtilsAndroid::setConfigOption(QString key, QString value)
+{
+    if (key == QLatin1String("calaos/host"))
+    {
+        //Shared with the push picture worker, like calaos.hostname in the
+        //iOS App Group.
+        QJniObject ctx = androidContext();
+        QJniObject jhost = QJniObject::fromString(value);
+        QJniObject::callStaticMethod<void>(kCredentialStoreClass, "setHost",
+                                           "(Landroid/content/Context;Ljava/lang/String;)V",
+                                           ctx.object(), jhost.object<jstring>());
+        clearJavaException("CredentialStore.setHost");
+    }
+
+    HardwareUtils::setConfigOption(key, value);
 }

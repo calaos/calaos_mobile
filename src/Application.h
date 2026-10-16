@@ -75,6 +75,9 @@ public:
 
     Q_INVOKABLE void login(QString user, QString pass, QString host);
     Q_INVOKABLE void logout();
+    //The user asked to log out (settings button): same as logout(), and the
+    //platform is told the session is over (see HardwareUtils::setSessionActive).
+    Q_INVOKABLE void userLogout();
     Q_INVOKABLE void resetAllData();
 
     Q_INVOKABLE void addItemFavorite(QString ioid, int type);

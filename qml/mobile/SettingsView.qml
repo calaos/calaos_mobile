@@ -45,7 +45,7 @@ Item {
                     text: qsTr("Logout")
                     width: Units.dp(200)
                     height: parent.height
-                    onButtonClicked: calaosApp.logout()
+                    onButtonClicked: calaosApp.userLogout()
                     anchors.horizontalCenter: parent.horizontalCenter
                 }
             }

@@ -585,21 +585,19 @@ void CalaosConnection::registerPushToken()
         return;
 
 #if defined(Q_OS_ANDROID)
-    QString hw = QStringLiteral("android");
+    const QString hw = PushFormat::AndroidHardware;
 #elif defined(Q_OS_IOS)
-    QString hw = QStringLiteral("ios");
+    const QString hw = QStringLiteral("ios");
 #else
-    QString hw;
+    const QString hw;
 #endif
 
     qDebug() << "Registering push token" << HardwareUtils::describeToken(token)
              << "for" << (hw.isEmpty() ? QStringLiteral("<unknown>") : hw);
 
-    //Send the push device token to register the mobile device to calaos_server for push notif
-    QJsonObject o = {
-        { JsonKeys::Token, token },
-        { JsonKeys::Hardware, hw }
-    };
+    //Send the push device token to register the mobile device to calaos_server
+    //for push notif (Android also asks for data-only messages, see PushFormat).
+    QJsonObject o = PushFormat::registration(token, hw);
 
     if (isWebsocket())
     {

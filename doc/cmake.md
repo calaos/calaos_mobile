@@ -228,7 +228,11 @@ After local builds work, add two workflows under
 - Runner: `ubuntu-24.04`.
 - Steps: install Qt (target `android`), Android SDK/NDK, KDAB android_openssl
   (cached), then `./tools/build_android.sh Release --aab` (signing from
-  `CALAOS_*`), then upload via `r0adkll/upload-google-play`.
+  `CALAOS_*`), then upload via `r0adkll/upload-google-play`. The script is
+  written for macOS: on `ubuntu-24.04` set `QT_HOST` to the Linux host kit
+  (`$QT_ROOT/gcc_64`), `ANDROID_SDK_ROOT` and `JAVA_HOME` (JDK 17), and map
+  the CI secrets to the `CALAOS_KEYSTORE` (decode `KEYSTORE_BASE64` to a file),
+  `CALAOS_KEYSTORE_PASS`, `CALAOS_KEY_ALIAS`, `CALAOS_KEY_PASS` variables.
 - Secrets: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`,
   `KEY_PASSWORD`, `PLAY_SERVICE_ACCOUNT_JSON`.
 
@@ -251,8 +255,8 @@ plain GitHub Actions because its signing model is simple enough.
 - [x] Add `.gitignore` entries for `build-ios/`, `build-android/`,
       `CMakeFiles/`, `CMakeCache.txt`.
 - [x] Document the new commands in [ios.md](ios.md) and
-      [android.md](android.md) under a new "CMake build (preferred)" section,
-      keeping the qmake instructions under "Legacy qmake build".
+      [android.md](android.md). (android.md now documents the CMake build
+      only: the qmake Android instructions were removed in AND-6.)
 
 ### Phase 1 — Skeleton CMake (no platform yet)
 - [x] Create top‑level `CMakeLists.txt`:

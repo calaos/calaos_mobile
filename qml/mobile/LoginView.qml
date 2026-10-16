@@ -4,6 +4,7 @@ import Calaos
 import SharedComponents
 
 Item {
+    id: loginRoot
 
     property alias username: userField.text
     property alias password: passField.text
@@ -15,6 +16,20 @@ Item {
 
     visible: opacity > 0?true:false
     Behavior on opacity { PropertyAnimation { } }
+
+    function hideKeyboard() {
+        userField.focus = false
+        passField.focus = false
+        hostField.focus = false
+        // Qt.inputMethod is seen as a plain QObject by the linter
+        // qmllint disable missing-property
+        Qt.inputMethod.hide()
+        // qmllint enable missing-property
+    }
+
+    // Safety net: whatever made the login view leave the screen
+    // (login, auto-login), the soft keyboard must not follow us.
+    onVisibleChanged: if (!visible) hideKeyboard()
 
     Rectangle {
         color: "#080808"
@@ -104,6 +119,7 @@ Item {
                                      if (calaosApp.applicationStatus === Common.Loading) {
                                          cancelClicked()
                                      } else {
+                                         loginRoot.hideKeyboard()
                                          loginClicked(userField.text, passField.text, hostField.text)
                                      }
                                  }

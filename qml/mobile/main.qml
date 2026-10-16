@@ -117,30 +117,48 @@ Window {
         // or keyboard back key, "adb shell input keyevent BACK") twice: as the
         // key itself and again through the OnBackInvokedCallback that Qt
         // registers, giving press, press, release, release. The gesture and
-        // the navigation bar button only come through the callback. Only the
-        // release of a press seen here counts, once: the copy would otherwise
-        // pop a second page, or send the app to the background after the
-        // first one popped back to the root.
-        property bool backPressed: false
-        property bool backEcho: false
+        // the navigation bar button only come through the callback. So only
+        // presses seen here count (auto-repeat of a held key aside), and one
+        // back is acted on when the last of them is released: the copy would
+        // otherwise pop a second page, or send the app to the background
+        // after the first one popped back to the root. A release with no
+        // pending press (its press went to a sheet) is dropped.
+        property int backPending: 0
+        function resetBack() {
+            backPending = 0
+        }
+        // A press whose release never comes here must not leave a count
+        // behind that would eat the next back
+        onActiveFocusChanged: if (!activeFocus) resetBack()
+        Connections {
+            target: Qt.application
+            function onStateChanged() {
+                stackView.resetBack()
+            }
+        }
         focus: true
         Keys.onPressed: (event) => {
                             if (event.key !== Qt.Key_Back)
                                 return
-                            if (backPressed)
-                                backEcho = true
-                            backPressed = true
+                            if (!event.isAutoRepeat)
+                                backPending++
+                            // Taking the press as well when a page will be
+                            // popped makes Qt's key-event path less likely to
+                            // move the task to the background anyway (Qt 6.12
+                            // race, see the qt6-android-build skill)
+                            event.accepted = stackView.depth > 2
                         }
         Keys.onReleased: (event) => {
-                             if (event.key !== Qt.Key_Back && event.key !== Qt.Key_Backspace)
+                             if (event.key !== Qt.Key_Back)
                                  return
-                             if (event.key === Qt.Key_Back) {
-                                 if (!backPressed || backEcho) {
-                                     backEcho = false
-                                     event.accepted = true
-                                     return
-                                 }
-                                 backPressed = false
+                             if (backPending === 0) {
+                                 event.accepted = true
+                                 return
+                             }
+                             backPending--
+                             if (backPending > 0) {
+                                 event.accepted = true
+                                 return
                              }
                              if (stackView.depth <= 2) {
                                  event.accepted = false

@@ -95,6 +95,33 @@ void HardwareUtils::emitPushNotifReceived(const QString &uuid)
     emit pushNotifReceived(uuid);
 }
 
+void HardwareUtils::handleNotificationOpened(const QString &uuid)
+{
+    if (uuid.isEmpty())
+        return;
+
+    qDebug() << "Notification opened, event" << uuid
+             << (calaosConnected ? "(connected)" : "(deferred until home is loaded)");
+
+    if (calaosConnected)
+    {
+        //An older deferred tap is superseded by the one being opened now.
+        pendingNotifUuid.clear();
+        emit pushNotifReceived(uuid);
+    }
+    else
+    {
+        pendingNotifUuid = uuid;
+    }
+}
+
+QString HardwareUtils::takePendingNotif()
+{
+    QString uuid;
+    uuid.swap(pendingNotifUuid);
+    return uuid;
+}
+
 void HardwareUtils::loadAuthKeychain(QString &email, QString &pass)
 {
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());

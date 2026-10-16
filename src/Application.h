@@ -152,6 +152,11 @@ private:
 
     bool startedWithOptHandled = false;
 
+    //The session is down (logout, lost connection, reconnecting): foreground
+    //push notifications stop being routed here, and a notification tapped
+    //from now on is deferred by HardwareUtils until homeLoaded().
+    void stopPushNotifRouting();
+
     QTimer *timerLockSettings = nullptr;
 
     void loadSettings();

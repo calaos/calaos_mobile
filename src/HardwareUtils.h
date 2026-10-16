@@ -15,8 +15,6 @@ protected:
     bool appIsBackground = false;
 
     bool startedWithOpt = false;
-    bool startedWithNotif = false;
-    QString notifUuid;
     QQmlApplicationEngine *qmlEngine = nullptr;
 
     //Device unique id used for push notifications
@@ -24,6 +22,10 @@ protected:
 
     //state of calaos connection (logged in/out)
     bool calaosConnected = false;
+
+private:
+    //Event uuid of a notification tapped while not logged in
+    QString pendingNotifUuid;
 
 public:
     static HardwareUtils *Instance(QObject *parent = NULL);
@@ -61,11 +63,16 @@ public:
     virtual QString getStartOption(const QString &key) { Q_UNUSED(key); return QString(); }
     void resetStartedWithOption() { startedWithOpt = false; }
 
-    //Used when user clicked on a notification
-    //It should open the app and load the notif
-    bool hasStartedWithNotif() { return startedWithNotif; }
-    QString getNotifUuid() { return notifUuid; }
-    void resetStartedWithNotif() { startedWithNotif = false; }
+    //The user tapped a push notification carrying a Calaos event uuid (cold
+    //start or app already running). Logged in: pushNotifReceived() is emitted
+    //right away. Otherwise the uuid is kept, the latest tap wins, until
+    //Application takes it once home is loaded again (takePendingNotif()).
+    void handleNotificationOpened(const QString &uuid);
+
+    //Returns the deferred notification uuid, if any, and forgets it: a
+    //deferred tap is opened exactly once.
+    QString takePendingNotif();
+    bool hasPendingNotif() const { return !pendingNotifUuid.isEmpty(); }
 
     virtual void setQuickLinks(QVariantList quicklinks) { Q_UNUSED(quicklinks); }
 

@@ -149,8 +149,8 @@ void HardwareUtilsAndroid::platformInit(QQmlApplicationEngine *e)
         if (!uuid.isEmpty())
         {
             qDebug() << "Android: started from notification, event" << uuid;
-            startedWithNotif = true;
-            notifUuid = uuid;
+            //Not logged in yet: kept until home is loaded.
+            handleNotificationOpened(uuid);
         }
     }
 }
@@ -162,23 +162,6 @@ void HardwareUtilsAndroid::setDeviceToken(QString t)
 
     qDebug() << "Android: FCM device token" << describeToken(t);
     deviceToken = t;
-}
-
-void HardwareUtilsAndroid::handleNotificationOpened(const QString &uuid)
-{
-    if (uuid.isEmpty())
-        return;
-
-    qDebug() << "Android: notification opened, event" << uuid
-             << (isCalaosConnected() ? "(connected)" : "(deferred until home is loaded)");
-
-    if (isCalaosConnected())
-        emitPushNotifReceived(uuid);
-    else
-    {
-        startedWithNotif = true;
-        notifUuid = uuid;
-    }
 }
 
 void HardwareUtilsAndroid::showAlertMessage(QString title, QString message, QString buttontext)

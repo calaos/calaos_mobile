@@ -30,10 +30,8 @@ public:
     //FirebaseMessaging.getToken() and every onNewToken()).
     void setDeviceToken(QString t);
 
-    //The user tapped a push notification carrying a Calaos event uuid while
-    //the activity was alive. Same policy as iOS: open it now if logged in,
-    //otherwise keep it for Application to open once home is loaded.
-    void handleNotificationOpened(const QString &uuid);
+    //Notification taps go through HardwareUtils::handleNotificationOpened():
+    //same policy as iOS.
 };
 
 #endif // HARDWAREUTILS_ANDROID_H

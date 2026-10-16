@@ -126,11 +126,8 @@
     NSString *uuid = userInfo[@"event_uuid"];
     if (uuid != nil)
     {
-        HardwareUtils_iOS *o = dynamic_cast<HardwareUtils_iOS *>(HardwareUtils::Instance());
-        if (o->isCalaosConnected())
-            o->emitPushNotifReceived(QString::fromNSString(uuid));
-        else
-            o->handleStartedWithPushNotif(QString::fromNSString(uuid));
+        //Opened now if logged in, otherwise once home is loaded again.
+        HardwareUtils::Instance()->handleNotificationOpened(QString::fromNSString(uuid));
     }
 
     completionHandler(UIBackgroundFetchResultNoData);
@@ -161,8 +158,10 @@
     NSString *uuid = response.notification.request.content.userInfo[@"event_uuid"];
     if (uuid != nil)
     {
-        HardwareUtils_iOS *o = dynamic_cast<HardwareUtils_iOS *>(HardwareUtils::Instance());
-        o->handleStartedWithPushNotif(QString::fromNSString(uuid));
+        //Opened now if logged in, otherwise once home is loaded again (a tap
+        //from the background arrives while the session is down: the app
+        //logs out when it resigns active).
+        HardwareUtils::Instance()->handleNotificationOpened(QString::fromNSString(uuid));
     }
     completionHandler();
 }
@@ -436,11 +435,4 @@ void HardwareUtils_iOS::handleRegisterNotifFail(void *err)
     NSLog(@"%@, %@", error, error.localizedDescription);
 
     deviceToken.clear();
-}
-
-void HardwareUtils_iOS::handleStartedWithPushNotif(const QString &uuid)
-{
-    if (!uuid.isEmpty())
-        startedWithNotif = true;
-    notifUuid = uuid;
 }

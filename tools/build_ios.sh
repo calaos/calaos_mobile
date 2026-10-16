@@ -57,6 +57,9 @@ BUILD_DIR="$(build_dir_for_sdk "${IOS_SDK}")"
 # Validate Qt paths
 [[ -d "${QT_IOS}" ]] || fail "Qt iOS kit not found: ${QT_IOS}"
 [[ -d "${QT_HOST}" ]] || fail "Qt host (macOS) kit not found: ${QT_HOST}"
+# Canonical paths (symlinks, trailing slashes) so the cache check below is stable.
+QT_IOS="$(cd "${QT_IOS}" && pwd -P)"
+QT_HOST="$(cd "${QT_HOST}" && pwd -P)"
 
 # Minimum iOS version. It cannot be lower than the one the Qt kit is built for
 # (CMAKE_OSX_DEPLOYMENT_TARGET in its qt.toolchain.cmake: 18 for Qt 6.12, 17 for 6.11).
@@ -71,6 +74,9 @@ fi
 # Qt6_DIR and SDK paths: start from a clean cache in that case.
 if [[ -f "${BUILD_DIR}/CMakeCache.txt" ]]; then
     cached_qt="$(sed -n 's/^Qt6_DIR:[A-Z]*=//p' "${BUILD_DIR}/CMakeCache.txt")"
+    if [[ -n "${cached_qt}" && -d "${cached_qt}" ]]; then
+        cached_qt="$(cd "${cached_qt}" && pwd -P)"
+    fi
     if [[ -n "${cached_qt}" && "${cached_qt}" != "${QT_IOS}/"* ]]; then
         echo "==> Qt kit changed (cache: ${cached_qt}): clearing the CMake cache"
         rm -rf "${BUILD_DIR}/CMakeCache.txt" "${BUILD_DIR}/CMakeFiles"

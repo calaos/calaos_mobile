@@ -8,8 +8,14 @@ set -euo pipefail
 # Environment overrides: QT_VERSION (default 6.12.0), QT_ROOT (default ~/Qt/$QT_VERSION),
 #   QT_ANDROID, QT_HOST, JAVA_HOME, ANDROID_SDK_ROOT, ANDROID_NDK_ROOT,
 #   ANDROID_OPENSSL_DIR, CALAOS_ANDROID_ABIS
-# Rolling back to another installed Qt: QT_VERSION=6.11.0 ./tools/build_android.sh
-#   (a cache configured against another kit is cleared automatically).
+# Rolling back to another installed Qt is NOT a knob-only operation on Android:
+#   android/build.gradle + AndroidManifest.xml are ported from one Qt kit's templates
+#   and its AGP needs that kit's Gradle wrapper (6.12 template: AGP 9.2.1, needs
+#   Gradle >= 9.4.1; the 6.11 kit ships Gradle 9.3.1). For Qt 6.11: revert the commit
+#   "build: port the Qt 6.12 Android templates (QT-1)", then
+#   QT_VERSION=6.11.0 ./tools/build_android.sh. The script refuses a kit whose
+#   template AGP differs from android/build.gradle, and clears the CMake cache and
+#   build-android/android-build when the kit changes.
 # ---------------------------------------------------------------------------
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -83,6 +89,9 @@ export PATH="$PATH:/opt/homebrew/bin:${QT_ROOT%/*}/Tools/Ninja"
 [[ "${CONFIG}" == "Debug" || "${CONFIG}" == "Release" ]] || fail "config must be Debug or Release"
 [[ -d "${QT_ANDROID}" ]] || fail "Qt Android kit not found: ${QT_ANDROID}"
 [[ -d "${QT_HOST}" ]] || fail "Qt host (macOS) kit not found: ${QT_HOST}"
+# Canonical paths (symlinks, trailing slashes) so the cache check below is stable.
+QT_ANDROID="$(cd "${QT_ANDROID}" && pwd -P)"
+QT_HOST="$(cd "${QT_HOST}" && pwd -P)"
 [[ -d "${ANDROID_SDK_ROOT}" ]] || fail "Android SDK not found: ${ANDROID_SDK_ROOT}"
 [[ -f "${ANDROID_NDK_ROOT}/build/cmake/android.toolchain.cmake" ]] || fail "Android NDK not found: ${ANDROID_NDK_ROOT}"
 [[ -x "${JAVA_HOME}/bin/java" ]] || fail "JDK 17 not found (JAVA_HOME='${JAVA_HOME}'); brew install openjdk@17"
@@ -92,13 +101,28 @@ java_major="$("${JAVA_HOME}/bin/java" -version 2>&1 | sed -n '1s/.*version "\([0
 command -v ninja >/dev/null 2>&1 || fail "ninja not found in PATH"
 command -v cmake >/dev/null 2>&1 || fail "cmake not found in PATH"
 
+# android/build.gradle is ported from a Qt kit template; its AGP only works with the
+# Gradle wrapper of that kit. Stop early rather than fail deep inside Gradle.
+if [[ "${LIB_ONLY}" == false ]]; then
+    agp_re='s/.*com\.android\.tools\.build:gradle:\([0-9.]*\).*/\1/p'
+    our_agp="$(sed -n "${agp_re}" "${SCRIPT_DIR}/android/build.gradle" | head -1)"
+    kit_agp="$(sed -n "${agp_re}" "${QT_ANDROID}/src/android/templates/build.gradle" 2>/dev/null | head -1)"
+    if [[ -n "${kit_agp}" && "${our_agp}" != "${kit_agp}" ]]; then
+        fail "android/build.gradle uses AGP ${our_agp} but the Qt kit template (${QT_ANDROID}) uses AGP ${kit_agp} with its own Gradle wrapper. Port that kit's templates into android/ (rollback to Qt 6.11: revert the commit 'build: port the Qt 6.12 Android templates (QT-1)')."
+    fi
+fi
+
 # A cache configured against another Qt kit (version bump/rollback) keeps the old
-# Qt6_DIR and toolchain paths: start from a clean cache in that case.
+# Qt6_DIR and toolchain paths, and androiddeployqt never removes files (Gradle
+# wrapper, settings.gradle, Qt libs) copied from the previous kit: start clean.
 if [[ -f "${BUILD_DIR}/CMakeCache.txt" ]]; then
     cached_qt="$(sed -n 's/^Qt6_DIR:[A-Z]*=//p' "${BUILD_DIR}/CMakeCache.txt")"
+    if [[ -n "${cached_qt}" && -d "${cached_qt}" ]]; then
+        cached_qt="$(cd "${cached_qt}" && pwd -P)"
+    fi
     if [[ -n "${cached_qt}" && "${cached_qt}" != "${QT_ANDROID}/"* ]]; then
-        echo "==> Qt kit changed (cache: ${cached_qt}): clearing the CMake cache"
-        rm -rf "${BUILD_DIR}/CMakeCache.txt" "${BUILD_DIR}/CMakeFiles"
+        echo "==> Qt kit changed (cache: ${cached_qt}): clearing the CMake cache and android-build/"
+        rm -rf "${BUILD_DIR}/CMakeCache.txt" "${BUILD_DIR}/CMakeFiles" "${BUILD_DIR}/android-build"
     fi
 fi
 

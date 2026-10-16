@@ -383,15 +383,38 @@ void HardwareUtilsAndroid::setSessionActive(bool active)
 
 bool HardwareUtilsAndroid::isSessionActive()
 {
-    //Unreadable store: behave as before FIX-11 (automatic login allowed)
-    //rather than locking the user out of the automatic login for good.
+    //Any failure (class or method not resolved, Java exception, no context)
+    //answers true, the pre-FIX-11 behaviour (automatic login allowed), rather
+    //than locking the user out of the automatic login for good. Raw JNIEnv on
+    //purpose: QJniObject::callStaticMethod<jboolean> clears a pending
+    //exception itself and returns false, which would read as "logged out".
     QJniObject ctx = androidContext();
-    const jboolean active = QJniObject::callStaticMethod<jboolean>(kCredentialStoreClass, "isSessionActive",
-                                                                   "(Landroid/content/Context;)Z",
-                                                                   ctx.object());
-    if (clearJavaException("CredentialStore.isSessionActive"))
+    if (!ctx.isValid())
         return true;
-    return active;
+
+    QJniEnvironment env;
+    jclass cls = env.findClass(kCredentialStoreClass);
+    if (!cls)
+    {
+        env.checkAndClearExceptions(QJniEnvironment::OutputMode::Verbose);
+        qWarning() << "Android: CredentialStore not found, session considered active";
+        return true;
+    }
+    jmethodID mid = env.findStaticMethod(cls, "isSessionActive", "(Landroid/content/Context;)Z");
+    if (!mid)
+    {
+        env.checkAndClearExceptions(QJniEnvironment::OutputMode::Verbose);
+        qWarning() << "Android: CredentialStore.isSessionActive not found, session considered active";
+        return true;
+    }
+
+    const jboolean active = env->CallStaticBooleanMethod(cls, mid, ctx.object());
+    if (env.checkAndClearExceptions(QJniEnvironment::OutputMode::Verbose))
+    {
+        qWarning() << "Android: JNI call failed: CredentialStore.isSessionActive, session considered active";
+        return true;
+    }
+    return active == JNI_TRUE;
 }
 
 void HardwareUtilsAndroid::loadAuthKeychain(QString &email, QString &pass)

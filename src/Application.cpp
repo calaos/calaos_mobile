@@ -194,10 +194,13 @@ void Application::createQmlApp()
     update_applicationStatus(Common::NotConnected);
 
     calaosConnect = new CalaosConnection(this);
+#ifndef CALAOS_DESKTOP
     //Before anything can log in: a logout done before the app was closed
     //still holds (FIX-11). The launch login and iOS become-active check
-    //sessionClosedByUser().
+    //sessionClosedByUser(). Mobile only: the desktop has no login screen, a
+    //stray flag in its settings would block server discovery for good.
     LaunchLogin::restoreUserLogout(calaosConnect, HardwareUtils::Instance());
+#endif
     connect(calaosConnect, &CalaosConnection::homeLoaded,
             this, &Application::homeLoaded);
     connect(calaosConnect, &CalaosConnection::loginFailed,

@@ -5,8 +5,10 @@
   No tracking, no data collected by the developer: the extension only fetches the
   event picture from the user's own Calaos server.
   Required-reason APIs:
-  - UserDefaults 1C8F.1: reads the Calaos server host name that the app writes in
-    the "group.fr.calaos.CalaosMobile" App Group suite (NotificationService.m).
+  - UserDefaults 1C8F.1: reads the Calaos server host name and the session state
+    (calaos.session_active: no picture after an explicit logout) that the app
+    writes in the "group.fr.calaos.CalaosMobile" App Group suite
+    (NotificationService.m).
 -->
 <plist version="1.0">
 <dict>

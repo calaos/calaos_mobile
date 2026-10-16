@@ -107,13 +107,47 @@ Window {
 
         initialItem: loginView
 
-        // Implements back key navigation
+        // Implements back key navigation. At the root (login page, or the
+        // favourites once logged in) the key is left unaccepted: Qt then moves
+        // the task to the background, as Android's own back does at the root
+        // of an app. Open sheets take the key before it gets here, and a
+        // visible system keyboard takes the first back to close itself.
+        //
+        // Android 13+ delivers a back that comes in as a key event (hardware
+        // or keyboard back key, "adb shell input keyevent BACK") twice: as the
+        // key itself and again through the OnBackInvokedCallback that Qt
+        // registers, giving press, press, release, release. The gesture and
+        // the navigation bar button only come through the callback. Only the
+        // release of a press seen here counts, once: the copy would otherwise
+        // pop a second page, or send the app to the background after the
+        // first one popped back to the root.
+        property bool backPressed: false
+        property bool backEcho: false
         focus: true
+        Keys.onPressed: (event) => {
+                            if (event.key !== Qt.Key_Back)
+                                return
+                            if (backPressed)
+                                backEcho = true
+                            backPressed = true
+                        }
         Keys.onReleased: (event) => {
-                             if (event.key === Qt.Key_Back || event.key === Qt.Key_Backspace) {
-                                 handleBack()
-                                 event.accepted = true;
+                             if (event.key !== Qt.Key_Back && event.key !== Qt.Key_Backspace)
+                                 return
+                             if (event.key === Qt.Key_Back) {
+                                 if (!backPressed || backEcho) {
+                                     backEcho = false
+                                     event.accepted = true
+                                     return
+                                 }
+                                 backPressed = false
                              }
+                             if (stackView.depth <= 2) {
+                                 event.accepted = false
+                                 return
+                             }
+                             rootWindow.handleBack()
+                             event.accepted = true
                          }
     }
 

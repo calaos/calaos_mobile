@@ -47,6 +47,25 @@ set_property(TARGET CalaosHome PROPERTY
     QT_ANDROID_VERSION_NAME "${CALAOS_VERSION}")
 set_property(TARGET CalaosHome PROPERTY
     QT_ANDROID_VERSION_CODE "${CALAOS_VERSION_CODE}")
+# Compile SDK pinned to the one Qt 6.12 builds its Java against
+# (QT_ANDROID_API_USED_FOR_JAVA). From API 37 on, platforms carry a minor level:
+# use "37.0", "37" matches no installed platform.
+set(CALAOS_ANDROID_COMPILE_SDK "37.0")
+if(DEFINED ANDROID_SDK_ROOT)
+    set(_calaos_sdk_root "${ANDROID_SDK_ROOT}")
+elseif(DEFINED ENV{ANDROID_SDK_ROOT})
+    set(_calaos_sdk_root "$ENV{ANDROID_SDK_ROOT}")
+else()
+    set(_calaos_sdk_root "$ENV{HOME}/Library/Android/sdk")
+endif()
+if(NOT EXISTS "${_calaos_sdk_root}/platforms/android-${CALAOS_ANDROID_COMPILE_SDK}/android.jar")
+    message(FATAL_ERROR
+        "Android SDK platform android-${CALAOS_ANDROID_COMPILE_SDK} not found in "
+        "${_calaos_sdk_root}/platforms. Install it with:\n"
+        "  sdkmanager \"platforms;android-${CALAOS_ANDROID_COMPILE_SDK}\"")
+endif()
+set_property(TARGET CalaosHome PROPERTY
+    QT_ANDROID_COMPILE_SDK_VERSION "${CALAOS_ANDROID_COMPILE_SDK}")
 set_property(TARGET CalaosHome PROPERTY
     QT_ANDROID_MIN_SDK_VERSION 28)
 set_property(TARGET CalaosHome PROPERTY

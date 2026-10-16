@@ -160,7 +160,13 @@ Controls.TextField {
         }
         MouseArea {
             anchors.fill: parent
-            onClicked: clearButtonClicked()
+            onClicked: {
+                // cut() is a no-op in Password echo mode, so clear explicitly.
+                // Reset the IME first so a pending preedit cannot reappear.
+                Qt.inputMethod["reset"]()
+                control.clear()
+                control.clearButtonClicked()
+            }
         }
     }
 

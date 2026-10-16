@@ -109,7 +109,6 @@ Item {
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Username")
                 enabled: !loginButton.loadingEnabled
-                onClearButtonClicked: { userField.selectAll(); userField.cut() }
             }
 
             CalaosTextField {
@@ -119,7 +118,6 @@ Item {
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Password")
                 enabled: !loginButton.loadingEnabled
-                onClearButtonClicked: { passField.selectAll(); passField.cut() }
             }
 
             CalaosTextField {
@@ -128,7 +126,6 @@ Item {
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Hostname")
                 enabled: !loginButton.loadingEnabled
-                onClearButtonClicked: { hostField.selectAll(); hostField.cut() }
             }
 
             ButtonLogin {

@@ -3,8 +3,20 @@ set -euo pipefail
 
 # ---------------------------------------------------------------------------
 # build_android.sh — Configure and build the Calaos Home Android app (Qt 6 + CMake + Ninja)
-# Usage: ./build_android.sh [Debug|Release] [--lib-only]
+# Usage: ./build_android.sh [Debug|Release] [--aab] [--lib-only]
 #   --lib-only  build only the native library (skip Gradle/APK packaging)
+#   --aab       build the Android App Bundle (Play Store upload) instead of the APK
+# ABIs: Debug builds arm64-v8a only (fast); Release builds the four ABIs
+#   (arm64-v8a;armeabi-v7a;x86;x86_64) with the installed per-ABI Qt kits
+#   (android_arm64_v8a is the main one, Qt configures the others as external
+#   projects). Override with CALAOS_ANDROID_ABIS (semicolon list, main ABI first).
+# Signing (Release): export CALAOS_KEYSTORE (path), CALAOS_KEYSTORE_PASS,
+#   CALAOS_KEY_ALIAS and optionally CALAOS_KEY_PASS (defaults to the store
+#   password). After the build the script signs a copy of the output with the upload
+#   key (jarsigner for the AAB, apksigner for the APK), passing the passwords through
+#   the environment only: they are never put on a command line nor echoed. Without
+#   them the Release output is unsigned. (Signing through Gradle's signingConfig makes
+#   androiddeployqt fail: it only knows the "-unsigned" APK name.)
 # Environment overrides: QT_VERSION (default 6.12.0), QT_ROOT (default ~/Qt/$QT_VERSION),
 #   QT_ANDROID, QT_HOST, JAVA_HOME, ANDROID_SDK_ROOT, ANDROID_NDK_ROOT,
 #   ANDROID_OPENSSL_DIR, CALAOS_ANDROID_ABIS
@@ -25,6 +37,7 @@ fail() { echo "ERROR: $1" >&2; exit 1; }
 
 CONFIG="Debug"
 LIB_ONLY=false
+AAB=false
 CONFIG_SET=false
 for arg in "$@"; do
     case "${arg}" in
@@ -32,9 +45,11 @@ for arg in "$@"; do
             [[ "${CONFIG_SET}" == false ]] || fail "config given twice"
             CONFIG="${arg}"; CONFIG_SET=true ;;
         --lib-only) LIB_ONLY=true ;;
-        *) fail "unknown argument '${arg}' (usage: $0 [Debug|Release] [--lib-only])" ;;
+        --aab) AAB=true ;;
+        *) fail "unknown argument '${arg}' (usage: $0 [Debug|Release] [--aab] [--lib-only])" ;;
     esac
 done
+[[ "${AAB}" == false || "${LIB_ONLY}" == false ]] || fail "--aab and --lib-only are mutually exclusive"
 
 abi_to_kit() {
     case "$1" in
@@ -58,7 +73,12 @@ kit_to_abi() {
 # Qt version: the only place to bump it. The NDK defaults to the kit's ndk_version.
 QT_VERSION="${QT_VERSION:-6.12.0}"
 QT_ROOT="${QT_ROOT:-$HOME/Qt/${QT_VERSION}}"
-CALAOS_ANDROID_ABIS="${CALAOS_ANDROID_ABIS:-arm64-v8a}"
+if [[ "${CONFIG}" == "Release" ]]; then
+    DEFAULT_ABIS="arm64-v8a;armeabi-v7a;x86;x86_64"
+else
+    DEFAULT_ABIS="arm64-v8a"
+fi
+CALAOS_ANDROID_ABIS="${CALAOS_ANDROID_ABIS:-${DEFAULT_ABIS}}"
 FIRST_ABI="${CALAOS_ANDROID_ABIS%%;*}"
 if [[ -z "${QT_ANDROID:-}" ]]; then
     kit="$(abi_to_kit "${FIRST_ABI}")" || fail "unknown ABI '${FIRST_ABI}' in CALAOS_ANDROID_ABIS"
@@ -72,6 +92,16 @@ case ";${CALAOS_ANDROID_ABIS};" in
     *) fail "Qt kit ABI '${ANDROID_ABI}' (${QT_ANDROID}) is not in CALAOS_ANDROID_ABIS='${CALAOS_ANDROID_ABIS}'" ;;
 esac
 QT_HOST="${QT_HOST:-${QT_ROOT}/macos}"
+
+# Every requested ABI needs its Qt kit. Qt finds the secondary kits next to the
+# main one by itself; pass the paths explicitly so a custom QT_ROOT/QT_ANDROID works.
+QT_ABI_ARGS=()
+IFS=';' read -r -a REQUESTED_ABIS <<< "${CALAOS_ANDROID_ABIS}"
+for abi in "${REQUESTED_ABIS[@]}"; do
+    kit="$(abi_to_kit "${abi}")" || fail "unknown ABI '${abi}' in CALAOS_ANDROID_ABIS (valid: arm64-v8a armeabi-v7a x86 x86_64)"
+    [[ -d "${QT_ROOT}/${kit}" ]] || fail "Qt kit for ABI '${abi}' not found: ${QT_ROOT}/${kit}"
+    QT_ABI_ARGS+=("-DQT_PATH_ANDROID_ABI_${abi}=${QT_ROOT}/${kit}")
+done
 
 export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}"
 # NDK version the Qt kit was built with ("ndk_version" in modules/Core.json).
@@ -112,6 +142,29 @@ if [[ "${LIB_ONLY}" == false ]]; then
     fi
 fi
 
+# Release signing: applied after the build. All or nothing,
+# so a typo cannot silently produce an unsigned upload. Values are never printed.
+SIGNED=false
+if [[ "${CONFIG}" == "Release" ]]; then
+    if [[ -n "${CALAOS_KEYSTORE:-}" || -n "${CALAOS_KEYSTORE_PASS:-}" || -n "${CALAOS_KEY_ALIAS:-}" ]]; then
+        [[ -n "${CALAOS_KEYSTORE:-}" && -n "${CALAOS_KEYSTORE_PASS:-}" && -n "${CALAOS_KEY_ALIAS:-}" ]] \
+            || fail "incomplete signing setup: CALAOS_KEYSTORE, CALAOS_KEYSTORE_PASS and CALAOS_KEY_ALIAS must all be set (CALAOS_KEY_PASS is optional)"
+        [[ -f "${CALAOS_KEYSTORE}" ]] || fail "CALAOS_KEYSTORE does not point to a file"
+        CALAOS_KEYSTORE="$(cd "$(dirname "${CALAOS_KEYSTORE}")" && pwd -P)/$(basename "${CALAOS_KEYSTORE}")"
+        export CALAOS_KEYSTORE CALAOS_KEYSTORE_PASS CALAOS_KEY_ALIAS
+        [[ -z "${CALAOS_KEY_PASS:-}" ]] || export CALAOS_KEY_PASS
+        SIGNED=true
+        [[ -x "${JAVA_HOME}/bin/jarsigner" ]] || fail "jarsigner not found in JAVA_HOME"
+        APKSIGNER="$(ls -d "${ANDROID_SDK_ROOT}"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)"
+        [[ "${AAB}" == true || -x "${APKSIGNER}" ]] || fail "apksigner not found in ${ANDROID_SDK_ROOT}/build-tools"
+    else
+        echo "WARNING: CALAOS_KEYSTORE / CALAOS_KEYSTORE_PASS / CALAOS_KEY_ALIAS not set: the Release build will be UNSIGNED (not uploadable to the Play Store)." >&2
+    fi
+else
+    # Debug is signed with the Android debug key; never leak release credentials into it.
+    unset CALAOS_KEYSTORE CALAOS_KEYSTORE_PASS CALAOS_KEY_ALIAS CALAOS_KEY_PASS
+fi
+
 # A cache configured against another Qt kit (version bump/rollback) keeps the old
 # Qt6_DIR and toolchain paths, and androiddeployqt never removes files (Gradle
 # wrapper, settings.gradle, Qt libs) copied from the previous kit: start clean.
@@ -146,19 +199,64 @@ cmake -S "${SCRIPT_DIR}" -B "${BUILD_DIR}" \
     -DQT_ANDROID_NDK_ROOT="${ANDROID_NDK_ROOT}" \
     -DJAVA_HOME="${JAVA_HOME}" \
     -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH \
-    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+    "-DQT_ANDROID_MULTI_ABI_FORWARD_VARS=ANDROID_OPENSSL_DIR;CALAOS_ANDROID_ABIS;CMAKE_FIND_ROOT_PATH_MODE_PACKAGE;CMAKE_POLICY_VERSION_MINIMUM;ANDROID_PLATFORM" \
+    "${QT_ABI_ARGS[@]}"
 
 echo ""
-echo "==> Building (${CONFIG})"
+echo "==> Building (${CONFIG}$([[ "${AAB}" == true ]] && echo ", AAB"))"
 if [[ "${LIB_ONLY}" == true ]]; then
     cmake --build "${BUILD_DIR}" --target CalaosHome
+elif [[ "${AAB}" == true ]]; then
+    cmake --build "${BUILD_DIR}" --target aab
 else
     cmake --build "${BUILD_DIR}"
 fi
 
 echo ""
-echo "==> Done. Native library / APK:"
-ls -1 "${BUILD_DIR}"/libCalaosHome_*.so 2>/dev/null || true
-if [[ "${LIB_ONLY}" == false ]]; then
-    find "${BUILD_DIR}/android-build/build/outputs" -name '*.apk' 2>/dev/null
+if [[ "${LIB_ONLY}" == true ]]; then
+    echo "==> Done. Native library:"
+    ls -1 "${BUILD_DIR}"/libCalaosHome_*.so 2>/dev/null || true
+    exit 0
+fi
+
+OUT_DIR="${BUILD_DIR}/android-build/build/outputs"
+if [[ "${AAB}" == true ]]; then
+    PKG_EXT=aab
+    PKG_SRC="$(find "${OUT_DIR}/bundle/$(echo "${CONFIG}" | tr 'A-Z' 'a-z')" -name '*.aab' 2>/dev/null | head -1)"
+else
+    PKG_EXT=apk
+    PKG_SRC="$(find "${OUT_DIR}/apk" -name '*.apk' -path "*$(echo "${CONFIG}" | tr 'A-Z' 'a-z')*" 2>/dev/null | head -1)"
+fi
+[[ -n "${PKG_SRC}" ]] || fail "no .${PKG_EXT} found under ${OUT_DIR}"
+
+if [[ "${SIGNED}" == true ]]; then
+    VERSION_NAME="$(head -1 "${SCRIPT_DIR}/VERSION.txt" | tr -d '[:space:]')"
+    PKG_OUT="${BUILD_DIR}/CalaosHome-${VERSION_NAME}-release.${PKG_EXT}"
+    echo "==> Signing ${PKG_EXT} with the upload key (alias ${CALAOS_KEY_ALIAS})"
+    rm -f "${PKG_OUT}"
+    cp "${PKG_SRC}" "${PKG_OUT}"
+    if [[ "${AAB}" == true ]]; then
+        # Gradle may leave a previously signed bundle in place when nothing changed.
+        zip -q -d "${PKG_OUT}" 'META-INF/*.SF' 'META-INF/*.RSA' 'META-INF/*.DSA' 'META-INF/*.EC' >/dev/null 2>&1 || true
+        keypass_args=()
+        [[ -z "${CALAOS_KEY_PASS:-}" ]] || keypass_args=(-keypass:env CALAOS_KEY_PASS)
+        "${JAVA_HOME}/bin/jarsigner" -keystore "${CALAOS_KEYSTORE}" \
+            -storepass:env CALAOS_KEYSTORE_PASS ${keypass_args[@]+"${keypass_args[@]}"} \
+            "${PKG_OUT}" "${CALAOS_KEY_ALIAS}" >/dev/null
+        "${JAVA_HOME}/bin/jarsigner" -verify "${PKG_OUT}" | grep -m1 "jar verified" || fail "jarsigner -verify failed"
+    else
+        keypass_args=()
+        [[ -z "${CALAOS_KEY_PASS:-}" ]] || keypass_args=(--key-pass env:CALAOS_KEY_PASS)
+        PATH="${JAVA_HOME}/bin:${PATH}" "${APKSIGNER}" sign --ks "${CALAOS_KEYSTORE}" \
+            --ks-key-alias "${CALAOS_KEY_ALIAS}" --ks-pass env:CALAOS_KEYSTORE_PASS \
+            ${keypass_args[@]+"${keypass_args[@]}"} "${PKG_OUT}"
+        PATH="${JAVA_HOME}/bin:${PATH}" "${APKSIGNER}" verify "${PKG_OUT}"
+    fi
+    echo "==> Done. Signed package:"
+    echo "${PKG_OUT}"
+else
+    rm -f "${BUILD_DIR}"/CalaosHome-*-release.${PKG_EXT}   # stale signed copy of an older build
+    echo "==> Done. Package ($([[ "${CONFIG}" == Release ]] && echo "UNSIGNED, not uploadable" || echo "debug key")):"
+    echo "${PKG_SRC}"
 fi

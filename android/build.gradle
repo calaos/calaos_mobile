@@ -68,6 +68,11 @@ android {
             manifest.srcFile 'debug/AndroidManifest.xml'
             java.srcDirs = ['debug/src']
         }
+        // Manifest overlay for release only: drops the permissions Qt inserts
+        // but the app does not need (WRITE_EXTERNAL_STORAGE).
+        release {
+            manifest.srcFile 'release/AndroidManifest.xml'
+        }
     }
 
     tasks.withType(JavaCompile) {
@@ -95,5 +100,23 @@ android {
         minSdkVersion qtMinSdkVersion
         targetSdkVersion qtTargetSdkVersion
         ndk.abiFilters = qtTargetAbiList.split(",")
+    }
+
+    buildTypes {
+        release {
+            // No signingConfig on purpose: androiddeployqt only accepts the
+            // "-unsigned" APK name Gradle gives an unsigned release, and signing
+            // through Gradle would keep the passwords in the Gradle daemon. The
+            // upload key is applied afterwards by tools/build_android.sh
+            // (jarsigner on the AAB, apksigner on the APK).
+            // R8 / resource shrinking stay off on purpose (AND-5): the Java
+            // code is tiny and Qt's own Java classes (org.qtproject.qt.android.*)
+            // are looked up by name from libQt6*.so without shipping any
+            // consumer keep rules. If this is ever switched on, keep every
+            // class and method called by name from JNI: HardwareUtils (static
+            // helpers + HardwareUtilsNatives), CredentialStore, and the
+            // manifest components CalaosMessagingService / PushPictureWorker.
+            minifyEnabled false
+        }
     }
 }

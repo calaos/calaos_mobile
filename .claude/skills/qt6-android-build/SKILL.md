@@ -35,7 +35,17 @@ The canonical entry point is `tools/build_android.sh` (created by AND-1; mirrors
 
 `./tools/build_android.sh Debug --lib-only` builds only the native `libCalaosHome_arm64-v8a.so` (cmake target `CalaosHome`, skips Gradle). Ninja is taken from Homebrew or `~/Qt/Tools/Ninja`. The KDAB file is `android_openssl.cmake` (`add_android_openssl_libraries`), Debug uses its `no-asm` libs.
 
-Debug builds target **arm64-v8a only** (fast). Release/AAB builds use all four ABIs.
+Debug builds target **arm64-v8a only** (fast). `Release` builds all four ABIs (`arm64-v8a;armeabi-v7a;x86;x86_64`, override with `CALAOS_ANDROID_ABIS`, main ABI first): the main ABI's kit is the one CMake is configured with, Qt configures the other three as external projects with their own kits (`QT_ANDROID_ABIS` target property from `cmake/Android.cmake`, `QT_PATH_ANDROID_ABI_<abi>` and `QT_ANDROID_MULTI_ABI_FORWARD_VARS` passed by the script). Any single ABI also configures and builds alone (the old "x86_64-only CMake error" was not reproducible with Qt 6.12; tested x86, x86_64, armeabi-v7a).
+
+Release / Play Store:
+
+```bash
+export CALAOS_KEYSTORE=/path/upload.jks CALAOS_KEY_ALIAS=upload
+read -rs CALAOS_KEYSTORE_PASS; export CALAOS_KEYSTORE_PASS      # CALAOS_KEY_PASS optional (defaults to it)
+./tools/build_android.sh Release --aab    # -> build-android/CalaosHome-<ver>-release.aab (signed copy)
+```
+
+Without the `CALAOS_*` variables the AAB stays unsigned (loud warning, file under `android-build/build/outputs/bundle/release/`); a partial set is an error. For testing use a throwaway keystore in `/tmp` (`keytool -genkeypair -storetype PKCS12 ...`, then delete it); with a PKCS12 keystore the key password is the store password (a different `-keypass` silently breaks signing).
 
 ## Build / deploy / debug
 
@@ -66,3 +76,8 @@ When the Qt kit changes, the script itself deletes `build-android/CMakeCache.txt
 9. Since Qt 6.12 the template's `useLegacyPackaging = legacyPackaging.toBoolean()` really honours `legacyPackaging=false`: native libs are stored uncompressed and page-aligned in the APK and loaded from it (not extracted), so a debug APK is ~2.5x bigger than with 6.11 (whose template turned the string "false" into true). Store downloads are compressed by Play anyway; `zipalign -c -P 16` must still pass.
 10. Back key: the manifest sets `android:enableOnBackInvokedCallback="true"` (Qt 6.12 template). Qt registers an `OnBackInvokedCallback` and delivers back as `Qt::Key_Back`; if QML does not accept it, Qt calls `moveTaskToBack()` instead of finishing the activity.
 11. Network changes: `HardwareUtilsAndroid` loads Qt's `QNetworkInformation` Android backend (plugin `libplugins_networkinformation_qandroidnetworkinformation_*.so`, deployed automatically because the app links Qt6::Network; `ACCESS_NETWORK_STATE` comes from the Qt Network module manifest merge) and emits `networkStatusChanged` on reachability/transport-medium changes. Android also reports `Reachability::Unknown` during handovers; `getNetworkStatus()` then falls back to the Java ConnectivityManager query. Emulator note: the emulated network can flap by itself under heavy host load.
+12. **Release signing is done by the script after the build, not by Gradle or `androiddeployqt --sign`.** A Gradle `signingConfig` renames the APK to `android-build-release.apk`, and androiddeployqt (which only knows `-unsigned`/`-signed`) then exits 20 without any message, failing even `--aab`. `QT_ANDROID_SIGN_*` would put the passwords on jarsigner's command line and only produces v1 APK signatures. The script copies the output and runs `jarsigner -storepass:env` (AAB) / `apksigner --ks-pass env:` (APK): passwords only travel through the environment.
+13. **`WRITE_EXTERNAL_STORAGE`** is inserted by Qt Core's `QT_ANDROID_PERMISSIONS` into the main manifest (same file as any `tools:node="remove"` would be, which conflicts), so it is removed by the overlay `android/release/AndroidManifest.xml` (`sourceSets.release` in `build.gradle`): release only, debug keeps it. Verify: `aapt2 dump permissions app.apk`.
+14. **R8/minify is deliberately off** (`minifyEnabled false`): Qt's Java (`org.qtproject.qt.android.*`) is resolved by name from native code with no consumer keep rules, the app's own Java is small, the win is a few MB of dex. If you enable it, keep all JNI-by-name targets: `HardwareUtils` static helpers (`showAlertMessage`, `getNetworkStatus`, `inputtextDialog`, `setNativesReady`, `getStoredPushToken`, `requestPushToken`, `takePendingEventUuid`, `deliverPushToken`), `HardwareUtilsNatives` (`registerNativeMethods`), `CredentialStore` methods called from C++, plus the manifest components `CalaosMessagingService`, `PushPictureWorker`, and verify a release APK on a device.
+15. **16 KB pages**: 64-bit libs (arm64-v8a, x86_64) have LOAD align `0x4000`; the 32-bit ones (armeabi-v7a, x86) are `0x1000`, which is fine: 16 KB devices are 64-bit only and Play's requirement targets 64-bit native code. `zipalign -c -P 16 4` passes on the universal APK (bundletool aligns uncompressed `.so`).
+16. Handy tools: bundletool is not installed; `gh release download 1.18.3 --repo google/bundletool -p bundletool-all-1.18.3.jar` into `/tmp`, then `java -jar ... dump manifest --bundle x.aab` or `build-apks --mode=universal --ks=...` for an installable APK. A release AAB is ~147 MB (uncompressed Qt libs and 113 `.so` per ABI, 4 ABIs); Play delivers per-ABI splits. Installing a release-signed APK on an emulator that has a debug build needs an `adb uninstall` first (different signature).

@@ -6,7 +6,7 @@
 # Push notifications (FCM) live entirely on the Java/Gradle side
 # (android/build.gradle, CalaosMessagingService.java): nothing to enable here.
 
-# ABIs to build. Debug uses arm64-v8a only; release multi-ABI comes with AND-5.
+# ABIs to build (set by tools/build_android.sh: arm64-v8a for Debug, all four for Release).
 set(CALAOS_ANDROID_ABIS "arm64-v8a" CACHE STRING
     "Semicolon-separated Android ABIs to build")
 

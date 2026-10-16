@@ -377,17 +377,29 @@ There is **no GitHub Actions workflow** for the Android app — releases are
 built locally / via Qt Creator and uploaded by hand. The release flow is
 typically:
 
-1. Bump `versionName` + `versionCode` in
-   [android/AndroidManifest.xml](../android/AndroidManifest.xml).
-2. Build a release AAB (`make aab`).
-3. Sign with the Calaos upload keystore (not stored in this repo).
-4. Upload to Google Play Console → CalaosHome.
+1. Bump [VERSION.txt](../VERSION.txt): `versionName` is the semver string,
+   `versionCode` is `MAJOR*10000 + MINOR*100 + PATCH` (both injected into the
+   manifest by `cmake/Versioning.cmake`).
+2. Build and sign the release AAB for the four ABIs (CMake build):
 
-For local install:
+   ```bash
+   export CALAOS_KEYSTORE=/path/to/upload.jks      # never committed
+   export CALAOS_KEY_ALIAS=upload
+   read -rs CALAOS_KEYSTORE_PASS; export CALAOS_KEYSTORE_PASS   # prompts, no echo
+   # optional, defaults to the store password: CALAOS_KEY_PASS
+   ./tools/build_android.sh Release --aab
+   ```
 
-```bash
-adb install -r build/outputs/apk/release/calaos_mobile-release.apk
-```
+   Output: `build-android/CalaosHome-<version>-release.aab`, signed with
+   `jarsigner` (passwords go through the environment, never on a command line).
+   Without the `CALAOS_*` variables the script warns and leaves the AAB
+   unsigned (`build-android/android-build/build/outputs/bundle/release/`).
+   `Release` without `--aab` builds the (apksigner-signed) APK instead.
+3. Upload to Google Play Console -> CalaosHome (Play App Signing: this is the
+   *upload* key).
+
+For local install of a release build: `bundletool build-apks --mode=universal`
+on the AAB, or `./tools/build_android.sh Release` and `adb install -r` the APK.
 
 ## 8. Things an LLM should remember
 

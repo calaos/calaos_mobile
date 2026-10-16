@@ -47,16 +47,23 @@ public:
     virtual void saveAuthKeychain(const QString &email, const QString &pass);
     virtual void loadAuthKeychain(QString &email, QString &pass);
     virtual QString getServerHost();
+    //Also forgets the session state (isSessionActive() is true again).
     virtual void resetAuthKeychain();
 
     virtual void setConfigOption(QString key, QString value);
     virtual QString getConfigOption(QString key);
 
-    //Session boundaries that matter to platform code running without the
-    //app (Android push picture worker): true once home is loaded, false on
-    //an explicit user logout only (Application::userLogout()), never on a
-    //lost connection, a reconnection or the iOS resign-active pause.
-    virtual void setSessionActive(bool active) { Q_UNUSED(active); }
+    //Persistent "not logged out by the user" state: true once home is
+    //loaded, false on an explicit user logout only (Application::userLogout()),
+    //never on a lost connection, a reconnection or the iOS resign-active
+    //pause. It survives a restart: while false, no automatic login runs
+    //(LaunchLogin, FIX-11), and platform code running without the app (Android
+    //push picture worker, iOS notification service extension) does not use
+    //the stored credentials. True when never set (fresh install, update) and
+    //again after resetAuthKeychain().
+    //Base implementation (desktop, tests): QSettings.
+    virtual void setSessionActive(bool active);
+    virtual bool isSessionActive();
 
     //Called from qml/mobile/main.qml: the QML layer decides when a value has
     //to be typed, the platform decides how. The answer comes back through the

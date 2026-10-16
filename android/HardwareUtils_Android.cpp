@@ -381,6 +381,19 @@ void HardwareUtilsAndroid::setSessionActive(bool active)
     clearJavaException("CredentialStore.setSessionActive");
 }
 
+bool HardwareUtilsAndroid::isSessionActive()
+{
+    //Unreadable store: behave as before FIX-11 (automatic login allowed)
+    //rather than locking the user out of the automatic login for good.
+    QJniObject ctx = androidContext();
+    const jboolean active = QJniObject::callStaticMethod<jboolean>(kCredentialStoreClass, "isSessionActive",
+                                                                   "(Landroid/content/Context;)Z",
+                                                                   ctx.object());
+    if (clearJavaException("CredentialStore.isSessionActive"))
+        return true;
+    return active;
+}
+
 void HardwareUtilsAndroid::loadAuthKeychain(QString &email, QString &pass)
 {
     email = credentialStoreString("user");

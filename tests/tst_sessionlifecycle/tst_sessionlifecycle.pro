@@ -20,6 +20,7 @@ QT += widgets
 HEADERS += \
     $$SRC_DIR/CalaosConnection.h \
     $$SRC_DIR/HardwareUtils.h \
+    $$SRC_DIR/LaunchLogin.h \
     $$SRC_DIR/Common.h \
     $$SRC_DIR/IOTypeRegistry.h \
     $$SRC_DIR/JsonKeys.h

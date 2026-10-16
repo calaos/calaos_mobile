@@ -39,6 +39,22 @@
  *  - offline launch with the stored credentials, the user types others and
  *    taps Login still offline, then the network: the typed ones are used.
  *
+ * FIX-11: a logout did not survive a restart: the new connection knew
+ * nothing of it and the launch login reconnected. The logout is now persisted
+ * (HardwareUtils::setSessionActive(), QSettings here) and LaunchLogin applies
+ * it to the connection created at startup. A "restart" below is a fresh
+ * CalaosConnection set up from what the store holds, exactly like
+ * Application::createQmlApp():
+ *
+ *  - logout, restart: no launch login, no become-active login, nothing when
+ *    the network comes back, online or offline;
+ *  - then a login by hand succeeds: the state is cleared and the next restart
+ *    logs in on its own;
+ *  - no stored state (fresh install, update from an older version): the
+ *    launch login runs;
+ *  - reset all data: the logout is forgotten, the demo account still does
+ *    not log in by itself.
+ *
  * HTTP transport only: the policy is shared by both transports and the HTTP
  * fake is enough to count logins (one get_home per login).
  */
@@ -52,6 +68,8 @@
 #include <QTcpSocket>
 
 #include "CalaosConnection.h"
+#include "HardwareUtils.h"
+#include "LaunchLogin.h"
 
 static const QString TestUser = QStringLiteral("user");
 static const QString TestPass = QStringLiteral("pass");
@@ -164,6 +182,8 @@ class TstSessionLifecycle: public QObject
     Q_OBJECT
 
 private slots:
+    void initTestCase();
+    void cleanupTestCase();
     void init();
     void cleanup();
 
@@ -183,6 +203,12 @@ private slots:
     void offlineLaunchConnectsWhenTheNetworkIsBack();
     void logoutThenOfflineAutoLoginStaysLoggedOut();
     void offlineLaunchThenTypedLoginUsesTheTypedCredentials();
+
+    void logoutSurvivesRestart();
+    void logoutSurvivesOfflineRestart();
+    void loginAfterRestartClearsTheLogout();
+    void noStoredStateLaunchLogsIn();
+    void resetAllDataForgetsTheLogout();
 
 private:
     //The session goes up through an explicit login, as from the login screen.
@@ -214,6 +240,46 @@ private:
     {
         return connection->deferLogin(user, pass, server->baseUrl(), ReconnectPolicy::UserRequest);
     }
+    //What Application does around the persisted logout (FIX-11):
+    //homeLoaded() after any successful login, userLogout() for Settings ->
+    //Logout, and createQmlApp() at startup (the app is killed and launched
+    //again: a new connection set up from the store only).
+    void sessionUp() { HardwareUtils::Instance()->setSessionActive(true); }
+    void userLogout()
+    {
+        HardwareUtils::Instance()->setSessionActive(false);
+        connection->logout();
+    }
+    void restart()
+    {
+        delete connection;
+        connection = new CalaosConnection();
+        LaunchLogin::restoreUserLogout(connection, HardwareUtils::Instance());
+    }
+    //The launch timer of createQmlApp(), online: returns true when it logs in.
+    bool launchLogin(const QString &user = TestUser, const QString &pass = TestPass,
+                     QString host = QString())
+    {
+        if (host.isNull())
+            host = server->baseUrl();
+        if (!LaunchLogin::shouldAutoLogin(connection, user, pass, host))
+            return false;
+        connection->login(user, pass, host);
+        return true;
+    }
+    //What a fresh QSettings reads, i.e. the next process.
+    static QVariant storedSessionState()
+    {
+        QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+        return settings.value(QStringLiteral("calaos/session_active"));
+    }
+    static void clearStore()
+    {
+        QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+        settings.clear();
+        settings.sync();
+    }
+
     //Longer than the anti-chatter delay of requestImmediateReconnect() and
     //than the first backoff delay: anything that was going to start a login
     //has done it by then.
@@ -223,8 +289,22 @@ private:
     CalaosConnection *connection = nullptr;
 };
 
+void TstSessionLifecycle::initTestCase()
+{
+    //The base HardwareUtils keeps the session state in QSettings: a store of
+    //our own, emptied before every case.
+    QCoreApplication::setOrganizationName(QStringLiteral("CalaosTests"));
+    QCoreApplication::setApplicationName(QStringLiteral("tst_sessionlifecycle"));
+}
+
+void TstSessionLifecycle::cleanupTestCase()
+{
+    clearStore();
+}
+
 void TstSessionLifecycle::init()
 {
+    clearStore();
     server = new FakeApiServer();
     QVERIFY(server->listen(QHostAddress::LocalHost, 0));
     connection = new CalaosConnection();
@@ -484,8 +564,7 @@ void TstSessionLifecycle::offlineLaunchConnectsWhenTheNetworkIsBack()
 
 //FIX-9: an automatic login refused offline (iOS become-active, the launch
 //login) never reopens a session the user closed.
-//Out of scope: a cold restart after a logout. The logout is not persisted
-//across restarts, online or offline (follow-up ticket).
+//A cold restart after a logout: see logoutSurvivesOfflineRestart() (FIX-11).
 void TstSessionLifecycle::logoutThenOfflineAutoLoginStaysLoggedOut()
 {
     loginAndWait();
@@ -533,6 +612,124 @@ void TstSessionLifecycle::offlineLaunchThenTypedLoginUsesTheTypedCredentials()
     settle();
     QCOMPARE(server->logins, 1);
     QCOMPARE(server->attempts, QStringList({ typed }));
+}
+
+//FIX-11, the ticket's case: Logout, kill the app, launch it again. The login
+//screen shows the stored credentials (they are not touched) and nothing logs
+//in: not the launch timer, not iOS become-active, not the network.
+void TstSessionLifecycle::logoutSurvivesRestart()
+{
+    loginAndWait();
+    sessionUp();
+    userLogout();
+    QCOMPARE(storedSessionState(), QVariant(false));
+
+    restart();
+    QVERIFY(connection->sessionClosedByUser());
+    QVERIFY(!launchLogin());
+    QVERIFY(!appForeground()); //iOS reports become-active at launch too
+    networkDown();
+    networkUp();
+    QVERIFY(!connection->acceptsImmediateReconnect()); //desktop discovery
+    settle();
+
+    QCOMPARE(server->logins, 1);
+    QCOMPARE(connection->connectionState(), ReconnectPolicy::Disconnected);
+
+    //Restarted again without logging in: still logged out.
+    restart();
+    QVERIFY(!launchLogin());
+    settle();
+    QCOMPARE(server->logins, 1);
+}
+
+//FIX-11, offline variant: launched in airplane mode after a logout, the
+//launch login is not recorded either, so the network coming back does
+//nothing.
+void TstSessionLifecycle::logoutSurvivesOfflineRestart()
+{
+    loginAndWait();
+    sessionUp();
+    userLogout();
+
+    restart();
+    networkDown();
+    QVERIFY(!LaunchLogin::shouldAutoLogin(connection, TestUser, TestPass, server->baseUrl()));
+    QVERIFY(!launchLoginOffline(TestUser, TestPass)); //deferLogin() refuses it too
+    networkUp();
+    settle();
+
+    QCOMPARE(server->logins, 1);
+    QCOMPARE(connection->connectionState(), ReconnectPolicy::Disconnected);
+}
+
+//FIX-11: Login by hand after the restart clears the state; the following
+//restarts log in on their own again.
+void TstSessionLifecycle::loginAfterRestartClearsTheLogout()
+{
+    loginAndWait();
+    sessionUp();
+    userLogout();
+    restart();
+    QVERIFY(!launchLogin());
+
+    //A rejected login does not clear it: homeLoaded() never ran.
+    connection->login(TypedUser, TypedPass, server->baseUrl());
+    QTRY_VERIFY(server->attempts.size() == 2);
+    connection->logout(); //the user gives up on the login screen
+    QCOMPARE(storedSessionState(), QVariant(false));
+    restart();
+    QVERIFY(!launchLogin());
+
+    loginAndWait(); //Login tapped with the right credentials
+    sessionUp();
+    QCOMPARE(storedSessionState(), QVariant(true));
+
+    restart();
+    QVERIFY(!connection->sessionClosedByUser());
+    QVERIFY(launchLogin());
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
+    QCOMPARE(server->logins, 3);
+}
+
+//FIX-11: nothing stored (fresh install, or an update from a version without
+//the state): the launch login runs, as before.
+void TstSessionLifecycle::noStoredStateLaunchLogsIn()
+{
+    QVERIFY(!storedSessionState().isValid());
+    QVERIFY(HardwareUtils::Instance()->isSessionActive());
+
+    restart();
+    QVERIFY(launchLogin());
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
+    QCOMPARE(server->logins, 1);
+}
+
+//FIX-11: Reset all data goes back to the initial state: the logout is
+//forgotten, the stored credentials are the demo account's, which is never
+//logged in automatically (unchanged demo behaviour).
+void TstSessionLifecycle::resetAllDataForgetsTheLogout()
+{
+    loginAndWait();
+    sessionUp();
+    userLogout();
+
+    HardwareUtils::Instance()->resetAuthKeychain();
+    QVERIFY(!storedSessionState().isValid());
+    QVERIFY(HardwareUtils::Instance()->isSessionActive());
+
+    restart();
+    QVERIFY(!connection->sessionClosedByUser());
+    QString user, pass;
+    HardwareUtils::Instance()->loadAuthKeychain(user, pass);
+    QCOMPARE(user, Common::getDemoUser());
+    QVERIFY(!launchLogin(user, pass, Common::getDemoHost()));
+    QVERIFY(!launchLogin(QStringLiteral("demo"), pass, Common::getDemoHost()));
+
+    //A real account typed afterwards logs in automatically at the next launch.
+    QVERIFY(launchLogin());
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
+    QCOMPARE(server->logins, 2);
 }
 
 QTEST_MAIN(TstSessionLifecycle)

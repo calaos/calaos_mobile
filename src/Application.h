@@ -157,6 +157,10 @@ private:
     //from now on is deferred by HardwareUtils until homeLoaded().
     void stopPushNotifRouting();
 
+    //Opening of the notification tapped while not logged in, see
+    //DeferredNotifGate.
+    DeferredNotifGate deferredNotif;
+
     QTimer *timerLockSettings = nullptr;
 
     void loadSettings();

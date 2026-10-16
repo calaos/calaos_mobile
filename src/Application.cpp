@@ -440,6 +440,10 @@ void Application::stopPushNotifRouting()
                this, &Application::pushNotificationReceived);
 
     HardwareUtils::Instance()->updateCalaosConnectState(false);
+
+    //A deferred tap taken by homeLoaded() but not opened yet goes back to
+    //HardwareUtils: the next login opens it, the pending delay will not.
+    HardwareUtils::Instance()->restorePendingNotif(deferredNotif.loggedOut());
 }
 
 void Application::logout()
@@ -497,21 +501,16 @@ void Application::homeLoaded(const QVariantMap &homeData)
     //Deliberately outside the startedWithOptHandled block: that flag is only
     //reset when the app resigns active, which Android never reports, so a
     //tap during a reconnection used to be dropped there (FIX-3).
-    const QString pendingNotif = HardwareUtils::Instance()->takePendingNotif();
-    if (!pendingNotif.isEmpty())
+    //The short delay lets the home page show first. A session that drops
+    //meanwhile voids the ticket (stopPushNotifRouting()).
+    const quint64 notifTicket = deferredNotif.loggedIn(HardwareUtils::Instance()->takePendingNotif());
+    if (notifTicket != 0)
     {
-        QTimer::singleShot(400, this, [this, pendingNotif]()
+        QTimer::singleShot(400, this, [this, notifTicket]()
         {
-            //The session dropped again in the meantime: keep the tap for the
-            //next login, unless a newer one is already waiting.
-            if (get_applicationStatus() != Common::LoggedIn)
-            {
-                if (!HardwareUtils::Instance()->hasPendingNotif())
-                    HardwareUtils::Instance()->handleNotificationOpened(pendingNotif);
-                return;
-            }
-
-            pushNotificationReceived(pendingNotif);
+            const QString uuid = deferredNotif.fire(notifTicket);
+            if (!uuid.isEmpty())
+                pushNotificationReceived(uuid);
         });
     }
 

@@ -122,6 +122,15 @@ QString HardwareUtils::takePendingNotif()
     return uuid;
 }
 
+void HardwareUtils::restorePendingNotif(const QString &uuid)
+{
+    if (uuid.isEmpty() || !pendingNotifUuid.isEmpty())
+        return;
+
+    qDebug() << "Notification" << uuid << "not opened before the session dropped, kept for the next login";
+    pendingNotifUuid = uuid;
+}
+
 void HardwareUtils::setDeviceToken(const QString &token)
 {
     if (token.isEmpty() || token == deviceToken)

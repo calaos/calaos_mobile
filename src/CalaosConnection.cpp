@@ -641,6 +641,10 @@ void CalaosConnection::requestFinished()
     }
 
     reqReply->deleteLater();
+    //Forget it on every path: resetTransport() aborts what is still listed,
+    //and a failed reply left here was aborted after its deletion (crash on
+    //the next logout or reconnection once any HTTP request had failed).
+    reqReplies.removeAll(reqReply);
 
     if (reqReply->error() != QNetworkReply::NoError)
     {
@@ -662,8 +666,6 @@ void CalaosConnection::requestFinished()
 #ifdef QT_DEBUG
     qDebug().noquote() << "RECV: " << jdoc.toJson();
 #endif
-
-    reqReplies.removeAll(reqReply);
 
     QVariantMap jroot = jdoc.object().toVariantMap();
 

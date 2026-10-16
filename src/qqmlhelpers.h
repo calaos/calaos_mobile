@@ -62,7 +62,7 @@
         Q_OBJECT \
     public: \
         enum Type { __VA_ARGS__ }; \
-        Q_ENUMS (Type) \
+        Q_ENUM (Type) \
     };
 
 /* Equality guard for the model-backed setters below.

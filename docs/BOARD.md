@@ -95,7 +95,7 @@ La version Android n'a jamais fonctionné en Qt 6. Analyse et plan validés par 
 | [AND-4](tasks/AND-4-push-fcm-java.md) | Notifications push FCM via le SDK Firebase Java | L | AND-3 | G-ANDROID | Terminé |
 | [AND-7](tasks/AND-7-push-image-camera.md) | Image de caméra dans les notifications push | L | AND-4 | G-ANDROID | En revue |
 | [AND-5](tasks/AND-5-release-aab-signature.md) | Build release : AAB multi-ABI et signature | S | AND-4 | G-ANDROID | Terminé |
-| [AND-6](tasks/AND-6-doc-nettoyage.md) | Documentation Android et nettoyage legacy | S | AND-5, AND-7 | G-ANDROID + G-DOC | À faire |
+| [AND-6](tasks/AND-6-doc-nettoyage.md) | Documentation Android et nettoyage legacy | S | AND-5, AND-7 | G-ANDROID + G-DOC | En cours |
 | [AND-8](tasks/AND-8-clavier-apres-login.md) | Le clavier reste ouvert après le login | S | — | G-QML-MOBILE | Terminé |
 
 Suivis issus des revues (à traiter dans le ticket indiqué) :

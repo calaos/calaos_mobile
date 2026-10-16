@@ -102,8 +102,8 @@
 {
     Q_UNUSED(application);
 
-    NSLog(@"%@", deviceToken);
-
+    //No NSLog of the token: it is a per-device credential (logged redacted
+    //by HardwareUtils::setDeviceToken()).
     HardwareUtils_iOS *o = dynamic_cast<HardwareUtils_iOS *>(HardwareUtils::Instance());
     o->handleRegisterNotif(deviceToken);
 }

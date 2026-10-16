@@ -199,8 +199,22 @@ void HardwareUtils::resetAuthKeychain()
 
     settings.setValue("calaos/cn_user", Common::getDemoUser());
     settings.setValue("calaos/cn_pass", Common::getDemoPass());
+    settings.remove("calaos/session_active");
 
     settings.sync();
+}
+
+void HardwareUtils::setSessionActive(bool active)
+{
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    settings.setValue("calaos/session_active", active);
+    settings.sync();
+}
+
+bool HardwareUtils::isSessionActive()
+{
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    return settings.value("calaos/session_active", true).toBool();
 }
 
 void HardwareUtils::setConfigOption(QString key, QString value)

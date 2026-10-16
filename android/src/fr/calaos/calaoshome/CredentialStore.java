@@ -87,9 +87,19 @@ public final class CredentialStore
     // (default, so an install updated in the background keeps working). An
     // explicit logout sets it false until the next successful login; a lost
     // connection or a reconnection does not change it.
+    // Never throws: an unreadable flag counts as active (C++ treats any JNI
+    // failure the same way), so a broken store cannot keep the app logged out.
     public static boolean isSessionActive(Context ctx)
     {
-        return prefs(ctx).getBoolean(PREF_SESSION_ACTIVE, true);
+        try
+        {
+            return prefs(ctx).getBoolean(PREF_SESSION_ACTIVE, true);
+        }
+        catch (RuntimeException e)
+        {
+            Log.w(TAG, "CredentialStore: session flag unreadable, considered active");
+            return true;
+        }
     }
 
     public static void setSessionActive(Context ctx, boolean active)

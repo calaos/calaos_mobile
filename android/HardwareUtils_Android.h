@@ -39,7 +39,9 @@ public:
     virtual void loadAuthKeychain(QString &email, QString &pass);
     virtual void resetAuthKeychain();
     virtual void setConfigOption(QString key, QString value);
+    //CredentialStore's session_active flag, shared with PushPictureWorker.
     virtual void setSessionActive(bool active);
+    virtual bool isSessionActive();
 
 private:
     //Qt's Android backend (ConnectivityManager default-network callback) feeds

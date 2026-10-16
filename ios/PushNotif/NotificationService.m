@@ -34,6 +34,14 @@
         [self contentComplete];
         return;
     }
+
+    //Logged out on purpose in the app: the stored credentials stay for the
+    //login screen but are not used here (same rule as Android's
+    //PushPictureWorker). The text of the notification is shown as is.
+    if (![self isSessionActive]) {
+        [self contentComplete];
+        return;
+    }
     
     // load the attachment
     [self loadAttachmentForUuid:uuid
@@ -149,6 +157,15 @@
                                           }
                                       }];
     [dataTask resume];
+}
+
+//Written by the app (HardwareUtils_iOS::setSessionActive()): false after an
+//explicit logout, absent (= active) before the first logout or after a reset.
+- (BOOL)isSessionActive {
+    NSUserDefaults *sharedDefaults = [[NSUserDefaults alloc] initWithSuiteName: @"group.fr.calaos.CalaosMobile"];
+    if ([sharedDefaults objectForKey:@"calaos.session_active"] == nil)
+        return YES;
+    return [sharedDefaults boolForKey:@"calaos.session_active"];
 }
 
 - (NSString *)getCalaosHost {

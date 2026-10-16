@@ -38,6 +38,7 @@ set(CALAOS_HEADERS
     src/AudioModel.h
     src/FavoritesModel.h
     src/HardwareUtils.h
+    src/LaunchLogin.h
     src/CameraModel.h
     src/RoomFilterModel.h
     src/Machine.h

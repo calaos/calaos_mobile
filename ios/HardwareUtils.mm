@@ -269,6 +269,11 @@ static HWClass *hwclass;
 static Reachability *reach;
 static A0SimpleKeychain *keychain;
 
+//Shared with the PushNotif extension (NotificationService.m).
+static NSString *const kAppGroup = @"group.fr.calaos.CalaosMobile";
+//False after an explicit logout, see HardwareUtils::setSessionActive().
+static NSString *const kSessionActiveKey = @"calaos.session_active";
+
 HardwareUtils_iOS::HardwareUtils_iOS(QObject *parent):
     HardwareUtils(parent)
 {
@@ -352,6 +357,27 @@ void HardwareUtils_iOS::resetAuthKeychain()
 {
     [keychain setString:Common::getDemoUser().toNSString() forKey:@"calaos-cn-user"];
     [keychain setString:Common::getDemoPass().toNSString() forKey:@"calaos-cn-pass"];
+
+    NSUserDefaults *sharedDefaults = [[NSUserDefaults alloc] initWithSuiteName:kAppGroup];
+    [sharedDefaults removeObjectForKey:kSessionActiveKey];
+    [sharedDefaults release];
+}
+
+void HardwareUtils_iOS::setSessionActive(bool active)
+{
+    NSUserDefaults *sharedDefaults = [[NSUserDefaults alloc] initWithSuiteName:kAppGroup];
+    [sharedDefaults setBool:active ? YES : NO forKey:kSessionActiveKey];
+    [sharedDefaults release];
+}
+
+bool HardwareUtils_iOS::isSessionActive()
+{
+    //Absent (fresh install, update, reset): active.
+    NSUserDefaults *sharedDefaults = [[NSUserDefaults alloc] initWithSuiteName:kAppGroup];
+    const bool active = [sharedDefaults objectForKey:kSessionActiveKey] == nil ||
+                        [sharedDefaults boolForKey:kSessionActiveKey];
+    [sharedDefaults release];
+    return active;
 }
 
 void HardwareUtils_iOS::inputTextDialog(const QString &title, const QString &message)

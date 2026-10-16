@@ -47,6 +47,7 @@ HEADERS += \
     src/AudioModel.h \
     src/FavoritesModel.h \
     src/HardwareUtils.h \
+    src/LaunchLogin.h \
     src/CameraModel.h \
     $$PWD/src/RoomFilterModel.h \
     $$PWD/src/Machine.h \

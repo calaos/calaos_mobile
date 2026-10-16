@@ -6,6 +6,7 @@
 #include <QStandardPaths>
 #include "RoomFilterModel.h"
 #include "ControlPanelModel.h"
+#include "LaunchLogin.h"
 
 #include "version.h"
 
@@ -193,6 +194,13 @@ void Application::createQmlApp()
     update_applicationStatus(Common::NotConnected);
 
     calaosConnect = new CalaosConnection(this);
+#ifndef CALAOS_DESKTOP
+    //Before anything can log in: a logout done before the app was closed
+    //still holds (FIX-11). The launch login and iOS become-active check
+    //sessionClosedByUser(). Mobile only: the desktop has no login screen, a
+    //stray flag in its settings would block server discovery for good.
+    LaunchLogin::restoreUserLogout(calaosConnect, HardwareUtils::Instance());
+#endif
     connect(calaosConnect, &CalaosConnection::homeLoaded,
             this, &Application::homeLoaded);
     connect(calaosConnect, &CalaosConnection::loginFailed,
@@ -364,22 +372,14 @@ void Application::createQmlApp()
 
 #ifndef CALAOS_DESKTOP
     //Start autologin, only on mobile. On desktop we wait for calaos_server detection
+    //Not after a logout, even one done before a restart (FIX-11): the login
+    //screen shows the stored credentials until the user taps Login.
     QTimer::singleShot(100, this, [=]()
     {
-        bool demoMode = false;
-        QString user = get_username();
-        QString pass = get_password();
-        QString h = get_hostname();
-
-        if ((user == "demo" || user == "demo@calaos.fr") &&
-            pass == "demo" &&
-            h == "demo.calaos.fr")
-        {
-            demoMode = true;
-        }
-
-        if (!demoMode)
-            startLogin(user, pass, h, false);
+        if (LaunchLogin::shouldAutoLogin(calaosConnect, get_username(), get_password(), get_hostname()))
+            startLogin(get_username(), get_password(), get_hostname(), false);
+        else
+            qDebug() << "Launch: no automatic login (demo account or logged out by the user)";
     });
 #endif
 }
@@ -492,6 +492,8 @@ void Application::logout()
 
 void Application::userLogout()
 {
+    //Persisted: the next launches stay logged out until a login succeeds
+    //(homeLoaded()), see LaunchLogin (FIX-11).
     HardwareUtils::Instance()->setSessionActive(false);
     //logout() first: it hands a tap taken but not opened yet back to
     //HardwareUtils (DeferredNotifGate::loggedOut() also makes any armed delay
@@ -502,6 +504,8 @@ void Application::userLogout()
 
 void Application::resetAllData()
 {
+    //Also forgets a persisted logout (FIX-11): back to the state of a fresh
+    //install, where the demo account is not logged in automatically.
     HardwareUtils::Instance()->resetAuthKeychain();
     //Also reset hostname
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());

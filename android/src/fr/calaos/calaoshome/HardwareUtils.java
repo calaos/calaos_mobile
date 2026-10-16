@@ -59,7 +59,11 @@ public class HardwareUtils extends QtActivity
         // Set before super.onCreate(): that call starts the Qt application,
         // which may call the static helpers right away.
         _context = this;
-        rememberEventUuid(getIntent());
+        // Only a genuine launch: when the system recreates the activity after
+        // process death it replays the original intent (without
+        // FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY), which must not reopen the event.
+        if (savedInstanceState == null)
+            rememberEventUuid(getIntent());
         super.onCreate(savedInstanceState);
 
         CalaosMessagingService.ensureNotificationChannel(this);
@@ -92,7 +96,9 @@ public class HardwareUtils extends QtActivity
     // (CalaosMessagingService) or, for a message displayed by the system while
     // the app was in the background, from the FCM data keys that Play
     // services copies into the launcher intent. An intent replayed from
-    // Recents must not reopen the event.
+    // Recents must not reopen the event. The activity is exported: the extra
+    // is untrusted (any app can send it), so it is validated and a hostile
+    // bundle that fails to unparcel is treated as no uuid.
     static String eventUuidFromIntent(Intent intent)
     {
         if (intent == null)
@@ -100,10 +106,17 @@ public class HardwareUtils extends QtActivity
         if ((intent.getFlags() & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0)
             return null;
 
-        String uuid = intent.getStringExtra(CalaosMessagingService.EXTRA_EVENT_UUID);
-        if (uuid == null || uuid.isEmpty())
+        String uuid;
+        try
+        {
+            uuid = intent.getStringExtra(CalaosMessagingService.EXTRA_EVENT_UUID);
+        }
+        catch (RuntimeException e) // BadParcelableException, ClassCastException, ...
+        {
+            Log.w(TAG, "Ignoring unreadable launch extras");
             return null;
-        return uuid;
+        }
+        return CalaosMessagingService.sanitizeEventUuid(uuid);
     }
 
     // Android 13+ only: below that, notifications need no runtime permission
@@ -355,7 +368,8 @@ public class HardwareUtils extends QtActivity
         }
     }
 
-    // Also used by CalaosMessagingService.onNewToken, from a binder thread.
+    // Also used by CalaosMessagingService.onNewToken, which runs on the FCM
+    // SDK's intent-handler executor thread; the native side queues to Qt.
     static void deliverPushToken(String token)
     {
         if (!nativesReady)

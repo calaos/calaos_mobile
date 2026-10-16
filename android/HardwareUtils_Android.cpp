@@ -37,8 +37,8 @@ QString describeToken(const QString &token)
     return QStringLiteral("%1... (%2 chars)").arg(token.left(8)).arg(token.size());
 }
 
-//Called from Android threads (UI thread, FCM binder thread): only hop to
-//the Qt thread from here.
+//Called from Android threads (UI thread, the FCM SDK's intent-handler
+//executor thread): only hop to the Qt thread from here.
 void jniEmitDialogTextValid(JNIEnv *, jclass, jstring text)
 {
     HardwareUtilsAndroid *hw = s_instance.data();

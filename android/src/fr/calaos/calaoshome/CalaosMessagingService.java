@@ -13,6 +13,7 @@ import androidx.core.app.NotificationManagerCompat;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 // FCM entry point. This service is started by Google Play services, possibly
 // in a fresh process where the Qt activity never ran: libCalaosHome is then
@@ -42,13 +43,20 @@ public class CalaosMessagingService extends FirebaseMessagingService
     // push payload and as the iOS userInfo).
     public static final String EXTRA_EVENT_UUID = "event_uuid";
 
+    // Shape of an acceptable event uuid. Both the launcher activity (exported)
+    // and the push payload are untrusted input: anything else is dropped
+    // before it is logged or handed to C++.
+    private static final Pattern EVENT_UUID = Pattern.compile("^[0-9a-fA-F-]{8,64}$");
+
     // Payload keys.
     private static final String KEY_TITLE = "title";
     private static final String KEY_BODY = "body";
     private static final String KEY_MESSAGE = "message";
     private static final String DEFAULT_TITLE = "Calaos";
 
-    // Token persistence, shared with the activity.
+    // Token persistence, shared with the activity. The file is excluded from
+    // Auto Backup / device transfer (res/xml/backup_rules.xml,
+    // data_extraction_rules.xml): a token is bound to one app instance.
     private static final String PREFS_NAME = "calaos_push";
     private static final String PREF_TOKEN = "fcm_token";
 
@@ -79,11 +87,7 @@ public class CalaosMessagingService extends FirebaseMessagingService
                                         data.get(KEY_MESSAGE),
                                         notif != null ? notif.getBody() : null,
                                         "");
-            String uuid = data.get(EXTRA_EVENT_UUID);
-            if (uuid != null && uuid.isEmpty())
-                uuid = null;
-
-            return new PushPayload(title, body, uuid);
+            return new PushPayload(title, body, sanitizeEventUuid(data.get(EXTRA_EVENT_UUID)));
         }
 
         private static String firstNonEmpty(String... values)
@@ -93,6 +97,26 @@ public class CalaosMessagingService extends FirebaseMessagingService
                     return v;
             return null;
         }
+    }
+
+    // Returns the uuid when it looks like one, null otherwise (missing, empty,
+    // too long, unexpected characters).
+    public static String sanitizeEventUuid(String uuid)
+    {
+        if (uuid == null || !EVENT_UUID.matcher(uuid).matches())
+            return null;
+        return uuid;
+    }
+
+    // Runs when Play services starts the service for a message, including in
+    // a process where the activity never ran (app updated, not yet opened):
+    // the channel must exist before the FCM SDK displays a background
+    // notification, or it falls back to its own "Misc" channel for good.
+    @Override
+    public void onCreate()
+    {
+        super.onCreate();
+        ensureNotificationChannel(this);
     }
 
     // ── Token ────────────────────────────────────────────────────────────
@@ -163,9 +187,10 @@ public class CalaosMessagingService extends FirebaseMessagingService
         if (nm == null)
             return;
 
-        NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Calaos",
+        NotificationChannel channel = new NotificationChannel(CHANNEL_ID,
+                                                              ctx.getString(R.string.notification_channel_name),
                                                               NotificationManager.IMPORTANCE_HIGH);
-        channel.setDescription("Calaos home automation events");
+        channel.setDescription(ctx.getString(R.string.notification_channel_description));
         channel.enableLights(true);
         channel.enableVibration(true);
         nm.createNotificationChannel(channel);
@@ -195,6 +220,9 @@ public class CalaosMessagingService extends FirebaseMessagingService
             .setStyle(new NotificationCompat.BigTextStyle().bigText(payload.body))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setDefaults(Notification.DEFAULT_ALL)
+            // A later re-post with the same id (picture, AND-7) must not
+            // ring/vibrate a second time.
+            .setOnlyAlertOnce(true)
             .setAutoCancel(true)
             .setContentIntent(openAppIntent(ctx, payload.eventUuid));
 

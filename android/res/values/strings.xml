@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- English only: build.gradle sets resConfig "en" (Qt template), which strips
+     every other locale from the APK, so values-fr/-de would not survive. -->
+<resources>
+    <string name="notification_channel_name">Calaos</string>
+    <string name="notification_channel_description">Calaos home automation events</string>
+</resources>

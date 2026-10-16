@@ -1938,7 +1938,7 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
 <context>
     <name>OfflineBanner</name>
     <message>
-        <location filename="../qml/mobile/OfflineBanner.qml" line="67"/>
+        <location filename="../qml/mobile/OfflineBanner.qml" line="72"/>
         <source>No network, will connect when it is back</source>
         <translation>Kein Netzwerk, Verbindung sobald es wieder da ist</translation>
     </message>

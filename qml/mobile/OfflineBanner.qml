@@ -15,12 +15,17 @@ Item {
     // answer without a blocking dialog.
     function highlight() {
         flash.restart()
-        Accessible.announce(label.text)
+        Qt.callLater(banner.announce)
     }
 
     // A height change is not announced by TalkBack/VoiceOver, unlike the
-    // native alert this banner replaces: say it when it appears.
-    onShownChanged: if (shown) Accessible.announce(label.text)
+    // native alert this banner replaces: say it when it appears. Through
+    // Qt.callLater, so a Login tap that both shows and highlights the banner
+    // is announced once.
+    function announce() {
+        Accessible.announce(label.text)
+    }
+    onShownChanged: if (shown) Qt.callLater(banner.announce)
 
     height: shown ? content.height : 0
     clip: true

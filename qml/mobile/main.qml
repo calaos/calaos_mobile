@@ -125,7 +125,7 @@ Window {
         RoomListView {
             model: homeModel
 
-            onRoomClicked: {
+            onRoomClicked: (idx, room_name) => {
                 //get room model
                 roomModel = homeModel.getRoomModel(idx)
                 currentRoomName = room_name

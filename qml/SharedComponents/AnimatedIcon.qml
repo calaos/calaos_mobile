@@ -30,7 +30,8 @@ Item {
 
     IconItem {
         id: picon
-        source: calaosApp.getPictureSized(imageFilenameOn.arg(currentImage))
+        // Only build a frame name for a valid index (currentImage is -1 until the animation starts)
+        source: currentImage >= 0 ? calaosApp.getPictureSized(imageFilenameOn.arg(currentImage)) : ""
         opacity: iconState?1:0
     }
 

@@ -50,6 +50,11 @@ CalaosConnection::CalaosConnection(QObject *parent) :
             this, &CalaosConnection::sslErrors);
     connect(accessManagerCam, &QNetworkAccessManager::sslErrors,
             this, &CalaosConnection::sslErrors);
+
+    //A token reported while the session is up (rotation, or a token that only
+    //arrived after the login) is registered right away, not at the next login.
+    connect(HardwareUtils::Instance(), &HardwareUtils::deviceTokenChanged,
+            this, &CalaosConnection::registerPushToken);
 }
 
 void CalaosConnection::sslErrors(QNetworkReply *reply, const QList<QSslError> &)
@@ -150,6 +155,7 @@ void CalaosConnection::resetTransport()
     wsFallbackDone = false;
     demoMode = false;
     uuidPolling.clear();
+    pushRegistration.sessionEnded();
 
     //The login handler is hooked on the manager, not on the reply: unhook it
     //before aborting anything, otherwise the abort of the *previous* attempt
@@ -434,24 +440,9 @@ void CalaosConnection::onWsConnected()
     wsPing->start(5 * 1000); //every 5s send a ping to calaos_server
     wsPingTimeout->start(20 * 1000); //20s timeout
 
-    QTimer::singleShot(100, this, [=]()
-    {
-        if (!wsocket) return;
-        if (HardwareUtils::Instance()->getDeviceToken().isEmpty()) return;
-
-#if defined(Q_OS_ANDROID)
-        QString hw = QStringLiteral("android");
-#elif defined(Q_OS_IOS)
-        QString hw = QStringLiteral("ios");
-#else
-        QString hw;
-#endif
-
-        //Send the push device token to register the mobile device to calaos_server for push notif
-        sendWebsocket(QStringLiteral("register_push"),
-                      {{ JsonKeys::Token, HardwareUtils::Instance()->getDeviceToken() },
-                       { JsonKeys::Hardware, hw }});
-    });
+    //register_push is sent once the login is accepted (see the "login"
+    //answer in onWsTextMessageReceived()): sendWebsocket() drops anything
+    //sent before that, which used to lose the registration on a slow link.
 }
 
 void CalaosConnection::onWsDisconnected()
@@ -570,28 +561,47 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
     reconnectPolicy.attemptSucceeded();
     emitStateChanged();
 
-    if (!HardwareUtils::Instance()->getDeviceToken().isEmpty())
-    {
-#if defined(Q_OS_ANDROID)
-        QString hw = QStringLiteral("android");
-#elif defined(Q_OS_IOS)
-        QString hw = QStringLiteral("ios");
-#else
-        QString hw;
-#endif
-
-        //Send the push device token to register the mobile device to calaos_server for push notif
-        QJsonObject o = {
-            { JsonKeys::Token, HardwareUtils::Instance()->getDeviceToken() },
-            { JsonKeys::Hardware, hw }
-        };
-        sendHttp(QStringLiteral("register_push"), o);
-    }
+    //Register the push token of this device for this session, if known yet.
+    pushRegistration.sessionStarted();
+    registerPushToken();
 
     //start polling
     startJsonPolling();
 
     emitHomeLoaded(jroot);
+}
+
+void CalaosConnection::registerPushToken()
+{
+    //Nothing to send on: the next login registers the current token.
+    if (!isWebsocket() && !isHttp())
+        return;
+
+    const QString token = HardwareUtils::Instance()->getDeviceToken();
+    if (!pushRegistration.shouldRegister(token))
+        return;
+
+#if defined(Q_OS_ANDROID)
+    QString hw = QStringLiteral("android");
+#elif defined(Q_OS_IOS)
+    QString hw = QStringLiteral("ios");
+#else
+    QString hw;
+#endif
+
+    qDebug() << "Registering push token" << HardwareUtils::describeToken(token)
+             << "for" << (hw.isEmpty() ? QStringLiteral("<unknown>") : hw);
+
+    //Send the push device token to register the mobile device to calaos_server for push notif
+    QJsonObject o = {
+        { JsonKeys::Token, token },
+        { JsonKeys::Hardware, hw }
+    };
+
+    if (isWebsocket())
+        sendWebsocket(QStringLiteral("register_push"), o);
+    else
+        sendHttp(QStringLiteral("register_push"), o);
 }
 
 void CalaosConnection::emitHomeLoaded(const QVariantMap &home)
@@ -1155,6 +1165,11 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
 
                 //ask for home
                 sendWebsocket("get_home");
+
+                //Register the push token of this device for this session,
+                //if known yet.
+                pushRegistration.sessionStarted();
+                registerPushToken();
             }
         }
         else

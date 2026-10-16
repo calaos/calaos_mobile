@@ -78,6 +78,15 @@ public:
 
     QString getDeviceToken() { return deviceToken; }
 
+    //Platform code reports the current push token here (APNs / FCM, at
+    //startup and on every rotation). deviceTokenChanged() is emitted when the
+    //value actually changes, so the server can be told about it.
+    void setDeviceToken(const QString &token);
+
+    //A push token is a per-device credential: never log it in full. Returns
+    //the first characters and the length, for diagnostics.
+    static QString describeToken(const QString &token);
+
     //let the HardwareUtils class know about the connection state
     void updateCalaosConnectState(bool connected) { calaosConnected = connected; }
     bool isCalaosConnected() { return calaosConnected; }
@@ -103,6 +112,9 @@ signals:
 
     //emited when in foreground and a push notif has been received
     void pushNotifReceived(const QString &uuid);
+
+    //emited when the push token changed (see setDeviceToken())
+    void deviceTokenChanged();
 };
 
 #endif // HARDWAREUTILS_H

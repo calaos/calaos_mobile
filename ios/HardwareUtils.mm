@@ -423,9 +423,9 @@ void HardwareUtils_iOS::handleRegisterNotif(void *data)
             ntohl(tokenBytes[0]), ntohl(tokenBytes[1]), ntohl(tokenBytes[2]),
             ntohl(tokenBytes[3]), ntohl(tokenBytes[4]), ntohl(tokenBytes[5]),
             ntohl(tokenBytes[6]), ntohl(tokenBytes[7])];
-    deviceToken = QString::fromNSString(tokenStr);
-
-    qDebug() << "Device token is: " << deviceToken;
+    //Emits deviceTokenChanged() when the token is new or rotated, so that a
+    //token reported after the login still reaches calaos_server.
+    setDeviceToken(QString::fromNSString(tokenStr));
 }
 
 void HardwareUtils_iOS::handleRegisterNotifFail(void *err)

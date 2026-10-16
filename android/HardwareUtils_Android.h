@@ -26,12 +26,10 @@ public:
 
     virtual void inputTextDialog(const QString &title, const QString &message);
 
-    //FCM registration token (from Java: persisted value at startup, then
-    //FirebaseMessaging.getToken() and every onNewToken()).
-    void setDeviceToken(QString t);
-
-    //Notification taps go through HardwareUtils::handleNotificationOpened():
-    //same policy as iOS.
+    //The FCM registration token (from Java: persisted value at startup, then
+    //FirebaseMessaging.getToken() and every onNewToken()) goes through
+    //HardwareUtils::setDeviceToken(), and notification taps through
+    //HardwareUtils::handleNotificationOpened(): same policy as iOS.
 };
 
 #endif // HARDWAREUTILS_ANDROID_H

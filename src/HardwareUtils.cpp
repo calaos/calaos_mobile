@@ -122,6 +122,23 @@ QString HardwareUtils::takePendingNotif()
     return uuid;
 }
 
+void HardwareUtils::setDeviceToken(const QString &token)
+{
+    if (token.isEmpty() || token == deviceToken)
+        return;
+
+    qDebug() << "Push device token" << describeToken(token);
+    deviceToken = token;
+    emit deviceTokenChanged();
+}
+
+QString HardwareUtils::describeToken(const QString &token)
+{
+    if (token.isEmpty())
+        return QStringLiteral("<empty>");
+    return QStringLiteral("%1... (%2 chars)").arg(token.left(8)).arg(token.size());
+}
+
 void HardwareUtils::loadAuthKeychain(QString &email, QString &pass)
 {
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());

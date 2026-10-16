@@ -163,7 +163,10 @@ Controls.TextField {
             onClicked: {
                 // cut() is a no-op in Password echo mode, so clear explicitly.
                 // Reset the IME first so a pending preedit cannot reappear.
-                Qt.inputMethod["reset"]()
+                // Qt.inputMethod is seen as a plain QObject by the linter
+                // qmllint disable missing-property
+                Qt.inputMethod.reset()
+                // qmllint enable missing-property
                 control.clear()
                 control.clearButtonClicked()
             }

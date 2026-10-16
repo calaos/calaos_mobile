@@ -39,6 +39,7 @@ Item {
     }
 
     BusyIndicator {
+        id: busy
         opacity: loading || pic.status === Image.Loading? 1:0
         running: visible
         visible: opacity > 0
@@ -50,10 +51,10 @@ Item {
 
         contentItem: Image {
             opacity: 0.70
-            visible: control.running
+            visible: busy.running
             source: "qrc:/img/spinner.svg"
             RotationAnimator on rotation {
-                running: control.running
+                running: busy.running
                 loops: Animation.Infinite
                 duration: 2000
                 from: 0 ; to: 360

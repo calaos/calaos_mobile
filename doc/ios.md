@@ -160,7 +160,7 @@ Background mode `remote-notification` is declared in
   (extension). Qt is linked statically, so the manifests inside the Qt frameworks do
   not reach the bundle: the app manifest also declares the required-reason APIs of the
   linked Qt code. Re-check after a Qt bump with
-  `nm -u CalaosHome.app/CalaosHome | grep -E '^_(f|l)?stat$|statv?fs|getattrlist|mach_absolute_time|CFPreferences|NSUserDefaults'`
+  `nm -u CalaosHome.app/CalaosHome | grep -E '^_(f|l)?stat(at)?$|statv?fs|getattrlist|mach_absolute_time|CFPreferences|NSUserDefaults'`
   and `strings -a CalaosHome.app/CalaosHome | grep -xE 'systemUptime|activeInputModes'`.
 - Native alerts go through [ios/AlertPrompt.m](../ios/AlertPrompt.m).
 - 3D Touch / Quick Actions are forwarded through

@@ -1,6 +1,11 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.25)
 
-project(CalaosHome LANGUAGES CXX OBJC OBJCXX)
+project(CalaosHome LANGUAGES CXX)
+
+# Objective-C/C++ is only needed for the iOS sources.
+if(IOS)
+    enable_language(OBJC OBJCXX)
+endif()
 
 # Guard: this CMake build is for mobile (iOS + Android) only.
 # CMAKE_SYSTEM_NAME is resolved by project(), so check here.
@@ -74,4 +79,5 @@ if(IOS)
 elseif(ANDROID)
     include(cmake/Android.cmake)
     qt_finalize_executable(CalaosHome)
+    calaos_android_limit_qml_scan(CalaosHome)
 endif()

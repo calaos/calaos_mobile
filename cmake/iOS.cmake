@@ -28,6 +28,12 @@ set_source_files_properties(
     PROPERTIES LANGUAGE OBJCXX
 )
 
+# Reachability.m (vendored, Tony Million) is built on SCNetworkReachability, deprecated
+# since iOS 17.4: the iOS 18 deployment target required by Qt 6.12 makes every call
+# warn. The API still works; moving to NWPathMonitor is a separate change.
+set_source_files_properties(ios/Reachability.m
+    PROPERTIES COMPILE_OPTIONS "-Wno-deprecated-declarations")
+
 # ── Asset catalog ─────────────────────────────────────────────────────────────
 # Explicitly mark the xcassets as a Resource so CMake places it in the
 # "Copy Bundle Resources" build phase — Xcode then runs actool on it.
@@ -39,6 +45,13 @@ target_sources(CalaosHome PRIVATE ios/ressources.xcassets)
 set_source_files_properties(ios/Splash.storyboard PROPERTIES
     MACOSX_PACKAGE_LOCATION Resources)
 target_sources(CalaosHome PRIVATE ios/Splash.storyboard)
+
+# ── Privacy manifest ──────────────────────────────────────────────────────────
+# Required-reason APIs of the app binary (see the comments in the file). Must land
+# at the root of CalaosHome.app: the Resources build phase puts it there.
+set_source_files_properties(ios/PrivacyInfo.xcprivacy PROPERTIES
+    MACOSX_PACKAGE_LOCATION Resources)
+target_sources(CalaosHome PRIVATE ios/PrivacyInfo.xcprivacy)
 
 # ── Frameworks ────────────────────────────────────────────────────────────────
 target_link_libraries(CalaosHome PRIVATE
@@ -64,13 +77,19 @@ set_target_properties(CalaosHome PROPERTIES
     XCODE_ATTRIBUTE_MARKETING_VERSION                  "${CALAOS_VERSION}"
     XCODE_ATTRIBUTE_CURRENT_PROJECT_VERSION            "${CALAOS_VERSION_CODE}"
     XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY             "1,2"
-    XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET         "17.0"
+    XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET         "${CMAKE_OSX_DEPLOYMENT_TARGET}"
     XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
     # Produce a dSYM bundle in Release/archive builds so symbols can be uploaded
     # (App Store / crash symbolication). CMake's Xcode generator otherwise leaves
     # this at "dwarf", which yields no dSYM.
     "XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT[variant=Release]" "dwarf-with-dsym"
 )
+
+# ── QML plugins (static Qt) ───────────────────────────────────────────────────
+# Scan only the mobile QML for the QML plugins to link (see cmake/qml_imports).
+set_target_properties(CalaosHome PROPERTIES QT_QML_MODULE_NO_IMPORT_SCAN TRUE)
+add_subdirectory(cmake/qml_imports)
+target_link_libraries(CalaosHome PRIVATE CalaosHomeQmlImports)
 
 # ── PushNotif Notification Service Extension ──────────────────────────────────
 add_subdirectory(ios)

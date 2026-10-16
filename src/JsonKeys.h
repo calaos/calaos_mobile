@@ -66,6 +66,8 @@ inline constexpr QLatin1StringView NewPw{"new_pw"};
 //Push notification device registration.
 inline constexpr QLatin1StringView Token{"token"};
 inline constexpr QLatin1StringView Hardware{"hardware"};
+//Shape of the FCM messages wanted by this device (see PushFormat).
+inline constexpr QLatin1StringView PushFormat{"push_format"};
 
 //--- Answer envelope and long polling ---------------------------------------
 inline constexpr QLatin1StringView Success{"success"};

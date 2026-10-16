@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Calaos blue (qml/SharedComponents Theme), used as the accent of push notifications. -->
+    <color name="calaos_notification">#3AB4D7</color>
+</resources>

@@ -1357,6 +1357,19 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
     </message>
 </context>
 <context>
+    <name>HardwareUtilsAndroid</name>
+    <message>
+        <location filename="../android/HardwareUtils_Android.cpp" line="275"/>
+        <source>Confirm</source>
+        <translation>Bestätigen</translation>
+    </message>
+    <message>
+        <location filename="../android/HardwareUtils_Android.cpp" line="277"/>
+        <source>Cancel</source>
+        <translation>Abbrechen</translation>
+    </message>
+</context>
+<context>
     <name>HardwareUtils_iOS</name>
     <message>
         <location filename="../ios/HardwareUtils.mm" line="324"/>

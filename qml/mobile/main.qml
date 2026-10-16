@@ -23,9 +23,24 @@ Window {
 
     color: "#080808"
 
-    //flags: Qt.platform.os === "ios"? Qt.MaximizeUsingFullscreenGeometryHint : undefined
+    //On iOS the window stops at the safe area unless it asks for the whole
+    //screen; the plain black bands the system leaves above and below it look
+    //letterboxed. Android 15+ always gives the whole screen (edge to edge);
+    //older Android keeps the system bars outside the window, as before.
+    flags: Qt.platform.os === "ios"? Qt.Window | Qt.ExpandedClientAreaHint : Qt.Window
 
     property bool isLandscape: rootWindow.width > rootWindow.height
+
+    //Insets of the system UI: status bar, notch / Dynamic Island, home
+    //indicator, and the Android system bars once the app is laid out edge to
+    //edge (enforced from Android 15 with targetSdk 35+). SafeArea is in the
+    //same units as the items and follows rotation and iPad window resizing;
+    //it is 0 wherever the system keeps the window clear of its bars (Android
+    //14 and older). Backgrounds run under the bars, text and controls do not.
+    readonly property real safeTop: SafeArea.margins.top
+    readonly property real safeBottom: SafeArea.margins.bottom
+    readonly property real safeLeft: SafeArea.margins.left
+    readonly property real safeRight: SafeArea.margins.right
 
     property variant roomModel
     property string currentRoomName
@@ -42,10 +57,10 @@ Window {
                                               "background")
         anchors {
             fill: parent
-            topMargin: platformMarginsTop
-            bottomMargin: platformMarginsBottom
-            leftMargin: platformMarginsLeft
-            rightMargin: platformMarginsRight
+            topMargin: rootWindow.safeTop
+            bottomMargin: rootWindow.safeBottom
+            leftMargin: rootWindow.safeLeft
+            rightMargin: rootWindow.safeRight
         }
         fillMode: Image.PreserveAspectCrop
     }
@@ -85,17 +100,72 @@ Window {
             left: background.left
             right: background.right
             bottom: menuBar.top
+            //While the menu bar is hidden (login page) the pages still stop
+            //above the bottom inset
+            bottomMargin: Math.max(0, rootWindow.safeBottom - (rootWindow.height - menuBar.y))
         }
 
         initialItem: loginView
 
-        // Implements back key navigation
+        // Implements back key navigation. At the root (login page, or the
+        // favourites once logged in) the key is left unaccepted: Qt then moves
+        // the task to the background, as Android's own back does at the root
+        // of an app. Open sheets take the key before it gets here, and a
+        // visible system keyboard takes the first back to close itself.
+        //
+        // Android 13+ delivers a back that comes in as a key event (hardware
+        // or keyboard back key, "adb shell input keyevent BACK") twice: as the
+        // key itself and again through the OnBackInvokedCallback that Qt
+        // registers, giving press, press, release, release. The gesture and
+        // the navigation bar button only come through the callback. So only
+        // presses seen here count (auto-repeat of a held key aside), and one
+        // back is acted on when the last of them is released: the copy would
+        // otherwise pop a second page, or send the app to the background
+        // after the first one popped back to the root. A release with no
+        // pending press (its press went to a sheet) is dropped.
+        property int backPending: 0
+        function resetBack() {
+            backPending = 0
+        }
+        // A press whose release never comes here must not leave a count
+        // behind that would eat the next back
+        onActiveFocusChanged: if (!activeFocus) resetBack()
+        Connections {
+            target: Qt.application
+            function onStateChanged() {
+                stackView.resetBack()
+            }
+        }
         focus: true
+        Keys.onPressed: (event) => {
+                            if (event.key !== Qt.Key_Back)
+                                return
+                            if (!event.isAutoRepeat)
+                                backPending++
+                            // Taking the press as well when a page will be
+                            // popped makes Qt's key-event path less likely to
+                            // move the task to the background anyway (Qt 6.12
+                            // race, see the qt6-android-build skill)
+                            event.accepted = stackView.depth > 2
+                        }
         Keys.onReleased: (event) => {
-                             if (event.key === Qt.Key_Back || event.key === Qt.Key_Backspace) {
-                                 handleBack()
-                                 event.accepted = true;
+                             if (event.key !== Qt.Key_Back)
+                                 return
+                             if (backPending === 0) {
+                                 event.accepted = true
+                                 return
                              }
+                             backPending--
+                             if (backPending > 0) {
+                                 event.accepted = true
+                                 return
+                             }
+                             if (stackView.depth <= 2) {
+                                 event.accepted = false
+                                 return
+                             }
+                             rootWindow.handleBack()
+                             event.accepted = true
                          }
     }
 
@@ -125,7 +195,7 @@ Window {
         RoomListView {
             model: homeModel
 
-            onRoomClicked: {
+            onRoomClicked: (idx, room_name) => {
                 //get room model
                 roomModel = homeModel.getRoomModel(idx)
                 currentRoomName = room_name
@@ -274,14 +344,19 @@ Window {
         }
     }
 
+    //The bar runs from edge to edge and down to the bottom of the screen,
+    //under the home indicator / navigation bar; its buttons stay inside.
     MainMenuBar {
         id: menuBar
 
         anchors {
-            left: background.left
-            right: background.right
-            bottom: background.bottom
+            left: parent.left
+            right: parent.right
+            bottom: parent.bottom
         }
+        bottomInset: rootWindow.safeBottom
+        leftInset: rootWindow.safeLeft
+        rightInset: rootWindow.safeRight
 
         onButtonHomeClicked: {
             menuBar.menuType = Common.MenuBack
@@ -314,7 +389,7 @@ Window {
             State {
                 name: "invisible"
                 PropertyChanges { target: menuBar; opacity: 0.2 }
-                PropertyChanges { target: menuBar; anchors.bottomMargin: -(menuBar.height + platformMarginsBottom) }
+                PropertyChanges { target: menuBar; anchors.bottomMargin: -menuBar.height }
             }
         ]
 
@@ -332,7 +407,10 @@ Window {
         ]
     }
 
-    //Those Rectangles are for masking top and bottom instead of using clipping
+    //Those Rectangles mask the insets around the pages instead of clipping
+    //them. The top one is the colour of the page headers, which therefore
+    //appear to run up under the status bar. Below the pages, the menu bar
+    //already covers the bottom inset.
     Rectangle {
         color: "#080808"
         anchors {
@@ -344,9 +422,17 @@ Window {
     Rectangle {
         color: "#080808"
         anchors {
-            top: menuBar.bottom
-            bottom: parent.bottom
-            left: parent.left; right: parent.right
+            top: background.top
+            bottom: menuBar.top
+            left: parent.left; right: background.left
+        }
+    }
+    Rectangle {
+        color: "#080808"
+        anchors {
+            top: background.top
+            bottom: menuBar.top
+            left: background.right; right: parent.right
         }
     }
 

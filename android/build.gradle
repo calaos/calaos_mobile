@@ -1,107 +1,123 @@
+// Calaos Home — Gradle build used by androiddeployqt.
+// Based on the Qt 6.12 template (src/android/templates/build.gradle).
+// androiddeployqt writes gradle.properties (androidCompileSdkVersion,
+// androidBuildToolsVersion, androidNdkVersion, androidPackageName, qtAndroidDir,
+// qtMinSdkVersion, qtTargetSdkVersion, qtTargetAbiList, qtGradlePluginType,
+// legacyPackaging): do not hard-code those values here.
+
 buildscript {
     repositories {
-        jcenter()
-        //maven { url 'https://maven.google.com' }
         google()
+        mavenCentral()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.1.2'
-        classpath 'com.google.gms:google-services:4.3.5'
+        //noinspection AndroidGradlePluginVersion
+        classpath 'com.android.tools.build:gradle:9.2.1'
+        // Reads google-services.json (copied next to this file by androiddeployqt)
+        // and generates the Firebase resources (google_app_id, ...).
+        // 4.5.0 verified with AGP 9.2.1 / Gradle 9.5.1.
+        classpath 'com.google.gms:google-services:4.5.0'
     }
-}
-
-allprojects {
-    repositories {
-        jcenter()
-        mavenCentral()
-        //maven {
-        //    url "https://maven.google.com"
-        //}
-        google()
-    }
-}
-
-apply plugin: 'com.android.application'
-apply plugin: 'com.google.gms.google-services'
-
-project.ext {
-  // Configure the Firebase C++ SDK location. This is the property that you set in gradle.properties
-  // This might need to be more complex. I got this from https://github.com/firebase/quickstart-cpp/blob/master/remote_config/testapp/build.gradle
-  firebase_cpp_sdk_dir = System.getenv('FIREBASE_CPP_SDK_DIR')
-  if (firebase_cpp_sdk_dir == null || firebase_cpp_sdk_dir.isEmpty()) {
-    throw new StopActionException(
-            'The FIREBASE_CPP_SDK_DIR ' +
-            'environment variable must be set to reference the Firebase C++ ' +
-            'SDK install directory.  This is used to configure static library ' +
-            'and C/C++ include paths for the SDK.')
-  }
 }
 
 repositories {
-    maven { url 'https://maven.google.com' }
-    flatDir {
-       dirs project.ext.firebase_cpp_sdk_dir + "/libs/android"
-    }
+    google()
+    mavenCentral()
+}
+
+apply plugin: qtGradlePluginType
+if (qtGradlePluginType == 'com.android.application') {
+    apply plugin: 'com.google.gms.google-services'
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    //compile 'com.google.android.gms:play-services-gcm:17.0.0'
-    //compile 'com.google.firebase:firebase-messaging:21.0.1'
-    //compile 'com.google.firebase.messaging.cpp:firebase_messaging_cpp@aar'
+    implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
+    //noinspection GradleDependency
+    implementation 'androidx.core:core:1.17.0'
+
+    // Push notifications (AND-4): Firebase Cloud Messaging, Java SDK.
+    implementation platform('com.google.firebase:firebase-bom:35.0.2')
+    implementation 'com.google.firebase:firebase-messaging'
+    // Camera picture download for push notifications (AND-7): expedited
+    // background job started from the messaging service (PushPictureWorker).
+    implementation 'androidx.work:work-runtime:2.11.2'
 }
 
 android {
-    /*******************************************************
-     * The following variables:
-     * - androidBuildToolsVersion,
-     * - androidCompileSdkVersion
-     * - qt5AndroidDir - holds the path to qt android files
-     *                   needed to build any Qt application
-     *                   on Android.
-     *
-     * are defined in gradle.properties file. This file is
-     * updated by QtCreator and androiddeployqt tools.
-     * Changing them manually might break the compilation!
-     *******************************************************/
-
-    compileSdkVersion androidCompileSdkVersion.toInteger()
-
+    namespace = "fr.calaos.calaoshome"
+    compileSdkVersion androidCompileSdkVersion
     buildToolsVersion androidBuildToolsVersion
-
-    defaultConfig {
-        minSdkVersion 26
-        targetSdkVersion 29
-        applicationId "fr.calaos.calaoshome"
-    }
+    ndkVersion = androidNdkVersion
 
     sourceSets {
         main {
             manifest.srcFile 'AndroidManifest.xml'
-            java.srcDirs = [qt5AndroidDir + '/src', 'src', 'java']
-            aidl.srcDirs = [qt5AndroidDir + '/src', 'src', 'aidl']
-            res.srcDirs = [qt5AndroidDir + '/res', 'res']
-            resources.srcDirs = ['src']
+            java.srcDirs = [qtAndroidDir + '/src', 'src', 'java']
+            kotlin.srcDirs = [qtAndroidDir + '/src', 'src', 'kotlin']
+            aidl.srcDirs = [qtAndroidDir + '/src', 'src', 'aidl']
+            res.srcDirs = [qtAndroidDir + '/res', 'res']
+            resources.srcDirs = ['resources']
             renderscript.srcDirs = ['src']
             assets.srcDirs = ['assets']
             jniLibs.srcDirs = ['libs']
        }
+        // Debug-only test hooks (fake push injection, AND-7): compiled and
+        // declared in the debug build type only, absent from release.
+        debug {
+            manifest.srcFile 'debug/AndroidManifest.xml'
+            java.srcDirs = ['debug/src']
+        }
+        // Manifest overlay for release only: drops the permissions Qt inserts
+        // but the app does not need (WRITE_EXTERNAL_STORAGE).
+        release {
+            manifest.srcFile 'release/AndroidManifest.xml'
+        }
     }
 
-    lintOptions {
-        abortOnError false
+    tasks.withType(JavaCompile) {
+        options.compilerArgs += ['-Xlint:all']
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    aaptOptions {
+        // Do not compress Qt binary resources file
+        noCompress 'rcc'
+    }
+
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = legacyPackaging.toBoolean()
+        }
+    }
+
+    defaultConfig {
+        applicationId "fr.calaos.calaoshome"
+        minSdkVersion qtMinSdkVersion
+        targetSdkVersion qtTargetSdkVersion
+        ndk.abiFilters = qtTargetAbiList.split(",")
+    }
+
+    buildTypes {
+        release {
+            // No signingConfig on purpose: androiddeployqt only accepts the
+            // "-unsigned" APK name Gradle gives an unsigned release, and signing
+            // through Gradle would hand the passwords to the long-lived Gradle
+            // daemon. The upload key is applied afterwards by
+            // tools/build_android.sh (jarsigner on the AAB, apksigner on the
+            // APK), which keeps the passwords out of every build process.
+            // R8 / resource shrinking stay off on purpose (AND-5): the Java
+            // code is tiny and Qt's own Java classes (org.qtproject.qt.android.*)
+            // are looked up by name from libQt6*.so without shipping any
+            // consumer keep rules. If this is ever switched on, keep every
+            // class and method called by name from JNI: HardwareUtils (static
+            // helpers + HardwareUtilsNatives), CredentialStore, and the
+            // manifest components CalaosMessagingService / PushPictureWorker.
+            minifyEnabled false
+        }
     }
 }
-
-apply from: "$gradle.firebase_cpp_sdk_dir/Android/firebase_dependencies.gradle"
-firebaseCpp.dependencies {
-  messaging
-}
-
-apply plugin: 'com.google.gms.google-services'

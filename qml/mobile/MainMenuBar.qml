@@ -2,22 +2,43 @@ import QtQuick
 import Calaos
 import SharedComponents
 
-Image {
+Item {
+    id: menuBar
 
-    height: menuType === Common.MenuMain?
+    //System insets the bar runs under (home indicator, navigation bar,
+    //landscape notch): the background fills them, the buttons stay out.
+    property real bottomInset: 0
+    property real leftInset: 0
+    property real rightInset: 0
+
+    height: bottomInset +
+            (menuType === Common.MenuMain?
                 Units.dp(98 / 2):
                 calaosApp.needBackButton?
                     Units.dp(48):
-                    0
+                    0)
 
     Behavior on height { NumberAnimation { easing.type: Easing.OutExpo; duration: 500 } }
 
-    fillMode: Image.TileHorizontally
-    verticalAlignment: Image.AlignLeft
-
-    source: "qrc:/img/menu_footer_background.png"
-
     property int menuType: Common.MenuMain
+
+    //The bar texture keeps its own height...
+    Image {
+        id: barBackground
+        anchors { top: parent.top; left: parent.left; right: parent.right }
+        height: parent.height - menuBar.bottomInset
+
+        fillMode: Image.TileHorizontally
+        verticalAlignment: Image.AlignLeft
+
+        source: "qrc:/img/menu_footer_background.png"
+    }
+
+    //...and the bottom inset continues in the colour of its bottom edge
+    Rectangle {
+        anchors { top: barBackground.bottom; left: parent.left; right: parent.right; bottom: parent.bottom }
+        color: "#262626"
+    }
 
     signal buttonHomeClicked()
     signal buttonMediaClicked()
@@ -34,121 +55,132 @@ Image {
         if (bt !== btConfig) btConfig.selected = false
     }
 
-    ButtonFooter {
-
-        opacity: menuType === Common.MenuBack?1:0
-        Behavior on opacity { NumberAnimation {} }
-        visible: calaosApp.needBackButton?opacity > 0:false
-
-        icon: calaosApp.getPictureSized("icon_exit")
-        buttonLabel: qsTr("Back")
-        onButtonClicked: {
-            unselectAll()
-            buttonBackClicked()
-        }
+    //The bar itself, above the bottom inset
+    Item {
+        id: content
         anchors {
-            verticalCenter: parent.verticalCenter
-            left: parent.left
-            leftMargin: Units.dp(10)
+            top: parent.top
+            left: parent.left; leftMargin: menuBar.leftInset
+            right: parent.right; rightMargin: menuBar.rightInset
         }
-    }
+        height: parent.height - menuBar.bottomInset
 
-    Image {
-        source: "qrc:/img/menu_footer_background_left.png"
+        ButtonFooter {
 
-        width: Units.dp(2)
-        height: parent.height
+            opacity: menuType === Common.MenuBack?1:0
+            Behavior on opacity { NumberAnimation {} }
+            visible: calaosApp.needBackButton?opacity > 0:false
 
-        anchors {
-            right: row.left
-            verticalCenterOffset: 1
-        }
-        opacity: row.opacity
-    }
-
-    Row {
-        id: row
-
-        opacity: menuType === Common.MenuMain?1:0
-        Behavior on opacity { NumberAnimation {} }
-        visible: opacity > 0
-
-        height: btHome.height
-        width: btHome.width * 4
-        anchors {
-            centerIn: parent
-            verticalCenterOffset: !calaosApp.needBackButton && menuType === Common.MenuBack?height/2:1
-        }
-        Behavior on anchors.verticalCenterOffset { NumberAnimation { easing.type: Easing.OutExpo; duration: 500 } }
-
-        MainMenuButton {
-            id: btHome
-
+            icon: calaosApp.getPictureSized("icon_exit")
+            buttonLabel: qsTr("Back")
             onButtonClicked: {
-                unselectAll(btHome)
-                buttonHomeClicked()
+                unselectAll()
+                buttonBackClicked()
+            }
+            anchors {
+                verticalCenter: parent.verticalCenter
+                left: parent.left
+                leftMargin: Units.dp(10)
+            }
+        }
+
+        Image {
+            source: "qrc:/img/menu_footer_background_left.png"
+
+            width: Units.dp(2)
+            height: parent.height
+
+            anchors {
+                right: row.left
+                verticalCenterOffset: 1
+            }
+            opacity: row.opacity
+        }
+
+        Row {
+            id: row
+
+            opacity: menuType === Common.MenuMain?1:0
+            Behavior on opacity { NumberAnimation {} }
+            visible: opacity > 0
+
+            height: btHome.height
+            width: btHome.width * 4
+            anchors {
+                centerIn: parent
+                verticalCenterOffset: !calaosApp.needBackButton && menuType === Common.MenuBack?height/2:1
+            }
+            Behavior on anchors.verticalCenterOffset { NumberAnimation { easing.type: Easing.OutExpo; duration: 500 } }
+
+            MainMenuButton {
+                id: btHome
+
+                onButtonClicked: {
+                    unselectAll(btHome)
+                    buttonHomeClicked()
+                }
+
+                label: qsTr("Home")
+                iconBase: "qrc:/img/button_home.png"
+                iconGlow: "qrc:/img/button_home_glow.png"
+                iconBloom: "qrc:/img/button_home_bloom.png"
             }
 
-            label: qsTr("Home")
-            iconBase: "qrc:/img/button_home.png"
-            iconGlow: "qrc:/img/button_home_glow.png"
-            iconBloom: "qrc:/img/button_home_bloom.png"
-        }
+            MainMenuButton {
+                id: btMedia
 
-        MainMenuButton {
-            id: btMedia
+                onButtonClicked: {
+                    unselectAll(btMedia)
+                    buttonMediaClicked()
+                }
 
-            onButtonClicked: {
-                unselectAll(btMedia)
-                buttonMediaClicked()
+                label: qsTr("Media")
+                iconBase: "qrc:/img/button_media.png"
+                iconGlow: "qrc:/img/button_media_glow.png"
+                iconBloom: "qrc:/img/button_media_bloom.png"
             }
 
-            label: qsTr("Media")
-            iconBase: "qrc:/img/button_media.png"
-            iconGlow: "qrc:/img/button_media_glow.png"
-            iconBloom: "qrc:/img/button_media_bloom.png"
-        }
+            MainMenuButton {
+                id: btScenario
 
-        MainMenuButton {
-            id: btScenario
+                onButtonClicked: {
+                    unselectAll(btScenario)
+                    buttonScenariosClicked()
+                }
 
-            onButtonClicked: {
-                unselectAll(btScenario)
-                buttonScenariosClicked()
+                label: qsTr("Scenarios")
+                iconBase: "qrc:/img/button_scenarios.png"
+                iconGlow: "qrc:/img/button_scenarios_glow.png"
+                iconBloom: "qrc:/img/button_scenarios_bloom.png"
             }
 
-            label: qsTr("Scenarios")
-            iconBase: "qrc:/img/button_scenarios.png"
-            iconGlow: "qrc:/img/button_scenarios_glow.png"
-            iconBloom: "qrc:/img/button_scenarios_bloom.png"
-        }
+            MainMenuButton {
+                id: btConfig
 
-        MainMenuButton {
-            id: btConfig
+                onButtonClicked: {
+                    unselectAll(btConfig)
+                    buttonConfigClicked()
+                }
 
-            onButtonClicked: {
-                unselectAll(btConfig)
-                buttonConfigClicked()
+                label: qsTr("Config")
+                iconBase: "qrc:/img/button_configuration.png"
+                iconGlow: "qrc:/img/button_configuration_glow.png"
+                iconBloom: "qrc:/img/button_configuration_bloom.png"
             }
 
-            label: qsTr("Config")
-            iconBase: "qrc:/img/button_configuration.png"
-            iconGlow: "qrc:/img/button_configuration_glow.png"
-            iconBloom: "qrc:/img/button_configuration_bloom.png"
         }
 
-    }
+        Image {
+            source: "qrc:/img/menu_footer_background_right.png"
 
-    Image {
-        source: "qrc:/img/menu_footer_background_right.png"
+            width: Units.dp(2)
+            height: parent.height
 
-        width: Units.dp(2)
-        height: parent.height
-
-        anchors {
-            left: row.right
-            verticalCenterOffset: 1
+            anchors {
+                left: row.right
+                verticalCenterOffset: 1
+            }
+            opacity: row.opacity
         }
-        opacity: row.opacity
     }
 }

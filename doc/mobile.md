@@ -83,22 +83,41 @@ because the system already provides one (`needBackButton = false`).
 | `hasInstall` | false | false | only if live medium markers exist |
 | `density` | 1.0 (or 2.0 with `--force-hdpi`) | 1.0 | 1.0/2.0 |
 
-Additionally, the C++ side sets the QML context properties
-`platformMarginsTop/Bottom/Left/Right` (notch / safe-area). On mobile they are
-populated from `qpa/qplatformwindow.h` via Qt; the QML layer applies them as
-margins around the background image.
+Safe areas (notch / Dynamic Island, home indicator, Android system bars) are
+handled in QML only: `qml/mobile/main.qml` reads the `SafeArea` attached
+property of the window (`safeTop/Bottom/Left/Right`, in item units, updated on
+rotation and iPad window resizing). Pages and their text stay inside; the top
+inset is painted in the header colour and the menu bar (`MainMenuBar`
+`bottomInset`) and bottom sheets (`BottomSheet`) run their background under the
+bottom inset. On iOS the window sets `Qt.ExpandedClientAreaHint` (without it
+Qt 6.9+ stops the window at the safe area and iOS shows black bands). Android
+15+ (targetSdk 35+) is always edge to edge; there the app also requests the
+dark colour scheme so that the transparent status bar gets light icons.
+Android 14 and older keep opaque system bars outside the window: the insets are
+0.
 
 ## 5. Networking & lifecycle differences vs. desktop
 
 `Application::createQmlApp()` connects to `HardwareUtils` lifecycle signals
 specifically used on mobile:
 
-- `applicationWillResignActive` — issues `logout()` and resets the start-option
-  flag. Mobile *does* drop the connection when backgrounded.
-- `applicationBecomeActive` — re-issues `login()` from the saved keychain
-  credentials.
-- The `disconnected` reconnect timer is **desktop-only**. On mobile the user is
-  taken back to the login screen (`stackView.pop(null, StackView.Immediate)`).
+- `applicationWillResignActive` (iOS only) — drops the connection with
+  `CalaosConnection::pause()` and resets the start-option flag. This is not a
+  logout: the policy remembers whether a session was wanted, and refuses every
+  automatic reconnection (network back, retry timer) while in the background.
+- `applicationBecomeActive` (iOS only) — `unpause()`, then re-issues `login()`
+  from the saved keychain credentials, **unless the user logged out**
+  (`sessionClosedByUser()`): an explicit logout survives the app going to the
+  background and back.
+- `networkStatusChanged` (iOS Reachability, Android `QNetworkInformation`) —
+  `suspend()` when the link is lost, `resume()` when it is back. `resume()`
+  only reconnects a session that is wanted: never after a logout or the login
+  cancel button, never while paused (FIX-7).
+- Reconnection itself (backoff, single retry timer) is the same on all
+  variants, see `ReconnectPolicy` in
+  [CalaosConnection.h](../src/CalaosConnection.h). While it is not connected
+  the mobile UI shows the login screen
+  (`stackView.pop(null, StackView.Immediate)`).
 
 WebSocket / HTTP fallback logic in
 [CalaosConnection](../src/CalaosConnection.cpp) is identical on both variants
@@ -156,9 +175,13 @@ QuickFlux dispatches.
   `fr.calaos.CalaosMobile`.
 - Android: native dialogs from
   [android/src/fr/calaos/calaoshome/HardwareUtils.java](../android/src/fr/calaos/calaoshome/HardwareUtils.java);
-  credentials persistence is delegated to `QSettings` because the Android
-  variant historically does not use a Keystore wrapper. **TODO**: any code
-  changes around credential handling must check this flow.
+  credentials and server host in
+  [CredentialStore.java](../android/src/fr/calaos/calaoshome/CredentialStore.java)
+  (SharedPreferences encrypted with an Android Keystore AES-GCM key, excluded
+  from backup), written/read by the `HardwareUtilsAndroid` overrides, so the
+  push picture worker can use them without Qt running. Credentials saved in
+  `QSettings` by earlier versions are migrated at the first start and the
+  clear-text copy removed. See [android.md](android.md) section 6.4.
 
 ## 9. Push notifications
 
@@ -169,11 +192,41 @@ platform-specific:
 
 - **iOS**: APNs + a Notification Service Extension (`PushNotif.appex`) that
   decrypts payloads using a shared keychain item. See [ios.md](ios.md).
-- **Android**: Firebase Cloud Messaging via the Firebase C++ SDK. See
-  [android.md](android.md).
+- **Android**: Firebase Cloud Messaging via the Firebase Java SDK
+  (`CalaosMessagingService`), data-only messages requested with
+  `push_format: "data"` in `register_push` (`PushFormat` in
+  `CalaosConnection.h`), camera picture attached by an expedited WorkManager
+  job. See [android.md](android.md) section 6.
 
-`HardwareUtils::deviceToken` holds the device push token; `CalaosConnection`
-will register it with `calaos_server` upon login.
+Shared rules (in [src/HardwareUtils.cpp](../src/HardwareUtils.cpp) and
+[src/CalaosConnection.cpp](../src/CalaosConnection.cpp)):
+
+- **Push token**: platform code reports it with `HardwareUtils::setDeviceToken()`,
+  which emits `deviceTokenChanged()` when the value changes. `CalaosConnection`
+  sends `register_push` once the login is accepted (websocket or HTTP), and
+  again when the token changes while the session is up (FCM rotation, APNs
+  token arriving after the login). The same token is never sent twice in one
+  session (`PushRegistration` in `CalaosConnection.h`). Over HTTP the request
+  carries `cn_user`/`cn_pass` like every api.php call. The token is a
+  per-device credential: it is only ever logged truncated
+  (`HardwareUtils::describeToken()`), and redacted from the HTTP debug dumps.
+- **Notification tap**: platform code calls
+  `HardwareUtils::handleNotificationOpened(uuid)`. Logged in → opened right away
+  through `pushNotifReceived(uuid)`. Not logged in (cold start, app in the
+  background, reconnection in progress) → kept, the latest tap wins, and
+  `Application::homeLoaded()` opens it once at the next login
+  (`takePendingNotif()`, then `DeferredNotifGate` in `HardwareUtils.h`: a
+  session that drops before the event is shown hands it back with
+  `restorePendingNotif()`, and a delay armed by an earlier login never opens
+  anything).
+- **Explicit logout** (Settings → Logout, `Application::userLogout()`, and
+  Settings → Reset all data, `Application::resetAllData()`):
+  after `logout()` hands back a tap taken but not opened yet,
+  `HardwareUtils::forgetPendingUserActions()` drops the deferred tap and the
+  iOS Quick Action start option, so neither fires (possibly stale, possibly
+  for another home) at the next manual login (FIX-7). A lost connection, the
+  login cancel button (plain `logout()`) and the iOS resign-active pause keep
+  them for the next login, as above.
 
 ## 10. Internationalisation
 

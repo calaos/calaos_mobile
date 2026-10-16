@@ -1,36 +1,53 @@
 <?xml version="1.0"?>
-<manifest package="fr.calaos.calaoshome" xmlns:android="http://schemas.android.com/apk/res/android"
-    android:installLocation="auto">
-
-    <!-- The following comment will be replaced upon deployment with default permissions based on the dependencies of the application.
-         Remove the comment if you do not require these default permissions. -->
+<!-- Based on the Qt 6.12 template (src/android/templates/AndroidManifest.xml).
+     The package name is not set here: namespace + applicationId live in build.gradle (AGP 8+).
+     Keep the INSERT_* placeholders: androiddeployqt fills them. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:installLocation="auto"
+    android:versionCode="-- %%INSERT_VERSION_CODE%% --"
+    android:versionName="-- %%INSERT_VERSION_NAME%% --">
     <!-- %%INSERT_PERMISSIONS -->
-
-    <!-- The following comment will be replaced upon deployment with default features based on the dependencies of the application.
-         Remove the comment if you do not require these default features. -->
     <!-- %%INSERT_FEATURES -->
-
-    <supports-screens android:largeScreens="true" android:normalScreens="true" android:anyDensity="true" android:smallScreens="true"/>
-
-    <application android:hardwareAccelerated="true"
-                 android:name="org.qtproject.qt.android.bindings.QtApplication"
-                 android:label="CalaosHome"
-                 android:requestLegacyExternalStorage="true"
-                 android:allowNativeHeapPointerTagging="false"
-                 android:allowBackup="true"
-                 android:fullBackupOnly="false"
-                 android:icon="@drawable/icon">
-
-        <activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation|mcc|mnc|density"
-                  android:name="fr.calaos.calaoshome.HardwareUtils"
-                  android:label="-- %%INSERT_APP_NAME%% --"
-                  android:screenOrientation="unspecified"
-                  android:launchMode="singleTop"
-                  android:exported="true">
-
+    <!-- Runtime permission on Android 13+ (requested by HardwareUtils.onCreate); ignored below. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Declared by androidx.work for its foreground-service and after-reboot
+         paths; neither is used (PushPictureWorker is expedited on Android 12+
+         only, never a foreground service, and a pending picture download is
+         pointless after a reboot). WAKE_LOCK stays. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="remove" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" tools:node="remove" />
+    <!-- usesCleartextTraffic (application tag below) lets the Java network
+         stack (PushPictureWorker, HttpURLConnection) reach a calaos_server
+         configured with a plain http:// or ws:// address; Qt's own sockets
+         are not subject to this policy, so the app already talks to such
+         servers. The flag applies to every Java network use in the app. -->
+    <supports-screens
+        android:anyDensity="true"
+        android:largeScreens="true"
+        android:normalScreens="true"
+        android:smallScreens="true" />
+    <application
+        android:name="org.qtproject.qt.android.bindings.QtApplication"
+        android:hardwareAccelerated="true"
+        android:label="CalaosHome"
+        android:icon="@drawable/icon"
+        android:enableOnBackInvokedCallback="true"
+        android:allowBackup="true"
+        android:usesCleartextTraffic="true"
+        android:fullBackupOnly="false"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules">
+        <activity
+            android:name="fr.calaos.calaoshome.HardwareUtils"
+            android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation|mcc|mnc|density"
+            android:label="-- %%INSERT_APP_NAME%% --"
+            android:launchMode="singleTop"
+            android:screenOrientation="unspecified"
+            android:exported="true">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
             <meta-data
@@ -40,27 +57,38 @@
             <meta-data
                 android:name="android.app.arguments"
                 android:value="-- %%INSERT_APP_ARGUMENTS%% --" />
-
-            <meta-data
-                android:name="android.app.extract_android_style"
-                android:value="minimal" />
-
-            <!-- Background running -->
-            <!-- Warning: changing this value to true may cause unexpected crashes if the
-                          application still try to draw after
-                          "applicationStateChanged(Qt::ApplicationSuspended)"
-                          signal is sent! -->
-            <meta-data android:name="android.app.background_running" android:value="false"/>
-            <meta-data android:name="android.app.auto_screen_scale_factor" android:value="false"/>
-
-            <!-- available android:values :
-                * default - In most cases this will be the same as "full", but it can also be something else if needed, e.g., for compatibility reasons
-                * full - useful QWidget & Quick Controls 1 apps
-                * minimal - useful for Quick Controls 2 apps, it is much faster than "full"
-                * none - useful for apps that don't use any of the above Qt modules
-                -->
-            <meta-data android:name="android.app.extract_android_style" android:value="minimal"/>
-
         </activity>
+
+        <!-- Push notifications (FCM, AND-4). The service also runs in a process
+             without Qt: see CalaosMessagingService.java. The meta-data below
+             applies to messages displayed by the system while the app is in the
+             background (notification messages); keep the channel id in sync
+             with CalaosMessagingService.CHANNEL_ID. -->
+        <service
+            android:name="fr.calaos.calaoshome.CalaosMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="calaos_events" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_calaos" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/calaos_notification" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.qtprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/qtprovider_paths"/>
+        </provider>
     </application>
 </manifest>

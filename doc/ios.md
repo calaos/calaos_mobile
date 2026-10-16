@@ -14,7 +14,7 @@
 | Apple Development Team id | `9WYC46992U` |
 | Keychain Sharing group | `fr.calaos.CalaosMobile` |
 | App Group | `group.fr.calaos.CalaosMobile` |
-| Min iOS | 17.0 (CMake build; matches the Qt 6.11 iOS libraries) |
+| Min iOS | 18.0 (CMake build; floor of the Qt 6.12 iOS libraries) |
 
 These are pinned in [ios/ios.pri](../ios/ios.pri) and
 [ios/AppInfo.plist](../ios/AppInfo.plist):
@@ -129,11 +129,12 @@ embedded via `QMAKE_BUNDLE_DATA += splash`.
 | Step | Code |
 |---|---|
 | Request authorization, register with APNs | [ios/HardwareUtils.mm](../ios/HardwareUtils.mm) — `application:didFinishLaunchingWithOptions:` (override of `QIOSApplicationDelegate`) |
-| Receive APNs token | `application:didRegisterForRemoteNotificationsWithDeviceToken:` → `HardwareUtils_iOS::handleRegisterNotif()` |
-| Token forwarded to QML / `CalaosConnection` | via `HardwareUtils::deviceToken` |
+| Receive APNs token | `application:didRegisterForRemoteNotificationsWithDeviceToken:` → `HardwareUtils_iOS::handleRegisterNotif()` → `HardwareUtils::setDeviceToken()` |
+| Token registered with `calaos_server` | `CalaosConnection` sends `register_push` at login, and again on `HardwareUtils::deviceTokenChanged()` while logged in (token arriving after the login) |
 | Encrypted payload received in background | `PushNotif.appex` (`ios/PushNotif/NotificationService.m`) — decrypts using keys stored in the shared keychain (`A0SimpleKeychain+KeyPair`) and rewrites the `UNNotificationContent` before display |
-| User taps notification while app is foreground | `HardwareUtils_iOS::handleStartedWithPushNotif(uuid)` → `Application::pushNotificationReceived(uuid)` → QuickFlux dispatch |
-| User taps notification while app is closed | Same path on `applicationBecomeActive`, with `startedWithNotif` flag |
+| User taps notification while logged in | `userNotificationCenter:didReceiveNotificationResponse:` → `HardwareUtils::handleNotificationOpened(uuid)` → `pushNotifReceived(uuid)` → `Application::pushNotificationReceived(uuid)` → QuickFlux dispatch |
+| User taps notification while not logged in (closed, background, reconnecting) | Same entry point; the uuid is kept and `Application::homeLoaded()` opens it once at the next login (`HardwareUtils::takePendingNotif()`, `DeferredNotifGate`: a session that drops before the event is shown hands it back to the next login) |
+| Push **arrives** (no tap), app in the foreground or woken in the background | `application:didReceiveRemoteNotification:fetchCompletionHandler:` → `HardwareUtils::handleNotificationOpened(uuid)`: the event is opened as if tapped, right away when logged in, otherwise at the next login. Long-standing product behaviour, deliberately unchanged by FIX-3 |
 
 Background mode `remote-notification` is declared in
 [ios/AppInfo.plist](../ios/AppInfo.plist) (`UIBackgroundModes`).
@@ -143,9 +144,24 @@ Background mode `remote-notification` is declared in
 - Status bar style is `UIStatusBarStyleLightContent`,
   `UIViewControllerBasedStatusBarAppearance = false`
   (see [AppInfo.plist](../ios/AppInfo.plist)).
-- Orientation: portrait (+ upside-down) on iPhone, all four on iPad.
+- Orientation: portrait only on iPhone (Face ID iPhones have no upside-down),
+  all four on iPad.
+- `CADisableMinimumFrameDurationOnPhone = true`: the app may render at 120 Hz on
+  ProMotion iPhones.
 - `LSRequiresIPhoneOS = true`.
-- `NSPhotoLibraryUsageDescription` is provided (used by some legacy media flows).
+- `NSPhotoLibraryUsageDescription` is kept: the app itself never reads the photo
+  library, but Qt's iOS platform plugin (`libqios.a`, `qiosfiledialog.mm`) is always
+  linked and references `PHPhotoLibrary`, which App Store upload checks flag when the
+  purpose string is missing.
+- App icon: a single 1024 px `AppIcon-1024.png` (no alpha) in
+  [ressources.xcassets](../ios/ressources.xcassets); actool derives every size.
+- Privacy manifests: [ios/PrivacyInfo.xcprivacy](../ios/PrivacyInfo.xcprivacy) (app) and
+  [ios/PushNotif/PrivacyInfo.xcprivacy](../ios/PushNotif/PrivacyInfo.xcprivacy)
+  (extension). Qt is linked statically, so the manifests inside the Qt frameworks do
+  not reach the bundle: the app manifest also declares the required-reason APIs of the
+  linked Qt code. Re-check after a Qt bump with
+  `nm -u CalaosHome.app/CalaosHome | grep -E '^_(f|l)?stat(at)?$|statv?fs|getattrlist|mach_absolute_time|CFPreferences|NSUserDefaults'`
+  and `strings -a CalaosHome.app/CalaosHome | grep -xE 'systemUptime|activeInputModes'`.
 - Native alerts go through [ios/AlertPrompt.m](../ios/AlertPrompt.m).
 - 3D Touch / Quick Actions are forwarded through
   `application:performActionForShortcutItem:` → `handlePerformActionForShortcutItem`,
@@ -218,7 +234,7 @@ requires no manual Xcode-side steps.
 ### 9.1 Prerequisites
 
 - Xcode 15+ with command-line tools.
-- Qt 6.6+ for iOS (tested with Qt 6.10): `qt-unified-installer` target `ios`.
+- Qt 6.6+ for iOS (tested with Qt 6.12): `qt-unified-installer` targets `ios_device` (+ `ios_simulator_arm64`); Qt <= 6.11 ships a single `ios` kit. Simulator builds need Qt >= 6.12 (`ios_simulator_arm64`); the script stops early otherwise.
 - Apple Developer account with team id `9WYC46992U`.
 
 ### 9.2 Configure
@@ -226,12 +242,26 @@ requires no manual Xcode-side steps.
 ```bash
 cmake -S . -B build-ios -G Xcode \
       -DCMAKE_SYSTEM_NAME=iOS \
-      -DCMAKE_OSX_DEPLOYMENT_TARGET=17.0 \
-      -DCMAKE_PREFIX_PATH=/path/to/Qt/6.10.0/ios \
+      -DCMAKE_OSX_DEPLOYMENT_TARGET=18.0 \
+      -DCMAKE_PREFIX_PATH=/path/to/Qt/6.12.0/ios_device \
+      -DQT_HOST_PATH=/path/to/Qt/6.12.0/macos \
       -DCMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM=9WYC46992U
 ```
 
-### 9.3 Build & archive to .ipa
+### 9.3 Build script, simulator
+
+```bash
+./tools/build_ios.sh Debug                 # device (build-ios/)
+./tools/build_ios.sh Debug --simulator     # simulator, arm64 (build-ios-sim/), ad hoc signed
+./tools/build_ios.sh --archive             # Release archive + export, see 9.4
+```
+
+The simulator build uses the Qt `ios_simulator_arm64` kit (Qt >= 6.12: the single
+`ios` kit of Qt <= 6.11 has no arm64 simulator slice, the script stops early) and needs no team or
+provisioning profile (ad hoc "Sign to Run Locally"; the entitlements are still
+embedded, so the keychain group and App Group work in the simulator).
+
+### 9.4 Build & archive to .ipa
 
 ```bash
 cmake --build build-ios --config Release --target archive
@@ -241,13 +271,13 @@ This runs `xcodebuild archive` followed by `xcodebuild -exportArchive` using
 [ios/ExportOptions.plist](../ios/ExportOptions.plist). The signed `.ipa` lands
 in `build-ios/export/`.
 
-### 9.4 What CMake handles automatically
+### 9.5 What CMake handles automatically
 
 - `PushNotif` extension target — defined in [ios/CMakeLists.txt](../ios/CMakeLists.txt),
   embedded into the main app via `XCODE_EMBED_APP_EXTENSIONS`.
 - Signing entitlements, development team, bundle id, bitcode-off.
 - Version numbers from [VERSION](../VERSION) (single source of truth).
-- All sources, frameworks, asset catalog, launch storyboard.
+- All sources, frameworks, asset catalog, launch storyboard, privacy manifests.
 
 No manual Xcode steps needed after configure.
 

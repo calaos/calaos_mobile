@@ -1,87 +1,133 @@
-
 #include "HardwareUtils_Android.h"
 #include <QJniObject>
 #include <QJniEnvironment>
-#include <jni.h>
 #include <QCoreApplication>
+#include <QDebug>
+#include <QPointer>
+#include <QNetworkInformation>
+#include <QSettings>
+#include <jni.h>
 
-#include <firebase/messaging.h>
-#include <firebase/app.h>
-#include <firebase/util.h>
-
-static ::firebase::InitResult firebaseInitializeMessaging(::firebase::App *app, void *);
-
-class FbListener: public ::firebase::messaging::Listener
+namespace
 {
-public:
-    FbListener()
-    {
-        QJniObject jniObject = QNativeInterface::QAndroidApplication::context();
-        ::firebase::App *instance = ::firebase::App::GetInstance();
-        if (instance)
-        {
-            fbApp = instance;
-        }
-        else
-        {
-            fbApp = ::firebase::App::Create(QJniEnvironment().jniEnv(), jniObject.object<jobject>());
-        }
-    }
 
-    void initMessaging()
-    {
-        qDebug() << "Initializing Firebase module";
-        fbInitializer.Initialize(fbApp, nullptr, firebaseInitializeMessaging);
-        qDebug() << "Module initialized. Waiting on messaging initialization";
+constexpr char kHardwareUtilsClass[] = "fr/calaos/calaoshome/HardwareUtils";
+constexpr char kNativesClass[] = "fr/calaos/calaoshome/HardwareUtilsNatives";
+constexpr char kCredentialStoreClass[] = "fr/calaos/calaoshome/CredentialStore";
 
-        firebase::messaging::GetToken().OnCompletion([](const firebase::Future<std::string> &completed_future)
-        {
-            if (completed_future.status() != firebase::kFutureStatusComplete)
-            {
-                qDebug() << "FB: GetToken future status not completed";
-                return;
-            }
+//QSettings keys of the clear-text credentials written by the base class
+//(and by this app before AND-7): read once for the migration, then removed.
+const QLatin1StringView kSettingsUser("calaos/cn_user");
+const QLatin1StringView kSettingsPass("calaos/cn_pass");
 
-            std::string token = *completed_future.result();
-            HardwareUtilsAndroid *o = reinterpret_cast<HardwareUtilsAndroid *>(HardwareUtils::Instance());
-            o->setDeviceToken(QString::fromStdString(token));
-        });
-    }
-
-    virtual void OnTokenReceived(const char *token)
-    {
-        HardwareUtilsAndroid *o = reinterpret_cast<HardwareUtilsAndroid *>(HardwareUtils::Instance());
-        o->setDeviceToken(token);
-    }
-
-    virtual void OnMessage(const ::firebase::messaging::Message &message)
-    {
-        Q_UNUSED(message)
-        qDebug() << "Received FCM message";
-    }
-
-private:
-    QJniEnvironment jniEnv;
-    ::firebase::App* fbApp;
-    ::firebase::ModuleInitializer fbInitializer;
-};
-
-static ::firebase::InitResult firebaseInitializeMessaging(::firebase::App *app, void *)
+QJniObject androidContext()
 {
-    qDebug() << "Try to initialize Firebase Messaging";
-    HardwareUtilsAndroid *o = reinterpret_cast<HardwareUtilsAndroid *>(HardwareUtils::Instance());
-    auto res = ::firebase::messaging::Initialize(*app, o->getFbListener());
-    if (res == firebase::kInitResultSuccess)
-        qDebug() << "FB Messaging Init success";
-    if (res == firebase::kInitResultFailedMissingDependency)
-        qWarning() << "FB Messaging init failed: missing dependency (google play services)";
-    return res;
+    return QNativeInterface::QAndroidApplication::context();
 }
 
-HardwareUtilsAndroid::HardwareUtilsAndroid(QObject *parent):
-    HardwareUtils(parent),
-    fcmListener(new FbListener())
+QString credentialStoreString(const char *method)
 {
+    QJniObject ctx = androidContext();
+    QJniObject s = QJniObject::callStaticObjectMethod(kCredentialStoreClass, method,
+                                                      "(Landroid/content/Context;)Ljava/lang/String;",
+                                                      ctx.object());
+    QJniEnvironment env;
+    if (env.checkAndClearExceptions(QJniEnvironment::OutputMode::Verbose) || !s.isValid())
+    {
+        qWarning() << "Android: CredentialStore call failed:" << method;
+        return QString();
+    }
+    return s.toString();
+}
+
+//Removes the clear-text pair from QSettings, if any is left.
+void forgetSettingsCredentials()
+{
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    if (!settings.contains(kSettingsUser) && !settings.contains(kSettingsPass))
+        return;
+    settings.remove(kSettingsUser);
+    settings.remove(kSettingsPass);
+    settings.sync();
+}
+
+//The live instance, read by the native callbacks. Becomes null once the
+//object is destroyed (Application teardown), so a late callback is dropped
+//instead of touching a dangling pointer.
+QPointer<HardwareUtilsAndroid> s_instance;
+
+//Describe (in logcat) and clear any pending Java exception left by the last
+//JNI call. Returns true if there was one.
+bool clearJavaException(const char *call)
+{
+    QJniEnvironment env;
+    if (env.checkAndClearExceptions(QJniEnvironment::OutputMode::Verbose))
+    {
+        qWarning() << "Android: JNI call failed:" << call;
+        return true;
+    }
+    return false;
+}
+
+//Called from Android threads (UI thread, the FCM SDK's intent-handler
+//executor thread): only hop to the Qt thread from here.
+void jniEmitDialogTextValid(JNIEnv *, jclass, jstring text)
+{
+    HardwareUtilsAndroid *hw = s_instance.data();
+    if (!hw)
+        return;
+
+    const QString s = QJniObject(text).toString();
+    QMetaObject::invokeMethod(hw, [hw, s]()
+    {
+        hw->emitDialogTextValid(s);
+    }, Qt::QueuedConnection);
+}
+
+void jniEmitDialogCancel(JNIEnv *, jclass)
+{
+    HardwareUtilsAndroid *hw = s_instance.data();
+    if (!hw)
+        return;
+
+    QMetaObject::invokeMethod(hw, [hw]()
+    {
+        hw->emitDialogCancel();
+    }, Qt::QueuedConnection);
+}
+
+void jniEmitDeviceToken(JNIEnv *, jclass, jstring token)
+{
+    HardwareUtilsAndroid *hw = s_instance.data();
+    if (!hw)
+        return;
+
+    const QString s = QJniObject(token).toString();
+    QMetaObject::invokeMethod(hw, [hw, s]()
+    {
+        hw->setDeviceToken(s);
+    }, Qt::QueuedConnection);
+}
+
+void jniEmitNotificationOpened(JNIEnv *, jclass, jstring uuid)
+{
+    HardwareUtilsAndroid *hw = s_instance.data();
+    if (!hw)
+        return;
+
+    const QString s = QJniObject(uuid).toString();
+    QMetaObject::invokeMethod(hw, [hw, s]()
+    {
+        hw->handleNotificationOpened(s);
+    }, Qt::QueuedConnection);
+}
+
+} // namespace
+
+HardwareUtilsAndroid::HardwareUtilsAndroid(QObject *parent):
+    HardwareUtils(parent)
+{
+    s_instance = this;
 }
 
 HardwareUtilsAndroid::~HardwareUtilsAndroid()
@@ -92,14 +138,57 @@ void HardwareUtilsAndroid::platformInit(QQmlApplicationEngine *e)
 {
     HardwareUtils::platformInit(e);
 
-    //init FCM
-    fcmListener->initMessaging();
-}
+    //Independent of the JNI registration below: a failure there must not also
+    //disable network monitoring.
+    setupNetworkMonitoring();
 
-void HardwareUtilsAndroid::setDeviceToken(QString t)
-{
-    qDebug() << "Received device token: " << t;
-    deviceToken = t;
+    //QJniEnvironment resolves the class through Qt's class loader, which
+    //a plain FindClass from a native thread does not.
+    QJniEnvironment env;
+    const bool ok = env.registerNativeMethods(kNativesClass, {
+        { "emitDialogTextValid", "(Ljava/lang/String;)V", reinterpret_cast<void *>(jniEmitDialogTextValid) },
+        { "emitDialogCancel", "()V", reinterpret_cast<void *>(jniEmitDialogCancel) },
+        { "emitDeviceToken", "(Ljava/lang/String;)V", reinterpret_cast<void *>(jniEmitDeviceToken) },
+        { "emitNotificationOpened", "(Ljava/lang/String;)V", reinterpret_cast<void *>(jniEmitNotificationOpened) },
+    });
+    clearJavaException("registerNativeMethods");
+    if (!ok)
+    {
+        qWarning() << "Android: failed to register native methods on" << kNativesClass;
+        return;
+    }
+
+    //From now on Java forwards token refreshes and notification taps.
+    QJniObject::callStaticMethod<void>(kHardwareUtilsClass, "setNativesReady", "()V");
+    clearJavaException("HardwareUtils.setNativesReady");
+
+    //Token saved by a previous run (or by the messaging service while Qt was
+    //not loaded): available right away, so the first login can register it.
+    QJniObject jtoken = QJniObject::callStaticObjectMethod(kHardwareUtilsClass,
+                                                           "getStoredPushToken",
+                                                           "()Ljava/lang/String;");
+    if (!clearJavaException("HardwareUtils.getStoredPushToken") && jtoken.isValid())
+        setDeviceToken(jtoken.toString());
+
+    //Then ask Firebase for the current one; it comes back through
+    //emitDeviceToken() (first run, or rotated token).
+    QJniObject::callStaticMethod<void>(kHardwareUtilsClass, "requestPushToken", "()V");
+    clearJavaException("HardwareUtils.requestPushToken");
+
+    //Cold start from a notification tap: the activity parked the uuid.
+    QJniObject juuid = QJniObject::callStaticObjectMethod(kHardwareUtilsClass,
+                                                          "takePendingEventUuid",
+                                                          "()Ljava/lang/String;");
+    if (!clearJavaException("HardwareUtils.takePendingEventUuid") && juuid.isValid())
+    {
+        const QString uuid = juuid.toString();
+        if (!uuid.isEmpty())
+        {
+            qDebug() << "Android: started from notification, event" << uuid;
+            //Not logged in yet: kept until home is loaded.
+            handleNotificationOpened(uuid);
+        }
+    }
 }
 
 void HardwareUtilsAndroid::showAlertMessage(QString title, QString message, QString buttontext)
@@ -107,37 +196,108 @@ void HardwareUtilsAndroid::showAlertMessage(QString title, QString message, QStr
     QJniObject jTitle = QJniObject::fromString(title);
     QJniObject jMessage = QJniObject::fromString(message);
     QJniObject jButtontext = QJniObject::fromString(buttontext);
-    QJniObject::callStaticMethod<void>("fr/calaos/calaoshome/HardwareUtils",
+    QJniObject::callStaticMethod<void>(kHardwareUtilsClass,
                                        "showAlertMessage",
                                        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
                                        jTitle.object<jstring>(),
                                        jMessage.object<jstring>(),
                                        jButtontext.object<jstring>());
+    clearJavaException("HardwareUtils.showAlertMessage");
+}
 
-    //Clear exception if any
-    QJniEnvironment env;
-    if (env->ExceptionCheck())
+void HardwareUtilsAndroid::setupNetworkMonitoring()
+{
+    //The backend plugin (libplugins_networkinformation_qandroidnetworkinformation)
+    //is deployed by androiddeployqt along with Qt6::Network.
+    if (!QNetworkInformation::loadBackendByFeatures(QNetworkInformation::Feature::Reachability |
+                                                    QNetworkInformation::Feature::TransportMedium) &&
+        !QNetworkInformation::loadBackendByFeatures(QNetworkInformation::Feature::Reachability))
     {
-        qDebug() << "JNI call failed";
-        env->ExceptionDescribe();
-        env->ExceptionClear();
+        qWarning() << "Android: no QNetworkInformation backend, network changes will not be reported";
+        return;
     }
+
+    QNetworkInformation *ni = QNetworkInformation::instance();
+    m_lastNetworkStatus = getNetworkStatus();
+    qInfo() << "Android: network monitoring backend" << ni->backendName()
+            << "reachability" << ni->reachability()
+            << "medium" << ni->transportMedium();
+
+    //Reachability covers airplane mode / link lost / link back; a medium
+    //change covers Wi-Fi <-> cellular handovers that keep us "online".
+    connect(ni, &QNetworkInformation::reachabilityChanged, this,
+            [this](QNetworkInformation::Reachability r)
+    {
+        qInfo() << "Android: reachability changed" << r;
+        emitNetworkStatusIfChanged();
+    });
+    connect(ni, &QNetworkInformation::transportMediumChanged, this,
+            [this](QNetworkInformation::TransportMedium m)
+    {
+        qInfo() << "Android: transport medium changed" << m;
+        emitNetworkStatusIfChanged();
+    });
+}
+
+//Status as seen by QNetworkInformation, the source of the emitted changes, so
+//getNetworkStatus() never contradicts the last networkStatusChanged().
+int HardwareUtilsAndroid::networkStatusFromQt(bool *known) const
+{
+    *known = false;
+    QNetworkInformation *ni = QNetworkInformation::instance();
+    if (!ni)
+        return NotConnected;
+
+    switch (ni->reachability())
+    {
+    case QNetworkInformation::Reachability::Disconnected:
+        *known = true;
+        return NotConnected;
+    case QNetworkInformation::Reachability::Unknown:
+        return NotConnected; //not known yet, caller falls back on Java
+    default:
+        break;
+    }
+
+    *known = true;
+    switch (ni->transportMedium())
+    {
+    case QNetworkInformation::TransportMedium::WiFi:
+    case QNetworkInformation::TransportMedium::Ethernet:
+        return ConnectedWiFi;
+    default:
+        return ConnectedWWAN;
+    }
+}
+
+//Reachability and transport medium often both change for a single network
+//event; the status is what the app acts on, so emit once per actual change.
+void HardwareUtilsAndroid::emitNetworkStatusIfChanged()
+{
+    const int status = getNetworkStatus();
+    if (status == m_lastNetworkStatus)
+        return;
+
+    m_lastNetworkStatus = status;
+    emitNetworkStatusChanged();
 }
 
 int HardwareUtilsAndroid::getNetworkStatus()
 {
-    jint status = QJniObject::callStaticMethod<jint>("fr/calaos/calaoshome/HardwareUtils",
-                                                     "getNetworkStatus");
+    bool known = false;
+    int status = networkStatusFromQt(&known);
 
-    qDebug() << "Android: HardwareUtilsAndroid::getNetworkStatus(): " << status;
-    //Clear exception if any
-    QJniEnvironment env;
-    if (env->ExceptionCheck())
+    if (!known)
     {
-        qDebug() << "JNI call failed";
-        env->ExceptionDescribe();
-        env->ExceptionClear();
+        status = QJniObject::callStaticMethod<jint>(kHardwareUtilsClass,
+                                                    "getNetworkStatus",
+                                                    "()I");
+        if (clearJavaException("HardwareUtils.getNetworkStatus"))
+            status = ConnectedWWAN; //We don't know. Say it's connected.
     }
+
+    qDebug() << "Android: HardwareUtilsAndroid::getNetworkStatus(): " << status
+             << (known ? "(qt)" : "(java)");
 
     return status;
 }
@@ -147,64 +307,174 @@ void HardwareUtilsAndroid::inputTextDialog(const QString &title, const QString &
     QJniObject jTitle = QJniObject::fromString(title);
     QJniObject jMessage = QJniObject::fromString(message);
 
-    QJniObject::callStaticMethod<void>("fr/calaos/calaoshome/HardwareUtils",
-                                       "inputtextDialog",
-                                       "(Ljava/lang/String;Ljava/lang/String;)V",
-                                       jTitle.object<jstring>(),
-                                       jMessage.object<jstring>());
-}
+    //Translated here, with the language chosen in the app (Application::setLanguage),
+    //not by Android resources: the app language is independent of the device locale.
+    QJniObject jConfirm = QJniObject::fromString(
+        QCoreApplication::translate("HardwareUtilsAndroid", "Confirm"));
+    QJniObject jCancel = QJniObject::fromString(
+        QCoreApplication::translate("HardwareUtilsAndroid", "Cancel"));
 
-static void emitDialogTextValid(JNIEnv *env, jobject obj, jstring text)
-{
-    Q_UNUSED(env);
-    Q_UNUSED(obj);
-    QJniObject jnitext(text);
-    QMetaObject::invokeMethod(HardwareUtils::Instance(),
-                              "emitDialogTextValid",
-                              Qt::QueuedConnection,
-                              Q_ARG(QString, jnitext.toString()));
-}
+    const jboolean shown = QJniObject::callStaticMethod<jboolean>(kHardwareUtilsClass,
+                                                                  "inputtextDialog",
+                                                                  "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z",
+                                                                  jTitle.object<jstring>(),
+                                                                  jMessage.object<jstring>(),
+                                                                  jConfirm.object<jstring>(),
+                                                                  jCancel.object<jstring>());
+    const bool failed = clearJavaException("HardwareUtils.inputtextDialog");
 
-static void emitDialogCancel(JNIEnv *env, jobject obj)
-{
-    Q_UNUSED(env);
-    Q_UNUSED(obj);
-    QMetaObject::invokeMethod(HardwareUtils::Instance(),
-                              "emitDialogCancel",
-                              Qt::QueuedConnection);
-}
-
-static JNINativeMethod jniMethods[] =
-{
-    { "emitDialogTextValid", "(Ljava/lang/String;)V", reinterpret_cast<void *>(emitDialogTextValid) },
-    { "emitDialogCancel", "()V", reinterpret_cast<void *>(emitDialogCancel) },
-};
-
-// this method is called automatically by Java after the .so file is loaded
-JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void */*reserved*/)
-{
-    JNIEnv *env;
-    // get the JNIEnv pointer.
-    if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK)
-        return JNI_ERR;
-
-    // search for Java class which declares the native methods
-    jclass javaClass = env->FindClass("fr/calaos/calaoshome/HardwareUtilsNatives");
-    if (!javaClass)
-        return JNI_ERR;
-
-    // register our native methods
-    jint res;
-    res = env->RegisterNatives(javaClass,
-                             jniMethods,
-                             sizeof(jniMethods) / sizeof(jniMethods[0]));
-    if (res < 0)
+    //No dialog means no answer will ever come back: report a cancel so the
+    //caller does not keep waiting for one. Queued like every other dialog
+    //answer, so it never arrives inside the caller's own call.
+    if (failed || !shown)
     {
-        qDebug() << "RegisterNatives failed with code: " << res;
-        env->DeleteLocalRef(javaClass);
-        return JNI_ERR;
+        QMetaObject::invokeMethod(this, [this]()
+        {
+            emitDialogCancel();
+        }, Qt::QueuedConnection);
+    }
+}
+
+//Returns false when Java could not store the pair (Keystore failure).
+static bool storeCredentials(const QString &user, const QString &pass)
+{
+    QJniObject ctx = androidContext();
+    QJniObject juser = QJniObject::fromString(user);
+    QJniObject jpass = QJniObject::fromString(pass);
+    const jboolean ok = QJniObject::callStaticMethod<jboolean>(kCredentialStoreClass, "save",
+                                                               "(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)Z",
+                                                               ctx.object(),
+                                                               juser.object<jstring>(),
+                                                               jpass.object<jstring>());
+    if (clearJavaException("CredentialStore.save"))
+        return false;
+    return ok;
+}
+
+void HardwareUtilsAndroid::saveAuthKeychain(const QString &email, const QString &pass)
+{
+    if (!storeCredentials(email, pass))
+    {
+        //Keep the user logged in at the next start rather than losing the
+        //pair: the base class copy (QSettings) is migrated again later. The
+        //store must not keep a previous pair meanwhile, or loadAuthKeychain()
+        //would hand that stale one out and drop the new one from QSettings.
+        qWarning() << "Android: credentials kept in settings, secure store unavailable";
+        QJniObject ctx = androidContext();
+        QJniObject::callStaticMethod<void>(kCredentialStoreClass, "clearCredentials",
+                                           "(Landroid/content/Context;)V", ctx.object());
+        clearJavaException("CredentialStore.clearCredentials");
+        HardwareUtils::saveAuthKeychain(email, pass);
+        return;
+    }
+    forgetSettingsCredentials();
+}
+
+void HardwareUtilsAndroid::setSessionActive(bool active)
+{
+    //Read by PushPictureWorker: after an explicit logout the stored pair
+    //stays for the login screen but is not used for pictures any more.
+    QJniObject ctx = androidContext();
+    QJniObject::callStaticMethod<void>(kCredentialStoreClass, "setSessionActive",
+                                       "(Landroid/content/Context;Z)V", ctx.object(),
+                                       static_cast<jboolean>(active));
+    clearJavaException("CredentialStore.setSessionActive");
+}
+
+bool HardwareUtilsAndroid::isSessionActive()
+{
+    //Any failure (class or method not resolved, Java exception, no context)
+    //answers true, the pre-FIX-11 behaviour (automatic login allowed), rather
+    //than locking the user out of the automatic login for good. Raw JNIEnv on
+    //purpose: QJniObject::callStaticMethod<jboolean> clears a pending
+    //exception itself and returns false, which would read as "logged out".
+    QJniObject ctx = androidContext();
+    if (!ctx.isValid())
+        return true;
+
+    QJniEnvironment env;
+    jclass cls = env.findClass(kCredentialStoreClass);
+    if (!cls)
+    {
+        env.checkAndClearExceptions(QJniEnvironment::OutputMode::Verbose);
+        qWarning() << "Android: CredentialStore not found, session considered active";
+        return true;
+    }
+    jmethodID mid = env.findStaticMethod(cls, "isSessionActive", "(Landroid/content/Context;)Z");
+    if (!mid)
+    {
+        env.checkAndClearExceptions(QJniEnvironment::OutputMode::Verbose);
+        qWarning() << "Android: CredentialStore.isSessionActive not found, session considered active";
+        return true;
     }
 
-    env->DeleteLocalRef(javaClass);
-    return JNI_VERSION_1_6;
+    const jboolean active = env->CallStaticBooleanMethod(cls, mid, ctx.object());
+    if (env.checkAndClearExceptions(QJniEnvironment::OutputMode::Verbose))
+    {
+        qWarning() << "Android: JNI call failed: CredentialStore.isSessionActive, session considered active";
+        return true;
+    }
+    return active == JNI_TRUE;
+}
+
+void HardwareUtilsAndroid::loadAuthKeychain(QString &email, QString &pass)
+{
+    email = credentialStoreString("user");
+    pass = credentialStoreString("password");
+
+    if (email.isEmpty() && pass.isEmpty())
+    {
+        //First start after the update (or a failed save, see above): the pair
+        //is still in QSettings. Move it, and only then drop the clear copy.
+        QString u, p;
+        HardwareUtils::loadAuthKeychain(u, p);
+        if (!u.isEmpty() || !p.isEmpty())
+        {
+            if (storeCredentials(u, p))
+            {
+                qDebug() << "Android: credentials migrated to the secure store";
+                forgetSettingsCredentials();
+            }
+            email = u;
+            pass = p;
+        }
+    }
+    else
+    {
+        forgetSettingsCredentials();
+    }
+
+    //The worker also needs the server address; setConfigOption() keeps it
+    //up to date from now on, this covers the install being updated.
+    if (credentialStoreString("host").isEmpty())
+        setConfigOption(QStringLiteral("calaos/host"), getServerHost());
+}
+
+void HardwareUtilsAndroid::resetAuthKeychain()
+{
+    //"Reset all data": nothing stays behind, in Java or in QSettings (the
+    //base class would write the demo pair there; loadSettings() falls back
+    //to it when the store is empty).
+    QJniObject ctx = androidContext();
+    QJniObject::callStaticMethod<void>(kCredentialStoreClass, "clear",
+                                       "(Landroid/content/Context;)V", ctx.object());
+    clearJavaException("CredentialStore.clear");
+    forgetSettingsCredentials();
+}
+
+void HardwareUtilsAndroid::setConfigOption(QString key, QString value)
+{
+    if (key == QLatin1String("calaos/host"))
+    {
+        //Shared with the push picture worker, like calaos.hostname in the
+        //iOS App Group.
+        QJniObject ctx = androidContext();
+        QJniObject jhost = QJniObject::fromString(value);
+        QJniObject::callStaticMethod<void>(kCredentialStoreClass, "setHost",
+                                           "(Landroid/content/Context;Ljava/lang/String;)V",
+                                           ctx.object(), jhost.object<jstring>());
+        clearJavaException("CredentialStore.setHost");
+    }
+
+    HardwareUtils::setConfigOption(key, value);
 }

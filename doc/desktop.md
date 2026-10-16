@@ -110,8 +110,7 @@ Set in [Application::createQmlApp()](../src/Application.cpp):
 
 Shared (also exposed on mobile): `calaosApp`, `homeModel`, `scenarioModel`, `lightOnModel`,
 `audioModel`, `favoritesModel`, `favoritesHomeModel`, `cameraModel`, `langModel`,
-`eventLogModel`, plus zero-valued `platformMargins{Left,Right,Top,Bottom}` (mobile sets
-real values).
+`eventLogModel`.
 
 ## 6. Desktop QML structure
 

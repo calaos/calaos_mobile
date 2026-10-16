@@ -22,7 +22,10 @@ SUBDIRS += \
     tst_favoritesmodel \
     tst_homemodel \
     tst_httpapiversion \
+    tst_httpreplies \
     tst_iobase \
+    tst_pushnotif \
     tst_qqmlhelpers \
     tst_reconnectpolicy \
-    tst_roomfiltermodel
+    tst_roomfiltermodel \
+    tst_sessionlifecycle

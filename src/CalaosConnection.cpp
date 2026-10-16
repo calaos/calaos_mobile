@@ -11,8 +11,11 @@ static const QStringList &credentialKeys()
 {
     //"u" and "p" are not JSON keys but the short query parameters of the
     //legacy v1 camera url, so they stay literals here (see JsonKeys.h).
+    //JsonKeys::Token is the push token sent by register_push: a per-device
+    //credential as well (FIX-3).
     static const QStringList keys = { JsonKeys::CnUser,
                                       JsonKeys::CnPass,
+                                      JsonKeys::Token,
                                       QStringLiteral("u"),
                                       QStringLiteral("p") };
     return keys;
@@ -50,6 +53,11 @@ CalaosConnection::CalaosConnection(QObject *parent) :
             this, &CalaosConnection::sslErrors);
     connect(accessManagerCam, &QNetworkAccessManager::sslErrors,
             this, &CalaosConnection::sslErrors);
+
+    //A token reported while the session is up (rotation, or a token that only
+    //arrived after the login) is registered right away, not at the next login.
+    connect(HardwareUtils::Instance(), &HardwareUtils::deviceTokenChanged,
+            this, &CalaosConnection::registerPushToken);
 }
 
 void CalaosConnection::sslErrors(QNetworkReply *reply, const QList<QSslError> &)
@@ -150,6 +158,7 @@ void CalaosConnection::resetTransport()
     wsFallbackDone = false;
     demoMode = false;
     uuidPolling.clear();
+    pushRegistration.sessionEnded();
 
     //The login handler is hooked on the manager, not on the reply: unhook it
     //before aborting anything, otherwise the abort of the *previous* attempt
@@ -208,13 +217,21 @@ void CalaosConnection::connectionLost(const QString &reason, ReconnectPolicy::Fa
         armReconnectTimer();
 }
 
-void CalaosConnection::requestImmediateReconnect(QString user, QString pass, QString h)
+bool CalaosConnection::acceptsImmediateReconnect() const
 {
     //Discovery fires once per announce datagram, so it can be chatty. It is
     //allowed to short-circuit the delay currently pending, but not more than
     //once per second: otherwise a talkative LAN would defeat the backoff.
     if (lastAttemptTimer.isValid() &&
         lastAttemptTimer.elapsed() < ReconnectPolicy::BaseDelayMs)
+        return false;
+
+    return reconnectPolicy.canBeginAttempt(ReconnectPolicy::AutoRetry);
+}
+
+void CalaosConnection::requestImmediateReconnect(QString user, QString pass, QString h)
+{
+    if (!acceptsImmediateReconnect())
         return;
 
     startConnection(user, pass, h, ReconnectPolicy::AutoRetry);
@@ -229,12 +246,48 @@ void CalaosConnection::suspend()
     emit disconnected();
 }
 
-void CalaosConnection::resume(QString user, QString pass, QString h)
+void CalaosConnection::pause()
 {
+    cancelReconnectTimer();
+    resetTransport();
+    reconnectPolicy.pause();
+    emitStateChanged();
+    emit disconnected();
+}
+
+void CalaosConnection::unpause()
+{
+    reconnectPolicy.unpause();
+}
+
+void CalaosConnection::resume()
+{
+    //canResume() implies a session was wanted, hence that startConnection()
+    //or deferLogin() (login refused offline, FIX-9) already ran and stored
+    //the credentials and host.
     if (!reconnectPolicy.canResume())
         return;
 
-    startConnection(user, pass, h, ReconnectPolicy::AutoRetry);
+    startConnection(username, password, lasthost, ReconnectPolicy::AutoRetry);
+}
+
+bool CalaosConnection::deferLogin(QString user, QString pass, QString h, ReconnectPolicy::Trigger trigger)
+{
+    if (!reconnectPolicy.deferAttempt(trigger))
+        return false;
+
+    //Nothing is in flight (deferAttempt() refuses otherwise), but a retry may
+    //be pending: the new intent replaces it, resume() starts the attempt.
+    cancelReconnectTimer();
+    resetTransport();
+
+    //What resume() will use, like an attempt started now would have stored.
+    username = user;
+    password = pass;
+    lasthost = h;
+
+    emitStateChanged();
+    return true;
 }
 
 void CalaosConnection::login(QString user, QString pass, QString h)
@@ -434,24 +487,9 @@ void CalaosConnection::onWsConnected()
     wsPing->start(5 * 1000); //every 5s send a ping to calaos_server
     wsPingTimeout->start(20 * 1000); //20s timeout
 
-    QTimer::singleShot(100, this, [=]()
-    {
-        if (!wsocket) return;
-        if (HardwareUtils::Instance()->getDeviceToken().isEmpty()) return;
-
-#if defined(Q_OS_ANDROID)
-        QString hw = QStringLiteral("android");
-#elif defined(Q_OS_IOS)
-        QString hw = QStringLiteral("ios");
-#else
-        QString hw;
-#endif
-
-        //Send the push device token to register the mobile device to calaos_server for push notif
-        sendWebsocket(QStringLiteral("register_push"),
-                      {{ JsonKeys::Token, HardwareUtils::Instance()->getDeviceToken() },
-                       { JsonKeys::Hardware, hw }});
-    });
+    //register_push is sent once the login is accepted (see the "login"
+    //answer in onWsTextMessageReceived()): sendWebsocket() drops anything
+    //sent before that, which used to lose the registration on a slow link.
 }
 
 void CalaosConnection::onWsDisconnected()
@@ -501,7 +539,8 @@ void CalaosConnection::logout()
 {
     cancelReconnectTimer();
     resetTransport();
-    //Explicit logout: no automatic reconnection is wanted any more.
+    //Explicit logout: no automatic reconnection is wanted any more, and none
+    //of suspend()/resume(), discovery or the retry timer may reopen it.
     reconnectPolicy.stop();
     emitStateChanged();
 
@@ -570,28 +609,54 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
     reconnectPolicy.attemptSucceeded();
     emitStateChanged();
 
-    if (!HardwareUtils::Instance()->getDeviceToken().isEmpty())
-    {
-#if defined(Q_OS_ANDROID)
-        QString hw = QStringLiteral("android");
-#elif defined(Q_OS_IOS)
-        QString hw = QStringLiteral("ios");
-#else
-        QString hw;
-#endif
-
-        //Send the push device token to register the mobile device to calaos_server for push notif
-        QJsonObject o = {
-            { JsonKeys::Token, HardwareUtils::Instance()->getDeviceToken() },
-            { JsonKeys::Hardware, hw }
-        };
-        sendHttp(QStringLiteral("register_push"), o);
-    }
+    //Register the push token of this device for this session, if known yet.
+    pushRegistration.sessionStarted();
+    registerPushToken();
 
     //start polling
     startJsonPolling();
 
     emitHomeLoaded(jroot);
+}
+
+void CalaosConnection::registerPushToken()
+{
+    //Nothing to send on: the next login registers the current token.
+    if (!isWebsocket() && !isHttp())
+        return;
+
+    const QString token = HardwareUtils::Instance()->getDeviceToken();
+    if (!pushRegistration.shouldRegister(token))
+        return;
+
+#if defined(Q_OS_ANDROID)
+    const QString hw = PushFormat::AndroidHardware;
+#elif defined(Q_OS_IOS)
+    const QString hw = QStringLiteral("ios");
+#else
+    const QString hw;
+#endif
+
+    qDebug() << "Registering push token" << HardwareUtils::describeToken(token)
+             << "for" << (hw.isEmpty() ? QStringLiteral("<unknown>") : hw);
+
+    //Send the push device token to register the mobile device to calaos_server
+    //for push notif (Android also asks for data-only messages, see PushFormat).
+    QJsonObject o = PushFormat::registration(token, hw);
+
+    if (isWebsocket())
+    {
+        sendWebsocket(QStringLiteral("register_push"), o);
+    }
+    else
+    {
+        //api.php checks the credentials before looking at the action, like
+        //for every other HTTP request: without them the server answers 400
+        //and the device is never registered. Redacted in the debug dump.
+        o[JsonKeys::CnUser] = username;
+        o[JsonKeys::CnPass] = password;
+        sendHttp(QStringLiteral("register_push"), o);
+    }
 }
 
 void CalaosConnection::emitHomeLoaded(const QVariantMap &home)
@@ -619,6 +684,10 @@ void CalaosConnection::requestFinished()
     }
 
     reqReply->deleteLater();
+    //Forget it on every path: resetTransport() aborts what is still listed,
+    //and a failed reply left here was aborted after its deletion (crash on
+    //the next logout or reconnection once any HTTP request had failed).
+    reqReplies.removeAll(reqReply);
 
     if (reqReply->error() != QNetworkReply::NoError)
     {
@@ -641,8 +710,6 @@ void CalaosConnection::requestFinished()
     qDebug().noquote() << "RECV: " << jdoc.toJson();
 #endif
 
-    reqReplies.removeAll(reqReply);
-
     QVariantMap jroot = jdoc.object().toVariantMap();
 
     //Audio player states, event log page and io states can all be in the same
@@ -662,6 +729,10 @@ void CalaosConnection::requestCamFinished(QNetworkReply *reqReply, const QString
     }
 
     reqReply->deleteLater();
+    //Forget it on every path, see requestFinished(): a failed picture is
+    //common, and left listed it was aborted after its deletion by the next
+    //resetTransport() (logout, reconnection, iOS going to the background).
+    reqReplies.removeAll(reqReply);
 
     if (reqReply->error() != QNetworkReply::NoError)
     {
@@ -671,7 +742,6 @@ void CalaosConnection::requestCamFinished(QNetworkReply *reqReply, const QString
     }
 
     QByteArray bytes = reqReply->readAll();
-    reqReplies.removeAll(reqReply);
 
     //we have a new picture
     emit cameraPictureDownloaded(camid, bytes);
@@ -686,6 +756,10 @@ void CalaosConnection::requestAudioCoverFinished(QNetworkReply *reqReply, const 
     }
 
     reqReply->deleteLater();
+    //Forget it on every path, see requestFinished(): a failed picture is
+    //common, and left listed it was aborted after its deletion by the next
+    //resetTransport() (logout, reconnection, iOS going to the background).
+    reqReplies.removeAll(reqReply);
 
     if (reqReply->error() != QNetworkReply::NoError)
     {
@@ -694,7 +768,6 @@ void CalaosConnection::requestAudioCoverFinished(QNetworkReply *reqReply, const 
     }
 
     QByteArray bytes = reqReply->readAll();
-    reqReplies.removeAll(reqReply);
 
     //we have a new picture
     emit audioCoverDownloaded(playerid, bytes);
@@ -1155,6 +1228,11 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
 
                 //ask for home
                 sendWebsocket("get_home");
+
+                //Register the push token of this device for this session,
+                //if known yet.
+                pushRegistration.sessionStarted();
+                registerPushToken();
             }
         }
         else

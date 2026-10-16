@@ -18,6 +18,7 @@ build/
 PushNotif.appex/
 # CMake build directories
 build-ios/
+build-ios-sim/
 build-android/
 CMakeFiles/
 CMakeCache.txt

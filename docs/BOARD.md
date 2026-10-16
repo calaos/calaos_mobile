@@ -83,6 +83,76 @@ Note : T04/T05/T06 sont parallélisables entre eux (fichiers disjoints, seule co
 Ouvert après P3 : c'est le dernier couplage inverse du modèle, celui qui oblige
 encore trois tests à lier `HardwareUtils` ou une doublure de `RoomModel`.
 
+## P-AND — Android Qt 6
+
+La version Android n'a jamais fonctionné en Qt 6. Analyse et plan validés par Raoul le 2026-10-16 (push via SDK Firebase Java, tests sur téléphone USB, branche `feat/android-qt6`). Skills dédiés dans `.claude/skills/` : `qt6-android-build`, `qt6-android-jni`, `calaos-board`, `calaos-android-review`. Tous les tickets sont séquentiels (mêmes fichiers `android/`).
+
+| ID | Titre | Taille | Bloqué par | Groupe | Statut |
+|---|---|---|---|---|---|
+| [AND-1](tasks/AND-1-toolchain-cmake.md) | Toolchain Android et configuration CMake | M | — | G-ANDROID | Terminé |
+| [AND-2](tasks/AND-2-packaging-gradle-manifest.md) | Packaging Qt 6.11 : Gradle, manifest, ressources | M | AND-1 | G-ANDROID | Terminé |
+| [AND-3](tasks/AND-3-glue-java-jni.md) | Glue Java/JNI au standard Qt 6 | M | AND-2 | G-ANDROID | Terminé |
+| [AND-4](tasks/AND-4-push-fcm-java.md) | Notifications push FCM via le SDK Firebase Java | L | AND-3 | G-ANDROID | Terminé |
+| [AND-7](tasks/AND-7-push-image-camera.md) | Image de caméra dans les notifications push | L | AND-4 | G-ANDROID | En revue |
+| [AND-5](tasks/AND-5-release-aab-signature.md) | Build release : AAB multi-ABI et signature | S | AND-4 | G-ANDROID | Terminé |
+| [AND-6](tasks/AND-6-doc-nettoyage.md) | Documentation Android et nettoyage legacy | S | AND-5, AND-7 | G-ANDROID + G-DOC | À faire |
+| [AND-8](tasks/AND-8-clavier-apres-login.md) | Le clavier reste ouvert après le login | S | — | G-QML-MOBILE | Terminé |
+
+Suivis issus des revues (à traiter dans le ticket indiqué) :
+- AND-5 : `android/build.gradle` `useLegacyPackaging = legacyPackaging` reçoit la chaîne `"false"`, évaluée à vrai par Groovy → les `.so` sont compressés dans l'APK (`extractNativeLibs=true`). Trancher (`.toBoolean()` ou compression assumée) avant la release ; la permission `WRITE_EXTERNAL_STORAGE` insérée par Qt est inutile (`tools:node="remove"` ou `maxSdkVersion`).
+- AND-5 : configurer avec le seul ABI `x86_64` s'arrête sur une erreur CMake non analysée (constaté pendant AND-1).
+- AND-5 : si la minification R8 est activée, ajouter une règle keep pour les helpers Java appelés par nom depuis le JNI (`HardwareUtils.showAlertMessage`, `getNetworkStatus`, `inputtextDialog`, classe `HardwareUtilsNatives`).
+- Nouveau ticket candidat : Android n'émet jamais `networkStatusChanged` (état réseau lu seulement au login) → `QNetworkInformation` ou `NetworkCallback`. Libellés « Confirm »/« Cancel » du dialogue de saisie non traduits.
+- AND-9 : depuis QT-1, `enableOnBackInvokedCallback="true"` (modèle Qt 6.12) et Qt 6.12 appelle `moveTaskToBack()` quand le retour n'est pas accepté ; or `qml/mobile/main.qml:94-97` accepte toujours `Key_Back`, même à la racine → l'app ne passe jamais en arrière-plan. Le correctif AND-9 consiste à ne plus accepter `Key_Back` à la racine.
+- Suivi FIX-3 : un tap mémorisé survit à une déconnexion volontaire et peut s'ouvrir sur une autre maison (besoin d'un chemin « logout utilisateur » distinct du logout iOS sur resign).
+- Suivis QT-1 : passer `targetSdk` à 37 (revue des changements Android 17) ; Reachability iOS → `NWPathMonitor` ; ticket de nettoyage qmllint pour les nouvelles catégories 6.12 (`id-shadows-member`, `unqualified`) ; l'APK Android embarque les plugins QML desktop (androiddeployqt scanne tout le repo) ; tests unitaires non compilables avec `~/Qt/6.11.0/macos` + Xcode 27 (`__yield`), à revérifier avec 6.12.
+- AND-7 : le changement serveur (messages FCM data seuls) est confié le 2026-10-16 à la session Happier « Calaos: Climate devices » (calaos_base). Contrat proposé : l'app envoie `"push_format": "data"` dans `register_push` (WS et HTTP), le serveur réserve le data seul (+ `android.priority=high`) aux jetons enregistrés ainsi ; l'app Play Store actuelle (Qt 5, Firebase C++) garde le format notification+data. AND-7 doit implémenter le contrat final documenté côté calaos_base.
+- PR GitHub #31 (gwarf, 2026-10-16) « android: fix the Qt 6 build and launch crash » recoupe AND-1/AND-2 (Qt 6.10, Firebase C++ conservé) ; PR #18 (2021) « image preview in notification for Android » recoupe AND-7. À traiter avec Raoul avant de pousser `feat/android-qt6`.
+- Suivis FIX-4 : sur un passage Wi-Fi → 4G l'app reste « connectée » alors que le websocket/long-poll de l'ancien réseau est mort (attente du timeout ping/poll ; iOS identique) → forcer une reconnexion sur changement de médium ; Android n'émet jamais `applicationWillResignActive` (session gardée en arrière-plan, reconnexion en arrière-plan) ; une app démarrée hors ligne ne se connecte pas automatiquement au retour du réseau (iOS identique).
+- Suivi FIX-5 : `lang/calaos_de.ts` a 51 chaînes non traduites et 2 entrées obsolètes (constat lupdate 2026-10-16) ; lancer lupdate via `lang/lang.pro` (un arbre CMake iOS ou Android ne voit que ses propres sources et supprimerait les entrées de l'autre plateforme) ; les `.qm` embarqués via `lang.qrc` sont versionnés et doivent être régénérés avec les `.ts`.
+- Suivis MOB-1 : (a) `LoginView` trop haute en paysage téléphone (logo coupé, bouton Login sous la barre gestuelle) → Flickable ou mise en page compacte ; (b) iPad en mode fenêtré (iPadOS 26+) : les contrôles de fenêtre en haut à gauche peuvent chevaucher l'icône d'en-tête (zone d'adaptation des coins non couverte par `safeAreaInsets`), à vérifier sur un vrai iPad ; (c) Android paysage : bande #080808 côté encoche et séparateur d'en-tête interrompu (letterbox unilatéral) → laisser fond et séparateur passer sous les marges latérales ; (d) Android 15+ en navigation 3 boutons : vérifier le voile de la barre de navigation au-dessus de la barre de menu. Preuves manquantes pour MOB-1 (passage appareils) : iPad paysage, pièce et scénarios peuplés, non-régression Android 12.
+- FIX-7 (correction du contexte du ticket) : la cause annoncée (`ReconnectPolicy::suspend()` qui réarme après `stop()`) était fausse ; le cas Android ne se reproduit pas sur le code de base (probablement un démarrage à froid après logout, qui se reconnecte par conception). Les vrais chemins corrigés : iOS (logout → arrière-plan → premier plan reconnectait) et découverte desktop (latent). iOS met désormais la session en pause en arrière-plan au lieu d'un logout.
+- Suivis FIX-8 : sur iOS, le retour au premier plan se connecte avec les propriétés `calaosApp` (`Application.cpp:91`), pas avec des valeurs tapées mais non validées dans l'écran de login ; `qml/mobile/main.qml:124-126` (`username: calaosApp.username` etc.) est du code mort depuis `LoginView.syncFromApp()` — à retirer après AND-9.
+- Suivis FIX-9 (Raoul a validé les deux le 2026-10-16 → FIX-10 et FIX-11) : (a) l'alerte « No network » reste affichée au-dessus de l'accueil après la connexion automatique → la fermer sur `homeLoaded` ou la remplacer par un bandeau « hors ligne » non modal (préféré par la revue) ; (b) la déconnexion n'est pas mémorisée entre deux lancements : après « Se déconnecter », un relancement à froid se reconnecte automatiquement (en ligne comme hors ligne, comportement ancien) → drapeau « déconnecté » persistant lu par l'auto-login de lancement (Android : réutiliser `CredentialStore.isSessionActive` d'AND-7 ; iOS à créer). Le critère FIX-9 « logout puis démarrage hors ligne ⇒ aucune » n'est vrai qu'au sein d'un même processus.
+- Constaté pendant la revue AND-9 (Qt 6.12, Android 16, chemin « key event » uniquement : `adb input keyevent BACK` / touche retour matérielle) : Qt appelle parfois `moveTaskToBack()` alors que le QML a accepté le relâchement ; déjà présent avant AND-9 ; un second retour a une fois terminé l'activité avec un SIGABRT FORTIFY (`hwuiTask0`) à la sortie. Geste et barre 3 boutons non affectés. Candidat à un rapport de bug Qt.
+- Test externe (gwarf, PR #32, 2026-10-16) sur `6bc67db` : Pixel 11 Pro XL, Android 16, build Linux via `tools/build_android.sh Debug` (Qt 6.12.0, NDK 27.2, JDK 17) — démarrage, connexion à un vrai serveur, commande des lumières OK ; push : `POST_NOTIFICATIONS` accordée, canal `calaos_events` créé, jeton FCM obtenu et transmis au C++, `register_push` envoyé après login. Réception réelle d'une notification non vérifiée. Valide AND-2/AND-3/AND-4 (partie jeton/permission) et QT-1 sur un vrai appareil Android 16, et le script de build sous Linux.
+- Passage appareil Redmi 9 (Android 12, 2026-10-16, build `6a3bfd4`) : démarrage, connexion wss, migration des identifiants vers le Keystore, jeton push, reconnexion automatique après coupure, lancement hors ligne puis connexion, push reçus au premier plan (image de caméra ajoutée) et en arrière-plan, tap → événement, bouton retour, dialogue en français ; 0 crash, aucune erreur JNI, aucun avertissement FIX-1/FIX-2. Non vérifiés sur appareil (laissés « En revue ») : FIX-8 (identifiants tapés) et FIX-11 (déconnexion après relance), FIX-3 (tap pendant une reconnexion), FIX-7/FIX-9 côté iOS, IOS-1/MOB-1/QT-1 sur iPhone, AND-9 en armv7, AND-7 avec le futur format data seul (changement calaos_base).
+- AND-6 : `mobile.pro` liste encore en `DISTFILES` le wrapper Gradle et `libs.xml` supprimés ; `tools/check_sources.sh` ne reconnaît pas les chemins `$$PWD/src/...` de `calaos.pri` (faux positifs).
+- QML (hors P-AND) : `main.qml:128` paramètre `idx` non déclaré ; `AnimatedIcon.qml:31` image `icon_light_00-1.png` introuvable.
+
+## P-DEV — Derniers appareils et dernière version de Qt
+
+Demandé par Raoul le 2026-10-16 : support des derniers iPhone (iOS 27, iPhone 17/18, Air), des dernières versions d'Android (15/16) et des builds multi-architecture, migration vers la version de Qt la plus récente (6.12.0). Outils de test : simulateurs iOS 27 (Xcode 27.1), émulateur `Calaos_API36_arm64` (Android 16), iPhone 15 Pro et Redmi 9 (Android 12) physiques. Skill iOS : `.claude/skills/qt6-ios-build`.
+
+Ordre : AND-4 → QT-1 → (IOS-1 ∥ AND-7) → MOB-1 → AND-5 → AND-9 → AND-6.
+
+| ID | Titre | Taille | Bloqué par | Groupe | Statut |
+|---|---|---|---|---|---|
+| [QT-1](tasks/QT-1-upgrade-qt-6-12.md) | Migration Qt 6.11.0 → Qt 6.12.0 (iOS + Android) | M | AND-4 | G-ANDROID + G-IOS + G-BUILD | En revue |
+| [IOS-1](tasks/IOS-1-derniers-iphone.md) | Support des derniers iPhone (iOS 27, iPhone 17/18, Air) | M | QT-1 | G-IOS | En revue |
+| [MOB-1](tasks/MOB-1-zones-securite.md) | Zones de sécurité : Dynamic Island iOS et edge-to-edge Android 15+ | M | IOS-1, AND-4 | G-QML-MOBILE | En revue |
+| [AND-9](tasks/AND-9-android-15-16-multiarch.md) | Android 15/16 et matrice multi-architecture | M | AND-5, MOB-1 | G-ANDROID | En revue |
+
+## P-FIX — Petits bugs constatés pendant P-AND
+
+Bugs relevés dans les logs et les revues des tickets P-AND (2026-10-16). Non retenu : l'avertissement `QFAppListener::onMessageReceived` connecté par `SLOT()` vient de `3rd_party/quickflux` (non modifiable, sans effet).
+
+Exécution parallèle : chaque ticket lancé en parallèle travaille dans son propre worktree git (`../calaos_mobile-wt/<ID>`, branche `wt/<ID>`), l'orchestrateur fusionne dans `feat/android-qt6` et tient ce board.
+
+| ID | Titre | Taille | Bloqué par | Groupe | Statut |
+|---|---|---|---|---|---|
+| [FIX-1](tasks/FIX-1-avertissements-qml.md) | Avertissements QML à l'exécution (paramètres injectés, image d'animation) | S | — | G-QML-MOBILE + G-QML-SHARED | Terminé |
+| [FIX-2](tasks/FIX-2-pusheventview-busyindicator.md) | PushEventView : ReferenceError `control` dans le BusyIndicator | S | — | G-QML-MOBILE | Terminé |
+| [FIX-3](tasks/FIX-3-push-token-partage.md) | Push : tap hors connexion, rotation du jeton, jeton dans les logs | M | AND-4 | G-CONN + G-ANDROID | En revue |
+| [FIX-4](tasks/FIX-4-reseau-android-changements.md) | Android : détecter les changements de réseau en cours d'exécution | S | FIX-3 | G-ANDROID | Terminé |
+| [FIX-5](tasks/FIX-5-dialogue-android-i18n.md) | Android : libellés traduits des dialogues natifs | S | FIX-4 | G-ANDROID | Terminé |
+| [FIX-6](tasks/FIX-6-check-sources-pwd.md) | tools/check_sources.sh : faux positifs sur les chemins `$$PWD/src/...` | S | — | G-BUILD | Terminé |
+| [FIX-7](tasks/FIX-7-reconnexion-apres-logout.md) | Pas de reconnexion automatique après une déconnexion volontaire | S | AND-7 | G-CONN | En revue |
+| [FIX-8](tasks/FIX-8-identifiants-tapes-ecrases.md) | Un changement de réseau écrase les identifiants tapés sur l'écran de login | S | FIX-7 | G-CONN | En revue |
+| [FIX-9](tasks/FIX-9-demarrage-hors-ligne.md) | App lancée hors ligne : se connecter quand le réseau revient | S | FIX-8 | G-CONN | En revue |
+| [FIX-10](tasks/FIX-10-bandeau-hors-ligne.md) | Bandeau « hors ligne » à la place de l'alerte modale « No network » | S | FIX-11, AND-9 | G-QML-MOBILE + G-CONN | En cours |
+| [FIX-11](tasks/FIX-11-deconnexion-persistante.md) | Mémoriser la déconnexion volontaire entre deux lancements | S | FIX-9 | G-CONN + G-ANDROID | En revue |
+
 ## Diagramme de parallélisation
 
 Chaque colonne est une lane exécutable par un agent indépendant ; `→` = séquence obligatoire, `‖` = parallèle.

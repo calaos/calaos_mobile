@@ -95,6 +95,79 @@ void HardwareUtils::emitPushNotifReceived(const QString &uuid)
     emit pushNotifReceived(uuid);
 }
 
+void HardwareUtils::handleNotificationOpened(const QString &uuid)
+{
+    if (uuid.isEmpty())
+        return;
+
+    qDebug() << "Notification opened, event" << uuid
+             << (calaosConnected ? "(connected)" : "(deferred until home is loaded)");
+
+    if (calaosConnected)
+    {
+        //An older deferred tap is superseded by the one being opened now.
+        pendingNotifUuid.clear();
+        emit pushNotifReceived(uuid);
+    }
+    else
+    {
+        pendingNotifUuid = uuid;
+    }
+}
+
+QString HardwareUtils::takePendingNotif()
+{
+    QString uuid;
+    uuid.swap(pendingNotifUuid);
+    return uuid;
+}
+
+void HardwareUtils::restorePendingNotif(const QString &uuid)
+{
+    if (uuid.isEmpty() || !pendingNotifUuid.isEmpty())
+        return;
+
+    qDebug() << "Notification" << uuid << "not opened before the session dropped, kept for the next login";
+    pendingNotifUuid = uuid;
+}
+
+void HardwareUtils::forgetPendingUserActions()
+{
+    if (!pendingNotifUuid.isEmpty() || startedWithOpt)
+        qDebug() << "Explicit logout: pending notification tap and start option dropped";
+
+    pendingNotifUuid.clear();
+    startedWithOpt = false;
+}
+
+void HardwareUtils::setDeviceToken(const QString &token)
+{
+    if (token.isEmpty() || token == deviceToken)
+        return;
+
+    qDebug() << "Push device token" << describeToken(token);
+    deviceToken = token;
+    emit deviceTokenChanged();
+}
+
+void HardwareUtils::clearDeviceToken()
+{
+    if (deviceToken.isEmpty())
+        return;
+
+    qDebug() << "Push device token cleared";
+    deviceToken.clear();
+    //Nothing is sent for an empty token: the next one is registered as usual.
+    emit deviceTokenChanged();
+}
+
+QString HardwareUtils::describeToken(const QString &token)
+{
+    if (token.isEmpty())
+        return QStringLiteral("<empty>");
+    return QStringLiteral("%1... (%2 chars)").arg(token.left(8)).arg(token.size());
+}
+
 void HardwareUtils::loadAuthKeychain(QString &email, QString &pass)
 {
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
@@ -126,8 +199,22 @@ void HardwareUtils::resetAuthKeychain()
 
     settings.setValue("calaos/cn_user", Common::getDemoUser());
     settings.setValue("calaos/cn_pass", Common::getDemoPass());
+    settings.remove("calaos/session_active");
 
     settings.sync();
+}
+
+void HardwareUtils::setSessionActive(bool active)
+{
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    settings.setValue("calaos/session_active", active);
+    settings.sync();
+}
+
+bool HardwareUtils::isSessionActive()
+{
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    return settings.value("calaos/session_active", true).toBool();
 }
 
 void HardwareUtils::setConfigOption(QString key, QString value)

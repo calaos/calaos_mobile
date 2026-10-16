@@ -42,8 +42,14 @@ public:
 
     enum Trigger
     {
-        UserRequest, //explicit login (login screen, app resume): resets backoff
-        AutoRetry,   //backoff timer, server discovery, network coming back
+        //Explicit login (login screen, launch login and iOS become-active
+        //when online): resets the backoff and any give-up.
+        UserRequest,
+        //Backoff timer, server discovery, network coming back, and the
+        //automatic logins (launch, iOS become-active) deferred offline
+        //(FIX-9). Become-active is deliberately UserRequest online but
+        //AutoRetry offline: a credentials give-up is not undone offline.
+        AutoRetry,
     };
 
     //Backoff: 1s, 2s, 4s, 8s, 16s, then capped at 30s.
@@ -64,6 +70,12 @@ public:
     int pollFailureCount() const { return m_pollFailures; }
     bool hasGivenUp() const { return m_givenUp; }
     bool wantsConnection() const { return m_wantsConnection; }
+    //The session was deliberately closed (logout, login cancelled): only an
+    //explicit login may open one again (FIX-7).
+    bool isStopped() const { return m_stopped; }
+    //The application is in the background (iOS resign-active): nothing may
+    //reconnect on its own until it comes back (FIX-7).
+    bool isPaused() const { return m_paused; }
     //Delay decided for the retry the caller must arm, in ms.
     int pendingDelayMs() const { return m_pendingDelayMs; }
 
@@ -81,11 +93,14 @@ public:
     }
 
     //THE anti double-login guard: one attempt at a time, ever.
+    //It is also the guard of every automatic attempt (retry timer, network
+    //coming back, server discovery): none may reopen a session that was given
+    //up on, deliberately closed, or that belongs to an app in the background.
     bool canBeginAttempt(Trigger t) const
     {
         if (m_state == Connecting || m_state == Connected)
             return false;
-        if (t == AutoRetry && m_givenUp)
+        if (t == AutoRetry && (m_givenUp || m_stopped || m_paused))
             return false;
         return true;
     }
@@ -100,6 +115,9 @@ public:
             m_failures = 0;
             m_authFailures = 0;
             m_givenUp = false;
+            //An explicit login reopens a deliberately closed session. It does
+            //not lift a pause: only the app coming back to the foreground does.
+            m_stopped = false;
         }
         m_pollFailures = 0;
         m_pendingDelayMs = 0;
@@ -149,7 +167,10 @@ public:
         return true;
     }
 
-    //Explicit logout: forget everything, including that a session was wanted.
+    //Deliberate close (Settings -> Logout, login cancelled, reset): forget
+    //everything, including that a session was wanted. The session stays
+    //closed whatever happens next (link lost and back, server discovered,
+    //app sent to the background and back) until an explicit login.
     void stop()
     {
         m_state = Disconnected;
@@ -159,11 +180,13 @@ public:
         m_givenUp = false;
         m_pendingDelayMs = 0;
         m_wantsConnection = false;
+        m_stopped = true;
     }
 
     //The link is known to be down (airplane mode, cable unplugged): drop the
-    //session but remember that one is wanted, so canResume() says yes when the
-    //link comes back.
+    //session but remember whether one is wanted, so canResume() says yes when
+    //the link comes back. It only ever drops: it never turns a stopped or
+    //paused policy back into one that wants a session.
     void suspend()
     {
         m_state = Disconnected;
@@ -172,6 +195,53 @@ public:
         m_pendingDelayMs = 0;
     }
 
+    //A login refused because the device has no network (FIX-9): nothing
+    //starts, but the session is now wanted, so canResume() says yes when the
+    //link comes back. UserRequest (login screen) counts as an explicit login:
+    //it resets the backoff and the give-up and reopens a deliberately closed
+    //session. AutoRetry (launch login, iOS become-active) does neither: it is
+    //refused after a deliberate close or a give-up, so it can never bring
+    //back a session the user closed. Like beginAttempt(), it does not lift a
+    //pause. Returns false (nothing changed) when refused, or when an attempt
+    //is in flight or a session is up.
+    bool deferAttempt(Trigger t)
+    {
+        if (m_state == Connecting || m_state == Connected)
+            return false;
+        if (t == AutoRetry && (m_givenUp || m_stopped))
+            return false;
+
+        if (t == UserRequest)
+        {
+            m_failures = 0;
+            m_authFailures = 0;
+            m_givenUp = false;
+            m_stopped = false;
+        }
+        m_pollFailures = 0;
+        m_pendingDelayMs = 0;
+        m_wantsConnection = true;
+        m_state = Disconnected;
+        return true;
+    }
+
+    //The application goes to the background (iOS resign-active): drop the
+    //session like suspend(), and refuse every automatic attempt until
+    //unpause(), so a network change seen in the background cannot reconnect.
+    //Unlike stop() the intent is kept: if a session was wanted, the app
+    //coming back to the foreground opens it again.
+    void pause()
+    {
+        suspend();
+        m_paused = true;
+    }
+
+    //The application is back in the foreground.
+    void unpause() { m_paused = false; }
+
+    //True when the app may reconnect on its own now: a session is wanted and
+    //nothing (an attempt in flight, a give-up, a deliberate close, a pause)
+    //forbids an automatic attempt.
     bool canResume() const
     {
         return m_wantsConnection && canBeginAttempt(AutoRetry);
@@ -212,8 +282,87 @@ private:
     int m_pendingDelayMs = 0;
     bool m_givenUp = false;
     bool m_wantsConnection = false;
+    bool m_stopped = false;
+    bool m_paused = false;
     bool m_jitterEnabled = true;
 };
+
+//Decides when the push token must be (re)sent to calaos_server with
+//"register_push" (FIX-3).
+//
+//The token is registered once per session, when the session is established,
+//and again whenever the platform reports a new token while the session is up
+//(FCM/APNs rotation, or a token that arrives after the login). A token that
+//changes while no session is up is simply picked up by the next login, and
+//the same token is never sent twice in one session.
+//
+//Header-only and free of QObject/network code for the same reason as
+//ReconnectPolicy: tests/tst_pushnotif drives it without a server.
+class PushRegistration
+{
+public:
+    bool isSessionUp() const { return m_sessionUp; }
+    QString registeredToken() const { return m_registered; }
+
+    //The transport is logged in. Nothing was registered in this session yet.
+    void sessionStarted()
+    {
+        m_sessionUp = true;
+        m_registered.clear();
+    }
+
+    //The transport is gone (logout, lost connection, new attempt).
+    void sessionEnded()
+    {
+        m_sessionUp = false;
+        m_registered.clear();
+    }
+
+    //Called both at the start of a session and on every token change.
+    //Returns true when register_push must be sent for this token now; the
+    //token is then considered registered for the rest of the session.
+    bool shouldRegister(const QString &token)
+    {
+        if (!m_sessionUp || token.isEmpty() || token == m_registered)
+            return false;
+        m_registered = token;
+        return true;
+    }
+
+private:
+    bool m_sessionUp = false;
+    QString m_registered;
+};
+
+//The "data" object of register_push (AND-7).
+//
+//Android asks calaos_server for data-only FCM messages: the system never
+//displays those itself, so CalaosMessagingService.onMessageReceived() runs
+//in every app state (foreground, background, killed) and can post the
+//notification with the camera picture. Without the field the server keeps
+//the legacy notification+data format, which only reaches the app in the
+//foreground (older app versions). iOS has its own APNs path and sends
+//nothing. The contract with calaos_base is kept in this one place: the key
+//is JsonKeys::PushFormat, the value AndroidPushFormat.
+//
+//Header-only so tests/tst_pushnotif checks the payload for each hardware
+//without a Q_OS_ANDROID build.
+namespace PushFormat
+{
+inline constexpr QLatin1StringView AndroidHardware{"android"};
+inline constexpr QLatin1StringView AndroidPushFormat{"data"};
+
+inline QJsonObject registration(const QString &token, const QString &hardware)
+{
+    QJsonObject o = {
+        { JsonKeys::Token, token },
+        { JsonKeys::Hardware, hardware }
+    };
+    if (hardware == AndroidHardware)
+        o[JsonKeys::PushFormat] = AndroidPushFormat;
+    return o;
+}
+}
 
 //QObject first, as Q_OBJECT requires; IOConnection is the read-only view the
 //IO models are given, see src/IOConnection.h.
@@ -296,11 +445,40 @@ public:
     //the guard in ReconnectPolicy refuses the call when an attempt is already
     //in flight or when we gave up on the credentials.
     void requestImmediateReconnect(QString user, QString pass, QString host);
+    //True when requestImmediateReconnect() would start an attempt right now.
+    //Lets the caller skip reading the stored settings when nothing would use
+    //them (FIX-8).
+    bool acceptsImmediateReconnect() const;
 
     //The link is known to be down: drop the session but remember it is wanted.
     void suspend();
-    //The link is back: reconnect immediately if a session was wanted.
-    void resume(QString user, QString pass, QString host);
+    //The link is back: reconnect immediately if a session was wanted, unless
+    //it was deliberately closed or the app is in the background.
+    //It reconnects with the credentials and host of the last attempt (explicit
+    //login, accepted credentials change or desktop discovery) or of the last
+    //login refused offline (deferLogin(), FIX-9), exactly like
+    //the backoff timer does. Never with whatever the login
+    //screen or the stored settings hold at that moment: a network change must
+    //not log in with other credentials (FIX-8).
+    void resume();
+    //A login refused because the device has no network (FIX-9): start
+    //nothing, but remember the session is wanted with these credentials and
+    //host, so resume() connects with them when the link is back. The latest
+    //recorded intent wins. trigger is UserRequest for the login screen and
+    //AutoRetry for the automatic logins (launch, iOS become-active), which
+    //never reopen a session closed by the user, see
+    //ReconnectPolicy::deferAttempt(). Returns true when the intent was
+    //recorded.
+    bool deferLogin(QString user, QString pass, QString h, ReconnectPolicy::Trigger trigger);
+    //The app goes to the background (iOS resign-active): drop the session,
+    //keep the intent, and let nothing reconnect until unpause().
+    void pause();
+    //The app is back in the foreground. Reconnecting is up to the caller,
+    //see sessionClosedByUser().
+    void unpause();
+    //The session was deliberately closed (logout() since the last explicit
+    //login): coming back to the foreground must not log in again.
+    bool sessionClosedByUser() const { return reconnectPolicy.isStopped(); }
 
 private:
     QNetworkAccessManager *accessManager;
@@ -348,6 +526,12 @@ private:
     //Since the last attempt was started, used to rate limit the "shortcut the
     //pending delay" requests coming from network discovery.
     QElapsedTimer lastAttemptTimer;
+
+    //When to send register_push, see PushRegistration.
+    PushRegistration pushRegistration;
+    //Sends register_push over the current transport if pushRegistration says
+    //the current token is not registered in this session yet.
+    void registerPushToken();
 
     //Set as soon as one of onWsDisconnected()/onWsError() switched to HTTP, so
     //a socket that errors *and* then closes cannot start two HTTP logins.

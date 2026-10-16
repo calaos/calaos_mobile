@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!-- Merged into the main manifest for the debug build type only
+     (sourceSets.debug in build.gradle): test hooks that must not ship. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- Fake FCM data message from adb, see FakePushReceiver.java.
+             DUMP is a signature|privileged permission: the adb shell has it,
+             other apps do not. -->
+        <receiver
+            android:name="fr.calaos.calaoshome.debug.FakePushReceiver"
+            android:permission="android.permission.DUMP"
+            android:exported="true" />
+    </application>
+</manifest>

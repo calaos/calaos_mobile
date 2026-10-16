@@ -32,6 +32,11 @@ public:
     virtual void loadAuthKeychain(QString &email, QString &pass);
     virtual void resetAuthKeychain();
 
+    //Kept in the App Group defaults: the notification service extension
+    //reads it too and loads no picture after an explicit logout.
+    virtual void setSessionActive(bool active);
+    virtual bool isSessionActive();
+
     virtual void inputTextDialog(const QString &title, const QString &message);
 
     virtual QString getStartOption(const QString &key);
@@ -41,7 +46,6 @@ public:
     void handlePerformActionForShortcutItem(void *shortcut);
     void handleRegisterNotif(void *data);
     void handleRegisterNotifFail(void *err);
-    void handleStartedWithPushNotif(const QString &uuid);
 };
 
 #endif // HARDWAREUTILS_IOS_H

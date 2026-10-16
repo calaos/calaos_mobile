@@ -106,6 +106,19 @@ Suivis issus des revues (à traiter dans le ticket indiqué) :
 - AND-6 : `mobile.pro` liste encore en `DISTFILES` le wrapper Gradle et `libs.xml` supprimés ; `tools/check_sources.sh` ne reconnaît pas les chemins `$$PWD/src/...` de `calaos.pri` (faux positifs).
 - QML (hors P-AND) : `main.qml:128` paramètre `idx` non déclaré ; `AnimatedIcon.qml:31` image `icon_light_00-1.png` introuvable.
 
+## P-DEV — Derniers appareils et dernière version de Qt
+
+Demandé par Raoul le 2026-10-16 : support des derniers iPhone (iOS 27, iPhone 17/18, Air), des dernières versions d'Android (15/16) et des builds multi-architecture, migration vers la version de Qt la plus récente (6.12.0). Outils de test : simulateurs iOS 27 (Xcode 27.1), émulateur `Calaos_API36_arm64` (Android 16), iPhone 15 Pro et Redmi 9 (Android 12) physiques. Skill iOS : `.claude/skills/qt6-ios-build`.
+
+Ordre : AND-4 → QT-1 → (IOS-1 ∥ AND-7) → MOB-1 → AND-5 → AND-9 → AND-6.
+
+| ID | Titre | Taille | Bloqué par | Groupe | Statut |
+|---|---|---|---|---|---|
+| [QT-1](tasks/QT-1-upgrade-qt-6-12.md) | Migration Qt 6.11.0 → Qt 6.12.0 (iOS + Android) | M | AND-4 | G-ANDROID + G-IOS + G-BUILD | À faire |
+| [IOS-1](tasks/IOS-1-derniers-iphone.md) | Support des derniers iPhone (iOS 27, iPhone 17/18, Air) | M | QT-1 | G-IOS | À faire |
+| [MOB-1](tasks/MOB-1-zones-securite.md) | Zones de sécurité : Dynamic Island iOS et edge-to-edge Android 15+ | M | IOS-1, AND-4 | G-QML-MOBILE | À faire |
+| [AND-9](tasks/AND-9-android-15-16-multiarch.md) | Android 15/16 et matrice multi-architecture | M | AND-5, MOB-1 | G-ANDROID | À faire |
+
 ## Diagramme de parallélisation
 
 Chaque colonne est une lane exécutable par un agent indépendant ; `→` = séquence obligatoire, `‖` = parallèle.

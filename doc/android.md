@@ -236,8 +236,8 @@ The CMake path is the new canonical build. It replaces the qmake +
 
 ### 9.1 Prerequisites
 
-- Android SDK + NDK (NDK r25c+ recommended).
-- Qt 6.6+ for Android (tested with Qt 6.10): install the `android_arm64_v8a`
+- Android SDK + NDK (the NDK the Qt kit was built with: 27.2.12479018 for Qt 6.12; see `ndk_version` in the kit's `modules/Core.json`).
+- Qt 6.6+ for Android (tested with Qt 6.12): install the `android_arm64_v8a`
   target at minimum, plus the host Qt for your machine.
 - `FIREBASE_CPP_SDK_DIR` env set to the Firebase C++ SDK root.
 - KDAB [`android_openssl`](https://github.com/KDAB/android_openssl) prebuilt
@@ -250,11 +250,11 @@ The CMake path is the new canonical build. It replaces the qmake +
 export FIREBASE_CPP_SDK_DIR=/path/to/firebase_cpp_sdk
 
 cmake -S . -B build-android -G Ninja \
-      -DCMAKE_PREFIX_PATH=/path/to/Qt/6.10.0/android_arm64_v8a \
+      -DCMAKE_PREFIX_PATH=/path/to/Qt/6.12.0/android_arm64_v8a \
       -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake \
       -DANDROID_PLATFORM=android-26 \
       -DANDROID_ABI=arm64-v8a \
-      -DQT_HOST_PATH=/path/to/Qt/6.10.0/macos
+      -DQT_HOST_PATH=/path/to/Qt/6.12.0/macos
 ```
 
 For multi-ABI fat APK add `-DQT_ANDROID_ABIS="armeabi-v7a;arm64-v8a;x86;x86_64"`.

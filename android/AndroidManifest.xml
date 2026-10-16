@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!-- Based on the Qt 6.11 template (src/android/templates/AndroidManifest.xml).
+<!-- Based on the Qt 6.12 template (src/android/templates/AndroidManifest.xml).
      The package name is not set here: namespace + applicationId live in build.gradle (AGP 8+).
      Keep the INSERT_* placeholders: androiddeployqt fills them. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
@@ -20,7 +20,7 @@
         android:hardwareAccelerated="true"
         android:label="CalaosHome"
         android:icon="@drawable/icon"
-        android:enableOnBackInvokedCallback="false"
+        android:enableOnBackInvokedCallback="true"
         android:allowBackup="true"
         android:fullBackupOnly="false"
         android:fullBackupContent="@xml/backup_rules"

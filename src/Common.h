@@ -17,14 +17,14 @@ public:
         Loading,
         LoggedIn
     };
-    Q_ENUMS(AppStatus)
+    Q_ENUM(AppStatus)
 
     enum MenuType {
         MenuNone,
         MenuMain,
         MenuBack
     };
-    Q_ENUMS(MenuType)
+    Q_ENUM(MenuType)
 
     enum IOType {
         Unkown = 0,
@@ -78,7 +78,7 @@ public:
         //Device family, state is the mode and the details travel in `device`
         Climate,
     };
-    Q_ENUMS(IOType)
+    Q_ENUM(IOType)
 
     enum FavoriteType {
         FavIO = 0,
@@ -87,7 +87,7 @@ public:
         FavAudio,
         FavCamera
     };
-    Q_ENUMS(FavoriteType)
+    Q_ENUM(FavoriteType)
 
     enum AudioStatusType {
         StatusUnknown = 0,
@@ -95,7 +95,7 @@ public:
         StatusPause,
         StatusStop
     };
-    Q_ENUMS(AudioStatusType)
+    Q_ENUM(AudioStatusType)
 
     enum FilterModelType {
         FilterAll = 0,
@@ -103,14 +103,14 @@ public:
         FilterRight,
         FilterScenario,
     };
-    Q_ENUMS(FilterModelType)
+    Q_ENUM(FilterModelType)
 
     enum EventType {
         EventUnknown = 0,
         EventIoChanged = 3,
         EventPush = 22,
     };
-    Q_ENUMS(EventType)
+    Q_ENUM(EventType)
 
     static QString IOTypeToString(IOType t);
     static IOType IOTypeFromString(QString t, QString style = {});

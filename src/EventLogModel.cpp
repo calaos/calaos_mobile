@@ -98,6 +98,15 @@ EventLogItem::EventLogItem(QQmlApplicationEngine *eng, CalaosConnection *con):
 
 void EventLogItem::load(const QVariantMap &data)
 {
+    /* Roles that only some branches below fill (unknown event type, IO not in
+     * the cache, IO type without an icon) must still hold a string: an unset
+     * role reads as undefined in QML, and since Qt 6.12 undefined passed to a
+     * QString parameter (calaosApp.getPictureSized(evIconSource)) arrives as
+     * the string "undefined" instead of an empty string. */
+    update_evIconSource(QString());
+    update_evActionText(QString());
+    update_evRoomName(QString());
+
     if (data[JsonKeys::EventType] == "3")
     {
         update_evType(Common::EventIoChanged);

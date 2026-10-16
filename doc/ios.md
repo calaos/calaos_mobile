@@ -14,7 +14,7 @@
 | Apple Development Team id | `9WYC46992U` |
 | Keychain Sharing group | `fr.calaos.CalaosMobile` |
 | App Group | `group.fr.calaos.CalaosMobile` |
-| Min iOS | 17.0 (CMake build; matches the Qt 6.11 iOS libraries) |
+| Min iOS | 18.0 (CMake build; floor of the Qt 6.12 iOS libraries) |
 
 These are pinned in [ios/ios.pri](../ios/ios.pri) and
 [ios/AppInfo.plist](../ios/AppInfo.plist):
@@ -218,7 +218,7 @@ requires no manual Xcode-side steps.
 ### 9.1 Prerequisites
 
 - Xcode 15+ with command-line tools.
-- Qt 6.6+ for iOS (tested with Qt 6.10): `qt-unified-installer` target `ios`.
+- Qt 6.6+ for iOS (tested with Qt 6.12): `qt-unified-installer` targets `ios_device` (+ `ios_simulator_arm64`); Qt <= 6.11 ships a single `ios` kit.
 - Apple Developer account with team id `9WYC46992U`.
 
 ### 9.2 Configure
@@ -226,8 +226,9 @@ requires no manual Xcode-side steps.
 ```bash
 cmake -S . -B build-ios -G Xcode \
       -DCMAKE_SYSTEM_NAME=iOS \
-      -DCMAKE_OSX_DEPLOYMENT_TARGET=17.0 \
-      -DCMAKE_PREFIX_PATH=/path/to/Qt/6.10.0/ios \
+      -DCMAKE_OSX_DEPLOYMENT_TARGET=18.0 \
+      -DCMAKE_PREFIX_PATH=/path/to/Qt/6.12.0/ios_device \
+      -DQT_HOST_PATH=/path/to/Qt/6.12.0/macos \
       -DCMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM=9WYC46992U
 ```
 

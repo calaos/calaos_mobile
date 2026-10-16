@@ -26,6 +26,14 @@ public:
 
     virtual void inputTextDialog(const QString &title, const QString &message);
 
+private:
+    //Qt's Android backend (ConnectivityManager default-network callback) feeds
+    //QNetworkInformation; its changes become networkStatusChanged(), like
+    //Reachability does on iOS.
+    void setupNetworkMonitoring();
+    int networkStatusFromQt(bool *known) const;
+
+public:
     //The FCM registration token (from Java: persisted value at startup, then
     //FirebaseMessaging.getToken() and every onNewToken()) goes through
     //HardwareUtils::setDeviceToken(), and notification taps through

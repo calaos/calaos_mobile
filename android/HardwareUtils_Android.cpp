@@ -2,6 +2,7 @@
 #include <QJniObject>
 #include <QJniEnvironment>
 #include <QDebug>
+#include <QCoreApplication>
 #include <QPointer>
 #include <QNetworkInformation>
 #include <jni.h>
@@ -268,11 +269,20 @@ void HardwareUtilsAndroid::inputTextDialog(const QString &title, const QString &
     QJniObject jTitle = QJniObject::fromString(title);
     QJniObject jMessage = QJniObject::fromString(message);
 
+    //Translated here, with the language chosen in the app (Application::setLanguage),
+    //not by Android resources: the app language is independent of the device locale.
+    QJniObject jConfirm = QJniObject::fromString(
+        QCoreApplication::translate("HardwareUtilsAndroid", "Confirm"));
+    QJniObject jCancel = QJniObject::fromString(
+        QCoreApplication::translate("HardwareUtilsAndroid", "Cancel"));
+
     const jboolean shown = QJniObject::callStaticMethod<jboolean>(kHardwareUtilsClass,
                                                                   "inputtextDialog",
-                                                                  "(Ljava/lang/String;Ljava/lang/String;)Z",
+                                                                  "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z",
                                                                   jTitle.object<jstring>(),
-                                                                  jMessage.object<jstring>());
+                                                                  jMessage.object<jstring>(),
+                                                                  jConfirm.object<jstring>(),
+                                                                  jCancel.object<jstring>());
     const bool failed = clearJavaException("HardwareUtils.inputtextDialog");
 
     //No dialog means no answer will ever come back: report a cancel so the

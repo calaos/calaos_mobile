@@ -3,7 +3,12 @@ set -euo pipefail
 
 # ---------------------------------------------------------------------------
 # build_ios.sh — Configure and build the Calaos Home iOS app with CMake/Xcode
-# Usage: ./build_ios.sh [Debug|Release] [--archive]
+# Usage: ./build_ios.sh [Debug|Release] [--archive] [--simulator]
+#   --simulator  build for the iOS simulator (arm64, Qt kit ios_simulator_arm64,
+#                build dir build-ios-sim/), signed ad hoc: no team, no provisioning.
+#                Needs Qt >= 6.12 (the single "ios" kit of older Qt has no
+#                arm64 simulator slice).
+#   --archive    archive + export (device, Release only; Release is implied)
 # Environment overrides: QT_VERSION (default 6.12.0), QT_ROOT (default ~/Qt/$QT_VERSION),
 #   QT_IOS (Qt iOS kit), QT_HOST (Qt macOS host kit), IOS_DEPLOYMENT_TARGET
 # Rolling back to another installed Qt: QT_VERSION=6.11.0 ./tools/build_ios.sh Debug
@@ -14,20 +19,38 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 fail() { echo "ERROR: $1" >&2; exit 1; }
 
-CONFIG="${1:-Debug}"
+USAGE="usage: $0 [Debug|Release] [--archive] [--simulator]"
+CONFIG=""
 ARCHIVE=false
-if [[ "${2:-}" == "--archive" ]]; then
-    ARCHIVE=true
+SIMULATOR=false
+for arg in "$@"; do
+    case "${arg}" in
+        --archive) ARCHIVE=true ;;
+        --simulator) SIMULATOR=true ;;
+        Debug|Release)
+            [[ -z "${CONFIG}" ]] || fail "configuration given twice (${CONFIG}, ${arg}); ${USAGE}"
+            CONFIG="${arg}" ;;
+        *) fail "unknown argument: ${arg}; ${USAGE}" ;;
+    esac
+done
+if [[ "${ARCHIVE}" == true ]]; then
+    [[ "${SIMULATOR}" == false ]] || fail "--archive is for device builds only"
+    # The archive target always builds Release: refuse a Debug request.
+    [[ "${CONFIG:-Release}" == "Release" ]] || fail "--archive builds Release only (got ${CONFIG})"
+    CONFIG="Release"
 fi
+CONFIG="${CONFIG:-Debug}"
 
 # Qt version: the only place to bump it.
 QT_VERSION="${QT_VERSION:-6.12.0}"
 QT_ROOT="${QT_ROOT:-$HOME/Qt/${QT_VERSION}}"
 TEAM_ID="9WYC46992U"
 
-# Target SDK. Only device builds (iphoneos) are wired today; simulator builds
-# (iphonesimulator, Qt kit ios_simulator_arm64) are added by IOS-1.
+# Target SDK: iphoneos (device) or iphonesimulator (--simulator).
 IOS_SDK="iphoneos"
+if [[ "${SIMULATOR}" == true ]]; then
+    IOS_SDK="iphonesimulator"
+fi
 
 # Qt >= 6.12 ships one kit per SDK; Qt <= 6.11 has a single "ios" kit.
 qt_ios_kit() {
@@ -47,8 +70,14 @@ build_dir_for_sdk() {
 
 if [[ -z "${QT_IOS:-}" ]]; then
     QT_IOS="${QT_ROOT}/$(qt_ios_kit "${IOS_SDK}")"
-    if [[ ! -d "${QT_IOS}" && -d "${QT_ROOT}/ios" ]]; then
-        QT_IOS="${QT_ROOT}/ios"
+    if [[ ! -d "${QT_IOS}" ]]; then
+        # The single "ios" kit of Qt <= 6.11 has no arm64 simulator slice: only
+        # device builds can fall back to it. Simulator builds need Qt >= 6.12.
+        if [[ "${SIMULATOR}" == true ]]; then
+            fail "Qt simulator kit not found: ${QT_IOS} (simulator builds need Qt >= 6.12 and its ios_simulator_arm64 kit)"
+        elif [[ -d "${QT_ROOT}/ios" ]]; then
+            QT_IOS="${QT_ROOT}/ios"
+        fi
     fi
 fi
 QT_HOST="${QT_HOST:-${QT_ROOT}/macos}"
@@ -83,6 +112,19 @@ if [[ -f "${BUILD_DIR}/CMakeCache.txt" ]]; then
     fi
 fi
 
+# SDK-specific configure and build arguments.
+SDK_CMAKE_ARGS=()
+XCODEBUILD_ARGS=(-allowProvisioningUpdates)
+if [[ "${SIMULATOR}" == true ]]; then
+    # The simulator kit only has arm64 slices (Apple silicon hosts).
+    SDK_CMAKE_ARGS=(-DCMAKE_OSX_SYSROOT=iphonesimulator -DCMAKE_OSX_ARCHITECTURES=arm64)
+    # No team or provisioning profile: sign ad hoc ("Sign to Run Locally"), which
+    # keeps the entitlements (keychain access group, App Group) the simulator
+    # enforces. Command-line build settings override the target attributes.
+    XCODEBUILD_ARGS=(CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM=
+        PROVISIONING_PROFILE_SPECIFIER=)
+fi
+
 echo "==> Configuring for iOS (${CONFIG}, SDK: ${IOS_SDK}, min iOS ${IOS_DEPLOYMENT_TARGET})"
 echo "    Qt kit: ${QT_IOS}"
 echo "    Qt host: ${QT_HOST}"
@@ -94,7 +136,8 @@ cmake -S "${SCRIPT_DIR}" -B "${BUILD_DIR}" \
     -DQT_HOST_PATH="${QT_HOST}" \
     -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH \
     -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
-    -DCMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM="${TEAM_ID}"
+    -DCMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM="${TEAM_ID}" \
+    ${SDK_CMAKE_ARGS[@]+"${SDK_CMAKE_ARGS[@]}"}
 
 # CMake's Xcode generator leaves "shadow" symlinks in the product dirs
 # (<CONFIG>-<sdk>/) pointing at the actual build products. A regular build and
@@ -117,7 +160,7 @@ echo "==> Building (${CONFIG})"
 clean_stale_symlinks
 cmake --build "${BUILD_DIR}" \
     --config "${CONFIG}" \
-    -- -allowProvisioningUpdates -parallelizeTargets -jobs "$(sysctl -n hw.logicalcpu)"
+    -- "${XCODEBUILD_ARGS[@]}" -parallelizeTargets -jobs "$(sysctl -n hw.logicalcpu)"
 
 if [[ "${ARCHIVE}" == true ]]; then
     echo ""

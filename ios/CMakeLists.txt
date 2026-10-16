@@ -12,6 +12,11 @@ add_executable(PushNotif MACOSX_BUNDLE
     "PushNotif/A0SimpleKeychain+KeyPair.m"
 )
 
+# Privacy manifest of the extension, copied to the root of PushNotif.appex.
+set_source_files_properties(PushNotif/PrivacyInfo.xcprivacy PROPERTIES
+    MACOSX_PACKAGE_LOCATION Resources)
+target_sources(PushNotif PRIVATE PushNotif/PrivacyInfo.xcprivacy)
+
 # Explicitly mark .m files as Objective-C so the Xcode generator sets the
 # correct language type (objective-c, not c). Without this, qt_standard_project_setup()'s
 # global AUTOMOC can cause the Xcode generator to misidentify the language.

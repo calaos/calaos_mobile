@@ -4,8 +4,10 @@
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="sharedpref" path="calaos_push.xml" />
+        <exclude domain="sharedpref" path="calaos_credentials.xml" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="sharedpref" path="calaos_push.xml" />
+        <exclude domain="sharedpref" path="calaos_credentials.xml" />
     </device-transfer>
 </data-extraction-rules>

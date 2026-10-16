@@ -1,12 +1,14 @@
 package fr.calaos.calaoshome;
 
 import android.app.Notification;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.SystemClock;
+import android.service.notification.StatusBarNotification;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
@@ -44,8 +46,10 @@ import org.json.JSONObject;
 //
 // Any failure (no credentials, unreachable server, wrong credentials, no
 // pic_uid, undecodable image) leaves the text notification as it is: there is
-// no error to show the user. Nothing here logs a URL, a credential or image
-// bytes.
+// no error to show the user. After an explicit user logout
+// (CredentialStore.isSessionActive() false) nothing is downloaded, and a
+// notification the user dismissed meanwhile is not re-posted. Nothing here
+// logs a URL, a credential or image bytes.
 //
 // TLS is validated by the system trust store, like NSURLSession on iOS: a
 // server with a self-signed certificate gets the text notification only. The
@@ -155,19 +159,24 @@ public class PushPictureWorker extends Worker
                 return Result.failure();
         }
 
-        String host = CredentialStore.host(ctx);
-        String user = CredentialStore.user(ctx);
-        String pass = CredentialStore.password(ctx);
-        if (host.isEmpty() || user.isEmpty())
-        {
-            Log.i(TAG, "Push picture: no server or credentials stored, text notification kept");
-            return Result.failure();
-        }
-        String api = apiBaseUrl(host);
-
         Bitmap picture;
         try
         {
+            if (!CredentialStore.isSessionActive(ctx))
+            {
+                Log.i(TAG, "Push picture: user logged out, text notification kept");
+                return Result.failure();
+            }
+            String host = CredentialStore.host(ctx);
+            String user = CredentialStore.user(ctx);
+            String pass = CredentialStore.password(ctx);
+            if (host.isEmpty() || user.isEmpty())
+            {
+                Log.i(TAG, "Push picture: no server or credentials stored, text notification kept");
+                return Result.failure();
+            }
+            String api = apiBaseUrl(host);
+
             String json = new String(httpGet(eventUrl(api, user, pass, eventUuid), MAX_JSON_BYTES), "UTF-8");
             String picUid = picUidFromEvent(json);
             if (picUid == null)
@@ -184,11 +193,11 @@ public class PushPictureWorker extends Worker
                 return Result.failure();
             }
         }
-        catch (HttpStatusException e)
+        catch (PermanentFailure e)
         {
-            // Wrong credentials (400), unknown event or picture (404), ...:
-            // a retry would not help.
-            Log.w(TAG, "Push picture: server answered HTTP " + e.status + " for event " + eventUuid);
+            // Wrong credentials (400), unknown event or picture (404), body
+            // over the cap, ...: a retry would not help.
+            Log.w(TAG, "Push picture: " + e.getMessage() + " for event " + eventUuid);
             return Result.failure();
         }
         catch (IOException e)
@@ -210,6 +219,13 @@ public class PushPictureWorker extends Worker
             return Result.failure();
         }
 
+        if (!isNotificationActive(ctx, notificationId))
+        {
+            // Dismissed (or tapped) meanwhile: do not bring it back.
+            Log.i(TAG, "Push picture: notification gone for event " + eventUuid + ", not re-posted");
+            return Result.success();
+        }
+
         CalaosMessagingService.PushPayload payload = new CalaosMessagingService.PushPayload(
             in.getString(KEY_TITLE), in.getString(KEY_BODY), eventUuid);
         Notification n = CalaosMessagingService.buildNotification(ctx, payload)
@@ -223,6 +239,25 @@ public class PushPictureWorker extends Worker
         CalaosMessagingService.showNotification(ctx, notificationId, n);
         Log.i(TAG, "Push picture: notification updated for event " + eventUuid);
         return Result.success();
+    }
+
+    private static boolean isNotificationActive(Context ctx, int id)
+    {
+        NotificationManager nm = ctx.getSystemService(NotificationManager.class);
+        if (nm == null)
+            return true;
+        try
+        {
+            for (StatusBarNotification sbn: nm.getActiveNotifications())
+                if (sbn.getId() == id)
+                    return true;
+            return false;
+        }
+        catch (RuntimeException e)
+        {
+            // Cannot tell: re-post rather than lose the picture.
+            return true;
+        }
     }
 
     // ── URLs (same rules as the iOS extension and CalaosConnection::login) ──
@@ -280,15 +315,24 @@ public class PushPictureWorker extends Worker
 
     // ── HTTP ─────────────────────────────────────────────────────────────
 
-    private static final class HttpStatusException extends IOException
+    // A failure no retry can fix (the message is safe to log: no URL).
+    private static class PermanentFailure extends IOException
     {
         private static final long serialVersionUID = 1L;
-        final int status;
+
+        PermanentFailure(String message)
+        {
+            super(message);
+        }
+    }
+
+    private static final class HttpStatusException extends PermanentFailure
+    {
+        private static final long serialVersionUID = 1L;
 
         HttpStatusException(int status)
         {
-            super("HTTP " + status);
-            this.status = status;
+            super("server answered HTTP " + status);
         }
     }
 
@@ -319,7 +363,7 @@ public class PushPictureWorker extends Worker
                 while ((n = in.read(buf)) > 0)
                 {
                     if (out.size() + n > maxBytes)
-                        throw new IOException("body larger than " + maxBytes + " bytes");
+                        throw new PermanentFailure("body larger than " + maxBytes + " bytes");
                     out.write(buf, 0, n);
                 }
                 return out.toByteArray();

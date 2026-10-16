@@ -479,6 +479,17 @@ public:
     //The session was deliberately closed (logout() since the last explicit
     //login): coming back to the foreground must not log in again.
     bool sessionClosedByUser() const { return reconnectPolicy.isStopped(); }
+    //What the offline banner shows (FIX-10): the link is down (linkDown, as
+    //HardwareUtils reports it) while a session is wanted, i.e. one the link
+    //coming back would open: a session lost with the network, or a login
+    //refused offline and recorded by deferLogin(). Not after a logout (an
+    //automatic login offline is not recorded then), nor once the credentials
+    //were given up on: the network coming back would open nothing.
+    bool waitsForNetwork(bool linkDown) const
+    {
+        return linkDown && reconnectPolicy.wantsConnection() &&
+               !reconnectPolicy.isStopped() && !reconnectPolicy.hasGivenUp();
+    }
 
 private:
     QNetworkAccessManager *accessManager;

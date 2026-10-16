@@ -55,6 +55,17 @@
  *  - reset all data: the logout is forgotten, the demo account still does
  *    not log in by itself.
  *
+ * FIX-10: the modal "No network" alert is replaced by a banner shown while
+ * waitsForNetwork() (Application::waitingForNetwork): no network and a
+ * session wanted, i.e. one that the link coming back opens. Checked along the
+ * same scenarios, next to what the link coming back really does:
+ *
+ *  - offline launch: shown, hidden once the link is back and connected;
+ *  - active session that loses the link: shown during the outage only;
+ *  - logout, then offline (automatic login refused): never shown; a Login
+ *    tapped offline shows it;
+ *  - credentials given up on: not shown, nothing would reconnect.
+ *
  * HTTP transport only: the policy is shared by both transports and the HTTP
  * fake is enough to count logins (one get_home per login).
  */
@@ -209,6 +220,10 @@ private slots:
     void loginAfterRestartClearsTheLogout();
     void noStoredStateLaunchLogsIn();
     void resetAllDataForgetsTheLogout();
+
+    void offlineBannerFollowsTheSessionIntent();
+    void offlineBannerNotShownAfterLogout();
+    void offlineBannerNotShownAfterCredentialsGiveUp();
 
 private:
     //The session goes up through an explicit login, as from the login screen.
@@ -730,6 +745,75 @@ void TstSessionLifecycle::resetAllDataForgetsTheLogout()
     QVERIFY(launchLogin());
     QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
     QCOMPARE(server->logins, 2);
+}
+
+//FIX-10: launched in airplane mode, then the session flaps with the link.
+//The banner is up exactly while the link is down and a session is wanted.
+void TstSessionLifecycle::offlineBannerFollowsTheSessionIntent()
+{
+    //Nothing wanted yet (demo account on the login screen, offline): no banner.
+    QVERIFY(!connection->waitsForNetwork(true));
+
+    networkDown();
+    QVERIFY(launchLoginOffline(TestUser, TestPass));
+    QVERIFY(connection->waitsForNetwork(true));
+
+    networkUp();
+    QVERIFY(!connection->waitsForNetwork(false)); //hidden as soon as the link is back
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
+    QVERIFY(!connection->waitsForNetwork(false));
+
+    //The link drops during the session: shown during the outage only.
+    networkDown();
+    QVERIFY(connection->waitsForNetwork(true));
+    networkUp();
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
+    QVERIFY(!connection->waitsForNetwork(false));
+    QCOMPARE(server->logins, 2);
+}
+
+//FIX-10 + FIX-11: no banner after a deliberate logout, offline, even after a
+//restart; Login tapped offline brings it (and the connection) back.
+void TstSessionLifecycle::offlineBannerNotShownAfterLogout()
+{
+    loginAndWait();
+    sessionUp();
+    userLogout();
+
+    networkDown();
+    QVERIFY(!launchLoginOffline(TestUser, TestPass));
+    QVERIFY(!connection->waitsForNetwork(true));
+
+    restart();
+    networkDown();
+    QVERIFY(!launchLoginOffline(TestUser, TestPass));
+    QVERIFY(!connection->waitsForNetwork(true));
+
+    QVERIFY(typedLoginOffline(TestUser, TestPass));
+    QVERIFY(connection->waitsForNetwork(true));
+    networkUp();
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
+    QVERIFY(!connection->waitsForNetwork(false));
+
+    //Logged out again while offline: the banner goes away with the intent.
+    networkDown();
+    QVERIFY(connection->waitsForNetwork(true));
+    userLogout();
+    QVERIFY(!connection->waitsForNetwork(true));
+}
+
+//FIX-10: the credentials were given up on (rejected MaxAuthFailures times):
+//the link coming back would not reconnect, so there is nothing to wait for.
+void TstSessionLifecycle::offlineBannerNotShownAfterCredentialsGiveUp()
+{
+    connection->login(TypedUser, TypedPass, server->baseUrl());
+    QTRY_VERIFY_WITH_TIMEOUT(server->attempts.size() == ReconnectPolicy::MaxAuthFailures, 15000);
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Disconnected);
+
+    networkDown();
+    QVERIFY(!connection->waitsForNetwork(true));
+    QVERIFY(!launchLoginOffline(TestUser, TestPass)); //an automatic login does not lift the give-up
+    QVERIFY(!connection->waitsForNetwork(true));
 }
 
 QTEST_MAIN(TstSessionLifecycle)

@@ -99,6 +99,10 @@ void HardwareUtilsAndroid::platformInit(QQmlApplicationEngine *e)
 {
     HardwareUtils::platformInit(e);
 
+    //Independent of the JNI registration below: a failure there must not also
+    //disable network monitoring.
+    setupNetworkMonitoring();
+
     //QJniEnvironment resolves the class through Qt's class loader, which
     //a plain FindClass from a native thread does not.
     QJniEnvironment env;
@@ -114,8 +118,6 @@ void HardwareUtilsAndroid::platformInit(QQmlApplicationEngine *e)
         qWarning() << "Android: failed to register native methods on" << kNativesClass;
         return;
     }
-
-    setupNetworkMonitoring();
 
     //From now on Java forwards token refreshes and notification taps.
     QJniObject::callStaticMethod<void>(kHardwareUtilsClass, "setNativesReady", "()V");
@@ -177,6 +179,7 @@ void HardwareUtilsAndroid::setupNetworkMonitoring()
     }
 
     QNetworkInformation *ni = QNetworkInformation::instance();
+    m_lastNetworkStatus = getNetworkStatus();
     qInfo() << "Android: network monitoring backend" << ni->backendName()
             << "reachability" << ni->reachability()
             << "medium" << ni->transportMedium();
@@ -187,13 +190,13 @@ void HardwareUtilsAndroid::setupNetworkMonitoring()
             [this](QNetworkInformation::Reachability r)
     {
         qInfo() << "Android: reachability changed" << r;
-        emitNetworkStatusChanged();
+        emitNetworkStatusIfChanged();
     });
     connect(ni, &QNetworkInformation::transportMediumChanged, this,
             [this](QNetworkInformation::TransportMedium m)
     {
         qInfo() << "Android: transport medium changed" << m;
-        emitNetworkStatusChanged();
+        emitNetworkStatusIfChanged();
     });
 }
 
@@ -226,6 +229,18 @@ int HardwareUtilsAndroid::networkStatusFromQt(bool *known) const
     default:
         return ConnectedWWAN;
     }
+}
+
+//Reachability and transport medium often both change for a single network
+//event; the status is what the app acts on, so emit once per actual change.
+void HardwareUtilsAndroid::emitNetworkStatusIfChanged()
+{
+    const int status = getNetworkStatus();
+    if (status == m_lastNetworkStatus)
+        return;
+
+    m_lastNetworkStatus = status;
+    emitNetworkStatusChanged();
 }
 
 int HardwareUtilsAndroid::getNetworkStatus()

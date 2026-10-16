@@ -26,18 +26,22 @@ public:
 
     virtual void inputTextDialog(const QString &title, const QString &message);
 
+    //The FCM registration token (from Java: persisted value at startup, then
+    //FirebaseMessaging.getToken() and every onNewToken()) goes through
+    //HardwareUtils::setDeviceToken(), and notification taps through
+    //HardwareUtils::handleNotificationOpened(): same policy as iOS.
+
 private:
     //Qt's Android backend (ConnectivityManager default-network callback) feeds
     //QNetworkInformation; its changes become networkStatusChanged(), like
     //Reachability does on iOS.
     void setupNetworkMonitoring();
     int networkStatusFromQt(bool *known) const;
+    void emitNetworkStatusIfChanged();
 
-public:
-    //The FCM registration token (from Java: persisted value at startup, then
-    //FirebaseMessaging.getToken() and every onNewToken()) goes through
-    //HardwareUtils::setDeviceToken(), and notification taps through
-    //HardwareUtils::handleNotificationOpened(): same policy as iOS.
+    //Last status handed out, so one network event reported through both
+    //reachabilityChanged and transportMediumChanged emits only once.
+    int m_lastNetworkStatus = -1;
 };
 
 #endif // HARDWAREUTILS_ANDROID_H

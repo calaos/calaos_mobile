@@ -6,6 +6,9 @@
 //
 
 #import "NotificationService.h"
+#import <fcntl.h>
+#import <sys/file.h>
+#import <unistd.h>
 #import "ios/SimpleKeychain/A0SimpleKeychain.h"
 #import "ios/SimpleKeychain/A0SimpleKeychain+KeyPair.h"
 
@@ -16,11 +19,26 @@
 
 @end
 
+//Shared with the app (ios/HardwareUtils.mm).
+static NSString *const kAppGroup = @"group.fr.calaos.CalaosMobile";
+//Unread notifications shown on the app icon. Incremented here for every push,
+//reset to 0 by the app (launch, become active, push presented in the
+//foreground) and removed by "reset all data".
+static NSString *const kBadgeCountKey = @"calaos.badge_count";
+//flock() file in the App Group container, best effort exclusion between the
+//read-increment-write here, the app's reset (separate process) and concurrent
+//requests in this process. Same name in HardwareUtils.mm.
+static NSString *const kBadgeLockFile = @"calaos.badge_count.lock";
+
 @implementation NotificationService
 
 - (void)didReceiveNotificationRequest:(UNNotificationRequest *)request withContentHandler:(void (^)(UNNotificationContent * _Nonnull))contentHandler {
     self.contentHandler = contentHandler;
     self.bestAttemptContent = [request.content mutableCopy];
+
+    //First, so that every path below (and serviceExtensionTimeWillExpire)
+    //delivers the badge, with or without a picture.
+    self.bestAttemptContent.badge = @([self incrementBadgeCount]);
     
     //Check for attachment
     NSDictionary *userInfo = request.content.userInfo;
@@ -59,11 +77,19 @@
 - (void)serviceExtensionTimeWillExpire {
     // Called just before the extension will be terminated by the system.
     // Use this as an opportunity to deliver your "best attempt" at modified content, otherwise the original push payload will be used.
-    self.contentHandler(self.bestAttemptContent);
+    [self contentComplete];
 }
 
+//Delivers the content once: after serviceExtensionTimeWillExpire, the
+//download completion (another queue) may still come back.
 - (void)contentComplete {
-    self.contentHandler(self.bestAttemptContent);
+    void (^handler)(UNNotificationContent *) = nil;
+    @synchronized (self) {
+        handler = self.contentHandler;
+        self.contentHandler = nil;
+    }
+    if (handler)
+        handler(self.bestAttemptContent);
 }
 
 - (void)loadAttachmentForUuid:(NSString *)uuid
@@ -159,17 +185,43 @@
     [dataTask resume];
 }
 
+//Returns the new unread count. Best effort: without the lock (container
+//unavailable, or the app's reset gave up waiting) or with cfprefsd reordering
+//writes, a race can lose one increment; a kill after the increment but before
+//delivery counts one too many. Either way the badge is off by one until the
+//app resets it.
+- (NSInteger)incrementBadgeCount {
+    int fd = -1;
+    NSURL *container = [[NSFileManager defaultManager] containerURLForSecurityApplicationGroupIdentifier:kAppGroup];
+    if (container != nil) {
+        NSString *lockPath = [container URLByAppendingPathComponent:kBadgeLockFile].path;
+        fd = open(lockPath.fileSystemRepresentation, O_RDWR | O_CREAT | O_CLOEXEC, 0600);
+        if (fd >= 0)
+            flock(fd, LOCK_EX);
+    }
+
+    NSUserDefaults *sharedDefaults = [[NSUserDefaults alloc] initWithSuiteName:kAppGroup];
+    NSInteger count = MAX([sharedDefaults integerForKey:kBadgeCountKey], 0) + 1;
+    [sharedDefaults setInteger:count forKey:kBadgeCountKey];
+
+    if (fd >= 0) {
+        flock(fd, LOCK_UN);
+        close(fd);
+    }
+    return count;
+}
+
 //Written by the app (HardwareUtils_iOS::setSessionActive()): false after an
 //explicit logout, absent (= active) before the first logout or after a reset.
 - (BOOL)isSessionActive {
-    NSUserDefaults *sharedDefaults = [[NSUserDefaults alloc] initWithSuiteName: @"group.fr.calaos.CalaosMobile"];
+    NSUserDefaults *sharedDefaults = [[NSUserDefaults alloc] initWithSuiteName:kAppGroup];
     if ([sharedDefaults objectForKey:@"calaos.session_active"] == nil)
         return YES;
     return [sharedDefaults boolForKey:@"calaos.session_active"];
 }
 
 - (NSString *)getCalaosHost {
-    NSUserDefaults *sharedDefaults = [[NSUserDefaults alloc] initWithSuiteName: @"group.fr.calaos.CalaosMobile"];
+    NSUserDefaults *sharedDefaults = [[NSUserDefaults alloc] initWithSuiteName:kAppGroup];
     
     NSString *h = [sharedDefaults stringForKey:@"calaos.hostname"];
     if ([h hasPrefix:@"http://"] || [h hasPrefix:@"https://"]) {

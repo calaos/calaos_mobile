@@ -128,16 +128,41 @@ embedded via `QMAKE_BUNDLE_DATA += splash`.
 
 | Step | Code |
 |---|---|
-| Request authorization, register with APNs | [ios/HardwareUtils.mm](../ios/HardwareUtils.mm) — `application:didFinishLaunchingWithOptions:` (override of `QIOSApplicationDelegate`) |
-| Receive APNs token | `application:didRegisterForRemoteNotificationsWithDeviceToken:` → `HardwareUtils_iOS::handleRegisterNotif()` → `HardwareUtils::setDeviceToken()` |
+| Request authorization, register with APNs | [ios/HardwareUtils.mm](../ios/HardwareUtils.mm) — `HardwareUtils_iOS::platformInit()` (called from `main()` once `QGuiApplication` exists, still inside the launch sequence) |
+| Receive APNs token | `application:didRegisterForRemoteNotificationsWithDeviceToken:` installed at runtime on Qt's application delegate (`hookApplicationDelegate()`) → `HardwareUtils_iOS::handleRegisterNotif()` → `HardwareUtils::setDeviceToken()` |
 | Token registered with `calaos_server` | `CalaosConnection` sends `register_push` at login, and again on `HardwareUtils::deviceTokenChanged()` while logged in (token arriving after the login) |
 | Encrypted payload received in background | `PushNotif.appex` (`ios/PushNotif/NotificationService.m`) — decrypts using keys stored in the shared keychain (`A0SimpleKeychain+KeyPair`) and rewrites the `UNNotificationContent` before display |
-| User taps notification while logged in | `userNotificationCenter:didReceiveNotificationResponse:` → `HardwareUtils::handleNotificationOpened(uuid)` → `pushNotifReceived(uuid)` → `Application::pushNotificationReceived(uuid)` → QuickFlux dispatch |
+| User taps notification while logged in | `userNotificationCenter:didReceiveNotificationResponse:` (app-owned `CalaosNotificationDelegate`) → `HardwareUtils::handleNotificationOpened(uuid)` → `pushNotifReceived(uuid)` → `Application::pushNotificationReceived(uuid)` → QuickFlux dispatch |
 | User taps notification while not logged in (closed, background, reconnecting) | Same entry point; the uuid is kept and `Application::homeLoaded()` opens it once at the next login (`HardwareUtils::takePendingNotif()`, `DeferredNotifGate`: a session that drops before the event is shown hands it back to the next login) |
-| Push **arrives** (no tap), app in the foreground or woken in the background | `application:didReceiveRemoteNotification:fetchCompletionHandler:` → `HardwareUtils::handleNotificationOpened(uuid)`: the event is opened as if tapped, right away when logged in, otherwise at the next login. Long-standing product behaviour, deliberately unchanged by FIX-3 |
+| Push **arrives** (no tap), app in the foreground or woken in the background | `application:didReceiveRemoteNotification:fetchCompletionHandler:` (runtime hook on Qt's application delegate) → `HardwareUtils::handleNotificationOpened(uuid)`: the event is opened as if tapped, right away when logged in, otherwise at the next login. Long-standing product behaviour, deliberately unchanged by FIX-3 |
+| Push **displayed** with the app in the background or killed (icon badge, IOS-3) | `PushNotif.appex` increments `calaos.badge_count` in the App Group suite and sets `bestAttemptContent.badge` to it, first thing, so every path (picture or not, logged out, `serviceExtensionTimeWillExpire`) carries the badge. Needs `mutable-content: 1` in the payload (`calaos_server` sets it on every iOS push); without it the extension does not run and there is no badge |
+| Badge cleared | `resetBadge()` in `ios/HardwareUtils.mm` sets the counter and the badge to 0 at launch (`platformInit()`), on `UIApplicationDidBecomeActiveNotification`, and when a push is presented in the foreground (`willPresentNotification:`, presented without the badge option). `resetAuthKeychain()` ("reset all data") removes the key |
+
+Badge counter: the app and the extension are separate processes. The
+extension's read-increment-write and the app's reset both take an exclusive
+`flock()` on `calaos.badge_count.lock` in the App Group container, which also
+covers concurrent extension requests. This is best effort: the extension waits
+for the lock, the app (main thread) tries a few times for about 10 ms and then
+goes on without it, the lock is skipped if the container cannot be opened, and
+the defaults are written through cfprefsd whose ordering across processes is
+not guaranteed. In those cases, or if the extension is killed after the
+increment but before its content is delivered, the badge can be off by one
+until the next launch, which resets it. The App Group suite therefore carries `calaos.hostname`,
+`calaos.session_active` and `calaos.badge_count` (privacy reason 1C8F.1 in both
+manifests).
 
 Background mode `remote-notification` is declared in
 [ios/AppInfo.plist](../ios/AppInfo.plist) (`UIBackgroundModes`).
+
+Application delegate (IOS-2): Qt owns the `UIApplication` delegate
+(`QIOSApplicationDelegate`, private) and, since Qt 6.12, installs it only while
+`QGuiApplication` is constructed (`UIApplicationMain()` starts with a placeholder,
+`QIOSDynamicSceneDelegate`). Never put a category on Qt's delegate classes: it is
+not sent `application:didFinishLaunchingWithOptions:` any more, and a category
+silently replaces any method Qt adds later. The callbacks UIKit only sends to the
+application or scene delegate are installed at runtime by `installHook()` (added
+when missing, otherwise swizzled with Qt's implementation still called), see the
+comment at the top of `ios/HardwareUtils.mm`.
 
 ## 5. UI / system integration
 
@@ -163,8 +188,11 @@ Background mode `remote-notification` is declared in
   `nm -u CalaosHome.app/CalaosHome | grep -E '^_(f|l)?stat(at)?$|statv?fs|getattrlist|mach_absolute_time|CFPreferences|NSUserDefaults'`
   and `strings -a CalaosHome.app/CalaosHome | grep -xE 'systemUptime|activeInputModes'`.
 - Native alerts go through [ios/AlertPrompt.m](../ios/AlertPrompt.m).
-- 3D Touch / Quick Actions are forwarded through
-  `application:performActionForShortcutItem:` → `handlePerformActionForShortcutItem`,
+- 3D Touch / Quick Actions: the app uses scenes (Qt does), so UIKit hands them to the
+  window scene delegate: `windowScene:performActionForShortcutItem:completionHandler:`
+  (app running) or the connection options of `scene:willConnectToSession:options:`
+  (cold launch), both hooked on Qt's `QIOSWindowSceneDelegate` →
+  `handlePerformActionForShortcutItem`,
   exposed to QML via `HardwareUtils::getStartOption()` and
   `HardwareUtils::setQuickLinks()`.
 

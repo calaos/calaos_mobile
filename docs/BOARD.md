@@ -99,6 +99,7 @@ La version Android n'a jamais fonctionné en Qt 6. Analyse et plan validés par 
 | [AND-8](tasks/AND-8-clavier-apres-login.md) | Le clavier reste ouvert après le login | S | — | G-QML-MOBILE | Terminé |
 
 Suivis issus des revues (à traiter dans le ticket indiqué) :
+- Passage iPhone 15 Pro (2026-10-17, Qt 6.12) validé par Raoul : affichage Dynamic Island/120 Hz, arrière-plan, déconnexion persistante, lancement hors ligne + bandeau, bouton X, push premier plan/arrière-plan/app tuée avec image, tap → événement (y compris à froid), Quick Actions à froid et en arrière-plan. Pastille (IOS-3) validée le 2026-10-17 après déploiement de `mutable-content` côté calaos_server. Restent : AND-9 en armv7 et FIX-3 (tap pendant une reconnexion) sur appareil ; MOB-1 iPad paysage non vérifié.
 - AND-7 validé de bout en bout le 2026-10-17 : changement calaos_base déployé (messages FCM data seuls pour les jetons `push_format: "data"`), push reçu avec l'image de caméra, app tuée (test Raoul).
 - AND-5 : `android/build.gradle` `useLegacyPackaging = legacyPackaging` reçoit la chaîne `"false"`, évaluée à vrai par Groovy → les `.so` sont compressés dans l'APK (`extractNativeLibs=true`). Trancher (`.toBoolean()` ou compression assumée) avant la release ; la permission `WRITE_EXTERNAL_STORAGE` insérée par Qt est inutile (`tools:node="remove"` ou `maxSdkVersion`).
 - AND-5 : configurer avec le seul ABI `x86_64` s'arrête sur une erreur CMake non analysée (constaté pendant AND-1).
@@ -128,10 +129,12 @@ Ordre : AND-4 → QT-1 → (IOS-1 ∥ AND-7) → MOB-1 → AND-5 → AND-9 → A
 
 | ID | Titre | Taille | Bloqué par | Groupe | Statut |
 |---|---|---|---|---|---|
-| [QT-1](tasks/QT-1-upgrade-qt-6-12.md) | Migration Qt 6.11.0 → Qt 6.12.0 (iOS + Android) | M | AND-4 | G-ANDROID + G-IOS + G-BUILD | En revue |
-| [IOS-1](tasks/IOS-1-derniers-iphone.md) | Support des derniers iPhone (iOS 27, iPhone 17/18, Air) | M | QT-1 | G-IOS | En revue |
-| [MOB-1](tasks/MOB-1-zones-securite.md) | Zones de sécurité : Dynamic Island iOS et edge-to-edge Android 15+ | M | IOS-1, AND-4 | G-QML-MOBILE | En revue |
+| [QT-1](tasks/QT-1-upgrade-qt-6-12.md) | Migration Qt 6.11.0 → Qt 6.12.0 (iOS + Android) | M | AND-4 | G-ANDROID + G-IOS + G-BUILD | Terminé |
+| [IOS-1](tasks/IOS-1-derniers-iphone.md) | Support des derniers iPhone (iOS 27, iPhone 17/18, Air) | M | QT-1 | G-IOS | Terminé |
+| [MOB-1](tasks/MOB-1-zones-securite.md) | Zones de sécurité : Dynamic Island iOS et edge-to-edge Android 15+ | M | IOS-1, AND-4 | G-QML-MOBILE | Terminé |
 | [AND-9](tasks/AND-9-android-15-16-multiarch.md) | Android 15/16 et matrice multi-architecture | M | AND-5, MOB-1 | G-ANDROID | En revue |
+| [IOS-2](tasks/IOS-2-push-ios-qt612.md) | Push iOS sous Qt 6.12 : conflit avec le délégué d'application de Qt | M | — | G-IOS | Terminé |
+| [IOS-3](tasks/IOS-3-pastille-icone.md) | Pastille de l'icône iOS : compteur de notifications non lues | S | IOS-2 | G-IOS | Terminé |
 
 ## P-FIX — Petits bugs constatés pendant P-AND
 
@@ -147,12 +150,12 @@ Exécution parallèle : chaque ticket lancé en parallèle travaille dans son pr
 | [FIX-4](tasks/FIX-4-reseau-android-changements.md) | Android : détecter les changements de réseau en cours d'exécution | S | FIX-3 | G-ANDROID | Terminé |
 | [FIX-5](tasks/FIX-5-dialogue-android-i18n.md) | Android : libellés traduits des dialogues natifs | S | FIX-4 | G-ANDROID | Terminé |
 | [FIX-6](tasks/FIX-6-check-sources-pwd.md) | tools/check_sources.sh : faux positifs sur les chemins `$$PWD/src/...` | S | — | G-BUILD | Terminé |
-| [FIX-7](tasks/FIX-7-reconnexion-apres-logout.md) | Pas de reconnexion automatique après une déconnexion volontaire | S | AND-7 | G-CONN | En revue |
-| [FIX-8](tasks/FIX-8-identifiants-tapes-ecrases.md) | Un changement de réseau écrase les identifiants tapés sur l'écran de login | S | FIX-7 | G-CONN | En revue |
-| [FIX-9](tasks/FIX-9-demarrage-hors-ligne.md) | App lancée hors ligne : se connecter quand le réseau revient | S | FIX-8 | G-CONN | En revue |
-| [FIX-10](tasks/FIX-10-bandeau-hors-ligne.md) | Bandeau « hors ligne » à la place de l'alerte modale « No network » | S | FIX-11, AND-9 | G-QML-MOBILE + G-CONN | En revue |
-| [FIX-11](tasks/FIX-11-deconnexion-persistante.md) | Mémoriser la déconnexion volontaire entre deux lancements | S | FIX-9 | G-CONN + G-ANDROID | En revue |
-| [FIX-12](tasks/FIX-12-effacer-mot-de-passe.md) | Le bouton « effacer » du champ mot de passe n'efface rien | S | FIX-10 | G-QML-MOBILE | En revue |
+| [FIX-7](tasks/FIX-7-reconnexion-apres-logout.md) | Pas de reconnexion automatique après une déconnexion volontaire | S | AND-7 | G-CONN | Terminé |
+| [FIX-8](tasks/FIX-8-identifiants-tapes-ecrases.md) | Un changement de réseau écrase les identifiants tapés sur l'écran de login | S | FIX-7 | G-CONN | Terminé |
+| [FIX-9](tasks/FIX-9-demarrage-hors-ligne.md) | App lancée hors ligne : se connecter quand le réseau revient | S | FIX-8 | G-CONN | Terminé |
+| [FIX-10](tasks/FIX-10-bandeau-hors-ligne.md) | Bandeau « hors ligne » à la place de l'alerte modale « No network » | S | FIX-11, AND-9 | G-QML-MOBILE + G-CONN | Terminé |
+| [FIX-11](tasks/FIX-11-deconnexion-persistante.md) | Mémoriser la déconnexion volontaire entre deux lancements | S | FIX-9 | G-CONN + G-ANDROID | Terminé |
+| [FIX-12](tasks/FIX-12-effacer-mot-de-passe.md) | Le bouton « effacer » du champ mot de passe n'efface rien | S | FIX-10 | G-QML-MOBILE | Terminé |
 
 ## Diagramme de parallélisation
 

@@ -22,7 +22,7 @@
  Qt has no public API for the APNs token or remote notifications.
 
  Instead:
- - the launch work (badge, status bar, notification center delegate, APNs
+ - the launch work (badge, notification center delegate, APNs
    registration) runs from HardwareUtils_iOS::platformInit(), i.e. from main()
    before the event loop starts, still inside the launch sequence;
  - notification taps and foreground presentation go through an app-owned
@@ -44,17 +44,25 @@ HardwareUtils_iOS *iosUtils()
 //Installs block as the implementation of sel on cls. Returns the
 //implementation the class responded with before (its own or an inherited
 //one), which the hook must call, or nullptr when there was none.
+//Must be called once per class and selector: a second call would chain the
+//hook to itself.
 IMP installHook(Class cls, SEL sel, Protocol *proto, id block)
 {
-    IMP imp = imp_implementationWithBlock(block);
     Method m = class_getInstanceMethod(cls, sel);
     if (!m)
     {
         const char *types = protocol_getMethodDescription(proto, sel, NO, YES).types;
-        class_addMethod(cls, sel, imp, types);
+        if (!types)
+        {
+            qWarning() << "No type encoding for" << sel_getName(sel) << "in"
+                       << protocol_getName(proto) << ": not hooked";
+            return nullptr;
+        }
+        class_addMethod(cls, sel, imp_implementationWithBlock(block), types);
         return nullptr;
     }
 
+    IMP imp = imp_implementationWithBlock(block);
     IMP previous = method_getImplementation(m);
     //Inherited: add an override on cls. Defined on cls itself: replace it.
     if (!class_addMethod(cls, sel, imp, method_getTypeEncoding(m)))
@@ -70,6 +78,10 @@ IMP qtPerformShortcut = nullptr;
 
 void hookApplicationDelegate()
 {
+    static bool installed = false;
+    if (installed)
+        return;
+
     UIApplication *app = [UIApplication sharedApplication];
     id<UIApplicationDelegate> delegate = app.delegate;
     if (!delegate)
@@ -78,7 +90,11 @@ void hookApplicationDelegate()
         return;
     }
 
+    installed = true;
     Class cls = object_getClass(delegate);
+    if (![NSStringFromClass(cls) isEqualToString:@"QIOSApplicationDelegate"])
+        qWarning() << "Unexpected application delegate class"
+                   << QString::fromNSString(NSStringFromClass(cls)) << ", hooked anyway";
     Protocol *proto = @protocol(UIApplicationDelegate);
 
     const SEL didRegister = @selector(application:didRegisterForRemoteNotificationsWithDeviceToken:);
@@ -141,6 +157,11 @@ void hookApplicationDelegate()
 
 void hookSceneDelegate()
 {
+    static bool installed = false;
+    if (installed)
+        return;
+    installed = true;
+
     //Qt makes this class the delegate of every application window scene
     //(QIOSApplicationDelegate application:configurationForConnectingSceneSession:options:).
     //With scenes, UIKit hands Quick Actions to the scene delegate only, never
@@ -166,6 +187,13 @@ void hookSceneDelegate()
         //options, windowScene:performActionForShortcutItem: is not called.
         if (options.shortcutItem)
             iosUtils()->handlePerformActionForShortcutItem(options.shortcutItem);
+
+        //Launched by a notification tap: UIKit also sends it to the
+        //notification center delegate; handled here too in case it does not
+        //(handleNotificationOpened() only keeps the latest uuid until login).
+        NSString *uuid = options.notificationResponse.notification.request.content.userInfo[@"event_uuid"];
+        if (uuid != nil)
+            HardwareUtils::Instance()->handleNotificationOpened(QString::fromNSString(uuid));
     });
 
     const SEL performShortcut = @selector(windowScene:performActionForShortcutItem:completionHandler:);
@@ -370,17 +398,19 @@ void HardwareUtils_iOS::platformInit(QQmlApplicationEngine *e)
     HardwareUtils::platformInit(e);
 
     //QGuiApplication exists: Qt has installed its application delegate. Still
-    //inside the launch sequence (main() runs before UIKit finishes launching),
-    //so the scene is not connected yet and the notification center delegate
-    //is set in time for a tap that launched the app.
+    //inside the launch sequence (main() runs from
+    //UIApplicationDidFinishLaunchingNotification, before the event loop), so
+    //the scene is not connected yet and the notification center delegate is
+    //set in time for a tap that launched the app.
     hookApplicationDelegate();
     hookSceneDelegate();
 
     UIApplication *app = [UIApplication sharedApplication];
     UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
 
+    //Status bar style: UIStatusBarStyle in AppInfo.plist
+    //(UIViewControllerBasedStatusBarAppearance = false).
     [center setBadgeCount:0 withCompletionHandler:nil];
-    [app setStatusBarStyle:UIStatusBarStyleLightContent];
 
     notificationDelegate = [[CalaosNotificationDelegate alloc] init];
     center.delegate = notificationDelegate;
@@ -478,20 +508,6 @@ void HardwareUtils_iOS::inputTextDialog(const QString &title, const QString &mes
                          message:message.toNSString()
                           cancel:cancel.toNSString()
                          confirm:valid.toNSString()];
-}
-
-void HardwareUtils_iOS::handleApplicationDidFinishLaunching(void *n)
-{
-    NSDictionary *launchOptions = reinterpret_cast<NSDictionary *>(n);
-    qDebug() << "handleApplicationDidFinishLaunching: " << launchOptions;
-
-    //This gets if our app has been launched with options by clicking on a quick action
-    UIApplicationShortcutItem *shortcutItem = [launchOptions objectForKey:UIApplicationLaunchOptionsShortcutItemKey];
-    if(shortcutItem)
-    {
-        startedWithOpt = true;
-        ioStartShortcut = QString::fromNSString(shortcutItem.type);
-    }
 }
 
 void HardwareUtils_iOS::handlePerformActionForShortcutItem(void *shortcut)

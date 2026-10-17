@@ -46,7 +46,6 @@ public:
     virtual QString getStartOption(const QString &key);
     virtual void setQuickLinks(QVariantList quicklinks);
 
-    void handleApplicationDidFinishLaunching(void *notif);
     void handlePerformActionForShortcutItem(void *shortcut);
     void handleRegisterNotif(void *data);
     void handleRegisterNotifFail(void *err);

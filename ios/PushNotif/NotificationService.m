@@ -77,11 +77,19 @@ static NSString *const kBadgeLockFile = @"calaos.badge_count.lock";
 - (void)serviceExtensionTimeWillExpire {
     // Called just before the extension will be terminated by the system.
     // Use this as an opportunity to deliver your "best attempt" at modified content, otherwise the original push payload will be used.
-    self.contentHandler(self.bestAttemptContent);
+    [self contentComplete];
 }
 
+//Delivers the content once: after serviceExtensionTimeWillExpire, the
+//download completion (another queue) may still come back.
 - (void)contentComplete {
-    self.contentHandler(self.bestAttemptContent);
+    void (^handler)(UNNotificationContent *) = nil;
+    @synchronized (self) {
+        handler = self.contentHandler;
+        self.contentHandler = nil;
+    }
+    if (handler)
+        handler(self.bestAttemptContent);
 }
 
 - (void)loadAttachmentForUuid:(NSString *)uuid

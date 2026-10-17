@@ -538,11 +538,12 @@ void HardwareUtils_iOS::handleRegisterNotif(void *data)
 {
     NSData *tokenData = reinterpret_cast<NSData *>(data);
 
-    const unsigned *tokenBytes = (const unsigned*)[tokenData bytes];
-    NSString *tokenStr = [NSString stringWithFormat:@"%08x%08x%08x%08x%08x%08x%08x%08x",
-            ntohl(tokenBytes[0]), ntohl(tokenBytes[1]), ntohl(tokenBytes[2]),
-            ntohl(tokenBytes[3]), ntohl(tokenBytes[4]), ntohl(tokenBytes[5]),
-            ntohl(tokenBytes[6]), ntohl(tokenBytes[7])];
+    //Hex of every byte: APNs tokens have no fixed length (32 bytes on
+    //devices today, 80 on the iOS 27 simulator).
+    const unsigned char *bytes = static_cast<const unsigned char *>(tokenData.bytes);
+    NSMutableString *tokenStr = [NSMutableString stringWithCapacity:tokenData.length * 2];
+    for (NSUInteger i = 0; i < tokenData.length; i++)
+        [tokenStr appendFormat:@"%02x", bytes[i]];
     //Emits deviceTokenChanged() when the token is new or rotated, so that a
     //token reported after the login still reaches calaos_server.
     setDeviceToken(QString::fromNSString(tokenStr));

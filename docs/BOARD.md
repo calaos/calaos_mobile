@@ -99,7 +99,7 @@ La version Android n'a jamais fonctionné en Qt 6. Analyse et plan validés par 
 | [AND-8](tasks/AND-8-clavier-apres-login.md) | Le clavier reste ouvert après le login | S | — | G-QML-MOBILE | Terminé |
 
 Suivis issus des revues (à traiter dans le ticket indiqué) :
-- Passage iPhone 15 Pro (2026-10-17, Qt 6.12) validé par Raoul : affichage Dynamic Island/120 Hz, arrière-plan, déconnexion persistante, lancement hors ligne + bandeau, bouton X, push premier plan/arrière-plan/app tuée avec image, tap → événement (y compris à froid), Quick Actions à froid et en arrière-plan. Restent : IOS-3 (pastille) à tester une fois `mutable-content` déployé côté calaos_server ; AND-9 en armv7 et FIX-3 (tap pendant une reconnexion) sur appareil ; MOB-1 iPad paysage non vérifié.
+- Passage iPhone 15 Pro (2026-10-17, Qt 6.12) validé par Raoul : affichage Dynamic Island/120 Hz, arrière-plan, déconnexion persistante, lancement hors ligne + bandeau, bouton X, push premier plan/arrière-plan/app tuée avec image, tap → événement (y compris à froid), Quick Actions à froid et en arrière-plan. Pastille (IOS-3) validée le 2026-10-17 après déploiement de `mutable-content` côté calaos_server. Restent : AND-9 en armv7 et FIX-3 (tap pendant une reconnexion) sur appareil ; MOB-1 iPad paysage non vérifié.
 - AND-7 validé de bout en bout le 2026-10-17 : changement calaos_base déployé (messages FCM data seuls pour les jetons `push_format: "data"`), push reçu avec l'image de caméra, app tuée (test Raoul).
 - AND-5 : `android/build.gradle` `useLegacyPackaging = legacyPackaging` reçoit la chaîne `"false"`, évaluée à vrai par Groovy → les `.so` sont compressés dans l'APK (`extractNativeLibs=true`). Trancher (`.toBoolean()` ou compression assumée) avant la release ; la permission `WRITE_EXTERNAL_STORAGE` insérée par Qt est inutile (`tools:node="remove"` ou `maxSdkVersion`).
 - AND-5 : configurer avec le seul ABI `x86_64` s'arrête sur une erreur CMake non analysée (constaté pendant AND-1).
@@ -134,7 +134,7 @@ Ordre : AND-4 → QT-1 → (IOS-1 ∥ AND-7) → MOB-1 → AND-5 → AND-9 → A
 | [MOB-1](tasks/MOB-1-zones-securite.md) | Zones de sécurité : Dynamic Island iOS et edge-to-edge Android 15+ | M | IOS-1, AND-4 | G-QML-MOBILE | Terminé |
 | [AND-9](tasks/AND-9-android-15-16-multiarch.md) | Android 15/16 et matrice multi-architecture | M | AND-5, MOB-1 | G-ANDROID | En revue |
 | [IOS-2](tasks/IOS-2-push-ios-qt612.md) | Push iOS sous Qt 6.12 : conflit avec le délégué d'application de Qt | M | — | G-IOS | Terminé |
-| [IOS-3](tasks/IOS-3-pastille-icone.md) | Pastille de l'icône iOS : compteur de notifications non lues | S | IOS-2 | G-IOS | En revue |
+| [IOS-3](tasks/IOS-3-pastille-icone.md) | Pastille de l'icône iOS : compteur de notifications non lues | S | IOS-2 | G-IOS | Terminé |
 
 ## P-FIX — Petits bugs constatés pendant P-AND
 

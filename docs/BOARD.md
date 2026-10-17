@@ -132,6 +132,7 @@ Ordre : AND-4 → QT-1 → (IOS-1 ∥ AND-7) → MOB-1 → AND-5 → AND-9 → A
 | [IOS-1](tasks/IOS-1-derniers-iphone.md) | Support des derniers iPhone (iOS 27, iPhone 17/18, Air) | M | QT-1 | G-IOS | En revue |
 | [MOB-1](tasks/MOB-1-zones-securite.md) | Zones de sécurité : Dynamic Island iOS et edge-to-edge Android 15+ | M | IOS-1, AND-4 | G-QML-MOBILE | En revue |
 | [AND-9](tasks/AND-9-android-15-16-multiarch.md) | Android 15/16 et matrice multi-architecture | M | AND-5, MOB-1 | G-ANDROID | En revue |
+| [IOS-2](tasks/IOS-2-push-ios-qt612.md) | Push iOS sous Qt 6.12 : conflit avec le délégué d'application de Qt | M | — | G-IOS | En cours |
 
 ## P-FIX — Petits bugs constatés pendant P-AND
 

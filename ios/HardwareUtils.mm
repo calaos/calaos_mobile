@@ -200,12 +200,10 @@ void hookSceneDelegate()
         if (options.shortcutItem)
             iosUtils()->handlePerformActionForShortcutItem(options.shortcutItem);
 
-        //Launched by a notification tap: UIKit also sends it to the
-        //notification center delegate; handled here too in case it does not
-        //(handleNotificationOpened() only keeps the latest uuid until login).
-        NSString *uuid = options.notificationResponse.notification.request.content.userInfo[@"event_uuid"];
-        if (uuid != nil)
-            HardwareUtils::Instance()->handleNotificationOpened(QString::fromNSString(uuid));
+        //A notification tap that launched the app (options.notificationResponse)
+        //is not handled here: UIKit sends it to the notification center
+        //delegate (CalaosNotificationDelegate); handling it here as well opens
+        //the event twice when that callback arrives after the login.
     });
 
     const SEL performShortcut = @selector(windowScene:performActionForShortcutItem:completionHandler:);

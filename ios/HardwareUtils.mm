@@ -223,8 +223,11 @@ void hookSceneDelegate()
 }
 
 //Runs block on the unread counter under the lock the extension takes for its
-//read-increment-write (best effort: without the container, an increment racing
-//with the block can be lost, i.e. a badge off by one).
+//read-increment-write. Best effort: called on the main thread, so it never
+//waits for an extension that holds the lock (about 10 ms at most, then the
+//block runs unlocked); without the lock, or with cfprefsd reordering writes,
+//an increment racing with the block can be lost (badge off by one until the
+//next reset).
 void withBadgeCountLocked(void (^block)(NSUserDefaults *sharedDefaults))
 {
     int fd = -1;
@@ -234,19 +237,24 @@ void withBadgeCountLocked(void (^block)(NSUserDefaults *sharedDefaults))
     {
         NSString *lockPath = [container URLByAppendingPathComponent:kBadgeLockFile].path;
         fd = open(lockPath.fileSystemRepresentation, O_RDWR | O_CREAT | O_CLOEXEC, 0600);
-        if (fd >= 0)
-            flock(fd, LOCK_EX);
+    }
+
+    bool locked = false;
+    for (int attempt = 0; fd >= 0 && !locked && attempt < 5; attempt++)
+    {
+        if (attempt > 0)
+            usleep(2000);
+        locked = flock(fd, LOCK_EX | LOCK_NB) == 0;
     }
 
     NSUserDefaults *sharedDefaults = [[NSUserDefaults alloc] initWithSuiteName:kAppGroup];
     block(sharedDefaults);
     [sharedDefaults release];
 
-    if (fd >= 0)
-    {
+    if (locked)
         flock(fd, LOCK_UN);
+    if (fd >= 0)
         close(fd);
-    }
 }
 
 //The user is looking at the app: nothing is unread any more.

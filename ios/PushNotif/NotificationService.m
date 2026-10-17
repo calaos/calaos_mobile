@@ -25,9 +25,9 @@ static NSString *const kAppGroup = @"group.fr.calaos.CalaosMobile";
 //reset to 0 by the app (launch, become active, push presented in the
 //foreground) and removed by "reset all data".
 static NSString *const kBadgeCountKey = @"calaos.badge_count";
-//flock() file in the App Group container, serializing the read-increment-write
-//here with the app's reset (separate processes) and with concurrent requests
-//in this process. Same name in HardwareUtils.mm.
+//flock() file in the App Group container, best effort exclusion between the
+//read-increment-write here, the app's reset (separate process) and concurrent
+//requests in this process. Same name in HardwareUtils.mm.
 static NSString *const kBadgeLockFile = @"calaos.badge_count.lock";
 
 @implementation NotificationService
@@ -177,9 +177,11 @@ static NSString *const kBadgeLockFile = @"calaos.badge_count.lock";
     [dataTask resume];
 }
 
-//Returns the new unread count. The lock is best effort: without it (container
-//unavailable), two pushes racing with each other or with the app's reset can
-//lose one increment, i.e. a badge off by one.
+//Returns the new unread count. Best effort: without the lock (container
+//unavailable, or the app's reset gave up waiting) or with cfprefsd reordering
+//writes, a race can lose one increment; a kill after the increment but before
+//delivery counts one too many. Either way the badge is off by one until the
+//app resets it.
 - (NSInteger)incrementBadgeCount {
     int fd = -1;
     NSURL *container = [[NSFileManager defaultManager] containerURLForSecurityApplicationGroupIdentifier:kAppGroup];
@@ -204,14 +206,14 @@ static NSString *const kBadgeLockFile = @"calaos.badge_count.lock";
 //Written by the app (HardwareUtils_iOS::setSessionActive()): false after an
 //explicit logout, absent (= active) before the first logout or after a reset.
 - (BOOL)isSessionActive {
-    NSUserDefaults *sharedDefaults = [[NSUserDefaults alloc] initWithSuiteName: @"group.fr.calaos.CalaosMobile"];
+    NSUserDefaults *sharedDefaults = [[NSUserDefaults alloc] initWithSuiteName:kAppGroup];
     if ([sharedDefaults objectForKey:@"calaos.session_active"] == nil)
         return YES;
     return [sharedDefaults boolForKey:@"calaos.session_active"];
 }
 
 - (NSString *)getCalaosHost {
-    NSUserDefaults *sharedDefaults = [[NSUserDefaults alloc] initWithSuiteName: @"group.fr.calaos.CalaosMobile"];
+    NSUserDefaults *sharedDefaults = [[NSUserDefaults alloc] initWithSuiteName:kAppGroup];
     
     NSString *h = [sharedDefaults stringForKey:@"calaos.hostname"];
     if ([h hasPrefix:@"http://"] || [h hasPrefix:@"https://"]) {

@@ -1,163 +1,214 @@
 #import "HardwareUtils_iOS.h"
 #import <UIKit/UIKit.h>
 #import <UserNotifications/UserNotifications.h>
+#import <objc/runtime.h>
 #import "Reachability.h"
 #import "SimpleKeychain/A0SimpleKeychain.h"
 #import "SimpleKeychain/A0SimpleKeychain+KeyPair.h"
 #import "../src/Common.h"
 
-#define SYSTEM_VERSION_GRATERTHAN_OR_EQUALTO(v)  ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] != NSOrderedAscending)
+/*
+ Application delegate integration (IOS-2).
 
-// override QIOSApplicationDelegate to get
-// launch options via didFinishLaunchingWithOptions.
-// and performActionForShortcutItem
+ Qt owns the UIApplication delegate (QIOSApplicationDelegate, a private class).
+ Since Qt 6.12, UIApplicationMain() starts with a placeholder delegate
+ (QIOSDynamicSceneDelegate, src/entrypoint/qtentrypoint_ios.mm) and main() runs
+ from UIApplicationDidFinishLaunchingNotification; QIOSIntegration only installs
+ QIOSApplicationDelegate while QGuiApplication is constructed. Neither class
+ implements application:didFinishLaunchingWithOptions:, the push callbacks or
+ the Quick Action callbacks, but QIOSApplicationDelegate is no longer the
+ delegate at launch: the category the app used to put on it was never sent
+ didFinishLaunchingWithOptions:, so the app never registered with APNs.
+ Qt has no public API for the APNs token or remote notifications.
 
-// This is hidden, so we declare it here to hook into it
-@interface QIOSApplicationDelegate: UIResponder <UIApplicationDelegate, UNUserNotificationCenterDelegate>
-@end
+ Instead:
+ - the launch work (badge, status bar, notification center delegate, APNs
+   registration) runs from HardwareUtils_iOS::platformInit(), i.e. from main()
+   before the event loop starts, still inside the launch sequence;
+ - notification taps and foreground presentation go through an app-owned
+   UNUserNotificationCenter delegate (CalaosNotificationDelegate);
+ - the callbacks UIKit only sends to the application delegate (APNs token,
+   remote notification) or to the window scene delegate (Quick Actions) are
+   installed at runtime on the classes Qt uses (installHook()): added when the
+   class does not implement the selector, otherwise swizzled with the previous
+   implementation still called, so a future Qt implementation keeps working.
+*/
 
-@interface QIOSApplicationDelegate(AppDelegate)
-@end
+namespace {
 
-@implementation QIOSApplicationDelegate (AppDelegate)
-
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
+HardwareUtils_iOS *iosUtils()
 {
-    Q_UNUSED(application);
-    Q_UNUSED(launchOptions);
+    return static_cast<HardwareUtils_iOS *>(HardwareUtils::Instance());
+}
 
-    // reset badge count
-    [UIApplication sharedApplication].applicationIconBadgeNumber = 0;
-
-    [[UIApplication sharedApplication] setStatusBarStyle:(UIStatusBarStyle) UIStatusBarStyleLightContent];
-
-    // Register to receive notifications from the system
-    if (SYSTEM_VERSION_GRATERTHAN_OR_EQUALTO(@"10.0"))
+//Installs block as the implementation of sel on cls. Returns the
+//implementation the class responded with before (its own or an inherited
+//one), which the hook must call, or nullptr when there was none.
+IMP installHook(Class cls, SEL sel, Protocol *proto, id block)
+{
+    IMP imp = imp_implementationWithBlock(block);
+    Method m = class_getInstanceMethod(cls, sel);
+    if (!m)
     {
-        UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
-        center.delegate = self;
-        [center requestAuthorizationWithOptions:(UNAuthorizationOptionSound |
-                                                 UNAuthorizationOptionAlert |
-                                                 UNAuthorizationOptionBadge)
-                              completionHandler:^(BOOL granted, NSError * _Nullable error)
-        {
-            if (!error)
-            {
-                [[UIApplication sharedApplication] registerForRemoteNotifications];
-                NSLog(@"Push registration success.");
-            }
-            else
-            {
-                NSLog(@"Push registration FAILED" );
-                NSLog(@"ERROR: %@ - %@", error.localizedFailureReason, error.localizedDescription);
-                NSLog(@"SUGGESTIONS: %@ - %@", error.localizedRecoveryOptions, error.localizedRecoverySuggestion);
-            }
-        }];
+        const char *types = protocol_getMethodDescription(proto, sel, NO, YES).types;
+        class_addMethod(cls, sel, imp, types);
+        return nullptr;
     }
-    else
+
+    IMP previous = method_getImplementation(m);
+    //Inherited: add an override on cls. Defined on cls itself: replace it.
+    if (!class_addMethod(cls, sel, imp, method_getTypeEncoding(m)))
+        method_setImplementation(m, imp);
+    return previous;
+}
+
+IMP qtDidRegisterForRemote = nullptr;
+IMP qtDidFailToRegisterForRemote = nullptr;
+IMP qtDidReceiveRemote = nullptr;
+IMP qtSceneWillConnect = nullptr;
+IMP qtPerformShortcut = nullptr;
+
+void hookApplicationDelegate()
+{
+    UIApplication *app = [UIApplication sharedApplication];
+    id<UIApplicationDelegate> delegate = app.delegate;
+    if (!delegate)
     {
-        if ([application respondsToSelector:@selector(isRegisteredForRemoteNotifications)])
+        qWarning() << "No application delegate: push notifications disabled";
+        return;
+    }
+
+    Class cls = object_getClass(delegate);
+    Protocol *proto = @protocol(UIApplicationDelegate);
+
+    const SEL didRegister = @selector(application:didRegisterForRemoteNotificationsWithDeviceToken:);
+    qtDidRegisterForRemote = installHook(cls, didRegister, proto,
+        ^(id self_, UIApplication *application, NSData *deviceToken)
+    {
+        if (qtDidRegisterForRemote)
+            reinterpret_cast<void (*)(id, SEL, UIApplication *, NSData *)>(qtDidRegisterForRemote)(
+                self_, didRegister, application, deviceToken);
+
+        //No log of the token: it is a per-device credential (logged redacted
+        //by HardwareUtils::setDeviceToken()).
+        iosUtils()->handleRegisterNotif(deviceToken);
+    });
+
+    const SEL didFail = @selector(application:didFailToRegisterForRemoteNotificationsWithError:);
+    qtDidFailToRegisterForRemote = installHook(cls, didFail, proto,
+        ^(id self_, UIApplication *application, NSError *error)
+    {
+        if (qtDidFailToRegisterForRemote)
+            reinterpret_cast<void (*)(id, SEL, UIApplication *, NSError *)>(qtDidFailToRegisterForRemote)(
+                self_, didFail, application, error);
+
+        iosUtils()->handleRegisterNotifFail(error);
+    });
+
+    const SEL didReceive = @selector(application:didReceiveRemoteNotification:fetchCompletionHandler:);
+    qtDidReceiveRemote = installHook(cls, didReceive, proto,
+        ^(id self_, UIApplication *application, NSDictionary *userInfo,
+          void (^completionHandler)(UIBackgroundFetchResult))
+    {
+        NSString *uuid = userInfo[@"event_uuid"];
+        if (uuid != nil)
         {
-            //iOS 8
-            [application registerUserNotificationSettings:
-                [UIUserNotificationSettings settingsForTypes:(UIUserNotificationTypeSound |
-                                                              UIUserNotificationTypeAlert |
-                                                              UIUserNotificationTypeBadge)
-                                                  categories:nil]];
-            [application registerForRemoteNotifications];
+            //Not a tap: a push *arriving* (iOS hands remote notifications to
+            //the app here, in the foreground or woken in the background). The
+            //app has always opened its event like a tap: right away if logged
+            //in, otherwise once home is loaded again. Kept as is on purpose
+            //(product behaviour predating FIX-3), see doc/ios.md section 4.
+            HardwareUtils::Instance()->handleNotificationOpened(QString::fromNSString(uuid));
         }
+
+        //The completion handler must be called once: by Qt if it handles the
+        //notification too, by us otherwise.
+        if (qtDidReceiveRemote)
+            reinterpret_cast<void (*)(id, SEL, UIApplication *, NSDictionary *,
+                                      void (^)(UIBackgroundFetchResult))>(qtDidReceiveRemote)(
+                self_, didReceive, application, userInfo, completionHandler);
         else
-        {
-            //iOS 7
-            UIUserNotificationType nTypes = UIUserNotificationTypeBadge |
-                                            UIRemoteNotificationTypeAlert |
-                                            UIRemoteNotificationTypeSound;
-            [application registerForRemoteNotificationTypes:nTypes];
-        }
-    }
+            completionHandler(UIBackgroundFetchResultNoData);
+    });
 
-//    HardwareUtils_iOS *o = (HardwareUtils_iOS *)HardwareUtils::Instance();
-//    o->handleApplicationDidFinishLaunching(launchOptions);
-
-    return YES;
+    //UIApplication may cache which optional methods its delegate implements
+    //when the delegate is set (the token callback is looked up at call time,
+    //nothing guarantees it for the others): set it again so that the methods
+    //added above are seen. The property is assign, Qt keeps the object alive.
+    app.delegate = nil;
+    app.delegate = delegate;
 }
 
-- (void)application:(UIApplication *)application performActionForShortcutItem:(UIApplicationShortcutItem *)shortcutItem completionHandler:(void (^)(BOOL))completionHandler
+void hookSceneDelegate()
 {
-    Q_UNUSED(application);
-    Q_UNUSED(completionHandler);
-
-    HardwareUtils_iOS *o = dynamic_cast<HardwareUtils_iOS *>(HardwareUtils::Instance());
-    o->handlePerformActionForShortcutItem(shortcutItem);
-}
-
-#pragma mark - Remote Notification Delegate // <= iOS 9.x
-
-- (void)application:(UIApplication*)application didRegisterUserNotificationSettings:(UIUserNotificationSettings *)notificationSettings
-{
-    [application registerForRemoteNotifications];
-}
-
-- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken
-{
-    Q_UNUSED(application);
-
-    //No NSLog of the token: it is a per-device credential (logged redacted
-    //by HardwareUtils::setDeviceToken()).
-    HardwareUtils_iOS *o = dynamic_cast<HardwareUtils_iOS *>(HardwareUtils::Instance());
-    o->handleRegisterNotif(deviceToken);
-}
-
-- (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error
-{
-    Q_UNUSED(application);
-
-    HardwareUtils_iOS *o = dynamic_cast<HardwareUtils_iOS *>(HardwareUtils::Instance());
-    o->handleRegisterNotifFail(error);
-
-    NSLog(@"Did Fail to Register for Remote Notifications");
-    NSLog(@"%@, %@", error, error.localizedDescription);
-}
-
-- (void)application:(UIApplication *)application didReceiveRemoteNotification:(nonnull NSDictionary *)userInfo fetchCompletionHandler:(nonnull void (^)(UIBackgroundFetchResult))completionHandler
-{
-    NSLog(@"Push Notification Information : %@", userInfo);
-
-    NSString *uuid = userInfo[@"event_uuid"];
-    if (uuid != nil)
+    //Qt makes this class the delegate of every application window scene
+    //(QIOSApplicationDelegate application:configurationForConnectingSceneSession:options:).
+    //With scenes, UIKit hands Quick Actions to the scene delegate only, never
+    //to application:performActionForShortcutItem:completionHandler:.
+    Class cls = NSClassFromString(@"QIOSWindowSceneDelegate");
+    if (!cls)
     {
-        //Not a tap: a push *arriving* (iOS hands remote notifications to
-        //the app here, in the foreground or woken in the background). The
-        //app has always opened its event like a tap: right away if logged
-        //in, otherwise once home is loaded again. Kept as is on purpose
-        //(product behaviour predating FIX-3), see doc/ios.md section 4.
-        HardwareUtils::Instance()->handleNotificationOpened(QString::fromNSString(uuid));
+        qWarning() << "Qt window scene delegate not found: Quick Actions disabled";
+        return;
     }
 
-    completionHandler(UIBackgroundFetchResultNoData);
+    Protocol *proto = @protocol(UIWindowSceneDelegate);
+
+    const SEL willConnect = @selector(scene:willConnectToSession:options:);
+    qtSceneWillConnect = installHook(cls, willConnect, proto,
+        ^(id self_, UIScene *scene, UISceneSession *session, UISceneConnectionOptions *options)
+    {
+        if (qtSceneWillConnect)
+            reinterpret_cast<void (*)(id, SEL, UIScene *, UISceneSession *, UISceneConnectionOptions *)>(
+                qtSceneWillConnect)(self_, willConnect, scene, session, options);
+
+        //Launched from a Quick Action: the item only comes with the connection
+        //options, windowScene:performActionForShortcutItem: is not called.
+        if (options.shortcutItem)
+            iosUtils()->handlePerformActionForShortcutItem(options.shortcutItem);
+    });
+
+    const SEL performShortcut = @selector(windowScene:performActionForShortcutItem:completionHandler:);
+    qtPerformShortcut = installHook(cls, performShortcut, proto,
+        ^(id self_, UIWindowScene *windowScene, UIApplicationShortcutItem *shortcutItem,
+          void (^completionHandler)(BOOL))
+    {
+        iosUtils()->handlePerformActionForShortcutItem(shortcutItem);
+
+        if (qtPerformShortcut)
+            reinterpret_cast<void (*)(id, SEL, UIWindowScene *, UIApplicationShortcutItem *,
+                                      void (^)(BOOL))>(qtPerformShortcut)(
+                self_, performShortcut, windowScene, shortcutItem, completionHandler);
+        else
+            completionHandler(YES);
+    });
 }
 
-#pragma mark - UNUserNotificationCenter Delegate // >= iOS 10
+} // namespace
+
+#pragma mark - UNUserNotificationCenter delegate
+
+@interface CalaosNotificationDelegate : NSObject <UNUserNotificationCenterDelegate>
+@end
+
+@implementation CalaosNotificationDelegate
 
 //Called when a notification is delivered to a foreground app.
 - (void)userNotificationCenter:(UNUserNotificationCenter *)center willPresentNotification:(UNNotification *)notification withCompletionHandler:(void (^)(UNNotificationPresentationOptions options))completionHandler
 {
-    NSLog(@"User Info = %@", notification.request.content.userInfo);
+    Q_UNUSED(center);
 
     NSString *uuid = notification.request.content.userInfo[@"event_uuid"];
     if (uuid != nil)
-    {
-        HardwareUtils_iOS *o = dynamic_cast<HardwareUtils_iOS *>(HardwareUtils::Instance());
-        o->emitPushNotifReceived(QString::fromNSString(uuid));
-    }
+        iosUtils()->emitPushNotifReceived(QString::fromNSString(uuid));
 
     completionHandler(UNNotificationPresentationOptionNone);
 }
 
 //Called to let your app know which action was selected by the user for a given notification.
-- (void)userNotificationCenter:(UNUserNotificationCenter *)center didReceiveNotificationResponse:(UNNotificationResponse *)response withCompletionHandler:(void(^)())completionHandler
+- (void)userNotificationCenter:(UNUserNotificationCenter *)center didReceiveNotificationResponse:(UNNotificationResponse *)response withCompletionHandler:(void (^)(void))completionHandler
 {
-    NSLog(@"User Info = %@", response.notification.request.content.userInfo);
+    Q_UNUSED(center);
 
     NSString *uuid = response.notification.request.content.userInfo[@"event_uuid"];
     if (uuid != nil)
@@ -268,6 +319,8 @@ HardwareUtils_iOS *hwobj;
 static HWClass *hwclass;
 static Reachability *reach;
 static A0SimpleKeychain *keychain;
+//UNUserNotificationCenter.delegate does not retain it.
+static CalaosNotificationDelegate *notificationDelegate;
 
 //Shared with the PushNotif extension (NotificationService.m).
 static NSString *const kAppGroup = @"group.fr.calaos.CalaosMobile";
@@ -310,6 +363,43 @@ HardwareUtils_iOS::~HardwareUtils_iOS()
     [reach release];
     [hwclass release];
     [keychain release];
+}
+
+void HardwareUtils_iOS::platformInit(QQmlApplicationEngine *e)
+{
+    HardwareUtils::platformInit(e);
+
+    //QGuiApplication exists: Qt has installed its application delegate. Still
+    //inside the launch sequence (main() runs before UIKit finishes launching),
+    //so the scene is not connected yet and the notification center delegate
+    //is set in time for a tap that launched the app.
+    hookApplicationDelegate();
+    hookSceneDelegate();
+
+    UIApplication *app = [UIApplication sharedApplication];
+    UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+
+    [center setBadgeCount:0 withCompletionHandler:nil];
+    [app setStatusBarStyle:UIStatusBarStyleLightContent];
+
+    notificationDelegate = [[CalaosNotificationDelegate alloc] init];
+    center.delegate = notificationDelegate;
+
+    [center requestAuthorizationWithOptions:(UNAuthorizationOptionSound |
+                                             UNAuthorizationOptionAlert |
+                                             UNAuthorizationOptionBadge)
+                          completionHandler:^(BOOL granted, NSError * _Nullable error)
+    {
+        if (error)
+            qWarning() << "Notification authorization failed:"
+                       << QString::fromNSString(error.localizedDescription);
+        else if (!granted)
+            qDebug() << "Notification authorization denied by the user";
+    }];
+
+    //The APNs token does not depend on the user's authorization: register on
+    //every launch, the token comes back through the hooked delegate.
+    [app registerForRemoteNotifications];
 }
 
 void HardwareUtils_iOS::showAlertMessage(QString title, QString message, QString buttontext)
@@ -461,8 +551,8 @@ void HardwareUtils_iOS::handleRegisterNotif(void *data)
 void HardwareUtils_iOS::handleRegisterNotifFail(void *err)
 {
     NSError *error = reinterpret_cast<NSError *>(err);
-    NSLog(@"Did Fail to Register for Remote Notifications");
-    NSLog(@"%@, %@", error, error.localizedDescription);
+    qWarning() << "Failed to register for remote notifications:"
+               << QString::fromNSString(error.localizedDescription);
 
     clearDeviceToken();
 }

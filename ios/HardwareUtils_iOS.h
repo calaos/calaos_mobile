@@ -14,6 +14,10 @@ protected:
 public:
     virtual ~HardwareUtils_iOS();
 
+    //Installs the application/scene delegate hooks and registers for push
+    //notifications, see the top of HardwareUtils.mm.
+    virtual void platformInit(QQmlApplicationEngine *e);
+
     virtual void showAlertMessage(QString title, QString message, QString buttontext);
 
     enum NetworkStatus

@@ -2,6 +2,9 @@
 #import <UIKit/UIKit.h>
 #import <UserNotifications/UserNotifications.h>
 #import <objc/runtime.h>
+#import <fcntl.h>
+#import <sys/file.h>
+#import <unistd.h>
 #import "Reachability.h"
 #import "SimpleKeychain/A0SimpleKeychain.h"
 #import "SimpleKeychain/A0SimpleKeychain+KeyPair.h"
@@ -22,7 +25,7 @@
  Qt has no public API for the APNs token or remote notifications.
 
  Instead:
- - the launch work (badge, notification center delegate, APNs
+ - the launch work (badge reset, notification center delegate, APNs
    registration) runs from HardwareUtils_iOS::platformInit(), i.e. from main()
    before the event loop starts, still inside the launch sequence;
  - notification taps and foreground presentation go through an app-owned
@@ -33,6 +36,15 @@
    class does not implement the selector, otherwise swizzled with the previous
    implementation still called, so a future Qt implementation keeps working.
 */
+
+//Shared with the PushNotif extension (NotificationService.m).
+static NSString *const kAppGroup = @"group.fr.calaos.CalaosMobile";
+//False after an explicit logout, see HardwareUtils::setSessionActive().
+static NSString *const kSessionActiveKey = @"calaos.session_active";
+//Unread notifications on the app icon, incremented by the extension (IOS-3).
+static NSString *const kBadgeCountKey = @"calaos.badge_count";
+//flock() file in the App Group container, same name as in the extension.
+static NSString *const kBadgeLockFile = @"calaos.badge_count.lock";
 
 namespace {
 
@@ -212,6 +224,42 @@ void hookSceneDelegate()
     });
 }
 
+//Runs block on the unread counter under the lock the extension takes for its
+//read-increment-write (best effort: without the container, an increment racing
+//with the block can be lost, i.e. a badge off by one).
+void withBadgeCountLocked(void (^block)(NSUserDefaults *sharedDefaults))
+{
+    int fd = -1;
+    NSURL *container = [[NSFileManager defaultManager]
+        containerURLForSecurityApplicationGroupIdentifier:kAppGroup];
+    if (container != nil)
+    {
+        NSString *lockPath = [container URLByAppendingPathComponent:kBadgeLockFile].path;
+        fd = open(lockPath.fileSystemRepresentation, O_RDWR | O_CREAT | O_CLOEXEC, 0600);
+        if (fd >= 0)
+            flock(fd, LOCK_EX);
+    }
+
+    NSUserDefaults *sharedDefaults = [[NSUserDefaults alloc] initWithSuiteName:kAppGroup];
+    block(sharedDefaults);
+    [sharedDefaults release];
+
+    if (fd >= 0)
+    {
+        flock(fd, LOCK_UN);
+        close(fd);
+    }
+}
+
+//The user is looking at the app: nothing is unread any more.
+void resetBadge()
+{
+    withBadgeCountLocked(^(NSUserDefaults *sharedDefaults) {
+        [sharedDefaults setInteger:0 forKey:kBadgeCountKey];
+    });
+    [[UNUserNotificationCenter currentNotificationCenter] setBadgeCount:0 withCompletionHandler:nil];
+}
+
 } // namespace
 
 #pragma mark - UNUserNotificationCenter delegate
@@ -229,6 +277,10 @@ void hookSceneDelegate()
     NSString *uuid = notification.request.content.userInfo[@"event_uuid"];
     if (uuid != nil)
         iosUtils()->emitPushNotifReceived(QString::fromNSString(uuid));
+
+    //The extension already counted it, but the user sees it in the app: no
+    //badge (the content's badge is not applied without the Badge option).
+    resetBadge();
 
     completionHandler(UNNotificationPresentationOptionNone);
 }
@@ -290,6 +342,7 @@ HardwareUtils_iOS *hwobj;
 -(void)applicationDidBecomeActive:(NSNotification*)notif
 {
     Q_UNUSED(notif)
+    resetBadge();
     hwobj->emitApplicationActiveChanged(true);
 }
 
@@ -350,11 +403,6 @@ static A0SimpleKeychain *keychain;
 //UNUserNotificationCenter.delegate does not retain it.
 static CalaosNotificationDelegate *notificationDelegate;
 
-//Shared with the PushNotif extension (NotificationService.m).
-static NSString *const kAppGroup = @"group.fr.calaos.CalaosMobile";
-//False after an explicit logout, see HardwareUtils::setSessionActive().
-static NSString *const kSessionActiveKey = @"calaos.session_active";
-
 HardwareUtils_iOS::HardwareUtils_iOS(QObject *parent):
     HardwareUtils(parent)
 {
@@ -410,7 +458,7 @@ void HardwareUtils_iOS::platformInit(QQmlApplicationEngine *e)
 
     //Status bar style: UIStatusBarStyle in AppInfo.plist
     //(UIViewControllerBasedStatusBarAppearance = false).
-    [center setBadgeCount:0 withCompletionHandler:nil];
+    resetBadge();
 
     notificationDelegate = [[CalaosNotificationDelegate alloc] init];
     center.delegate = notificationDelegate;
@@ -481,6 +529,11 @@ void HardwareUtils_iOS::resetAuthKeychain()
     NSUserDefaults *sharedDefaults = [[NSUserDefaults alloc] initWithSuiteName:kAppGroup];
     [sharedDefaults removeObjectForKey:kSessionActiveKey];
     [sharedDefaults release];
+
+    withBadgeCountLocked(^(NSUserDefaults *defaults) {
+        [defaults removeObjectForKey:kBadgeCountKey];
+    });
+    [[UNUserNotificationCenter currentNotificationCenter] setBadgeCount:0 withCompletionHandler:nil];
 }
 
 void HardwareUtils_iOS::setSessionActive(bool active)

@@ -7,8 +7,9 @@
   Required-reason APIs:
   - UserDefaults 1C8F.1: reads the Calaos server host name and the session state
     (calaos.session_active: no picture after an explicit logout) that the app
-    writes in the "group.fr.calaos.CalaosMobile" App Group suite
-    (NotificationService.m).
+    writes in the "group.fr.calaos.CalaosMobile" App Group suite, and increments
+    the unread counter shown on the app icon (calaos.badge_count), which the app
+    resets (NotificationService.m).
 -->
 <plist version="1.0">
 <dict>

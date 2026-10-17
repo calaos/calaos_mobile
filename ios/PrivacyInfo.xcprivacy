@@ -19,7 +19,8 @@
   - UserDefaults 1C8F.1: HardwareUtils.mm writes the Calaos host name and the
     session state (calaos.session_active, false after an explicit logout) to the
     "group.fr.calaos.CalaosMobile" App Group suite for the PushNotif extension,
-    and reads the session state back at launch.
+    reads the session state back at launch, and resets the unread counter the
+    extension increments for the app icon badge (calaos.badge_count).
   - FileTimestamp C617.1: Qt file APIs (stat/fstat/lstat through QFileInfo, QDir,
     QSettings, QML cache) read the metadata of files inside the app container.
   - SystemBootTime 35F9.1: Qt GUI timestamps touch events with

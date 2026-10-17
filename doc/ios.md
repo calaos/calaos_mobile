@@ -136,6 +136,18 @@ embedded via `QMAKE_BUNDLE_DATA += splash`.
 | User taps notification while not logged in (closed, background, reconnecting) | Same entry point; the uuid is kept and `Application::homeLoaded()` opens it once at the next login (`HardwareUtils::takePendingNotif()`, `DeferredNotifGate`: a session that drops before the event is shown hands it back to the next login) |
 | Push **arrives** (no tap), app in the foreground or woken in the background | `application:didReceiveRemoteNotification:fetchCompletionHandler:` (runtime hook on Qt's application delegate) → `HardwareUtils::handleNotificationOpened(uuid)`: the event is opened as if tapped, right away when logged in, otherwise at the next login. Long-standing product behaviour, deliberately unchanged by FIX-3 |
 
+| Push **displayed** with the app in the background or killed (icon badge, IOS-3) | `PushNotif.appex` increments `calaos.badge_count` in the App Group suite and sets `bestAttemptContent.badge` to it, first thing, so every path (picture or not, logged out, `serviceExtensionTimeWillExpire`) carries the badge. Needs `mutable-content: 1` in the payload (`calaos_server` sets it on every iOS push); without it the extension does not run and there is no badge |
+| Badge cleared | `resetBadge()` in `ios/HardwareUtils.mm` sets the counter and the badge to 0 at launch (`platformInit()`), on `UIApplicationDidBecomeActiveNotification`, and when a push is presented in the foreground (`willPresentNotification:`, presented without the badge option). `resetAuthKeychain()` ("reset all data") removes the key |
+
+Badge counter: the app and the extension are separate processes. The
+extension's read-increment-write and the app's reset both hold an exclusive
+`flock()` on `calaos.badge_count.lock` in the App Group container, which also
+serializes concurrent extension requests. If the container cannot be opened the
+lock is skipped and a race can lose one increment (badge off by one, cleared at
+the next launch). The App Group suite therefore carries `calaos.hostname`,
+`calaos.session_active` and `calaos.badge_count` (privacy reason 1C8F.1 in both
+manifests).
+
 Background mode `remote-notification` is declared in
 [ios/AppInfo.plist](../ios/AppInfo.plist) (`UIBackgroundModes`).
 

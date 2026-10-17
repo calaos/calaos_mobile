@@ -6,6 +6,9 @@
 //
 
 #import "NotificationService.h"
+#import <fcntl.h>
+#import <sys/file.h>
+#import <unistd.h>
 #import "ios/SimpleKeychain/A0SimpleKeychain.h"
 #import "ios/SimpleKeychain/A0SimpleKeychain+KeyPair.h"
 
@@ -16,11 +19,26 @@
 
 @end
 
+//Shared with the app (ios/HardwareUtils.mm).
+static NSString *const kAppGroup = @"group.fr.calaos.CalaosMobile";
+//Unread notifications shown on the app icon. Incremented here for every push,
+//reset to 0 by the app (launch, become active, push presented in the
+//foreground) and removed by "reset all data".
+static NSString *const kBadgeCountKey = @"calaos.badge_count";
+//flock() file in the App Group container, serializing the read-increment-write
+//here with the app's reset (separate processes) and with concurrent requests
+//in this process. Same name in HardwareUtils.mm.
+static NSString *const kBadgeLockFile = @"calaos.badge_count.lock";
+
 @implementation NotificationService
 
 - (void)didReceiveNotificationRequest:(UNNotificationRequest *)request withContentHandler:(void (^)(UNNotificationContent * _Nonnull))contentHandler {
     self.contentHandler = contentHandler;
     self.bestAttemptContent = [request.content mutableCopy];
+
+    //First, so that every path below (and serviceExtensionTimeWillExpire)
+    //delivers the badge, with or without a picture.
+    self.bestAttemptContent.badge = @([self incrementBadgeCount]);
     
     //Check for attachment
     NSDictionary *userInfo = request.content.userInfo;
@@ -157,6 +175,30 @@
                                           }
                                       }];
     [dataTask resume];
+}
+
+//Returns the new unread count. The lock is best effort: without it (container
+//unavailable), two pushes racing with each other or with the app's reset can
+//lose one increment, i.e. a badge off by one.
+- (NSInteger)incrementBadgeCount {
+    int fd = -1;
+    NSURL *container = [[NSFileManager defaultManager] containerURLForSecurityApplicationGroupIdentifier:kAppGroup];
+    if (container != nil) {
+        NSString *lockPath = [container URLByAppendingPathComponent:kBadgeLockFile].path;
+        fd = open(lockPath.fileSystemRepresentation, O_RDWR | O_CREAT | O_CLOEXEC, 0600);
+        if (fd >= 0)
+            flock(fd, LOCK_EX);
+    }
+
+    NSUserDefaults *sharedDefaults = [[NSUserDefaults alloc] initWithSuiteName:kAppGroup];
+    NSInteger count = MAX([sharedDefaults integerForKey:kBadgeCountKey], 0) + 1;
+    [sharedDefaults setInteger:count forKey:kBadgeCountKey];
+
+    if (fd >= 0) {
+        flock(fd, LOCK_UN);
+        close(fd);
+    }
+    return count;
 }
 
 //Written by the app (HardwareUtils_iOS::setSessionActive()): false after an

@@ -1,9 +1,9 @@
 name: PR CI
 
 # CI de pull request (T03) : compile réellement le code, exécute les tests
-# unitaires et passe qmllint. Les workflows existants (build*.yml,
-# build_docker_*.yml) ne compilent rien : ils délèguent ou fabriquent des
-# images Docker. Ce workflow-ci est le seul garde-fou de compilation.
+# unitaires et passe qmllint. Le workflow publish.yml ne compile
+# rien : il fabrique des images Docker. Ce workflow-ci est le seul garde-fou
+# de compilation.
 #
 # Les jobs tournent dans un conteneur Arch Linux, comme la release
 # (docker/Dockerfile part de archlinux:base-devel). Arch est rolling, donc on

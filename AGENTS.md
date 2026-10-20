@@ -47,8 +47,10 @@ ios/                iOS platform code (Obj-C/Obj-C++, keychain, push appex)
 docker/             Docker image + xinit launcher for Calaos OS
 lang/               Qt Linguist .ts/.qm + Go auto-translate tool
 3rd_party/          Vendored dependencies — DO NOT MODIFY
-.github/workflows/  CI/CD (desktop pkg + Docker)
+.github/workflows/  CI (pr-ci.yml) + manual publish (publish.yml)
 ```
+
+Publishing is manual: Actions → Publish → Run workflow, channel prerelease|patch|minor|major.
 
 ## Where to find what
 

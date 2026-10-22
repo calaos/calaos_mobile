@@ -291,11 +291,19 @@ QList<DecodedEvent> CalaosEventDecoder::decodeQueryAnswer(const QVariantMap &ans
         events << makeMapEvent(DecodedEvent::AudioStateChange, QString(), answer);
     }
 
-    if (answer.contains(JsonKeys::Events) &&
-        answer.contains(JsonKeys::TotalPage))
+    //api.php sends the page at the top level, exactly like the "data" of the
+    //websocket answer: {total_page, total_count, page, per_page, events}
+    //(JsonApi::buildJsonEventLog). This used to report answer["data"], which
+    //that answer does not have, so over HTTP the event log never loaded
+    //(EVLOG-1). A page wrapped in "data" is still accepted.
+    const auto isLogPage = [](const QVariantMap &m)
     {
-        events << makeMapEvent(DecodedEvent::LogEvent, QString(), answer[JsonKeys::Data].toMap());
-    }
+        return m.contains(JsonKeys::Events) && m.contains(JsonKeys::TotalPage);
+    };
+    if (isLogPage(answer))
+        events << makeMapEvent(DecodedEvent::LogEvent, QString(), answer);
+    else if (isLogPage(answer.value(JsonKeys::Data).toMap()))
+        events << makeMapEvent(DecodedEvent::LogEvent, QString(), answer.value(JsonKeys::Data).toMap());
 
     if (v == ApiV2)
     {

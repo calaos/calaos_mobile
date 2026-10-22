@@ -19,6 +19,7 @@ SUBDIRS += \
     tst_climatewidget \
     tst_common \
     tst_eventlogmodel \
+    tst_eventlogsession \
     tst_favoritesmodel \
     tst_homemodel \
     tst_httpapiversion \

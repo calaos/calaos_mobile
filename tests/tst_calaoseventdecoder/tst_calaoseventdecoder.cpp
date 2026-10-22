@@ -102,6 +102,9 @@ private slots:
     void queryAnswerV2();
     void queryAnswerV3();
     void queryAnswerReportsEveryPayloadOfTheSameAnswer();
+    void queryAnswerEventLogPageRealHttpShape_data();
+    void queryAnswerEventLogPageRealHttpShape();
+    void queryAnswerEventLogPageWrappedInData();
     void queryAnswerIgnoresEmptyLists();
 
     void typeCoverageIsComplete();
@@ -631,7 +634,6 @@ void TstCalaosEventDecoder::queryAnswerReportsEveryPayloadOfTheSameAnswer()
         R"({"audio_players":[{"id":"0"}],
             "events":["e1"],
             "total_page":3,
-            "data":{"events":[{"msg":"hello"}]},
             "inputs":[{"id":"input_1"}]})");
 
     const QList<DecodedEvent> events =
@@ -641,10 +643,58 @@ void TstCalaosEventDecoder::queryAnswerReportsEveryPayloadOfTheSameAnswer()
                                              "LogEvent||||0|",
                                              "InputStateChange||||0|" }));
 
-    //The audio payload is the whole answer, the log payload is answer["data"].
+    //The audio payload is the whole answer, and so is the log page: api.php
+    //sends it at the top level (EVLOG-1).
     QCOMPARE(events.at(0).data, answer);
-    QVERIFY(events.at(1).data.contains("events"));
-    QCOMPARE(events.at(1).data, answer.value("data").toMap());
+    QCOMPARE(events.at(1).data, answer);
+}
+
+void TstCalaosEventDecoder::queryAnswerEventLogPageRealHttpShape_data()
+{
+    QTest::addColumn<int>("api");
+    QTest::newRow("v2") << int(CalaosEventDecoder::ApiV2);
+    QTest::newRow("v3") << int(CalaosEventDecoder::ApiV3);
+}
+
+void TstCalaosEventDecoder::queryAnswerEventLogPageRealHttpShape()
+{
+    //What api.php answers to {"action":"eventlog","page":0,"per_page":50}
+    //(calaos_base JsonApi::buildJsonEventLog, sent as is by
+    //JsonApiHandlerHttp::processEventLog): the page is the top level object,
+    //there is no "data". It used to be decoded as answer["data"], an empty
+    //map, so over HTTP the event log never loaded (EVLOG-1).
+    QFETCH(int, api);
+    const QVariantMap answer = frameFromJson(
+        R"({"total_page":2,"total_count":80,"page":0,"per_page":50,
+            "events":[{"uuid":"e1","event_type":"22","created_at":"2026-10-21 17:23:15",
+                       "io_id":"","io_state":"","pic_uid":"",
+                       "event_raw":{"message":"hello"}}]})");
+
+    const QList<DecodedEvent> events =
+            record(CalaosEventDecoder::decodeQueryAnswer(answer, CalaosEventDecoder::ApiVersion(api)));
+
+    QList<DecodedEvent> pages;
+    for (const DecodedEvent &ev: events)
+        if (ev.type == DecodedEvent::LogEvent)
+            pages << ev;
+
+    QCOMPARE(pages.size(), 1);
+    QCOMPARE(pages.at(0).data, answer);
+    QCOMPARE(pages.at(0).data.value("events").toList().size(), 1);
+    QCOMPARE(pages.at(0).data.value("total_page").toInt(), 2);
+}
+
+void TstCalaosEventDecoder::queryAnswerEventLogPageWrappedInData()
+{
+    //A page wrapped in "data", like the websocket answer, is still accepted.
+    const QVariantMap answer = frameFromJson(
+        R"({"data":{"total_page":1,"events":[{"uuid":"e1"}]}})");
+
+    const QList<DecodedEvent> events =
+            record(CalaosEventDecoder::decodeQueryAnswer(answer, CalaosEventDecoder::ApiV2));
+
+    QCOMPARE(describe(events), (QStringList{ "LogEvent||||0|" }));
+    QCOMPARE(events.at(0).data, answer.value("data").toMap());
 }
 
 void TstCalaosEventDecoder::queryAnswerIgnoresEmptyLists()

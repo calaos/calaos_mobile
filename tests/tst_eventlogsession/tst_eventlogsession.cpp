@@ -372,6 +372,9 @@ private slots:
     }
 
     //Application::logout(): the connection, then the history.
+    //Mirrors Application::logout() and the loginFailed handler (src/Application.cpp):
+    //Application cannot be linked in this harness, so these tests check the model and
+    //connection behaviour, not that Application still calls eventLogModel->reset().
     void appLogout()
     {
         con->logout();

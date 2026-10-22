@@ -99,6 +99,7 @@ La version Android n'a jamais fonctionné en Qt 6. Analyse et plan validés par 
 | [AND-8](tasks/AND-8-clavier-apres-login.md) | Le clavier reste ouvert après le login | S | — | G-QML-MOBILE | Terminé |
 
 Suivis issus des revues (à traiter dans le ticket indiqué) :
+- `tst_climatewidget` (`ClimateSheet::test_theModelLetsGoOfTheDeviceWhenTheSheetCloses`) échoue désormais à chaque exécution, y compris sur `master` (constaté pendant EVLOG-1, 2026-10-22) : à traiter dans un ticket dédié, comme le test instable `tst_camerapolling`.
 - AND-9 validé sur le Redmi en armeabi-v7a (5 jours sans crash, push avec image reçu) et en arm64 le 2026-10-22.
 - Passage iPhone 15 Pro (2026-10-17, Qt 6.12) validé par Raoul : affichage Dynamic Island/120 Hz, arrière-plan, déconnexion persistante, lancement hors ligne + bandeau, bouton X, push premier plan/arrière-plan/app tuée avec image, tap → événement (y compris à froid), Quick Actions à froid et en arrière-plan. Pastille (IOS-3) validée le 2026-10-17 après déploiement de `mutable-content` côté calaos_server. Restent : AND-9 en armv7 et FIX-3 (tap pendant une reconnexion) sur appareil ; MOB-1 iPad paysage non vérifié.
 - AND-7 validé de bout en bout le 2026-10-17 : changement calaos_base déployé (messages FCM data seuls pour les jetons `push_format: "data"`), push reçu avec l'image de caméra, app tuée (test Raoul).

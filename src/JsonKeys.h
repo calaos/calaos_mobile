@@ -139,6 +139,9 @@ inline constexpr QLatin1StringView PerPage{"per_page"};
 //Presence of "total_page" next to "events" is what tells an event log answer
 //apart from any other answer carrying events.
 inline constexpr QLatin1StringView TotalPage{"total_page"};
+//What calaos_server answers instead of a page or an event it could not read
+//(database error, page out of range, unknown uuid).
+inline constexpr QLatin1StringView Error{"error"};
 inline constexpr QLatin1StringView EventType{"event_type"};
 inline constexpr QLatin1StringView EventRaw{"event_raw"};
 inline constexpr QLatin1StringView Message{"message"};

@@ -178,6 +178,11 @@ void CalaosConnection::resetTransport()
         reply->deleteLater();
     }
 
+    //Forgotten before the abort, which emits finished() synchronously: the
+    //event log requests they carried are failed below, in one place, once
+    //the transport is fully down.
+    eventLogReplies.clear();
+
     const QList<QNetworkReply *> replies = reqReplies;
     reqReplies.clear();
     foreach (QNetworkReply *reply, replies)
@@ -185,6 +190,10 @@ void CalaosConnection::resetTransport()
         reply->abort();
         reply->deleteLater();
     }
+
+    //Last, so a listener sees a transport that is already down (EVLOG-1:
+    //the answer was simply lost before and the event log waited forever).
+    failPendingEventLogRequests();
 }
 
 void CalaosConnection::connectionLost(const QString &reason, ReconnectPolicy::Failure kind)
@@ -689,6 +698,15 @@ void CalaosConnection::requestFinished()
     //the next logout or reconnection once any HTTP request had failed).
     reqReplies.removeAll(reqReply);
 
+    //An event log request: answered (or failed) on every path, see
+    //eventLogReplyFinished().
+    const QString eventLogId = eventLogReplies.take(reqReply);
+    if (!eventLogId.isEmpty())
+    {
+        eventLogReplyFinished(reqReply, eventLogId);
+        return;
+    }
+
     if (reqReply->error() != QNetworkReply::NoError)
     {
         qDebug() << "Error in " << redactUrl(reqReply->url()) << ":" << reqReply->errorString();
@@ -712,8 +730,9 @@ void CalaosConnection::requestFinished()
 
     QVariantMap jroot = jdoc.object().toVariantMap();
 
-    //Audio player states, event log page and io states can all be in the same
-    //answer: the decoder reports every payload it recognises, in order.
+    //Audio player states and io states can be in the same answer: the
+    //decoder reports every payload it recognises, in order. Event log answers
+    //never get here, they are tied to their request above.
     dispatchEvents(CalaosEventDecoder::decodeQueryAnswer(
                        jroot,
                        isHttpApiV2() ? CalaosEventDecoder::ApiV2
@@ -782,9 +801,9 @@ void CalaosConnection::requestError(QNetworkReply::NetworkError code)
     qWarning() << "Request error, keeping the session: " << code;
 }
 
-void CalaosConnection::sendWebsocket(const QString &msg, const QJsonObject &data, const QString &client_id)
+bool CalaosConnection::sendWebsocket(const QString &msg, const QJsonObject &data, const QString &client_id)
 {
-    if (!isWebsocket()) return;
+    if (!isWebsocket()) return false;
 
     QJsonObject o = {{ JsonKeys::Msg, msg },
                      { JsonKeys::Data, data }};
@@ -797,11 +816,12 @@ void CalaosConnection::sendWebsocket(const QString &msg, const QJsonObject &data
 #endif
 
     wsocket->sendTextMessage(doc.toJson());
+    return true;
 }
 
-void CalaosConnection::sendHttp(const QString &msg, QJsonObject &data, bool ignoreErrors)
+QNetworkReply *CalaosConnection::sendHttp(const QString &msg, QJsonObject &data, bool ignoreErrors)
 {
-    if (!isHttp()) return;
+    if (!isHttp()) return nullptr;
 
     if (!msg.isEmpty())
         data[JsonKeys::Action] = msg;
@@ -825,6 +845,7 @@ void CalaosConnection::sendHttp(const QString &msg, QJsonObject &data, bool igno
         connect(reqReply, &QNetworkReply::errorOccurred, this, &CalaosConnection::requestError);
 
     reqReplies.append(reqReply);
+    return reqReply;
 }
 
 void CalaosConnection::sendCommand(QString id, QString value, QString type, QString action)
@@ -856,17 +877,162 @@ void CalaosConnection::sendNumberedCommand(QString id, QString value, QString ty
         sendHttp(action, jroot);
 }
 
-void CalaosConnection::sendJson(QString action, QJsonObject &jsonData)
+bool CalaosConnection::sendJson(const QString &action, QJsonObject &jsonData, const QString &msgId)
 {
     if (isWebsocket())
-        sendWebsocket(action, jsonData, "user_cmd_json");
-    else
+        return sendWebsocket(action, jsonData, msgId);
+
+    if (isHttp())
     {
         jsonData[JsonKeys::CnUser] = username;
         jsonData[JsonKeys::CnPass] = password;
 
-        sendHttp(action, jsonData);
+        return sendHttp(action, jsonData) != nullptr;
     }
+
+    //No session up: nothing is sent, and the caller must not wait for an
+    //answer that cannot come.
+    return false;
+}
+
+//msg_id prefixes of the event log requests. calaos_server echoes the msg_id
+//of every eventlog request in its answer (JsonApiHandlerWS::processEventLog),
+//which is what ties an answer to its request. Values, not keys: they stay
+//here and not in JsonKeys.h.
+static const QLatin1StringView EventLogPageTag{"eventlog_page:"};
+static const QLatin1StringView EventLogEventTag{"eventlog_event:"};
+
+QString CalaosConnection::requestEventLogPage(int page, int perPage)
+{
+    return requestEventLog(EventLogKind::Page,
+                           QJsonObject{{ JsonKeys::Page, page },
+                                       { JsonKeys::PerPage, perPage }});
+}
+
+QString CalaosConnection::requestEventLogEvent(const QString &uuid)
+{
+    return requestEventLog(EventLogKind::Event, QJsonObject{{ JsonKeys::Uuid, uuid }});
+}
+
+QString CalaosConnection::requestEventLog(EventLogKind kind, QJsonObject data)
+{
+    const QString id = (kind == EventLogKind::Page ? EventLogPageTag : EventLogEventTag) +
+                       QString::number(++eventLogSeq);
+
+    if (isWebsocket())
+    {
+        if (!sendWebsocket(QStringLiteral("eventlog"), data, id))
+            return QString();
+    }
+    else if (isHttp())
+    {
+        //The HTTP answer is tied to its request by the reply that carries it.
+        data[JsonKeys::CnUser] = username;
+        data[JsonKeys::CnPass] = password;
+        QNetworkReply *reply = sendHttp(QStringLiteral("eventlog"), data);
+        if (!reply)
+            return QString();
+        eventLogReplies.insert(reply, id);
+    }
+    else
+    {
+        qDebug() << "Event log request not sent: no session up";
+        return QString();
+    }
+
+    pendingEventLog.insert(id, kind);
+    return id;
+}
+
+void CalaosConnection::cancelEventLogRequest(const QString &requestId)
+{
+    pendingEventLog.remove(requestId);
+    //The HTTP reply, if any, finishes on its own; requestFinished() then
+    //finds no request waiting for it.
+}
+
+void CalaosConnection::finishEventLogRequest(const QString &requestId, bool transportOk, const QVariantMap &answer)
+{
+    const auto it = pendingEventLog.constFind(requestId);
+    if (it == pendingEventLog.constEnd())
+    {
+        //Finished already, cancelled after a timeout, or sent by an older
+        //session: nobody waits for it any more.
+        qDebug() << "Event log answer dropped, no request waits for" << requestId;
+        return;
+    }
+
+    const EventLogKind kind = it.value();
+    pendingEventLog.erase(it);
+
+    //A server that could not read the log answers {"error": ...} instead:
+    //that ends the request just as well.
+    const bool serverError = answer.contains(JsonKeys::Error);
+    if (kind == EventLogKind::Page)
+    {
+        const bool ok = transportOk && !serverError && answer.contains(JsonKeys::Events);
+        if (!ok)
+            qWarning() << "Event log page request" << requestId << "failed:"
+                       << (transportOk ? answer.value(JsonKeys::Error).toString() : QStringLiteral("transport"));
+        emit eventLogPageFinished(requestId, ok, answer);
+    }
+    else
+    {
+        const bool ok = transportOk && !serverError && !answer.isEmpty();
+        emit eventLogEventFinished(requestId, ok, answer);
+    }
+}
+
+void CalaosConnection::failPendingEventLogRequests()
+{
+    //Ids are unique, so the order does not matter; sorted only to make the
+    //sequence of signals reproducible.
+    QStringList ids = pendingEventLog.keys();
+    ids.sort();
+    for (const QString &id: std::as_const(ids))
+        finishEventLogRequest(id, false, QVariantMap());
+}
+
+void CalaosConnection::eventLogReplyFinished(QNetworkReply *reply, const QString &requestId)
+{
+    if (reply->error() != QNetworkReply::NoError)
+    {
+        qDebug() << "Error in " << redactUrl(reply->url()) << ":" << reply->errorString();
+        finishEventLogRequest(requestId, false, QVariantMap());
+        return;
+    }
+
+    const QByteArray bytes = reply->readAll();
+    QJsonParseError err;
+    const QJsonDocument jdoc = QJsonDocument::fromJson(bytes, &err);
+    if (err.error != QJsonParseError::NoError || !jdoc.isObject())
+    {
+        qDebug() << "Event log answer: JSON parse error at " << err.offset << " : " << err.errorString();
+        finishEventLogRequest(requestId, false, QVariantMap());
+        return;
+    }
+
+    const QVariantMap answer = jdoc.object().toVariantMap();
+
+    //A page is the LogEvent the decoder finds in the answer (it reads the
+    //top level shape api.php sends). A single event, or an error, is the
+    //answer itself.
+    QVariantMap payload = answer;
+    if (pendingEventLog.value(requestId) == EventLogKind::Page)
+    {
+        const QList<DecodedEvent> events = CalaosEventDecoder::decodeQueryAnswer(
+                    answer, isHttpApiV2() ? CalaosEventDecoder::ApiV2 : CalaosEventDecoder::ApiV3);
+        for (const DecodedEvent &ev: events)
+        {
+            if (ev.type == DecodedEvent::LogEvent)
+            {
+                payload = ev.data;
+                break;
+            }
+        }
+    }
+
+    finishEventLogRequest(requestId, true, payload);
 }
 
 void CalaosConnection::queryState(QStringList inputs, QStringList outputs, QStringList audio_players)
@@ -1152,7 +1318,8 @@ void CalaosConnection::dispatchEvents(const QList<DecodedEvent> &events)
             emit eventAudioStateChange(ev.id, ev.data);
             break;
         case DecodedEvent::LogEvent:
-            emit logEventLoaded(ev.data);
+            //Event log pages are tied to their request instead, see
+            //eventLogReplyFinished(): a page nobody asked for is dropped.
             break;
 
         case DecodedEvent::Unknown:
@@ -1264,7 +1431,10 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
     }
     else if (jroot[JsonKeys::Msg] == "eventlog")
     {
-        emit logEventLoaded(jroot[JsonKeys::Data].toObject().toVariantMap());
+        //calaos_server echoes the msg_id of the request: the answer goes to
+        //that request only (EVLOG-1), a page and a single event can no
+        //longer be taken for one another, nor a late answer for a newer one.
+        finishEventLogRequest(jroot[JsonKeys::MsgId].toString(), true, jdata.toVariantMap());
     }
     else if (jroot[JsonKeys::Msg] == "settings")
     {

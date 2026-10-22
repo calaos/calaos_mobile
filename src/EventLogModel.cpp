@@ -22,8 +22,17 @@ EventLogModel::EventLogModel(QQmlApplicationEngine *eng, CalaosConnection *con, 
     roles[RoleActionText] = "evActionText";
     setItemRoleNames(roles);
 
-    connect(connection, &CalaosConnection::logEventLoaded,
-            this, &EventLogModel::logEventLoaded);
+    connect(connection, &CalaosConnection::eventLogPageFinished,
+            this, &EventLogModel::pageFinished);
+    connect(connection, &CalaosConnection::connectionStateChanged,
+            this, &EventLogModel::connectionStateChanged);
+    //Credentials given up on: the session will not come back on its own,
+    //what is shown belongs to it (Application clears the other models too).
+    connect(connection, &CalaosConnection::loginFailed,
+            this, &EventLogModel::reset);
+
+    requestTimer.setSingleShot(true);
+    connect(&requestTimer, &QTimer::timeout, this, &EventLogModel::requestTimedOut);
 }
 
 QObject *EventLogModel::getEventModel(int idx) const
@@ -33,43 +42,126 @@ QObject *EventLogModel::getEventModel(int idx) const
     return it;
 }
 
-void EventLogModel::load(int page, int per_page)
+void EventLogModel::requestPage(int page, bool replace)
 {
-    if (loading) return;
-    loading = true;
+    const QString id = connection->requestEventLogPage(page, DEFAULT_PER_PAGE);
+    if (id.isEmpty())
+    {
+        //No session up: nothing was sent, so nothing is waited for. The next
+        //login refreshes (Application::homeLoaded()).
+        qDebug() << "Event log: no session, page" << page << "not requested";
+        return;
+    }
 
-    QJsonObject d = {{ JsonKeys::Page, page },
-                     { JsonKeys::PerPage, per_page }};
-    connection->sendJson("eventlog", d);
+    pendingId = id;
+    pendingPage = page;
+    pendingReplace = replace;
+    requestTimer.start(requestTimeoutMs);
+}
+
+void EventLogModel::abandonRequest()
+{
+    if (pendingId.isEmpty())
+        return;
+
+    connection->cancelEventLogRequest(pendingId);
+    pendingId.clear();
+    requestTimer.stop();
 }
 
 void EventLogModel::loadMore()
 {
     qDebug() << "Load more... rowCount:" << rowCount();
-    if (loading) return;
+    if (isLoading() || atEnd) return;
 
-    load(rowCount() / DEFAULT_PER_PAGE, DEFAULT_PER_PAGE);
+    requestPage(nextPage, false);
 }
 
-void EventLogModel::logEventLoaded(const QVariantMap &data)
+void EventLogModel::refresh()
 {
-    if (!data.contains(JsonKeys::Events))
-        return;
+    qDebug() << "refresh...";
 
-    if (needClear)
-        clear();
-    needClear = false;
+    //Whatever is in flight is superseded: an answer to it is ignored.
+    abandonRequest();
+    requestPage(0, true);
+}
 
-    QVariantList events = data[JsonKeys::Events].toList();
-    for (int i = 0;i < events.count();i++)
+void EventLogModel::reset()
+{
+    abandonRequest();
+    clear();
+    shownUuids.clear();
+    nextPage = 0;
+    atEnd = false;
+}
+
+void EventLogModel::pageFinished(const QString &requestId, bool ok, const QVariantMap &data)
+{
+    if (requestId != pendingId)
+        return; //an abandoned request, or not ours
+
+    pendingId.clear();
+    requestTimer.stop();
+
+    if (!ok)
     {
-        EventLogItem *it = new EventLogItem(engine, connection);
-        it->load(events.at(i).toMap());
-
-        appendRow(it);
+        //The rows stay as they are; the next refresh() or loadMore() asks
+        //again.
+        qWarning() << "Event log page" << pendingPage << "not loaded:"
+                   << data.value(JsonKeys::Error).toString();
+        return;
     }
 
-    loading = false;
+    if (pendingReplace)
+    {
+        clear();
+        shownUuids.clear();
+    }
+
+    const QVariantList events = data.value(JsonKeys::Events).toList();
+    appendEvents(events);
+
+    nextPage = pendingPage + 1;
+    //The last page is the one shorter than asked for, or the one total_page
+    //says is last: nothing is requested past it.
+    atEnd = events.count() < DEFAULT_PER_PAGE ||
+            (data.contains(JsonKeys::TotalPage) &&
+             nextPage >= Common::toIntSafe(data.value(JsonKeys::TotalPage), 0, "eventlog.total_page"));
+}
+
+void EventLogModel::appendEvents(const QVariantList &events)
+{
+    for (const QVariant &v: events)
+    {
+        const QVariantMap e = v.toMap();
+        const QString uuid = e.value(JsonKeys::Uuid).toString();
+        if (!uuid.isEmpty())
+        {
+            if (shownUuids.contains(uuid))
+                continue;
+            shownUuids.insert(uuid);
+        }
+
+        EventLogItem *it = new EventLogItem(engine, connection);
+        it->load(e);
+        appendRow(it);
+    }
+}
+
+void EventLogModel::connectionStateChanged(int state)
+{
+    //Whatever was in flight is lost with the session: stop waiting, the
+    //refresh after the next login sends a new request. The rows are kept
+    //(stale is better than empty) until that refresh replaces them.
+    if (state != ReconnectPolicy::Connected)
+        abandonRequest();
+}
+
+void EventLogModel::requestTimedOut()
+{
+    qWarning() << "Event log page" << pendingPage << "not answered after"
+               << requestTimeoutMs << "ms, giving up on" << pendingId;
+    abandonRequest();
 }
 
 QObject *EventLogModel::loadEvent(QString uuid)
@@ -77,15 +169,6 @@ QObject *EventLogModel::loadEvent(QString uuid)
     EventLogItem *it = new EventLogItem(engine, connection);
     it->load(uuid);
     return it;
-}
-
-void EventLogModel::refresh()
-{
-    qDebug() << "refresh...";
-    if (loading) return;
-
-    needClear = true;
-    load();
 }
 
 EventLogItem::EventLogItem(QQmlApplicationEngine *eng, CalaosConnection *con):
@@ -224,22 +307,31 @@ void EventLogItem::load(const QVariantMap &data)
 
 void EventLogItem::load(const QString &uuid)
 {
-    update_loading(true);
-    QJsonObject d = {{ JsonKeys::Uuid, uuid }};
-    connection->sendJson("eventlog", d);
+    requestId = connection->requestEventLogEvent(uuid);
+    if (requestId.isEmpty())
+    {
+        //No session up: nothing to wait for.
+        update_loading(false);
+        return;
+    }
 
-    connect(connection, &CalaosConnection::logEventLoaded,
-            this, &EventLogItem::logEventLoaded);
+    update_loading(true);
+    connect(connection, &CalaosConnection::eventLogEventFinished,
+            this, &EventLogItem::eventFinished, Qt::UniqueConnection);
 }
 
-void EventLogItem::logEventLoaded(const QVariantMap &data)
+void EventLogItem::eventFinished(const QString &id, bool ok, const QVariantMap &data)
 {
-    if (data.contains(JsonKeys::Events))
+    //Only the answer to this item's own request (EVLOG-1): a page, or the
+    //event another item asked for, used to be taken for it.
+    if (id != requestId)
         return;
 
-    disconnect(connection, &CalaosConnection::logEventLoaded,
-               this, &EventLogItem::logEventLoaded);
+    disconnect(connection, &CalaosConnection::eventLogEventFinished,
+               this, &EventLogItem::eventFinished);
+    requestId.clear();
 
     update_loading(false);
-    load(data);
+    if (ok)
+        load(data);
 }

@@ -619,7 +619,7 @@ void Application::loginFailed()
     favHomeModel->clear();
     lightOnModel->clear();
     cameraModel->clear();
-    eventLogModel->clear();
+    eventLogModel->reset();
 
     update_applicationStatus(Common::NotConnected);
 

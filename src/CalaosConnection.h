@@ -423,7 +423,29 @@ public:
     bool isWebsocket() { return wsocket && constate == ConStateWebsocket; }
     bool isHttp() { return constate == ConStateHttp; }
 
-    void sendJson(QString action, QJsonObject &jsonData);
+    //Sends a JSON action over the current transport, tagged with msgId over
+    //the websocket (the server echoes it in its answer). Returns false, and
+    //sends nothing, when no session is up (EVLOG-1: it used to drop the
+    //request silently while the caller waited for an answer).
+    bool sendJson(const QString &action, QJsonObject &jsonData,
+                  const QString &msgId = QStringLiteral("user_cmd_json"));
+
+    //Event log requests (EVLOG-1). Each one gets a unique id, also used as
+    //msg_id over the websocket so the answer is tied back to its request.
+    //An empty id means nothing was sent (no session up) and nothing will be
+    //signalled. Otherwise exactly one eventLogPageFinished() (for a page) or
+    //eventLogEventFinished() (for a single event) is emitted for that id:
+    //with the server's answer, with the server's {"error": ...}, or as a
+    //failure when the transport goes away first (logout, lost connection,
+    //app sent to the background) or the HTTP request fails. The only
+    //exception is cancelEventLogRequest(), after which nothing is emitted.
+    QString requestEventLogPage(int page, int perPage);
+    QString requestEventLogEvent(const QString &uuid);
+    //The caller stopped waiting (timeout): forget the request, a late answer
+    //is dropped.
+    void cancelEventLogRequest(const QString &requestId);
+    //Requests sent and not finished yet (tests).
+    int pendingEventLogRequests() const { return pendingEventLog.size(); }
 
     QString getNotifPictureUrl(const QString &pic_uid);
 
@@ -510,6 +532,24 @@ private:
     int constate = ConStateUnknown;
 
     QList<QNetworkReply *> reqReplies;
+
+    //Event log requests in flight, by request id (EVLOG-1).
+    enum class EventLogKind { Page, Event };
+    QHash<QString, EventLogKind> pendingEventLog;
+    //HTTP: the reply that carries each of them (also listed in reqReplies).
+    QHash<QNetworkReply *, QString> eventLogReplies;
+    //Makes every request id unique for the lifetime of the connection, so a
+    //late answer can never be taken for the answer to a newer request.
+    quint64 eventLogSeq = 0;
+    QString requestEventLog(EventLogKind kind, QJsonObject data);
+    //Ends the request: emits its signal once, nothing for an unknown id
+    //(already finished, cancelled, or the answer to a request of an older
+    //session).
+    void finishEventLogRequest(const QString &requestId, bool transportOk, const QVariantMap &answer);
+    //Fails every request still in flight: their answer can no longer come.
+    void failPendingEventLogRequests();
+    //HTTP answer to an event log request.
+    void eventLogReplyFinished(QNetworkReply *reply, const QString &requestId);
     QNetworkReply *pollReply;
 
     QWebSocket *wsocket = nullptr;
@@ -555,8 +595,9 @@ private:
 
     //Single entry point of every connection attempt, automatic or not.
     void startConnection(QString user, QString pass, QString h, ReconnectPolicy::Trigger trigger);
-    //Tears the transport down without touching the policy and without
-    //emitting anything: shared by logout(), suspend() and every new attempt.
+    //Tears the transport down without touching the policy: shared by
+    //logout(), suspend() and every new attempt. The only thing it emits, last,
+    //is the failure of the event log requests still in flight (EVLOG-1).
     void resetTransport();
     //The session is over because something broke. Tears down, tells the
     //policy, notifies Application and arms the single retry timer.
@@ -567,8 +608,10 @@ private:
     void cancelReconnectTimer();
     void emitStateChanged();
     void reconnectTimerFired();
-    void sendWebsocket(const QString &msg, const QJsonObject &data = QJsonObject(), const QString &client_id = QString());
-    void sendHttp(const QString &msg, QJsonObject &data, bool ignoreErrors = true);
+    //Both report what was sent: false / nullptr when that transport is not
+    //the one up.
+    bool sendWebsocket(const QString &msg, const QJsonObject &data = QJsonObject(), const QString &client_id = QString());
+    QNetworkReply *sendHttp(const QString &msg, QJsonObject &data, bool ignoreErrors = true);
 
     void processEventsV2(QString msg);
     void processEventsV3(QVariantMap msg);
@@ -613,7 +656,12 @@ signals:
     void cameraPictureDownloaded(const QString &camid, const QByteArray &data);
     void cameraPictureFailed(const QString &camid);
     void eventTouchscreenCamera(QString camid);
-    void logEventLoaded(const QVariantMap &data);
+    //End of an event log request, see requestEventLogPage(). ok is true when
+    //the server sent what was asked for (a page carries "events"); the map
+    //is the server's answer either way ({"error": ...} on a server error),
+    //empty when the transport failed.
+    void eventLogPageFinished(const QString &requestId, bool ok, const QVariantMap &page);
+    void eventLogEventFinished(const QString &requestId, bool ok, const QVariantMap &event);
     void audioCoverDownloaded(const QString &camid, const QByteArray &data);
     void changeCredsSuccess(QString uname, QString pass);
     void changeCredsFailed();

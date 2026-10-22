@@ -27,7 +27,9 @@
  *    a page answer is never taken for a single event;
  *  - logout and loginFailed reset the state;
  *  - loadMore() stops at the last page, a short last page is not loaded
- *    twice and an event already shown is not added again.
+ *    twice and an event already shown is not added again;
+ *  - the view asking for more while a refresh replaces the rows (found on
+ *    the simulator) does not start a request with stale paging.
  */
 
 #include <QtTest>
@@ -385,6 +387,7 @@ private slots:
     void loginFailedResetsState();
     void loadMoreStopsAtLastPage();
     void loadMoreSkipsEventsAlreadyShown();
+    void viewLoadingMoreWhileRowsAreReplaced();
 };
 
 //Path 2 of the ticket: calaos_server (or haproxy) restarts while a page is in
@@ -774,6 +777,48 @@ void TstEventLogSession::loadMoreSkipsEventsAlreadyShown()
 
     QTRY_VERIFY(!model->isLoading());
     QVERIFY(rowsAre(95, ws.log.label));
+}
+
+//EventLogView.qml calls loadMore() when the list reaches its end, and
+//clear() puts it there: while a refresh replaces the rows, the view asks for
+//more. Seen on the simulator: with the request already marked finished, that
+//asked for the next page of the *previous* paging in the middle of the
+//refresh. The request must count as in flight until its rows are in.
+void TstEventLogSession::viewLoadingMoreWhileRowsAreReplaced()
+{
+    FakeCalaosWs ws;
+    QVERIFY(ws.start());
+    ws.log.totalCount = 200;
+    loginAndLoad(ws);
+    model->loadMore();
+    QTRY_COMPARE(model->rowCount(), 2 * DEFAULT_PER_PAGE);
+    model->loadMore();
+    QTRY_COMPARE(model->rowCount(), 3 * DEFAULT_PER_PAGE);
+    QTRY_VERIFY(!model->isLoading());
+    QCOMPARE(ws.pageRequests(), 3);
+
+    //The view: the list emptied by clear() is at its end.
+    int viewCalls = 0;
+    connect(model, &QAbstractItemModel::modelReset, this, [this, &viewCalls]()
+    {
+        viewCalls++;
+        model->loadMore();
+    });
+
+    ws.log.label = QStringLiteral("refreshed");
+    model->refresh();
+    QTRY_VERIFY(rowsAre(DEFAULT_PER_PAGE, ws.log.label));
+    QTRY_VERIFY(!model->isLoading());
+    QVERIFY(viewCalls > 0);
+    QTest::qWait(200);
+    QCOMPARE(ws.pageRequests(), 4); //the refresh only
+    QCOMPARE(ws.requests.last().data["page"].toInt(), 0);
+    QVERIFY(rowsAre(DEFAULT_PER_PAGE, ws.log.label));
+
+    model->loadMore();
+    QTRY_COMPARE(ws.pageRequests(), 5);
+    QCOMPARE(ws.requests.last().data["page"].toInt(), 1);
+    QTRY_VERIFY(rowsAre(2 * DEFAULT_PER_PAGE, ws.log.label));
 }
 
 QTEST_MAIN(TstEventLogSession)

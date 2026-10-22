@@ -89,10 +89,11 @@ void EventLogModel::refresh()
 void EventLogModel::reset()
 {
     abandonRequest();
-    clear();
+    //Paging first: the view reacts to clear() (atYEnd -> loadMore()).
     shownUuids.clear();
     nextPage = 0;
     atEnd = false;
+    clear();
 }
 
 void EventLogModel::pageFinished(const QString &requestId, bool ok, const QVariantMap &data)
@@ -100,11 +101,11 @@ void EventLogModel::pageFinished(const QString &requestId, bool ok, const QVaria
     if (requestId != pendingId)
         return; //an abandoned request, or not ours
 
-    pendingId.clear();
     requestTimer.stop();
 
     if (!ok)
     {
+        pendingId.clear();
         //The rows stay as they are; the next refresh() or loadMore() asks
         //again.
         qWarning() << "Event log page" << pendingPage << "not loaded:"
@@ -112,13 +113,16 @@ void EventLogModel::pageFinished(const QString &requestId, bool ok, const QVaria
         return;
     }
 
+    //The request stays in flight until its rows are in: the view reacts to
+    //the rows changing (clear() puts the list at its end, and
+    //EventLogView.qml calls loadMore() on atYEnd), and a request started
+    //from there would ask for a page computed from the previous paging.
+    const QVariantList events = data.value(JsonKeys::Events).toList();
     if (pendingReplace)
     {
-        clear();
         shownUuids.clear();
+        clear();
     }
-
-    const QVariantList events = data.value(JsonKeys::Events).toList();
     appendEvents(events);
 
     nextPage = pendingPage + 1;
@@ -127,6 +131,7 @@ void EventLogModel::pageFinished(const QString &requestId, bool ok, const QVaria
     atEnd = events.count() < DEFAULT_PER_PAGE ||
             (data.contains(JsonKeys::TotalPage) &&
              nextPage >= Common::toIntSafe(data.value(JsonKeys::TotalPage), 0, "eventlog.total_page"));
+    pendingId.clear();
 }
 
 void EventLogModel::appendEvents(const QVariantList &events)

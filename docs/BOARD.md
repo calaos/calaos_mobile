@@ -99,6 +99,7 @@ La version Android n'a jamais fonctionné en Qt 6. Analyse et plan validés par 
 | [AND-8](tasks/AND-8-clavier-apres-login.md) | Le clavier reste ouvert après le login | S | — | G-QML-MOBILE | Terminé |
 
 Suivis issus des revues (à traiter dans le ticket indiqué) :
+- EVLOG-1 validé sur l'iPhone 15 Pro le 2026-10-22 (rafraîchissement, arrière-plan répété, pages suivantes sans doublon).
 - `tst_climatewidget` (`ClimateSheet::test_theModelLetsGoOfTheDeviceWhenTheSheetCloses`) échoue désormais à chaque exécution, y compris sur `master` (constaté pendant EVLOG-1, 2026-10-22) : à traiter dans un ticket dédié, comme le test instable `tst_camerapolling`.
 - AND-9 validé sur le Redmi en armeabi-v7a (5 jours sans crash, push avec image reçu) et en arm64 le 2026-10-22.
 - Passage iPhone 15 Pro (2026-10-17, Qt 6.12) validé par Raoul : affichage Dynamic Island/120 Hz, arrière-plan, déconnexion persistante, lancement hors ligne + bandeau, bouton X, push premier plan/arrière-plan/app tuée avec image, tap → événement (y compris à froid), Quick Actions à froid et en arrière-plan. Pastille (IOS-3) validée le 2026-10-17 après déploiement de `mutable-content` côté calaos_server. Restent : AND-9 en armv7 et FIX-3 (tap pendant une reconnexion) sur appareil ; MOB-1 iPad paysage non vérifié.
@@ -158,7 +159,7 @@ Exécution parallèle : chaque ticket lancé en parallèle travaille dans son pr
 | [FIX-10](tasks/FIX-10-bandeau-hors-ligne.md) | Bandeau « hors ligne » à la place de l'alerte modale « No network » | S | FIX-11, AND-9 | G-QML-MOBILE + G-CONN | Terminé |
 | [FIX-11](tasks/FIX-11-deconnexion-persistante.md) | Mémoriser la déconnexion volontaire entre deux lancements | S | FIX-9 | G-CONN + G-ANDROID | Terminé |
 | [FIX-12](tasks/FIX-12-effacer-mot-de-passe.md) | Le bouton « effacer » du champ mot de passe n'efface rien | S | FIX-10 | G-QML-MOBILE | Terminé |
-| [EVLOG-1](tasks/EVLOG-1-historique-fige.md) | Historique des événements figé après une requête perdue | M | — | G-CONN + G-MODELS | En revue |
+| [EVLOG-1](tasks/EVLOG-1-historique-fige.md) | Historique des événements figé après une requête perdue | M | — | G-CONN + G-MODELS | Terminé |
 
 ## Diagramme de parallélisation
 

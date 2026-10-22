@@ -25,6 +25,8 @@
  *  - a late answer to an abandoned request, and the answer to a single event
  *    (push notification view), never end nor corrupt the page in flight, and
  *    a page answer is never taken for a single event;
+ *  - a single event the server never answers stops loading after the
+ *    guard timeout (the push view spinner used to run forever);
  *  - logout and loginFailed reset the state (Application::logout() and
  *    loginFailed() call reset()): after a logout, another home shows none
  *    of the previous rows and pages from 0;
@@ -395,6 +397,7 @@ private slots:
     void httpTransportLoadsTopLevelPage();
     void lateAnswerOfAbandonedRequestIgnored();
     void singleEventAndPageAnswersKeptApart();
+    void singleEventReleasedByTimeout();
     void logoutResetsState();
     void logoutThenAnotherHome();
     void loginFailedResetsState();
@@ -671,6 +674,40 @@ void TstEventLogSession::singleEventAndPageAnswersKeptApart()
     QVERIFY(item2);
     QVERIFY(item2->get_loading());
     con->logout();
+    QVERIFY(!item2->get_loading());
+}
+
+//A single event (push notification view) the server never answers: the
+//item stops loading after the guard timeout, the connection forgets the
+//request, and a late answer changes nothing.
+void TstEventLogSession::singleEventReleasedByTimeout()
+{
+    model->setRequestTimeout(300);
+    FakeCalaosWs ws;
+    QVERIFY(ws.start());
+    loginAndLoad(ws);
+
+    ws.mode = FakeCalaosWs::Hold;
+    QScopedPointer<QObject> obj(model->loadEvent(QStringLiteral("ev-3")));
+    EventLogItem *item = qobject_cast<EventLogItem *>(obj.data());
+    QVERIFY(item);
+    QTRY_COMPARE(ws.requests.size(), 2);
+    QVERIFY(item->get_loading());
+    QCOMPARE(con->pendingEventLogRequests(), 1);
+
+    QTRY_VERIFY(!item->get_loading());
+    QCOMPARE(con->pendingEventLogRequests(), 0);
+
+    ws.answer(1);
+    QTest::qWait(200);
+    QCOMPARE(item->get_evNotifText(), QString());
+
+    //A new item still loads once the server answers.
+    ws.mode = FakeCalaosWs::Answer;
+    QScopedPointer<QObject> obj2(model->loadEvent(QStringLiteral("ev-4")));
+    EventLogItem *item2 = qobject_cast<EventLogItem *>(obj2.data());
+    QVERIFY(item2);
+    QTRY_COMPARE(item2->get_evNotifText(), QStringLiteral("single ev-4"));
     QVERIFY(!item2->get_loading());
 }
 

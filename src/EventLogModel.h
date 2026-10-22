@@ -44,7 +44,8 @@ public:
     explicit EventLogModel(QQmlApplicationEngine *engine, CalaosConnection *con, QObject *parent = nullptr);
     virtual ~EventLogModel() {}
 
-    //How long a page request may stay unanswered before it is abandoned.
+    //How long a request (a page, or the single event of loadEvent()) may
+    //stay unanswered before it is abandoned.
     static constexpr int DefaultRequestTimeoutMs = 25000;
 
     enum
@@ -139,15 +140,23 @@ public:
     virtual ~EventLogItem() {}
 
     void load(const QVariantMap &data);
-    void load(const QString &uuid);
+    //Asks the server for that one event. loading stays true until it is
+    //answered, the session drops, or timeoutMs passes without an answer
+    //(a silent server must not leave the push view spinning forever).
+    void load(const QString &uuid, int timeoutMs = EventLogModel::DefaultRequestTimeoutMs);
 
 private slots:
     void eventFinished(const QString &requestId, bool ok, const QVariantMap &data);
 
 private:
+    void endRequest();
+
     QQmlApplicationEngine *engine;
     CalaosConnection *connection;
     QString requestId;
+    //Only created for the items that load an event themselves, not for the
+    //rows of the model.
+    QTimer *requestTimer = nullptr;
 };
 
 #endif // EVENTLOGMODEL_H

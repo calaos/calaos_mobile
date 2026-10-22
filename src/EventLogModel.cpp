@@ -170,7 +170,7 @@ void EventLogModel::requestTimedOut()
 QObject *EventLogModel::loadEvent(QString uuid)
 {
     EventLogItem *it = new EventLogItem(engine, connection);
-    it->load(uuid);
+    it->load(uuid, requestTimeoutMs);
     return it;
 }
 
@@ -308,7 +308,7 @@ void EventLogItem::load(const QVariantMap &data)
     }
 }
 
-void EventLogItem::load(const QString &uuid)
+void EventLogItem::load(const QString &uuid, int timeoutMs)
 {
     requestId = connection->requestEventLogEvent(uuid);
     if (requestId.isEmpty())
@@ -321,6 +321,30 @@ void EventLogItem::load(const QString &uuid)
     update_loading(true);
     connect(connection, &CalaosConnection::eventLogEventFinished,
             this, &EventLogItem::eventFinished, Qt::UniqueConnection);
+
+    if (!requestTimer)
+    {
+        requestTimer = new QTimer(this);
+        requestTimer->setSingleShot(true);
+        connect(requestTimer, &QTimer::timeout, this, [this]()
+        {
+            qWarning() << "Event log event not answered, giving up on" << requestId;
+            //The connection forgets it too: a late answer goes nowhere.
+            connection->cancelEventLogRequest(requestId);
+            endRequest();
+        });
+    }
+    requestTimer->start(timeoutMs);
+}
+
+void EventLogItem::endRequest()
+{
+    disconnect(connection, &CalaosConnection::eventLogEventFinished,
+               this, &EventLogItem::eventFinished);
+    if (requestTimer)
+        requestTimer->stop();
+    requestId.clear();
+    update_loading(false);
 }
 
 void EventLogItem::eventFinished(const QString &id, bool ok, const QVariantMap &data)
@@ -330,11 +354,7 @@ void EventLogItem::eventFinished(const QString &id, bool ok, const QVariantMap &
     if (id != requestId)
         return;
 
-    disconnect(connection, &CalaosConnection::eventLogEventFinished,
-               this, &EventLogItem::eventFinished);
-    requestId.clear();
-
-    update_loading(false);
+    endRequest();
     if (ok)
         load(data);
 }

@@ -110,9 +110,10 @@ private:
     //requested again and its rows duplicated.
     int nextPage = 0;
     bool atEnd = false;
-    //Events shown, so a page that overlaps the previous one (new events
-    //logged in between shift the pages) adds no duplicate row.
-    QSet<QString> shownUuids;
+    //Events shown, by their "id" (the event uuid), so a page that overlaps
+    //the previous one (new events logged in between shift the pages) adds
+    //no duplicate row.
+    QSet<QString> shownIds;
 };
 
 class EventLogItem: public QObject, public QStandardItem

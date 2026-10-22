@@ -57,7 +57,8 @@ static const QString TestUser = QStringLiteral("user");
 static const QString TestPass = QStringLiteral("pass");
 
 //The event log of the fake server: totalCount events, newest first, event i
-//has the uuid "ev-<i>" and the message "<label> #<i>". Paged like
+//has the id "ev-<i>" (the uuid, sent as "id" like HistEvent::toJson) and
+//the message "<label> #<i>". Paged like
 //HistLogger::getEvents(): total_page rounded up, a page past it is an error.
 struct FakeLog
 {
@@ -67,7 +68,7 @@ struct FakeLog
     static QJsonObject event(int i, const QString &message)
     {
         return QJsonObject{
-            { "uuid", QStringLiteral("ev-%1").arg(i) },
+            { "id", QStringLiteral("ev-%1").arg(i) },
             { "event_type", "22" },
             { "created_at", QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd hh:mm:ss") },
             { "io_id", "" },

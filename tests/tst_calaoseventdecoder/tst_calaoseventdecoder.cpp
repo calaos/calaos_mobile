@@ -666,7 +666,7 @@ void TstCalaosEventDecoder::queryAnswerEventLogPageRealHttpShape()
     QFETCH(int, api);
     const QVariantMap answer = frameFromJson(
         R"({"total_page":2,"total_count":80,"page":0,"per_page":50,
-            "events":[{"uuid":"e1","event_type":"22","created_at":"2026-10-21 17:23:15",
+            "events":[{"id":"e1","event_type":"22","created_at":"2026-10-21 17:23:15",
                        "io_id":"","io_state":"","pic_uid":"",
                        "event_raw":{"message":"hello"}}]})");
 
@@ -688,7 +688,7 @@ void TstCalaosEventDecoder::queryAnswerEventLogPageWrappedInData()
 {
     //A page wrapped in "data", like the websocket answer, is still accepted.
     const QVariantMap answer = frameFromJson(
-        R"({"data":{"total_page":1,"events":[{"uuid":"e1"}]}})");
+        R"({"data":{"total_page":1,"events":[{"id":"e1"}]}})");
 
     const QList<DecodedEvent> events =
             record(CalaosEventDecoder::decodeQueryAnswer(answer, CalaosEventDecoder::ApiV2));

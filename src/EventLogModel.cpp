@@ -90,7 +90,7 @@ void EventLogModel::reset()
 {
     abandonRequest();
     //Paging first: the view reacts to clear() (atYEnd -> loadMore()).
-    shownUuids.clear();
+    shownIds.clear();
     nextPage = 0;
     atEnd = false;
     clear();
@@ -120,7 +120,7 @@ void EventLogModel::pageFinished(const QString &requestId, bool ok, const QVaria
     const QVariantList events = data.value(JsonKeys::Events).toList();
     if (pendingReplace)
     {
-        shownUuids.clear();
+        shownIds.clear();
         clear();
     }
     appendEvents(events);
@@ -139,12 +139,14 @@ void EventLogModel::appendEvents(const QVariantList &events)
     for (const QVariant &v: events)
     {
         const QVariantMap e = v.toMap();
-        const QString uuid = e.value(JsonKeys::Uuid).toString();
-        if (!uuid.isEmpty())
+        //calaos_server sends the uuid of an event as "id"
+        //(HistEvent::toJson); "uuid" is only the request parameter.
+        const QString id = e.value(JsonKeys::Id).toString();
+        if (!id.isEmpty())
         {
-            if (shownUuids.contains(uuid))
+            if (shownIds.contains(id))
                 continue;
-            shownUuids.insert(uuid);
+            shownIds.insert(id);
         }
 
         EventLogItem *it = new EventLogItem(engine, connection);

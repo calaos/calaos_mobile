@@ -138,6 +138,7 @@ Ordre : AND-4 → QT-1 → (IOS-1 ∥ AND-7) → MOB-1 → AND-5 → AND-9 → A
 | [AND-9](tasks/AND-9-android-15-16-multiarch.md) | Android 15/16 et matrice multi-architecture | M | AND-5, MOB-1 | G-ANDROID | Terminé |
 | [IOS-2](tasks/IOS-2-push-ios-qt612.md) | Push iOS sous Qt 6.12 : conflit avec le délégué d'application de Qt | M | — | G-IOS | Terminé |
 | [IOS-3](tasks/IOS-3-pastille-icone.md) | Pastille de l'icône iOS : compteur de notifications non lues | S | IOS-2 | G-IOS | Terminé |
+| [IOS-4](tasks/IOS-4-iphone-duo.md) | Support de l'iPhone Duo (pliable) et captures App Store — avant avril 2027 | M | — | G-IOS + G-QML-MOBILE | À faire |
 
 ## P-FIX — Petits bugs constatés pendant P-AND
 

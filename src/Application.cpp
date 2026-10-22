@@ -486,6 +486,9 @@ void Application::logout()
 {
     stopPushNotifRouting();
     calaosConnect->logout();
+    //The history belongs to the session just closed: the next login may be
+    //to another home, its rows and paging must not show there (EVLOG-1).
+    eventLogModel->reset();
     update_applicationStatus(Common::NotConnected);
     //Nothing is wanted any more: no banner, even offline.
     updateWaitingForNetwork();

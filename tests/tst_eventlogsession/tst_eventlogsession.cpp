@@ -25,7 +25,9 @@
  *  - a late answer to an abandoned request, and the answer to a single event
  *    (push notification view), never end nor corrupt the page in flight, and
  *    a page answer is never taken for a single event;
- *  - logout and loginFailed reset the state;
+ *  - logout and loginFailed reset the state (Application::logout() and
+ *    loginFailed() call reset()): after a logout, another home shows none
+ *    of the previous rows and pages from 0;
  *  - loadMore() stops at the last page, a short last page is not loaded
  *    twice and an event already shown is not added again;
  *  - the view asking for more while a refresh replaces the rows (found on
@@ -363,6 +365,15 @@ private slots:
             homes++;
             model->refresh();
         });
+        //Application::loginFailed() calls eventLogModel->reset().
+        connect(con, &CalaosConnection::loginFailed, model, &EventLogModel::reset);
+    }
+
+    //Application::logout(): the connection, then the history.
+    void appLogout()
+    {
+        con->logout();
+        model->reset();
     }
 
     void cleanup()
@@ -385,6 +396,7 @@ private slots:
     void lateAnswerOfAbandonedRequestIgnored();
     void singleEventAndPageAnswersKeptApart();
     void logoutResetsState();
+    void logoutThenAnotherHome();
     void loginFailedResetsState();
     void loadMoreStopsAtLastPage();
     void loadMoreSkipsEventsAlreadyShown();
@@ -686,9 +698,45 @@ void TstEventLogSession::logoutResetsState()
     QTRY_VERIFY(rowsAre(DEFAULT_PER_PAGE, ws.log.label));
 }
 
+//Application::logout() then a login to another home: none of the rows of the
+//first home stay, and the paging starts over (it used to continue from the
+//page count of the first home).
+void TstEventLogSession::logoutThenAnotherHome()
+{
+    FakeCalaosWs home1;
+    QVERIFY(home1.start());
+    home1.log.label = QStringLiteral("home1");
+    loginAndLoad(home1);
+    model->loadMore();
+    QTRY_COMPARE(model->rowCount(), 2 * DEFAULT_PER_PAGE);
+    QTRY_VERIFY(!model->isLoading());
+
+    appLogout();
+    QCOMPARE(model->rowCount(), 0);
+    QVERIFY(!model->isLoading());
+    QVERIFY(!model->isAtEnd());
+
+    FakeCalaosWs home2;
+    QVERIFY(home2.start());
+    home2.log.label = QStringLiteral("home2");
+    home2.log.totalCount = 80;
+    con->login(TestUser, TestPass, home2.url());
+    QTRY_COMPARE(homes, 2);
+    QTRY_VERIFY(rowsAre(DEFAULT_PER_PAGE, home2.log.label));
+    QCOMPARE(home2.pageRequests(), 1);
+    QCOMPARE(home2.requests.at(0).data["page"].toInt(), 0);
+
+    model->loadMore();
+    QTRY_COMPARE(home2.pageRequests(), 2);
+    QCOMPARE(home2.requests.at(1).data["page"].toInt(), 1);
+    QTRY_VERIFY(rowsAre(80, home2.log.label));
+    QCOMPARE(home1.pageRequests(), 2);
+}
+
 //The session drops with a page in flight and the server then rejects the
-//credentials until the client gives up (loginFailed): the rows and the
-//paging of that session are forgotten, and the next login loads from page 0.
+//credentials until the client gives up (loginFailed, on which Application
+//resets the history): the rows and the paging of that session are
+//forgotten, and the next login loads from page 0.
 void TstEventLogSession::loginFailedResetsState()
 {
     FakeCalaosWs ws;

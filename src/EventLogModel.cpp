@@ -26,10 +26,6 @@ EventLogModel::EventLogModel(QQmlApplicationEngine *eng, CalaosConnection *con, 
             this, &EventLogModel::pageFinished);
     connect(connection, &CalaosConnection::connectionStateChanged,
             this, &EventLogModel::connectionStateChanged);
-    //Credentials given up on: the session will not come back on its own,
-    //what is shown belongs to it (Application clears the other models too).
-    connect(connection, &CalaosConnection::loginFailed,
-            this, &EventLogModel::reset);
 
     requestTimer.setSingleShot(true);
     connect(&requestTimer, &QTimer::timeout, this, &EventLogModel::requestTimedOut);

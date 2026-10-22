@@ -72,8 +72,9 @@ public:
 
     Q_INVOKABLE QObject *loadEvent(QString uuid);
 
-    //Forgets everything: rows, paging and the request in flight
-    //(credentials given up on).
+    //Forgets everything: rows, paging and the request in flight. Called by
+    //Application on logout (possibly before logging in to another home) and
+    //when the credentials were given up on (loginFailed()).
     void reset();
 
     bool isLoading() const { return !pendingId.isEmpty(); }

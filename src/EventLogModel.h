@@ -2,6 +2,8 @@
 #define EVENTLOGMODEL_H
 
 #include <QStandardItemModel>
+#include <QSet>
+#include <QTimer>
 #include "qqmlhelpers.h"
 #include <QQmlApplicationEngine>
 #include "CalaosConnection.h"

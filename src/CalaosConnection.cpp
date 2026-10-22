@@ -193,6 +193,9 @@ void CalaosConnection::resetTransport()
 
     //Last, so a listener sees a transport that is already down (EVLOG-1:
     //the answer was simply lost before and the event log waited forever).
+    //Down means constate/isWebsocket()/isHttp() only: the callers update
+    //reconnectPolicy, and emit connectionStateChanged(), after this returns,
+    //so a listener must not read connectionState() here.
     failPendingEventLogRequests();
 }
 

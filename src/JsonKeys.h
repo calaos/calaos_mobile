@@ -68,6 +68,8 @@ inline constexpr QLatin1StringView Token{"token"};
 inline constexpr QLatin1StringView Hardware{"hardware"};
 //Shape of the FCM messages wanted by this device (see PushFormat).
 inline constexpr QLatin1StringView PushFormat{"push_format"};
+//Human-readable name of the phone, shown to the admin choosing an approver.
+inline constexpr QLatin1StringView DeviceName{"device_name"};
 
 //--- Answer envelope and long polling ---------------------------------------
 inline constexpr QLatin1StringView Success{"success"};

@@ -30,6 +30,8 @@ public:
 
     virtual void inputTextDialog(const QString &title, const QString &message);
 
+    virtual QString getDeviceName();
+
     //Credentials and server host live on the Java side (CredentialStore:
     //Keystore-encrypted SharedPreferences), where the push picture worker
     //can read them without Qt running: the Android counterpart of the iOS

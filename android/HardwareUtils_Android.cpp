@@ -282,6 +282,16 @@ void HardwareUtilsAndroid::emitNetworkStatusIfChanged()
     emitNetworkStatusChanged();
 }
 
+QString HardwareUtilsAndroid::getDeviceName()
+{
+    QJniObject jname = QJniObject::callStaticObjectMethod(kHardwareUtilsClass,
+                                                          "getDeviceName",
+                                                          "()Ljava/lang/String;");
+    if (clearJavaException("HardwareUtils.getDeviceName") || !jname.isValid())
+        return QString();
+    return jname.toString();
+}
+
 int HardwareUtilsAndroid::getNetworkStatus()
 {
     bool known = false;

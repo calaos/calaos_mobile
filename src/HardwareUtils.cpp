@@ -161,6 +161,11 @@ void HardwareUtils::clearDeviceToken()
     emit deviceTokenChanged();
 }
 
+QString HardwareUtils::getDeviceName()
+{
+    return QSysInfo::machineHostName();
+}
+
 QString HardwareUtils::describeToken(const QString &token)
 {
     if (token.isEmpty())

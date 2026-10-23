@@ -4,7 +4,7 @@
 <context>
     <name>Application</name>
     <message>
-        <location filename="../src/Application.cpp" line="227"/>
+        <location filename="../src/Application.cpp" line="249"/>
         <source>Network error</source>
         <translation>Erreur réseau</translation>
     </message>
@@ -13,46 +13,73 @@
         <translation type="vanished">La connection avec calaos_server a été perdu. Elle va être retentée lorsque calaos_server sera de nouveau disponible.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="228"/>
+        <location filename="../src/Application.cpp" line="250"/>
         <source>The connection to calaos_server was lost. It will reconnect automatically when calaos_server is available again.</source>
         <translation>La connexion avec calaos_server a été perdue. Elle sera rétablie automatiquement dès que calaos_server sera de nouveau disponible.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="231"/>
-        <location filename="../src/Application.cpp" line="239"/>
-        <location filename="../src/Application.cpp" line="251"/>
-        <location filename="../src/Application.cpp" line="635"/>
-        <location filename="../src/Application.cpp" line="800"/>
+        <location filename="../src/Application.cpp" line="253"/>
+        <location filename="../src/Application.cpp" line="272"/>
+        <location filename="../src/Application.cpp" line="280"/>
+        <location filename="../src/Application.cpp" line="292"/>
+        <location filename="../src/Application.cpp" line="304"/>
+        <location filename="../src/Application.cpp" line="718"/>
+        <location filename="../src/Application.cpp" line="883"/>
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="237"/>
+        <location filename="../src/Application.cpp" line="263"/>
+        <source>Not connected</source>
+        <translation>Non connecté</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="265"/>
+        <source>The certificate of %1 was not trusted, the connection was cancelled.</source>
+        <translation>Le certificat de %1 n&apos;a pas été accepté, la connexion a été annulée.</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="268"/>
+        <source>The certificate of %1 was not trusted, the connection was cancelled. Tap Login to check it again.</source>
+        <translation>Le certificat de %1 n&apos;a pas été accepté, la connexion a été annulée. Touchez Connexion pour le vérifier à nouveau.</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="277"/>
+        <source>Certificate refused</source>
+        <translation>Certificat refusé</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="278"/>
+        <source>The certificate of %1 is not valid (%2). The connection was cancelled.</source>
+        <translation>Le certificat de %1 n&apos;est pas valide (%2). La connexion a été annulée.</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="290"/>
         <source>Credentials change failed</source>
         <translation>Échec de la modification des identifiants</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="238"/>
+        <location filename="../src/Application.cpp" line="291"/>
         <source>Credentials were not changed. Please try again.</source>
         <translation>Les identifiants n&apos;ont pas été modifiés. Veuillez réessayer.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="249"/>
+        <location filename="../src/Application.cpp" line="302"/>
         <source>Credentials changed</source>
         <translation>Identifiants modifiés</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="250"/>
+        <location filename="../src/Application.cpp" line="303"/>
         <source>Credentials were successfully changed.</source>
         <translation>Les identifiants ont été modifiés avec succès.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="798"/>
+        <location filename="../src/Application.cpp" line="881"/>
         <source>Reboot</source>
         <translation type="unfinished">Redémarrer</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="799"/>
+        <location filename="../src/Application.cpp" line="882"/>
         <source>An update is being installed. Reboot once it has finished.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -61,12 +88,12 @@
         <translation type="vanished">Aucune connexion réseau trouvée, cette application nécessite une connexion réseau pour fonctionner.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="633"/>
+        <location filename="../src/Application.cpp" line="716"/>
         <source>Login failed</source>
         <translation>Échec de l&apos;authentification</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="634"/>
+        <location filename="../src/Application.cpp" line="717"/>
         <source>Connection failed, please check your credentials.</source>
         <translation>Échec de la connexion, veuillez vérifier vos identifiants.</translation>
     </message>
@@ -1538,6 +1565,69 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     </message>
 </context>
 <context>
+    <name>DialogTlsTrust</name>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="18"/>
+        <source>Certificate changed!</source>
+        <translation>Certificat modifié !</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="18"/>
+        <source>Unknown certificate</source>
+        <translation>Certificat inconnu</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="20"/>
+        <source>The certificate key of %1 has changed since the last connection. This is expected if the certificate of your Calaos box was regenerated, but it can also mean that someone is intercepting the connection. Only trust it if you know why it changed.</source>
+        <translation>La clé du certificat de %1 a changé depuis la dernière connexion. C&apos;est normal si le certificat de votre box Calaos a été régénéré, mais cela peut aussi signifier que quelqu&apos;un intercepte la connexion. Ne lui faites confiance que si vous savez pourquoi il a changé.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="24"/>
+        <source>The certificate of %1 cannot be verified. This is usual for a Calaos box on a home network. Check that the fingerprint below is the one of your box before trusting it.</source>
+        <translation>Le certificat de %1 ne peut pas être vérifié. C&apos;est habituel pour une box Calaos sur un réseau local. Vérifiez que l&apos;empreinte ci-dessous est bien celle de votre box avant de lui faire confiance.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="27"/>
+        <source>Do not connect</source>
+        <translation>Ne pas se connecter</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="28"/>
+        <source>Trust</source>
+        <translation>Faire confiance</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="58"/>
+        <source>Key fingerprint (SHA-256)</source>
+        <translation>Empreinte de la clé (SHA-256)</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="63"/>
+        <source>Previously trusted key</source>
+        <translation>Clé acceptée précédemment</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="71"/>
+        <source>Certificate fingerprint (SHA-256)</source>
+        <translation>Empreinte du certificat (SHA-256)</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="80"/>
+        <source>Issued to: %1</source>
+        <translation>Délivré à : %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="81"/>
+        <source>Issued by: %1</source>
+        <translation>Délivré par : %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="82"/>
+        <source>Expires: %1</source>
+        <translation>Expire le : %1</translation>
+    </message>
+</context>
+<context>
     <name>EventLogItem</name>
     <message>
         <location filename="../src/EventLogModel.cpp" line="199"/>
@@ -1656,12 +1746,12 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>HardwareUtilsAndroid</name>
     <message>
-        <location filename="../android/HardwareUtils_Android.cpp" line="313"/>
+        <location filename="../android/HardwareUtils_Android.cpp" line="315"/>
         <source>Confirm</source>
         <translation>Valider</translation>
     </message>
     <message>
-        <location filename="../android/HardwareUtils_Android.cpp" line="315"/>
+        <location filename="../android/HardwareUtils_Android.cpp" line="317"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
@@ -1669,12 +1759,12 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>HardwareUtils_iOS</name>
     <message>
-        <location filename="../ios/HardwareUtils.mm" line="564"/>
+        <location filename="../ios/HardwareUtils.mm" line="584"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
     <message>
-        <location filename="../ios/HardwareUtils.mm" line="565"/>
+        <location filename="../ios/HardwareUtils.mm" line="585"/>
         <source>Confirm</source>
         <translation>Valider</translation>
     </message>
@@ -2390,27 +2480,37 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
         <translation>Remise à zéro des données</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="64"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="68"/>
+        <source>Trusted certificates:</source>
+        <translation>Certificats de confiance :</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsView.qml" line="107"/>
+        <source>Forget</source>
+        <translation>Oublier</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsView.qml" line="119"/>
         <source>Favorites:</source>
         <translation>Favoris:</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="70"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="125"/>
         <source>Add a favorite</source>
         <translation>Ajouter un favori</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="82"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="137"/>
         <source>Edit favorites list</source>
         <translation>Éditer la liste des favoris</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="90"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="145"/>
         <source>Language:</source>
         <translation>Langue:</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="127"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="182"/>
         <source>Settings</source>
         <translation>Options</translation>
     </message>
@@ -2455,6 +2555,69 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <location filename="../qml/desktop/SpotifyView.qml" line="149"/>
         <source>Quit</source>
         <translation>Quitter</translation>
+    </message>
+</context>
+<context>
+    <name>TlsTrustSheet</name>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="80"/>
+        <source>Certificate changed!</source>
+        <translation>Certificat modifié !</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="80"/>
+        <source>Unknown certificate</source>
+        <translation>Certificat inconnu</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="97"/>
+        <source>The certificate key of %1 has changed since the last connection. This is expected if the certificate of your Calaos box was regenerated, but it can also mean that someone is intercepting the connection. Only trust it if you know why it changed.</source>
+        <translation>La clé du certificat de %1 a changé depuis la dernière connexion. C&apos;est normal si le certificat de votre box Calaos a été régénéré, mais cela peut aussi signifier que quelqu&apos;un intercepte la connexion. Ne lui faites confiance que si vous savez pourquoi il a changé.</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="101"/>
+        <source>The certificate of %1 cannot be verified. This is usual for a Calaos box on a home network. Check that the fingerprint below is the one of your box before trusting it.</source>
+        <translation>Le certificat de %1 ne peut pas être vérifié. C&apos;est habituel pour une box Calaos sur un réseau local. Vérifiez que l&apos;empreinte ci-dessous est bien celle de votre box avant de lui faire confiance.</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="106"/>
+        <source>Key fingerprint (SHA-256)</source>
+        <translation>Empreinte de la clé (SHA-256)</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="111"/>
+        <source>Previously trusted key</source>
+        <translation>Clé acceptée précédemment</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="119"/>
+        <source>Certificate fingerprint (SHA-256)</source>
+        <translation>Empreinte du certificat (SHA-256)</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="128"/>
+        <source>Issued to: %1</source>
+        <translation>Délivré à : %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="129"/>
+        <source>Issued by: %1</source>
+        <translation>Délivré par : %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="130"/>
+        <source>Expires: %1</source>
+        <translation>Expire le : %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="142"/>
+        <source>Do not connect</source>
+        <translation>Ne pas se connecter</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="150"/>
+        <source>Trust</source>
+        <translation>Faire confiance</translation>
     </message>
 </context>
 <context>
@@ -2780,12 +2943,12 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
 <context>
     <name>main</name>
     <message>
-        <location filename="../qml/desktop/main.qml" line="380"/>
+        <location filename="../qml/desktop/main.qml" line="382"/>
         <source>Keyboard</source>
         <translation>Clavier</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/main.qml" line="381"/>
+        <location filename="../qml/desktop/main.qml" line="383"/>
         <source>Change text for &apos;%1&apos;</source>
         <translation>Changer le texte pour &apos;%1&apos;</translation>
     </message>

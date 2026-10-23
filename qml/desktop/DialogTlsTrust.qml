@@ -1,0 +1,84 @@
+import QtQuick
+import SharedComponents
+
+//The server certificate cannot be verified (self-signed box, or a certificate
+//for another name): the user checks the fingerprint and decides. Shown for a
+//first contact and, with a stronger wording, when the key changed since the
+//last time it was trusted.
+Dialog {
+    id: dlg
+
+    property var info: ({})
+    readonly property bool keyChanged: info.keyChanged === true
+
+    //A tap outside must not count as an answer: the connection waits for one.
+    dismissOnTap: false
+    minimumWidth: Units.dp(560)
+
+    title: keyChanged ? qsTr("Certificate changed!") : qsTr("Unknown certificate")
+    text: keyChanged ?
+              qsTr("The certificate key of %1 has changed since the last connection. "
+                   + "This is expected if the certificate of your Calaos box was "
+                   + "regenerated, but it can also mean that someone is intercepting "
+                   + "the connection. Only trust it if you know why it changed.").arg(info.host) :
+              qsTr("The certificate of %1 cannot be verified. This is usual for a Calaos "
+                   + "box on a home network. Check that the fingerprint below is the one "
+                   + "of your box before trusting it.").arg(info.host)
+    negativeButtonText: qsTr("Do not connect")
+    positiveButtonText: qsTr("Trust")
+
+    onAccepted: calaosApp.answerTlsTrust(true)
+    onRejected: calaosApp.answerTlsTrust(false)
+
+    Connections {
+        target: calaosApp
+        function onTlsTrustRequested(i) {
+            dlg.info = i
+            dlg.show()
+        }
+        function onTlsTrustCanceled() {
+            dlg.close()
+        }
+    }
+
+    component Label: Text {
+        width: parent.width
+        wrapMode: Text.Wrap
+        font { family: calaosFont.fontFamily; pixelSize: Units.dp(13); bold: true }
+        color: "#3AB4D7"
+    }
+
+    component Value: Text {
+        width: parent.width
+        wrapMode: Text.WrapAnywhere
+        font { family: calaosFont.fontFamily; pixelSize: Units.dp(13); weight: Font.Thin }
+        color: "#E7E7E7"
+    }
+
+    Label { text: qsTr("Key fingerprint (SHA-256)") }
+    Value { text: dlg.info.fingerprint || "" }
+
+    Label {
+        visible: dlg.keyChanged
+        text: qsTr("Previously trusted key")
+    }
+    Value {
+        visible: dlg.keyChanged
+        color: "#868482"
+        text: dlg.info.previousFingerprint || ""
+    }
+
+    Label { text: qsTr("Certificate fingerprint (SHA-256)") }
+    Value {
+        color: "#868482"
+        text: dlg.info.certFingerprint || ""
+    }
+
+    Value {
+        wrapMode: Text.Wrap
+        color: "#868482"
+        text: qsTr("Issued to: %1").arg(dlg.info.subject || "-") + "\n" +
+              qsTr("Issued by: %1").arg(dlg.info.issuer || "-") + "\n" +
+              qsTr("Expires: %1").arg(dlg.info.expiry || "-")
+    }
+}

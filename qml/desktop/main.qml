@@ -334,6 +334,8 @@ Window {
 
     DialogClimate { id: dialogClimate }
 
+    DialogTlsTrust { id: dialogTlsTrust }
+
     //Dispatch actions
     AppListener {
         Filter {

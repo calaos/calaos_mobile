@@ -129,8 +129,11 @@ docs/               Refactoring board (BOARD.md) and tickets (tasks/), in French
   certificate Qt validates is used as is; otherwise the SHA-256 of its
   SubjectPublicKeyInfo must match the pin stored per `host:port` (QSettings
   `tls/pins`), an unknown or changed key fails the attempt (`TrustFailure`, no
-  automatic retry) and asks the user. The pins are copied to the Android push
-  worker (`CredentialStore`) and the iOS extension (App Group).
+  automatic retry) and asks the user. Only the errors of that handshake are
+  ignored (`ignoreSslErrors(errors)`, never the blanket form: QNAM caches
+  it per channel). Expired or wrong-name certificates pass when the key is
+  pinned; revoked or forged ones never do. The pins are copied to the
+  Android push worker (`CredentialStore`) and the iOS extension (App Group).
 - **Platform abstraction**: [`HardwareUtils`](src/HardwareUtils.h) +
   per-platform subclasses in
   [src/HardwareUtils_desktop.cpp](src/HardwareUtils_desktop.cpp),

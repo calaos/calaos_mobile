@@ -18,15 +18,26 @@ Le client ignorait inconditionnellement les erreurs TLS (`ignoreSslErrors()` dan
 - **Ce qui est épinglé** : le SHA-256 du *SubjectPublicKeyInfo* du certificat feuille (pin SPKI), pas le certificat entier. Un renouvellement qui garde la clé (certificat auto-signé régénéré avec la même clé, certbot `--reuse-key`) ne redemande rien ; une nouvelle clé redemande toujours. Les octets SPKI sont extraits par un parcours DER maison (`TlsPinning::subjectPublicKeyInfo`), identique quel que soit le backend TLS (OpenSSL, Secure Transport), et égal à `PublicKey.getEncoded()` côté Java et au parcours DER de l'extension iOS.
 - **Clé du pin** : `hôte:port` (hôte en minuscules, IPv6 entre crochets, port par défaut explicite : `wss://` et `https://` partagent 443). IP LAN, nom DDNS et IP overlay sont trois hôtes distincts.
 - **Certificat valide pour une CA publique** (validation Qt réussie, nom conforme) : accepté sans pin, aucun dialogue.
-- **Erreurs jamais surmontables** par un pin : certificat révoqué, en liste noire, signature invalide, pas de certificat. Le reste (auto-signé, nom différent, expiré…) passe si la clé correspond au pin.
+- **Erreurs surmontables par un pin** (liste blanche explicite, `TlsPinning::isOverridable`) : auto-signé, émetteur inconnu ou non approuvé, CA invalide, usage invalide, nom différent, **expiré** ou pas encore valide (le pin porte sur la clé, et beaucoup de box tournent avec un vieux certificat auto-signé). Tout le reste (révoqué, liste noire, signature invalide, pas de certificat, erreur inconnue) est refusé.
+- **Seulement les erreurs de ce handshake** : `ignoreSslErrors(errors)`, jamais la version sans argument. QNAM garde le drapeau sur son canal en cache : un ignore global laissait passer un handshake suivant avec une autre clé (corps de requête et identifiants envoyés). Oublier un pin ou tout réinitialiser vide aussi le cache de connexions.
+- **Seul le certificat feuille** est pris en compte (jamais un certificat porté par une erreur, qui peut être un intermédiaire) ; feuille absente = refus.
+- **Redirections** : `SameOriginRedirectPolicy` sur les QNAM de `CalaosConnection`, aucune redirection suivie par l'extension iOS ni le worker Android (les identifiants ne partent jamais vers un autre hôte).
 - **Stockage** : QSettings `tls/pins` (map `hôte:port` → hex), mobile et desktop. Copie pour le worker Android (`CredentialStore`, `tls_pins`) et l'extension iOS (App Group, `calaos.tls_pins`). « Réinitialiser toutes les données » efface tout ; Réglages mobile liste les certificats de confiance avec « Oublier ».
 
 ## Flux
 
 1. Handshake → `sslErrors` → `TlsPinning::decide()` : `PinMatch` → `ignoreSslErrors()` (seul appel restant) ; sinon la tentative échoue.
-2. Clé inconnue ou changée : `ReconnectPolicy::TrustFailure` (abandon, aucun retry automatique, pas de repli HTTP depuis le websocket), et **une** question à l'utilisateur (`tlsTrustRequested`) : empreinte SPKI, empreinte du certificat, sujet, émetteur, expiration ; formulation alarmante si la clé a changé.
+2. Clé inconnue ou changée : `ReconnectPolicy::TrustFailure` (abandon, aucun retry automatique, pas de repli HTTP depuis le websocket), et **une** question à l'utilisateur (`tlsTrustRequested`) : empreinte SPKI, empreinte du certificat, sujet, émetteur, expiration. Formulation alarmante si la clé a changé, ou si le certificat est suspect (hôte joint par nom DNS — ni IP ni `.local` —, ou chaîne valide émise pour un autre nom) ; dans ces cas « Faire confiance » est atténué et demande un second appui sur mobile. Tant qu'une question est ouverte, un autre certificat ne la remplace pas : il est refusé pour cette tentative.
 3. Accepter → pin enregistré, nouvelle tentative immédiate. Refuser → reste déconnecté, alerte claire ; le même certificat est ensuite refusé **sans question** pour les connexions lancées par l'app (lancement, retour au premier plan iOS), jusqu'à un appui explicite sur « Connexion ». Déconnexion pendant la question → la question est annulée.
 4. Chemins sans utilisateur (images QML, client du daemon desktop, worker Android, extension iOS) : vérification seule, jamais de question.
+
+## Limites connues
+
+- **Normalisation de la clé d'hôte** : nom en forme ACE (punycode) partout (`QUrl::FullyEncoded`, `IDN.toASCII` en Java, `NSURLProtectionSpace.host` sur iOS), IPv6 entre crochets. Une forme écrite différemment (IPv6 non canonique, nom avec point final) donne une autre clé : la question revient, ou l'image push est omise. Échec fermé, acceptable.
+- **SPKI côté Java** : `PublicKey.getEncoded()` ré-encode la clé ; pour RSA et EC c'est le DER canonique, identique aux octets du certificat. Une clé encodée de façon non canonique dans le certificat donnerait une empreinte différente côté worker : image omise (échec fermé).
+- **Let's Encrypt joint par IP LAN** : certbot change la clé à chaque renouvellement sauf `--reuse-key` : nouvelle question tous les 60 à 90 jours. Joint par son nom DDNS, il est valide publiquement : aucune question.
+- **iOS, ATS** : l'extension n'est pas soumise à ATS pour une IP ou un nom `.local` ; une box auto-signée jointe par un nom DNS peut demander une exception ATS (à vérifier sur appareil).
+- **Desktop** : après un refus, le kiosque reste déconnecté jusqu'au redémarrage (pas d'écran de login) ; pas de liste « Oublier » sur desktop.
 
 ## Fichiers
 

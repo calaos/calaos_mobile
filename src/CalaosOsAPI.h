@@ -4,6 +4,34 @@
 #include <QObject>
 #include "NetworkRequest.h"
 #include "AsyncJobs.h"
+#include "CalaosOsProtocol.h"
+
+//Outcome of one call to the calaos-container daemon, whichever surface answered.
+struct CalaosOsReply
+{
+    bool ok = false;
+    //0 on transport errors (connection severed/refused, no HTTP reply), which
+    //are not server rejections: the daemon may be restarting
+    int httpStatus = 0;
+    CalaosOsProtocol::ApiVersion api = CalaosOsProtocol::ApiVersion::Unknown; //surface that answered
+    QString error; //displayable message on failure
+    //v2: the envelope data; legacy update/*: the whole document; legacy system/*: "output"
+    QJsonValue data;
+    bool upgradeInProgress = false;
+    bool packageNotFound = false;
+    //with httpStatus 0: why no HTTP answer came
+    QNetworkReply::NetworkError networkError = QNetworkReply::NoError;
+    bool requestStarted = true;
+
+    //the request provably never reached the daemon (nothing can have started)
+    bool neverReachedDaemon() const
+    {
+        return httpStatus == 0 &&
+               (!requestStarted ||
+                networkError == QNetworkReply::ConnectionRefusedError ||
+                networkError == QNetworkReply::HostNotFoundError);
+    }
+};
 
 class CalaosOsAPI: public QObject
 {
@@ -18,7 +46,8 @@ public:
     CalaosOsAPI(QNetworkAccessManager *nm = nullptr, QObject *parent = nullptr);
     virtual ~CalaosOsAPI();
 
-    void rebootMachine(std::function<void(bool success)> callback);
+    //reply.upgradeInProgress: refused because an upgrade runs (409)
+    void rebootMachine(std::function<void(const CalaosOsReply &reply)> callback);
     void restartApp(std::function<void(bool success)> callback);
     void getFsStatus(std::function<void(bool success, const QJsonValue &res)> callback);
 
@@ -34,42 +63,72 @@ public:
 
     void configureNetwork(const QJsonObject &networkConfig, std::function<void(bool success)> callback);
 
-    //check for available updates on the calaos-container update daemon (GET /api/update/check). Blocking server-side, can take tens of seconds.
-    void checkUpdates(std::function<void(bool ok, const QJsonObject &pkgs, const QString &err)> callback);
-    //get updates already found by a previous check, without triggering a new one (GET /api/update/available). Instant.
+    //check for available updates (GET update/check). Blocking server-side, can take tens of seconds.
+    //reply.data is the object keyed by package name.
+    void checkUpdates(std::function<void(const CalaosOsReply &reply)> callback);
+    //get updates already found by a previous check, without triggering a new one (GET update/available). Instant.
     void getAvailableUpdates(std::function<void(bool ok, const QJsonObject &pkgs, const QString &err)> callback);
-    //get currently installed packages (GET /api/update/installed). May 404 on older daemons, hence the httpStatus.
+    //get currently installed packages (GET update/installed). May 404 on older daemons, hence the httpStatus.
     void getInstalledPackages(std::function<void(bool ok, int httpStatus, const QJsonObject &pkgs)> callback);
-    //upgrade a single package by name (POST /api/update/upgrade?package=...). Blocking server-side, can take minutes.
-    //httpStatus is 0 on transport errors (connection severed/refused, no HTTP reply), which is not a server rejection:
-    //the transaction may still be running. Authoritative rejections come as HTTP errors (500 + {"error","msg"}).
-    void upgradePackage(const QString &package, std::function<void(bool ok, int httpStatus, const QString &err)> callback);
-    //upgrade all packages (POST /api/update/upgrade-all). Blocking server-side, can take minutes.
-    //httpStatus is 0 on transport errors: upgrade-all installs calaos-container first, which restarts the daemon
-    //and severs this POST while the transaction goes on, so a transport error is not an upgrade failure.
-    void upgradeAll(std::function<void(bool ok, int httpStatus, const QString &err)> callback);
-    //get the progress/status of an ongoing (or last) upgrade (GET /api/update/status).
-    void getUpdateStatus(std::function<void(bool ok, const QJsonObject &status)> callback);
+    //upgrade a package / all packages: 202 + job in reply.data on /api/v2, synchronous on legacy,
+    //where a transport error is not a failure (a self-upgrading daemon severs the POST)
+    void upgradePackage(const QString &package, std::function<void(const CalaosOsReply &reply)> callback);
+    void upgradeAll(std::function<void(const CalaosOsReply &reply)> callback);
+    //progress of an ongoing (or last) upgrade, plus the job on /api/v2 (GET update/status)
+    void getUpdateStatus(std::function<void(bool ok, const CalaosOsProtocol::UpdateStatus &status)> callback);
 
-    //auth token used for calaos-container requests
-    QString getToken() const;
-    //base address of the calaos-container daemon
-    QString getBaseAddr() const;
+    //WebSocket handshake of the daemon event stream, for the detected API version
+    QNetworkRequest eventsRequest();
+
+    CalaosOsProtocol::ApiVersion apiVersion() const { return m_apiVersion; }
+    //forget the detected API version: the daemon may have been replaced by another version
+    void resetApiVersion() { m_apiVersion = CalaosOsProtocol::ApiVersion::Unknown; }
+    //find out the API version if unknown, then call back
+    void detectApiVersion(std::function<void(const CalaosOsReply &reply)> callback);
+
+    //re-read the token file, e.g. after a 401 or before reconnecting
+    void reloadToken();
+
+    //for tests: point at a fake daemon and token file
+    void setBaseAddr(const QString &addr) { calaosAddr = addr; }
+    void setTokenFile(const QString &path);
 
 private:
+    enum class LegacyBody
+    {
+        Raw,    //update/*: the document itself
+        Output, //system/*, network/*: {"error","msg","output"}
+    };
+
+    struct Route
+    {
+        NetworkRequest::HttpType method = NetworkRequest::HttpGet;
+        QString v2Path;     //relative to /api/v2
+        QByteArray v2Body;
+        QString legacyPath; //full path, empty when the call has no legacy route
+        QByteArray legacyBody;
+        LegacyBody legacyShape = LegacyBody::Raw;
+        bool upgradeRoute = false;
+    };
+
+    void call(const Route &route, std::function<void(const CalaosOsReply &)> callback);
+    void send(const Route &route, bool useV2, bool authRetried, std::function<void(const CalaosOsReply &)> callback);
+    CalaosOsReply v2Reply(int success, int httpStatus, const QJsonDocument &doc, const QString &netError) const;
+    CalaosOsReply legacyReply(const Route &route, int success, int httpStatus, const QJsonDocument &doc, const QString &netError) const;
+
     void checkErrors(const QJsonDocument &jdoc, NetworkRequest *n = nullptr);
-    void doPost(QString apiPath, const QByteArray &postData, std::function<void(bool success)> callback);
-    void doGet(QString apiPath, std::function<void(bool success, const QJsonValue &res)> callback);
-    //same as doPost/doGet but without the {"error","msg","output"} envelope unwrap used by system/* endpoints:
-    //passes the full document and HTTP status to the callback, as used by the update/* endpoints.
-    void doPostRaw(QString apiPath, const QByteArray &postData, std::function<void(bool success, int httpStatus, const QJsonDocument &doc)> callback);
-    void doGetRaw(QString apiPath, std::function<void(bool success, int httpStatus, const QJsonDocument &doc)> callback);
 
     QNetworkAccessManager *netManager;
 
-    QString calaosAddr, token;
+    void ensureToken();
 
-    //errors of last api call if any
+    QString calaosAddr, token, tokenFile;
+    bool tokenReadable = true;
+    bool tokenLoaded = false;
+
+    CalaosOsProtocol::ApiVersion m_apiVersion = CalaosOsProtocol::ApiVersion::Unknown;
+
+    //errors of last install call if any
     QString lastError;
 };
 

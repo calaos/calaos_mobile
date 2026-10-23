@@ -15,6 +15,7 @@ TEMPLATE = subdirs
 
 SUBDIRS += \
     tst_calaoseventdecoder \
+    tst_calaososprotocol \
     tst_camerapolling \
     tst_climatewidget \
     tst_common \
@@ -29,4 +30,5 @@ SUBDIRS += \
     tst_qqmlhelpers \
     tst_reconnectpolicy \
     tst_roomfiltermodel \
-    tst_sessionlifecycle
+    tst_sessionlifecycle \
+    tst_updateclient

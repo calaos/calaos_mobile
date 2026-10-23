@@ -788,7 +788,18 @@ void Application::rebootMachine()
 {
     qInfo() << "Full reboot requested";
 #ifdef CALAOS_DESKTOP
-    CalaosOsAPI::Instance()->rebootMachine({});
+    CalaosOsAPI::Instance()->rebootMachine([this](const CalaosOsReply &reply)
+    {
+        //the daemon refuses to cut dpkg while an upgrade runs
+        if (reply.ok || !reply.upgradeInProgress)
+            return;
+
+        QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(&engine);
+        QVariantMap m = {{ "title", tr("Reboot") },
+                         { "message", tr("An update is being installed. Reboot once it has finished.") },
+                         { "button", tr("Close") }};
+        appDispatcher->dispatch("showNotificationMsg", m);
+    });
 #endif
 }
 

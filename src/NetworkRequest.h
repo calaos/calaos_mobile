@@ -59,6 +59,7 @@ public:
     QString getLastError() { return lastError; }
 
     int getHttpStatusCode() const { return httpStatusCode; }
+    QNetworkReply::NetworkError getNetworkError() const { return networkError; }
 
     void setCertificate(QString path);
 
@@ -97,6 +98,7 @@ private:
 
     QString lastError;
     int httpStatusCode = 0;
+    QNetworkReply::NetworkError networkError = QNetworkReply::NoError;
 
     QList<QSslCertificate> cacerts;
     QSslConfiguration sslConfiguration;

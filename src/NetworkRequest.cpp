@@ -158,6 +158,7 @@ void NetworkRequest::nmReadyRead()
 void NetworkRequest::nmFinished()
 {
     httpStatusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    networkError = reply->error();
 
     if (reply->error() != QNetworkReply::NoError)
     {
@@ -190,6 +191,7 @@ void NetworkRequest::nmFinishedJson()
     QJsonDocument jdoc;
 
     httpStatusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    networkError = reply->error();
 
     if (reply->error() != QNetworkReply::NoError)
     {
@@ -240,6 +242,7 @@ void NetworkRequest::nmFinishedJson()
 void NetworkRequest::nmFinishedData()
 {
     httpStatusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    networkError = reply->error();
 
     if (reply->error() != QNetworkReply::NoError)
     {

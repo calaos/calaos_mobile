@@ -37,6 +37,8 @@
 #include <QUrlQuery>
 #include <QWebSocket>
 #include <QWebSocketServer>
+#include <QPointer>
+#include <functional>
 #include <qfappdispatcher.h>
 
 #include "CalaosOsAPI.h"
@@ -109,6 +111,13 @@ public:
     int reboots = 0;
     int legacyUpgrades = 0;
 
+    //fault injection
+    int abortNextHttp = 0;          //drop the next HTTP requests unanswered, unrecorded
+    QString severPath;              //answer nothing on this path: connection closed
+    bool severAfterJobStart = false; //...after starting the job
+    bool finishBeforeReply = false; //end the job, then answer the 202 late
+    std::function<void()> beforeUpgradePost;
+
     //what the kiosk sent
     QList<HttpRequest> requests;
     QList<HttpRequest> wsHandshakes;
@@ -121,6 +130,20 @@ public:
         m_port = server.serverPort();
         return true;
     }
+
+    //bind the same port again: the previous socket may linger a moment
+    bool restart(quint16 port)
+    {
+        for (int i = 0; i < 50; i++)
+        {
+            if (start(port))
+                return true;
+            QTest::qWait(100);
+        }
+        return false;
+    }
+
+    QString errorString() const { return server.errorString(); }
 
     //the daemon goes away (restart after a self-upgrade): every connection drops
     void stop()
@@ -198,11 +221,13 @@ public:
 
     enum class Publish { All, None };
 
-    void finishJob(const QString &status, bool rebootRequired, Publish publish = Publish::All)
+    void finishJob(const QString &status, bool rebootRequired, Publish publish = Publish::All,
+                   bool daemonRestart = false)
     {
         QJsonObject j = job.toObject();
         j["status"] = status;
         j["reboot_required"] = rebootRequired;
+        j["daemon_restart"] = daemonRestart;
         j["finished_at"] = "2026-10-23T09:05:00Z";
         if (status == QStringLiteral("error"))
             j["error"] = "upgrade failed: calaos-server";
@@ -315,6 +340,12 @@ private:
             return;
         s->read(headLen + contentLength);
         req.body = raw.mid(headLen, contentLength);
+        if (abortNextHttp > 0)
+        {
+            abortNextHttp--;
+            s->abort();
+            return;
+        }
         requests.append(req);
         route(s, req);
     }
@@ -416,6 +447,13 @@ private:
                 err(s, 404, "not_found", "not found");
                 return;
             }
+            if (beforeUpgradePost)
+                beforeUpgradePost();
+            if (req.path == severPath && !severAfterJobStart)
+            {
+                s->abort();
+                return;
+            }
             if (busy)
             {
                 busyError(s);
@@ -432,6 +470,22 @@ private:
                 }
             }
             const QJsonObject j = startJob(pkg.isEmpty() ? QStringLiteral("upgrade_all") : QStringLiteral("upgrade"), pkg);
+            if (req.path == severPath)
+            {
+                s->abort();
+                return;
+            }
+            if (finishBeforeReply)
+            {
+                finishJob(QStringLiteral("done"), false);
+                QPointer<QTcpSocket> late(s);
+                QTimer::singleShot(300, this, [late, j]()
+                {
+                    if (late)
+                        ok(late, 202, j, QStringLiteral("accepted"));
+                });
+                return;
+            }
             ok(s, 202, j, QStringLiteral("accepted"));
         }
         else if (req.method == "POST" && p == QStringLiteral("/system/reboot"))
@@ -521,6 +575,13 @@ private slots:
     void v2GroupQueueRunsOneJobPerPackage();
     void v2DaemonRestartDuringJobReconnectsAndRereadsToken();
     void v2JobStartedElsewhereIsAdopted();
+    void v2TerminalEventBeforeThe202();
+    void v2PostRefusedIsAFailure();
+    void v2PostSeveredWithoutJobIsNeverASuccess();
+    void v2PostSeveredAfterJobStartFollowsTheJob();
+    void v2SelfUpgradingJobWaitsForTheNewDaemon();
+    void v2SelfUpgradingJobFallsBackOnTimeout();
+    void reconnectWithUnknownVersionReadsStatus();
 
     void legacyDaemonFallsBackOnPlain404AndCachesIt();
     void legacyDaemonUpgradeStaysSynchronous();
@@ -532,6 +593,8 @@ private slots:
 
     void upgradeInProgressAdoptsTheRunningJob();
     void upgradeInProgressWithoutJobIdFails();
+    void upgradeInProgressDoesNotClaimOurPackages();
+    void upgradeInProgressMidQueueIsReported();
     void checkDuringUpgradeKeepsDaemonAvailable();
     void rebootDuringUpgradeIsRefused_data();
     void rebootDuringUpgradeIsRefused();
@@ -805,7 +868,7 @@ void TstUpdateClient::v2DaemonRestartDuringJobReconnectsAndRereadsToken()
     daemon.token = makeToken('2');
     writeToken(daemon.token);
     daemon.wsHandshakes.clear();
-    QVERIFY(daemon.start(port));
+    QVERIFY2(daemon.restart(port), qPrintable(daemon.errorString()));
 
     QTRY_VERIFY_WITH_TIMEOUT(!m_mgr->get_isUpgrading(), 10000);
     QCOMPARE(m_mgr->get_updateState(), QStringLiteral("idle"));
@@ -1074,6 +1137,261 @@ void TstUpdateClient::rebootDuringUpgradeIsRefused()
     QVERIFY(reply.ok);
     QVERIFY(!reply.upgradeInProgress);
     QCOMPARE(daemon.reboots, 1);
+}
+
+static QJsonObject kernelPackages()
+{
+    return QJsonObject{
+        { "linux-image-amd64", QJsonObject{{ "name", "linux-image-amd64" }, { "version", "6.1" }, { "current_version", "6.0" }} },
+        { "firmware-linux", QJsonObject{{ "name", "firmware-linux" }, { "version", "2" }, { "current_version", "1" }} },
+    };
+}
+
+static QJsonObject foreignJob(const QString &id)
+{
+    return QJsonObject{{ "id", id }, { "kind", "upgrade_all" }, { "status", "running" },
+                       { "reboot_required", false }, { "daemon_restart", false }};
+}
+
+void TstUpdateClient::v2TerminalEventBeforeThe202()
+{
+    FakeDaemon daemon;
+    daemon.token = makeToken('f');
+    daemon.finishBeforeReply = true;
+    writeToken(daemon.token);
+    QVERIFY(daemon.start());
+    startClient(daemon);
+    QTRY_COMPARE(daemon.clients.size(), 1);
+    QTRY_COMPARE(m_mgr->get_updatesCount(), 1);
+
+    //the job ends before its 202: the cached terminal event concludes it at
+    //once, long before the 15 s safety read
+    m_mgr->upgradeAll();
+    QTRY_VERIFY_WITH_TIMEOUT(!m_mgr->get_isUpgrading(), 3000);
+    QCOMPARE(m_mgr->get_updateState(), QStringLiteral("idle"));
+    QCOMPARE(daemon.count("POST", "/api/v2/update/upgrade-all"), 1);
+}
+
+void TstUpdateClient::v2PostRefusedIsAFailure()
+{
+    FakeDaemon daemon;
+    daemon.token = makeToken('1');
+    writeToken(daemon.token);
+    QVERIFY(daemon.start());
+    startClient(daemon);
+    QTRY_COMPARE(daemon.clients.size(), 1);
+    QTRY_COMPARE(m_mgr->get_updatesCount(), 1);
+
+    //nothing listens: the POST never reached a daemon, nothing can have started
+    daemon.stop();
+    m_mgr->upgradeAll();
+    QTRY_VERIFY(!m_mgr->get_isUpgrading());
+    QCOMPARE(m_mgr->get_updateState(), QStringLiteral("error"));
+    QVERIFY(dispatchedOf("showRebootDialog").isEmpty());
+    for (const Dispatched &d: dispatchedOf("showNotificationMsg"))
+        QVERIFY(!d.message.value("message").toString().contains(QStringLiteral("successfully")));
+}
+
+void TstUpdateClient::v2PostSeveredWithoutJobIsNeverASuccess()
+{
+    FakeDaemon daemon;
+    daemon.token = makeToken('2');
+    //the box ran an upgrade before: update/status shows that finished job
+    daemon.job = QJsonObject{{ "id", "00000000aaaa0001" }, { "kind", "upgrade_all" }, { "status", "done" },
+                             { "reboot_required", false }, { "daemon_restart", false }};
+    daemon.severPath = QStringLiteral("/api/v2/update/upgrade-all");
+    writeToken(daemon.token);
+    QVERIFY(daemon.start());
+    startClient(daemon);
+    m_mgr->setJobPollInterval(200);
+    QTRY_COMPARE(daemon.clients.size(), 1);
+    QTRY_COMPARE(m_mgr->get_updatesCount(), 1);
+    QTRY_VERIFY(daemon.count("GET", "/api/v2/update/status") >= 2); //probe + read after connect
+
+    m_mgr->upgradeAll();
+    QTRY_VERIFY(!m_mgr->get_isUpgrading());
+    QCOMPARE(m_mgr->get_updateState(), QStringLiteral("error"));
+    QVERIFY(m_mgr->get_lastErrorString().contains(QStringLiteral("unknown")));
+    for (const Dispatched &d: dispatchedOf("showNotificationMsg"))
+        QVERIFY(!d.message.value("message").toString().contains(QStringLiteral("successfully")));
+}
+
+void TstUpdateClient::v2PostSeveredAfterJobStartFollowsTheJob()
+{
+    FakeDaemon daemon;
+    daemon.token = makeToken('3');
+    daemon.severPath = QStringLiteral("/api/v2/update/upgrade-all");
+    daemon.severAfterJobStart = true;
+    writeToken(daemon.token);
+    QVERIFY(daemon.start());
+    startClient(daemon);
+    m_mgr->setJobPollInterval(200);
+    QTRY_COMPARE(daemon.clients.size(), 1);
+    QTRY_COMPARE(m_mgr->get_updatesCount(), 1);
+    QTRY_VERIFY(daemon.count("GET", "/api/v2/update/status") >= 2);
+
+    m_mgr->upgradeAll();
+    QTRY_COMPARE(daemon.count("POST", "/api/v2/update/upgrade-all"), 1);
+    QTest::qWait(300);
+    QVERIFY(m_mgr->get_isUpgrading());
+
+    daemon.finishJob(QStringLiteral("done"), false);
+    QTRY_VERIFY(!m_mgr->get_isUpgrading());
+    QCOMPARE(m_mgr->get_updateState(), QStringLiteral("idle"));
+}
+
+void TstUpdateClient::v2SelfUpgradingJobWaitsForTheNewDaemon()
+{
+    FakeDaemon daemon;
+    daemon.token = makeToken('4');
+    daemon.available = kernelPackages();
+    writeToken(daemon.token);
+    QVERIFY(daemon.start());
+    startClient(daemon);
+    QTRY_COMPARE(daemon.clients.size(), 1);
+    QTRY_COMPARE(m_mgr->get_updatesCount(), 2);
+
+    m_mgr->upgradeGroup(QStringLiteral("kernel"));
+    QTRY_COMPARE(daemon.count("POST", "/api/v2/update/upgrade"), 1);
+
+    //the first job replaced the daemon binary: the daemon is about to exit
+    daemon.finishJob(QStringLiteral("done"), false, FakeDaemon::Publish::All, true);
+    QTest::qWait(400);
+    QCOMPARE(daemon.count("POST", "/api/v2/update/upgrade"), 1);
+    QVERIFY(m_mgr->get_isUpgrading());
+
+    const quint16 port = QUrl(daemon.baseAddr()).port();
+    daemon.stop();
+    QTest::qWait(200);
+    QVERIFY2(daemon.restart(port), qPrintable(daemon.errorString()));
+
+    QTRY_COMPARE_WITH_TIMEOUT(daemon.count("POST", "/api/v2/update/upgrade"), 2, 10000);
+    daemon.finishJob(QStringLiteral("done"), false);
+    QTRY_VERIFY(!m_mgr->get_isUpgrading());
+    QCOMPARE(m_mgr->get_updateState(), QStringLiteral("idle"));
+}
+
+void TstUpdateClient::v2SelfUpgradingJobFallsBackOnTimeout()
+{
+    FakeDaemon daemon;
+    daemon.token = makeToken('5');
+    daemon.available = kernelPackages();
+    writeToken(daemon.token);
+    QVERIFY(daemon.start());
+    startClient(daemon);
+    m_mgr->setDaemonRestartTimeout(800);
+    QTRY_COMPARE(daemon.clients.size(), 1);
+    QTRY_COMPARE(m_mgr->get_updatesCount(), 2);
+
+    m_mgr->upgradeGroup(QStringLiteral("kernel"));
+    QTRY_COMPARE(daemon.count("POST", "/api/v2/update/upgrade"), 1);
+
+    //the daemon never goes away: carry on after the timeout
+    daemon.finishJob(QStringLiteral("done"), false, FakeDaemon::Publish::All, true);
+    QTest::qWait(300);
+    QCOMPARE(daemon.count("POST", "/api/v2/update/upgrade"), 1);
+    QTRY_COMPARE(daemon.count("POST", "/api/v2/update/upgrade"), 2);
+
+    daemon.finishJob(QStringLiteral("done"), false);
+    QTRY_VERIFY(!m_mgr->get_isUpgrading());
+}
+
+void TstUpdateClient::reconnectWithUnknownVersionReadsStatus()
+{
+    FakeDaemon daemon;
+    daemon.token = makeToken('6');
+    writeToken(daemon.token);
+    QVERIFY(daemon.start());
+    startClient(daemon);
+    QTRY_COMPARE(daemon.clients.size(), 1);
+    QTRY_COMPARE(m_mgr->get_updatesCount(), 1);
+    QTest::qWait(200);
+
+    //the daemon restarts; its first answers are lost, so the version probe
+    //fails (Qt retries an idempotent GET once on a dropped connection)
+    const quint16 port = QUrl(daemon.baseAddr()).port();
+    daemon.stop();
+    daemon.abortNextHttp = 2;
+    const int before = daemon.count("GET", "/api/v2/update/status");
+    QVERIFY2(daemon.restart(port), qPrintable(daemon.errorString()));
+
+    QTRY_COMPARE_WITH_TIMEOUT(daemon.clients.size(), 1, 10000);
+    QCOMPARE(daemon.abortNextHttp, 0);
+    QTRY_VERIFY(daemon.count("GET", "/api/v2/update/status") > before);
+    QTRY_COMPARE(m_api->apiVersion(), CalaosOsProtocol::ApiVersion::V2);
+}
+
+void TstUpdateClient::upgradeInProgressDoesNotClaimOurPackages()
+{
+    FakeDaemon daemon;
+    daemon.token = makeToken('7');
+    daemon.available = QJsonObject{
+        { "calaos-home", QJsonObject{{ "name", "calaos-home" }, { "version", "5" }, { "current_version", "4" }} },
+    };
+    writeToken(daemon.token);
+    QVERIFY(daemon.start());
+    startClient(daemon);
+    QTRY_COMPARE(daemon.clients.size(), 1);
+    QTRY_COMPARE(m_mgr->get_updatesCount(), 1);
+
+    daemon.job = foreignJob(QStringLiteral("00000000cafe0003"));
+    daemon.busy = true;
+    daemon.busyJobId = QStringLiteral("00000000cafe0003");
+
+    m_mgr->upgradeAll();
+    QTRY_COMPARE(daemon.count("POST", "/api/v2/update/upgrade-all"), 1);
+    QTest::qWait(200);
+    QVERIFY(m_mgr->get_isUpgrading());
+    const int availableReads = daemon.count("GET", "/api/v2/update/available");
+
+    daemon.finishJob(QStringLiteral("done"), false);
+    QTRY_VERIFY(!m_mgr->get_isUpgrading());
+    QCOMPARE(m_mgr->get_updateState(), QStringLiteral("idle"));
+    //no "calaos-home restart" dialog nor "installed successfully" for a run we did not do
+    QVERIFY(dispatchedOf("showRebootDialog").isEmpty());
+    const QList<Dispatched> msgs = dispatchedOf("showNotificationMsg");
+    QCOMPARE(msgs.size(), 1);
+    QVERIFY(msgs.first().message.value("message").toString().contains(QStringLiteral("Another update was running")));
+    QTRY_VERIFY(daemon.count("GET", "/api/v2/update/available") > availableReads);
+}
+
+void TstUpdateClient::upgradeInProgressMidQueueIsReported()
+{
+    FakeDaemon daemon;
+    daemon.token = makeToken('8');
+    daemon.available = kernelPackages();
+    writeToken(daemon.token);
+    QVERIFY(daemon.start());
+    startClient(daemon);
+    QTRY_COMPARE(daemon.clients.size(), 1);
+    QTRY_COMPARE(m_mgr->get_updatesCount(), 2);
+
+    //another client grabs the lock between our two packages
+    int posts = 0;
+    daemon.beforeUpgradePost = [&daemon, &posts]()
+    {
+        if (++posts == 2)
+        {
+            daemon.job = foreignJob(QStringLiteral("00000000cafe0004"));
+            daemon.busy = true;
+            daemon.busyJobId = QStringLiteral("00000000cafe0004");
+        }
+    };
+
+    m_mgr->upgradeGroup(QStringLiteral("kernel"));
+    QTRY_COMPARE(daemon.count("POST", "/api/v2/update/upgrade"), 1);
+    daemon.finishJob(QStringLiteral("done"), true);
+    QTRY_COMPARE(daemon.count("POST", "/api/v2/update/upgrade"), 2);
+    QTest::qWait(200);
+    QVERIFY(m_mgr->get_isUpgrading());
+
+    daemon.finishJob(QStringLiteral("done"), false);
+    QTRY_VERIFY(!m_mgr->get_isUpgrading());
+    QCOMPARE(daemon.count("POST", "/api/v2/update/upgrade"), 2);
+    QVERIFY(dispatchedOf("showRebootDialog").isEmpty());
+    const QList<Dispatched> msgs = dispatchedOf("showNotificationMsg");
+    QCOMPARE(msgs.size(), 1);
+    QVERIFY(msgs.first().message.value("message").toString().contains(QStringLiteral("retry")));
 }
 
 int main(int argc, char **argv)

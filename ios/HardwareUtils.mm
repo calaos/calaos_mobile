@@ -41,6 +41,9 @@
 static NSString *const kAppGroup = @"group.fr.calaos.CalaosMobile";
 //False after an explicit logout, see HardwareUtils::setSessionActive().
 static NSString *const kSessionActiveKey = @"calaos.session_active";
+//host:port -> SPKI SHA-256 hex, see TlsPinning.h. Same key in
+//PushNotif/NotificationService.m.
+static NSString *const kTlsPinsKey = @"calaos.tls_pins";
 //Unread notifications on the app icon, incremented by the extension (IOS-3).
 static NSString *const kBadgeCountKey = @"calaos.badge_count";
 //flock() file in the App Group container, same name as in the extension.
@@ -546,6 +549,23 @@ void HardwareUtils_iOS::setSessionActive(bool active)
 {
     NSUserDefaults *sharedDefaults = [[NSUserDefaults alloc] initWithSuiteName:kAppGroup];
     [sharedDefaults setBool:active ? YES : NO forKey:kSessionActiveKey];
+    [sharedDefaults release];
+}
+
+void HardwareUtils_iOS::setTlsPins(const QVariantMap &pins)
+{
+    NSUserDefaults *sharedDefaults = [[NSUserDefaults alloc] initWithSuiteName:kAppGroup];
+    if (pins.isEmpty())
+    {
+        [sharedDefaults removeObjectForKey:kTlsPinsKey];
+    }
+    else
+    {
+        NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithCapacity:pins.size()];
+        for (auto it = pins.constBegin(); it != pins.constEnd(); ++it)
+            [dict setObject:it.value().toString().toNSString() forKey:it.key().toNSString()];
+        [sharedDefaults setObject:dict forKey:kTlsPinsKey];
+    }
     [sharedDefaults release];
 }
 

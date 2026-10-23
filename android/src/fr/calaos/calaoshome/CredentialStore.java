@@ -10,10 +10,13 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.util.Locale;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 // Calaos server address and credentials, readable from Java without Qt.
 //
@@ -51,6 +54,9 @@ public final class CredentialStore
     // False after an explicit user logout: the credentials stay (prefill of
     // the login screen) but background push processing must not use them.
     private static final String PREF_SESSION_ACTIVE = "session_active";
+    // JSON object host:port -> SPKI SHA-256 hex, a copy of the app's TLS pins
+    // (TlsPinning.h) for PushPictureWorker. Not a secret, kept in clear.
+    private static final String PREF_TLS_PINS = "tls_pins";
 
     private static final String KEYSTORE = "AndroidKeyStore";
     private static final String KEY_ALIAS = "calaos_credentials_v1";
@@ -105,6 +111,28 @@ public final class CredentialStore
     public static void setSessionActive(Context ctx, boolean active)
     {
         prefs(ctx).edit().putBoolean(PREF_SESSION_ACTIVE, active).commit();
+    }
+
+    // ── TLS pins ─────────────────────────────────────────────────────────
+
+    public static void setTlsPins(Context ctx, String json)
+    {
+        prefs(ctx).edit().putString(PREF_TLS_PINS, json == null ? "{}" : json).commit();
+    }
+
+    // Lowercase hex, empty when nothing is pinned for hostKey or the value is
+    // unreadable.
+    public static String tlsPin(Context ctx, String hostKey)
+    {
+        try
+        {
+            return new JSONObject(prefs(ctx).getString(PREF_TLS_PINS, "{}"))
+                .optString(hostKey, "").toLowerCase(Locale.ROOT);
+        }
+        catch (JSONException | RuntimeException e)
+        {
+            return "";
+        }
     }
 
     // ── Credentials ──────────────────────────────────────────────────────

@@ -3,6 +3,8 @@
 #include <QJniEnvironment>
 #include <QCoreApplication>
 #include <QDebug>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QPointer>
 #include <QNetworkInformation>
 #include <QSettings>
@@ -379,6 +381,17 @@ void HardwareUtilsAndroid::setSessionActive(bool active)
                                        "(Landroid/content/Context;Z)V", ctx.object(),
                                        static_cast<jboolean>(active));
     clearJavaException("CredentialStore.setSessionActive");
+}
+
+void HardwareUtilsAndroid::setTlsPins(const QVariantMap &pins)
+{
+    const QByteArray json = QJsonDocument(QJsonObject::fromVariantMap(pins)).toJson(QJsonDocument::Compact);
+    QJniObject ctx = androidContext();
+    QJniObject jpins = QJniObject::fromString(QString::fromUtf8(json));
+    QJniObject::callStaticMethod<void>(kCredentialStoreClass, "setTlsPins",
+                                       "(Landroid/content/Context;Ljava/lang/String;)V",
+                                       ctx.object(), jpins.object<jstring>());
+    clearJavaException("CredentialStore.setTlsPins");
 }
 
 bool HardwareUtilsAndroid::isSessionActive()

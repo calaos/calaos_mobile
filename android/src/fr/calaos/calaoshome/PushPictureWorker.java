@@ -26,7 +26,23 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Locale;
 import java.util.regex.Pattern;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -51,11 +67,14 @@ import org.json.JSONObject;
 // notification the user dismissed meanwhile is not re-posted. Nothing here
 // logs a URL, a credential or image bytes.
 //
-// TLS is validated by the system trust store, like NSURLSession on iOS: a
-// server with a self-signed certificate gets the text notification only. The
-// app's own TOFU pinning (CalaosConnection) is not shared with this worker.
-// Plain http:// hosts work because the manifest allows cleartext traffic, as
-// the Qt side already does for such servers.
+// TLS: a certificate the system trust store accepts for the host is used as
+// is. Otherwise (self-signed box, certificate for another name) only the key
+// the user confirmed in the app is accepted: the app copies its pins
+// (host:port -> SHA-256 of the SubjectPublicKeyInfo, src/TlsPinning.h) to
+// CredentialStore. The worker cannot ask the user: no pin, or a different key,
+// means the text notification only. Plain http:// hosts work because the
+// manifest allows cleartext traffic, as the Qt side already does for such
+// servers.
 public class PushPictureWorker extends Worker
 {
     private static final String TAG = "CalaosHome";
@@ -177,7 +196,7 @@ public class PushPictureWorker extends Worker
             }
             String api = apiBaseUrl(host);
 
-            String json = new String(httpGet(eventUrl(api, user, pass, eventUuid), MAX_JSON_BYTES), "UTF-8");
+            String json = new String(httpGet(ctx, eventUrl(api, user, pass, eventUuid), MAX_JSON_BYTES), "UTF-8");
             String picUid = picUidFromEvent(json);
             if (picUid == null)
             {
@@ -185,7 +204,7 @@ public class PushPictureWorker extends Worker
                 return Result.failure();
             }
 
-            byte[] bytes = httpGet(pictureUrl(api, user, pass, picUid), MAX_IMAGE_BYTES);
+            byte[] bytes = httpGet(ctx, pictureUrl(api, user, pass, picUid), MAX_IMAGE_BYTES);
             picture = decodeScaled(bytes, MAX_BITMAP_SIDE);
             if (picture == null)
             {
@@ -202,9 +221,9 @@ public class PushPictureWorker extends Worker
         }
         catch (IOException e)
         {
-            // Unreachable server, timeout, TLS failure (self-signed
-            // certificate), network access withdrawn: a few more attempts,
-            // then give up.
+            // Unreachable server, timeout, TLS failure (certificate neither
+            // trusted nor pinned), network access withdrawn: a few more
+            // attempts, then give up.
             final boolean again = attempt + 1 < MAX_ATTEMPTS && !isStopped();
             Log.w(TAG, "Push picture: download failed: " + e.getClass().getSimpleName()
                   + " (attempt " + (attempt + 1) + "/" + MAX_ATTEMPTS + ")"
@@ -338,11 +357,14 @@ public class PushPictureWorker extends Worker
 
     // GET with short timeouts; the body is capped (a server answering with
     // something huge must not exhaust the worker). The URL is never logged.
-    private static byte[] httpGet(String url, int maxBytes) throws IOException
+    private static byte[] httpGet(Context ctx, String url, int maxBytes) throws IOException
     {
-        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+        URL u = new URL(url);
+        HttpURLConnection conn = (HttpURLConnection) u.openConnection();
         try
         {
+            if (conn instanceof HttpsURLConnection)
+                applyPinning((HttpsURLConnection) conn, CredentialStore.tlsPin(ctx, hostKey(u)));
             conn.setConnectTimeout(CONNECT_TIMEOUT_MS);
             conn.setReadTimeout(READ_TIMEOUT_MS);
             conn.setRequestMethod("GET");
@@ -373,6 +395,119 @@ public class PushPictureWorker extends Worker
         {
             conn.disconnect();
         }
+    }
+
+    // ── TLS pinning ──────────────────────────────────────────────────────
+
+    // Same key as TlsPinning::hostKey(): lowercase host, IPv6 in brackets,
+    // explicit port.
+    static String hostKey(URL url)
+    {
+        String h = url.getHost().toLowerCase(Locale.ROOT);
+        if (h.contains(":") && !h.startsWith("["))
+            h = "[" + h + "]";
+        int port = url.getPort() == -1 ? url.getDefaultPort() : url.getPort();
+        return h + ":" + port;
+    }
+
+    // getEncoded() of an X.509 public key is its SubjectPublicKeyInfo DER,
+    // the bytes the app hashes.
+    static String spkiSha256(Certificate cert)
+    {
+        try
+        {
+            byte[] d = MessageDigest.getInstance("SHA-256").digest(cert.getPublicKey().getEncoded());
+            StringBuilder sb = new StringBuilder(d.length * 2);
+            for (byte b: d)
+                sb.append(String.format(Locale.ROOT, "%02x", b & 0xff));
+            return sb.toString();
+        }
+        catch (NoSuchAlgorithmException | RuntimeException e)
+        {
+            return "";
+        }
+    }
+
+    private static boolean pinMatches(Certificate[] chain, String pin)
+    {
+        return pin != null && !pin.isEmpty() && chain != null && chain.length > 0
+            && pin.equals(spkiSha256(chain[0]));
+    }
+
+    private static X509TrustManager systemTrustManager() throws GeneralSecurityException
+    {
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        tmf.init((KeyStore) null);
+        for (TrustManager tm: tmf.getTrustManagers())
+            if (tm instanceof X509TrustManager)
+                return (X509TrustManager) tm;
+        throw new GeneralSecurityException("no system X509TrustManager");
+    }
+
+    // System validation first, the pin only when it fails, for the chain and
+    // for the host name alike (a pinned box is usually reached by IP).
+    private static void applyPinning(HttpsURLConnection https, final String pin) throws IOException
+    {
+        final X509TrustManager system;
+        final SSLContext sc;
+        try
+        {
+            system = systemTrustManager();
+            X509TrustManager pinned = new X509TrustManager()
+            {
+                @Override
+                public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException
+                {
+                    system.checkClientTrusted(chain, authType);
+                }
+
+                @Override
+                public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException
+                {
+                    try
+                    {
+                        system.checkServerTrusted(chain, authType);
+                    }
+                    catch (CertificateException e)
+                    {
+                        if (!pinMatches(chain, pin))
+                            throw e;
+                    }
+                }
+
+                @Override
+                public X509Certificate[] getAcceptedIssuers()
+                {
+                    return system.getAcceptedIssuers();
+                }
+            };
+            sc = SSLContext.getInstance("TLS");
+            sc.init(null, new TrustManager[] { pinned }, null);
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new PermanentFailure("TLS setup failed: " + e.getClass().getSimpleName());
+        }
+
+        final HostnameVerifier defaultVerifier = HttpsURLConnection.getDefaultHostnameVerifier();
+        https.setSSLSocketFactory(sc.getSocketFactory());
+        https.setHostnameVerifier(new HostnameVerifier()
+        {
+            @Override
+            public boolean verify(String host, SSLSession session)
+            {
+                if (defaultVerifier.verify(host, session))
+                    return true;
+                try
+                {
+                    return pinMatches(session.getPeerCertificates(), pin);
+                }
+                catch (SSLPeerUnverifiedException e)
+                {
+                    return false;
+                }
+            }
+        });
     }
 
     // ── Image ────────────────────────────────────────────────────────────

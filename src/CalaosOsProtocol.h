@@ -6,6 +6,7 @@
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QHash>
+#include <QDateTime>
 
 //calaos-container API rules, without network code so they can be unit tested.
 //Only a plain-text 404 on /api/v2 means an old daemon that needs the legacy routes.
@@ -51,8 +52,7 @@ struct Job
 {
     bool valid = false;
     QString id;
-    QString kind;
-    QString package;
+    QDateTime startedAt;
     QString status; //"running", "done" or "error"
     QString error;
     bool rebootRequired = false;
@@ -104,6 +104,7 @@ public:
     bool isFollowing() const { return !m_id.isEmpty(); }
     const QString &jobId() const { return m_id; }
     const Job &finishedJob() const { return m_finished; }
+    QList<Job> earlyJobs() const;
 
 private:
     QString m_id;

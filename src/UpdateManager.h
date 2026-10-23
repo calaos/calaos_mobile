@@ -2,6 +2,8 @@
 #define UPDATEMANAGER_H
 
 #include <QObject>
+#include <QDateTime>
+#include <QElapsedTimer>
 #include <QQmlApplicationEngine>
 #include <QWebSocket>
 #include <QTimer>
@@ -86,20 +88,26 @@ private:
     void postNextInQueue();
     void continueQueue();
     void handleUpgradeReply(const CalaosOsReply &reply);
+    bool isJobOfOurPost(const CalaosOsProtocol::Job &job) const;
+    //follow or conclude the job our unanswered POST started; false if it is not one
+    bool claimJobOfOurPost(const CalaosOsProtocol::Job &job);
     void handleJobAction(CalaosOsProtocol::UpgradeJobTracker::Action action);
     void concludeJob(const CalaosOsProtocol::Job &job);
     void finishJob(const CalaosOsProtocol::Job &job);
     void resumeAfterDaemonRestart();
     void followForeignJob(const QString &id, const QString &message);
+    void showPostUpgradeDialog(const QSet<QString> &pkgs);
     bool endUpgrade();
     void finishUnclaimed(const QString &message);
     void applyStatusSnapshot(const QJsonObject &st);
     void adoptInFlightUpgrade(const QJsonObject &st);
     void finishUpgrade(bool ok, const QString &err);
 
+    void ensureStatusStream(bool delayReconnect = false);
     void startStatusPolling();
     void stopStatusPolling();
     void startJobPolling();
+    void handleStatusReply(quint64 gen, const CalaosOsProtocol::UpdateStatus &status);
     void scheduleWsReconnect();
 
     QQmlApplicationEngine *engine;
@@ -123,6 +131,8 @@ private:
     bool m_wsGotSnapshot = false;  //a connect-time snapshot was ever received
     quint64 m_pollGeneration = 0;  //bumped on finishUpgrade to drop in-flight poll replies
     bool m_inStatusReply = false;  //handling an update/status reply
+    bool m_statusInFlight = false;  //no second read from progress frames meanwhile
+    QElapsedTimer m_lastStatusRead; //a read just answered: wsConnected skips its own
     bool m_wsWasConnected = false; //only a drop of a working connection may mean a new daemon
 
     //state of the ongoing upgrade
@@ -144,14 +154,14 @@ private:
 
     //last job the daemon showed, to tell a job our severed POST may have started
     QString m_lastSeenJobId;
-    bool m_jobHistoryKnown = false;
     QString m_jobIdBeforePost;
-    bool m_jobHistoryKnownAtPost = false;
+    QDateTime m_postSentAt;
     bool m_postOutcomeUnknown = false; //v2 POST got no answer: a job may or may not exist
 
     //following a run of another client: never claim it installed our packages
     bool m_foreignRun = false;
     QString m_foreignMessage;
+    QSet<QString> m_installedBeforeForeign;
 
     //the job replaced the daemon binary: wait for the new daemon before going on
     bool m_awaitingRestart = false;

@@ -244,8 +244,7 @@ void TstCalaosOsProtocol::jobParsing()
         "daemon_restart":true,"started_at":"2026-10-22T09:12:03Z"})").object());
     QVERIFY(j.valid);
     QCOMPARE(j.id, QStringLiteral("3f9c2a7e5b1d4c80"));
-    QCOMPARE(j.kind, QStringLiteral("upgrade"));
-    QCOMPARE(j.package, QStringLiteral("calaos-server"));
+    QCOMPARE(j.startedAt, QDateTime::fromString(QStringLiteral("2026-10-22T09:12:03Z"), Qt::ISODate));
     QCOMPARE(j.status, QStringLiteral("error"));
     QCOMPARE(j.error, QStringLiteral("upgrade failed: calaos-server"));
     QVERIFY(j.rebootRequired);

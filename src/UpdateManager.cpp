@@ -295,6 +295,7 @@ void UpdateManager::beginUpgrade(const QStringList &queue, bool usesUpgradeAll)
     m_terminalMessage.clear();
     m_resyncMode = false;
     m_upgradeSet = QSet<QString>(queue.begin(), queue.end());
+    m_installedBeforeForeign.clear();
     m_jobs.clear();
     m_jobRebootKnown = false;
     m_jobRebootRequired = false;
@@ -315,18 +316,12 @@ void UpdateManager::beginUpgrade(const QStringList &queue, bool usesUpgradeAll)
     m_groupsModel->clearProgress();
 
     //make sure progress can reach us: WS preferred, polling as belt-and-braces
-    //while the WS is not established
-    if (m_ws.state() != QAbstractSocket::ConnectedState &&
-        m_ws.state() != QAbstractSocket::ConnectingState)
-    {
-        connectWs();
-        startStatusPolling();
-    }
+    ensureStatusStream();
 
     if (usesUpgradeAll)
     {
         m_jobIdBeforePost = m_lastSeenJobId;
-        m_jobHistoryKnownAtPost = m_jobHistoryKnown;
+        m_postSentAt = QDateTime::currentDateTimeUtc();
         m_jobs.startPending();
         m_api->upgradeAll([this](const CalaosOsReply &reply)
         {
@@ -355,7 +350,7 @@ void UpdateManager::postNextInQueue()
     //each package is one apt transaction: a legacy POST that returns when it
     //is over, or a job whose terminal state advances the queue
     m_jobIdBeforePost = m_lastSeenJobId;
-    m_jobHistoryKnownAtPost = m_jobHistoryKnown;
+    m_postSentAt = QDateTime::currentDateTimeUtc();
     m_jobs.startPending();
     m_api->upgradePackage(pkg, [this](const CalaosOsReply &reply)
     {
@@ -403,6 +398,8 @@ void UpdateManager::handleUpgradeReply(const CalaosOsReply &reply)
         const QString runningId = reply.data.toObject()["job_id"].toString();
         if (!runningId.isEmpty())
         {
+            m_installedBeforeForeign = m_queueDone > 0 ?
+                QSet<QString>(m_queue.begin(), m_queue.begin() + m_queueDone) : QSet<QString>();
             followForeignJob(runningId, tr("Another update was running. Check for updates again, then retry."));
             pollStatus();
             return;
@@ -410,6 +407,33 @@ void UpdateManager::handleUpgradeReply(const CalaosOsReply &reply)
 
         m_jobs.clear();
         finishUpgrade(false, tr("Another update operation is in progress, try again later."));
+        return;
+    }
+
+    if (reply.httpStatus == 0 && reply.api == ApiVersion::V2)
+    {
+        if (reply.neverReachedDaemon())
+        {
+            m_jobs.clear();
+            finishUpgrade(false, tr("Cannot contact the update service"));
+            return;
+        }
+
+        //the daemon may have started a job before the connection broke: the
+        //events buffered during the POST may already prove it
+        m_resyncMode = true;
+        m_postOutcomeUnknown = true;
+        const QList<Job> early = m_jobs.earlyJobs();
+        m_jobs.clear();
+        for (const Job &job: early)
+        {
+            if (claimJobOfOurPost(job))
+                return;
+        }
+
+        ensureStatusStream(true);
+        startJobPolling();
+        pollStatus();
         return;
     }
 
@@ -429,27 +453,6 @@ void UpdateManager::handleUpgradeReply(const CalaosOsReply &reply)
         return;
     }
 
-    if (reply.httpStatus == 0 && reply.api == ApiVersion::V2)
-    {
-        if (reply.neverReachedDaemon())
-        {
-            finishUpgrade(false, tr("Cannot contact the update service"));
-            return;
-        }
-
-        //the daemon may have started a job before the connection broke:
-        //only a job newer than the one seen before the POST can tell
-        m_resyncMode = true;
-        m_postOutcomeUnknown = true;
-        if (m_ws.state() != QAbstractSocket::ConnectedState &&
-            m_ws.state() != QAbstractSocket::ConnectingState)
-            scheduleWsReconnect();
-        startStatusPolling();
-        startJobPolling();
-        pollStatus();
-        return;
-    }
-
     if (reply.httpStatus == 0)
     {
         //transport error (connection severed/refused, no HTTP reply):
@@ -458,10 +461,7 @@ void UpdateManager::handleUpgradeReply(const CalaosOsReply &reply)
         //restarted the daemon). Switch to resync mode: the status
         //stream (WS/poll) concludes the upgrade
         m_resyncMode = true;
-        if (m_ws.state() != QAbstractSocket::ConnectedState &&
-            m_ws.state() != QAbstractSocket::ConnectingState)
-            scheduleWsReconnect();
-        startStatusPolling();
+        ensureStatusStream(true);
         return;
     }
 
@@ -475,6 +475,31 @@ void UpdateManager::handleUpgradeReply(const CalaosOsReply &reply)
     }
 
     finishUpgrade(false, reply.error);
+}
+
+bool UpdateManager::claimJobOfOurPost(const Job &job)
+{
+    if (!isJobOfOurPost(job))
+        return false;
+
+    m_postOutcomeUnknown = false;
+    m_resyncMode = false; //ours again: the queue goes on
+    if (job.isTerminal())
+    {
+        concludeJob(job);
+        return true;
+    }
+    m_pollGeneration++;
+    handleJobAction(m_jobs.follow(job.id));
+    startJobPolling();
+    return true;
+}
+
+bool UpdateManager::isJobOfOurPost(const Job &job) const
+{
+    return job.valid && job.id != m_jobIdBeforePost &&
+           m_postSentAt.isValid() && job.startedAt.isValid() &&
+           job.startedAt >= m_postSentAt.addSecs(-2);
 }
 
 void UpdateManager::handleJobAction(UpgradeJobTracker::Action action)
@@ -498,7 +523,7 @@ void UpdateManager::handleJobAction(UpgradeJobTracker::Action action)
         break;
     }
     case UpgradeJobTracker::Action::Lost:
-        finishUpgrade(false, tr("The update service lost track of the update"));
+        finishUnclaimed(tr("The update service lost track of the update"));
         break;
     }
 }
@@ -599,7 +624,7 @@ void UpdateManager::applyStatusSnapshot(const QJsonObject &st)
         if (m_jobs.isFollowing() || m_postOutcomeUnknown)
         {
             //the run is over: read its job, its terminal event may be lost
-            if (!m_inStatusReply)
+            if (!m_inStatusReply && !m_statusInFlight)
                 pollStatus();
         }
         else if (m_resyncMode && get_isUpgrading())
@@ -697,7 +722,7 @@ void UpdateManager::applyStatusSnapshot(const QJsonObject &st)
         //a job only ends on its own terminal state
         if (m_jobs.isFollowing() || m_postOutcomeUnknown)
         {
-            if (!m_inStatusReply)
+            if (!m_inStatusReply && !m_statusInFlight)
                 pollStatus();
         }
         else if (m_resyncMode)
@@ -729,14 +754,8 @@ void UpdateManager::adoptInFlightUpgrade(const QJsonObject &st)
     update_isUpgrading(true);
     update_updateState(QStringLiteral("upgrading"));
 
-    //the status stream is the only finisher of an adopted upgrade: make sure
-    //it keeps reaching us, WS preferred, polling while it is not established
-    if (m_ws.state() != QAbstractSocket::ConnectedState &&
-        m_ws.state() != QAbstractSocket::ConnectingState)
-    {
-        connectWs();
-        startStatusPolling();
-    }
+    //the status stream is the only finisher of an adopted upgrade
+    ensureStatusStream();
 
     //adopted from an upgrade_job event: no progress to show yet
     if (!st.isEmpty())
@@ -795,6 +814,47 @@ void UpdateManager::finishUnclaimed(const QString &message)
                      { "message", text },
                      { "button", tr("Close") }};
     QFAppDispatcher::instance(engine)->dispatch("showNotificationMsg", m);
+    if (!m_installedBeforeForeign.isEmpty())
+        showPostUpgradeDialog(m_installedBeforeForeign);
+    m_installedBeforeForeign.clear();
+}
+
+void UpdateManager::showPostUpgradeDialog(const QSet<QString> &pkgs)
+{
+    bool hasKernel = false;
+    for (const QString &p: pkgs)
+    {
+        if (UpdateGrouping::groupForPackage(p) == QStringLiteral("kernel"))
+        {
+            hasKernel = true;
+            break;
+        }
+    }
+
+    //a job tells from what it really installed; legacy runs only have
+    //the package names to guess from
+    const bool needsReboot = m_jobRebootKnown ? m_jobRebootRequired : hasKernel;
+    QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(engine);
+
+    if (pkgs.contains(QStringLiteral("calaos-home")))
+    {
+        QVariantMap m = {{ "showMachine", needsReboot },
+                         { "showApp", true }};
+        appDispatcher->dispatch("showRebootDialog", m);
+    }
+    else if (needsReboot)
+    {
+        QVariantMap m = {{ "showMachine", true },
+                         { "showApp", false }};
+        appDispatcher->dispatch("showRebootDialog", m);
+    }
+    else
+    {
+        QVariantMap m = {{ "title", tr("Software update") },
+                         { "message", tr("Update installed successfully.") },
+                         { "button", tr("Close") }};
+        appDispatcher->dispatch("showNotificationMsg", m);
+    }
 }
 
 void UpdateManager::finishUpgrade(bool ok, const QString &err)
@@ -820,39 +880,7 @@ void UpdateManager::finishUpgrade(bool ok, const QString &err)
         });
         refreshInstalledList();
 
-        bool hasKernel = false;
-        for (const QString &p: m_upgradeSet)
-        {
-            if (UpdateGrouping::groupForPackage(p) == QStringLiteral("kernel"))
-            {
-                hasKernel = true;
-                break;
-            }
-        }
-
-        //a job tells from what it really installed; legacy runs only have
-        //the package names to guess from
-        const bool needsReboot = m_jobRebootKnown ? m_jobRebootRequired : hasKernel;
-
-        if (m_upgradeSet.contains(QStringLiteral("calaos-home")))
-        {
-            QVariantMap m = {{ "showMachine", needsReboot },
-                             { "showApp", true }};
-            appDispatcher->dispatch("showRebootDialog", m);
-        }
-        else if (needsReboot)
-        {
-            QVariantMap m = {{ "showMachine", true },
-                             { "showApp", false }};
-            appDispatcher->dispatch("showRebootDialog", m);
-        }
-        else
-        {
-            QVariantMap m = {{ "title", tr("Software update") },
-                             { "message", tr("Update installed successfully.") },
-                             { "button", tr("Close") }};
-            appDispatcher->dispatch("showNotificationMsg", m);
-        }
+        showPostUpgradeDialog(m_upgradeSet);
     }
     else
     {
@@ -918,9 +946,13 @@ void UpdateManager::connectWs()
     if (m_api->apiVersion() == ApiVersion::Unknown)
     {
         m_wsDetecting = true;
-        m_api->detectApiVersion([this]()
+        const quint64 gen = m_pollGeneration;
+        m_api->detectApiVersion([this, gen](const CalaosOsReply &reply)
         {
             m_wsDetecting = false;
+            //the probe is a status read: use it rather than sending another
+            if (reply.ok)
+                handleStatusReply(gen, parseUpdateStatus(reply.api, reply.data));
             openWs();
         });
         return;
@@ -959,7 +991,8 @@ void UpdateManager::wsConnected()
 
     //events are not replayed: the persisted job is the source of truth;
     //Unknown too, the probe may have failed while the daemon was booting
-    if (m_api->apiVersion() != ApiVersion::Legacy)
+    if (m_api->apiVersion() != ApiVersion::Legacy &&
+        (m_awaitingRestart || !m_lastStatusRead.isValid() || m_lastStatusRead.elapsed() >= 1000))
         pollStatus();
 }
 
@@ -1003,7 +1036,11 @@ void UpdateManager::wsTextMessageReceived(const QString &msg)
     //the leaving daemon has nothing more to say; the new one's connect
     //snapshot must not conclude anything before the resume read
     if (m_awaitingRestart || m_resumingAfterRestart)
+    {
+        if (type == QStringLiteral("upgrade_progress"))
+            m_expectSnapshot = false;
         return;
+    }
 
     if (type == QStringLiteral("upgrade_job"))
     {
@@ -1012,6 +1049,14 @@ void UpdateManager::wsTextMessageReceived(const QString &msg)
             return;
         m_lastSeenJobId = job.id;
         update_rebootRequired(job.rebootRequired);
+
+        if (m_postOutcomeUnknown && get_isUpgrading())
+        {
+            //an older or foreign job proves nothing: ask the daemon
+            if (!claimJobOfOurPost(job))
+                pollStatus();
+            return;
+        }
 
         const bool adoptedWithoutId = get_isUpgrading() && m_resyncMode &&
                                       !m_jobs.isFollowing() && !m_jobs.isPending();
@@ -1080,6 +1125,18 @@ void UpdateManager::wsTextMessageReceived(const QString &msg)
     applyStatusSnapshot(data);
 }
 
+void UpdateManager::ensureStatusStream(bool delayReconnect)
+{
+    if (m_ws.state() == QAbstractSocket::ConnectedState ||
+        m_ws.state() == QAbstractSocket::ConnectingState)
+        return;
+    if (delayReconnect)
+        scheduleWsReconnect();
+    else
+        connectWs();
+    startStatusPolling();
+}
+
 void UpdateManager::startStatusPolling()
 {
     if (!m_pollTimer->isActive())
@@ -1094,101 +1151,102 @@ void UpdateManager::stopStatusPolling()
 void UpdateManager::pollStatus()
 {
     const quint64 gen = m_pollGeneration;
+    m_statusInFlight = true;
 
     m_api->getUpdateStatus([this, gen](bool ok, const UpdateStatus &status)
     {
-        if (!ok)
-            return;
-        if (gen != m_pollGeneration)
-            return; //reply from before the upgrade finished, drop it
-
-        //this reply is the fresh read: never chain another one from it
-        const QScopedValueRollback<bool> inReply(m_inStatusReply, true);
-        const QScopedValueRollback<bool> newDaemon(m_statusFromNewDaemon, isIdleProgress(status.progress));
-
-        if (status.hasJobField)
-        {
-            //the daemon clears it once the box has rebooted
-            update_rebootRequired(status.job.valid && status.job.rebootRequired);
-            m_lastSeenJobId = status.job.valid ? status.job.id : QString();
-            m_jobHistoryKnown = true;
-        }
-
-        if (m_awaitingRestart || m_resumingAfterRestart)
-            return;
-
-        if (m_postOutcomeUnknown && get_isUpgrading())
-        {
-            const Job &job = status.job;
-            const bool newJob = status.hasJobField && job.valid && m_jobHistoryKnownAtPost &&
-                                job.id != m_jobIdBeforePost;
-            if (newJob && !job.isTerminal())
-            {
-                //our POST did start it
-                m_postOutcomeUnknown = false;
-                m_resyncMode = false;
-                m_pollGeneration++;
-                handleJobAction(m_jobs.follow(job.id));
-                startJobPolling();
-                applyStatusSnapshot(status.progress);
-                return;
-            }
-            if (newJob)
-            {
-                concludeJob(job);
-                return;
-            }
-            if (isIdleProgress(status.progress))
-            {
-                finishUpgrade(false, tr("The outcome of the update is unknown. Check for updates again."));
-                return;
-            }
-            applyStatusSnapshot(status.progress);
-            return;
-        }
-
-        if (status.hasJobField)
-        {
-            const UpgradeJobTracker::Action action = m_jobs.onStatus(status.job, true);
-            if (action == UpgradeJobTracker::Action::Adopt)
-            {
-                if (!get_isUpgrading())
-                    adoptInFlightUpgrade(status.progress);
-                else
-                    applyStatusSnapshot(status.progress);
-                handleJobAction(action);
-                return;
-            }
-            if (action == UpgradeJobTracker::Action::Lost)
-            {
-                //ours ended unseen and another run came after it
-                const QString unknown = tr("The outcome of the update is unknown: another update ran meanwhile. Check for updates again.");
-                if (status.job.valid && !status.job.isTerminal())
-                {
-                    followForeignJob(status.job.id, unknown);
-                    applyStatusSnapshot(status.progress);
-                }
-                else if (status.job.valid)
-                    finishUnclaimed(unknown);
-                else
-                    handleJobAction(action);
-                return;
-            }
-            if (action != UpgradeJobTracker::Action::None)
-            {
-                handleJobAction(action);
-                return;
-            }
-        }
-
-        if (!get_isUpgrading())
-        {
-            //resync rule: an upgrade is running that we do not know about
-            if (status.progress["status"].toString() == QStringLiteral("upgrading"))
-                adoptInFlightUpgrade(status.progress);
-            return;
-        }
-
-        applyStatusSnapshot(status.progress);
+        m_statusInFlight = false;
+        if (ok)
+            handleStatusReply(gen, status);
     });
+}
+
+void UpdateManager::handleStatusReply(quint64 gen, const UpdateStatus &status)
+{
+    m_lastStatusRead.start();
+    if (gen != m_pollGeneration)
+        return; //reply from before the upgrade finished, drop it
+
+    //this reply is the fresh read: never chain another one from it
+    const QScopedValueRollback<bool> inReply(m_inStatusReply, true);
+    const QScopedValueRollback<bool> newDaemon(m_statusFromNewDaemon, isIdleProgress(status.progress));
+
+    if (status.hasJobField)
+    {
+        //the daemon clears it once the box has rebooted
+        update_rebootRequired(status.job.valid && status.job.rebootRequired);
+        m_lastSeenJobId = status.job.valid ? status.job.id : QString();
+    }
+
+    if (m_awaitingRestart)
+    {
+        if (isIdleProgress(status.progress))
+            resumeAfterDaemonRestart();
+        return;
+    }
+    if (m_resumingAfterRestart)
+        return;
+
+    if (m_postOutcomeUnknown && get_isUpgrading())
+    {
+        const Job &job = status.job;
+        const bool running = !job.isTerminal();
+        if (status.hasJobField && claimJobOfOurPost(job))
+        {
+            if (running)
+                applyStatusSnapshot(status.progress);
+            return;
+        }
+        if (isIdleProgress(status.progress))
+        {
+            finishUnclaimed(tr("The outcome of the update is unknown. Check for updates again."));
+            return;
+        }
+        applyStatusSnapshot(status.progress);
+        return;
+    }
+
+    if (status.hasJobField)
+    {
+        const UpgradeJobTracker::Action action = m_jobs.onStatus(status.job, true);
+        if (action == UpgradeJobTracker::Action::Adopt)
+        {
+            if (!get_isUpgrading())
+                adoptInFlightUpgrade(status.progress);
+            else
+                applyStatusSnapshot(status.progress);
+            handleJobAction(action);
+            return;
+        }
+        if (action == UpgradeJobTracker::Action::Lost)
+        {
+            //ours ended unseen and another run came after it
+            const QString unknown = tr("The outcome of the update is unknown: another update ran meanwhile. Check for updates again.");
+            if (status.job.valid && !status.job.isTerminal())
+            {
+                followForeignJob(status.job.id, unknown);
+                applyStatusSnapshot(status.progress);
+            }
+            else if (status.job.valid)
+                finishUnclaimed(unknown);
+            else
+                handleJobAction(action);
+            return;
+        }
+        if (action != UpgradeJobTracker::Action::None)
+        {
+            handleJobAction(action);
+            return;
+        }
+    }
+
+    if (!get_isUpgrading())
+    {
+        //resync rule: an upgrade is running that we do not know about
+        if (status.progress["status"].toString() == QStringLiteral("upgrading"))
+            adoptInFlightUpgrade(status.progress);
+        return;
+    }
+
+    applyStatusSnapshot(status.progress);
 }

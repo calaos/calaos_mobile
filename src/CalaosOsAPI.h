@@ -14,7 +14,6 @@ struct CalaosOsReply
     //are not server rejections: the daemon may be restarting
     int httpStatus = 0;
     CalaosOsProtocol::ApiVersion api = CalaosOsProtocol::ApiVersion::Unknown; //surface that answered
-    QString code;  //v2 error code, empty on the legacy surface
     QString error; //displayable message on failure
     //v2: the envelope data; legacy update/*: the whole document; legacy system/*: "output"
     QJsonValue data;
@@ -85,7 +84,7 @@ public:
     //forget the detected API version: the daemon may have been replaced by another version
     void resetApiVersion() { m_apiVersion = CalaosOsProtocol::ApiVersion::Unknown; }
     //find out the API version if unknown, then call back
-    void detectApiVersion(std::function<void()> callback);
+    void detectApiVersion(std::function<void(const CalaosOsReply &reply)> callback);
 
     //re-read the token file, e.g. after a 401 or before reconnecting
     void reloadToken();

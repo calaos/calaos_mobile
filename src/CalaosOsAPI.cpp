@@ -5,6 +5,15 @@
 
 using namespace CalaosOsProtocol;
 
+static auto valueAdapter(std::function<void(bool, const QJsonValue &)> callback)
+{
+    return [callback](const CalaosOsReply &reply)
+    {
+        if (callback)
+            callback(reply.ok, reply.ok ? reply.data : QJsonValue());
+    };
+}
+
 #ifdef Q_OS_LINUX
 #define TOKEN_FILE  "/run/calaos/calaos-ct.token"
 #else
@@ -97,11 +106,7 @@ void CalaosOsAPI::getFsStatus(std::function<void (bool, const QJsonValue &)> cal
     r.v2Path = QStringLiteral("/system/fs_status");
     r.legacyPath = QStringLiteral("/api/system/fs_status");
     r.legacyShape = LegacyBody::Output;
-    call(r, [callback](const CalaosOsReply &reply)
-    {
-        if (callback)
-            callback(reply.ok, reply.ok ? reply.data : QJsonValue());
-    });
+    call(r, valueAdapter(callback));
 }
 
 void CalaosOsAPI::rollbackSnapshot(std::function<void (bool)> callback)
@@ -124,11 +129,7 @@ void CalaosOsAPI::listInstallDevices(std::function<void (bool, const QJsonValue 
     r.v2Path = QStringLiteral("/system/install/list_devices");
     r.legacyPath = QStringLiteral("/api/system/install/list_devices");
     r.legacyShape = LegacyBody::Output;
-    call(r, [callback](const CalaosOsReply &reply)
-    {
-        if (callback)
-            callback(reply.ok, reply.ok ? reply.data : QJsonValue());
-    });
+    call(r, valueAdapter(callback));
 }
 
 //The installer stays on the legacy routes: it runs from a live image whose
@@ -250,11 +251,7 @@ void CalaosOsAPI::getNetworkInterfaces(std::function<void (bool, const QJsonValu
     r.v2Path = QStringLiteral("/network/list");
     r.legacyPath = QStringLiteral("/api/network/list");
     r.legacyShape = LegacyBody::Output;
-    call(r, [callback](const CalaosOsReply &reply)
-    {
-        if (callback)
-            callback(reply.ok, reply.ok ? reply.data : QJsonValue());
-    });
+    call(r, valueAdapter(callback));
 }
 
 void CalaosOsAPI::getSystemInfo(std::function<void (bool, const QJsonValue &)> callback)
@@ -263,11 +260,7 @@ void CalaosOsAPI::getSystemInfo(std::function<void (bool, const QJsonValue &)> c
     r.v2Path = QStringLiteral("/system/info");
     r.legacyPath = QStringLiteral("/api/system/info");
     r.legacyShape = LegacyBody::Output;
-    call(r, [callback](const CalaosOsReply &reply)
-    {
-        if (callback)
-            callback(reply.ok, reply.ok ? reply.data : QJsonValue());
-    });
+    call(r, valueAdapter(callback));
 }
 
 void CalaosOsAPI::configureNetwork(const QJsonObject &networkConfig, std::function<void (bool)> callback)
@@ -355,21 +348,18 @@ void CalaosOsAPI::getUpdateStatus(std::function<void (bool, const UpdateStatus &
     });
 }
 
-void CalaosOsAPI::detectApiVersion(std::function<void ()> callback)
+void CalaosOsAPI::detectApiVersion(std::function<void(const CalaosOsReply &)> callback)
 {
     if (m_apiVersion != ApiVersion::Unknown)
     {
-        callback();
+        callback(CalaosOsReply());
         return;
     }
 
     //any v2 route tells; update/status is cheap and allowed to every bearer
     Route r;
     r.v2Path = QStringLiteral("/update/status");
-    call(r, [callback](const CalaosOsReply &)
-    {
-        callback();
-    });
+    call(r, callback);
 }
 
 QNetworkRequest CalaosOsAPI::eventsRequest()
@@ -495,7 +485,6 @@ CalaosOsReply CalaosOsAPI::v2Reply(int success, int httpStatus, const QJsonDocum
     reply.httpStatus = httpStatus;
 
     const Envelope env = parseEnvelope(doc);
-    reply.code = env.code;
     reply.data = env.data;
     reply.ok = success == NetworkRequest::RequestSuccess && env.isEnvelope && !env.error;
     if (!reply.ok)

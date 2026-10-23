@@ -125,8 +125,12 @@ docs/               Refactoring board (BOARD.md) and tickets (tasks/), in French
   ([src/CalaosConnection.cpp:371-378](src/CalaosConnection.cpp)); a full
   `http(s)://` or `ws(s)://` URL is used as is. Both the v2 and v3 wire
   formats are decoded by [`CalaosEventDecoder`](src/CalaosEventDecoder.h).
-  TLS errors are ignored (`CalaosConnection.cpp:63-70`); TOFU pinning is only a
-  ticket (T12), not implemented.
+  TLS: trust on first use ([`TlsPinning`](src/TlsPinning.h), CM2). A
+  certificate Qt validates is used as is; otherwise the SHA-256 of its
+  SubjectPublicKeyInfo must match the pin stored per `host:port` (QSettings
+  `tls/pins`), an unknown or changed key fails the attempt (`TrustFailure`, no
+  automatic retry) and asks the user. The pins are copied to the Android push
+  worker (`CredentialStore`) and the iOS extension (App Group).
 - **Platform abstraction**: [`HardwareUtils`](src/HardwareUtils.h) +
   per-platform subclasses in
   [src/HardwareUtils_desktop.cpp](src/HardwareUtils_desktop.cpp),

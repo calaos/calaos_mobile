@@ -162,6 +162,14 @@ Exécution parallèle : chaque ticket lancé en parallèle travaille dans son pr
 | [FIX-12](tasks/FIX-12-effacer-mot-de-passe.md) | Le bouton « effacer » du champ mot de passe n'efface rien | S | FIX-10 | G-QML-MOBILE | Terminé |
 | [EVLOG-1](tasks/EVLOG-1-historique-fige.md) | Historique des événements figé après une requête perdue | M | — | G-CONN + G-MODELS | Terminé |
 
+## P-ADM — Plan admin de calaos_base (côté mobile)
+
+Tickets du plan `docs/admin/PLAN.md` de calaos_base qui touchent ce dépôt.
+
+| ID | Titre | Taille | Bloqué par | Groupe | Statut |
+|---|---|---|---|---|---|
+| [CM2](tasks/CM2-tls-tofu-pinning.md) | TLS TOFU : épinglage de la clé du certificat par hôte, re-confirmation au changement de clé | L | — | G-CONN + G-APP + G-ANDROID + G-IOS | En revue |
+
 ## Diagramme de parallélisation
 
 Chaque colonne est une lane exécutable par un agent indépendant ; `→` = séquence obligatoire, `‖` = parallèle.
@@ -204,9 +212,9 @@ P5   T29 → T30                                (T28 abandonné)
 Explicitement exclus de ce backlog, à traiter dans une phase dédiée :
 
 - **Sweep couleurs : tokens Theme partout** (ex-T28, spec conservée dans `docs/tasks/T28-sweep-theme-couleurs.md`) — écarté par Raoul le 2026-08-11. 328 couleurs en dur et une dérive de casse `#3ab4d7` / `#3AB4D7`, mais c'est le plus gros sweep du backlog, il figure dans la table des risques avec campagne de screenshots obligatoire, et il ne corrige aucun défaut. T29 et T30 n'en dépendaient pas sur le fond : ils traitent les imports et les logs, ils n'étaient sérialisés derrière lui que par le groupe G-QML-SWEEP. T29 passe derrière T27, T30 derrière T29.
-- **TLS TOFU / pinning d'empreinte certificat** (ex-T12, spec conservée dans `docs/tasks/T12-tls-tofu.md`) — écarté par Raoul le 2026-08-10 : verrouiller le certificat est trop risqué pour le parc installé, un renouvellement côté serveur couperait les clients. `ignoreSslErrors` reste donc en place. T13 et T14 n'en dépendaient pas sur le fond : ils n'étaient sérialisés derrière lui que parce que les trois touchent `CalaosConnection.cpp` (groupe G-CONN). T13 est repositionné derrière T08.
+- **TLS TOFU / pinning d'empreinte certificat** (ex-T12, spec conservée dans `docs/tasks/T12-tls-tofu.md`) — écarté par Raoul le 2026-08-10 : verrouiller le certificat est trop risqué pour le parc installé, un renouvellement côté serveur couperait les clients. **Repris par CM2** avec une nouvelle confirmation au changement de clé au lieu d'un refus définitif, et un pin de clé publique (SPKI) qui survit aux renouvellements à clé constante. T13 et T14 n'en dépendaient pas sur le fond : ils n'étaient sérialisés derrière lui que parce que les trois touchent `CalaosConnection.cpp` (groupe G-CONN). T13 est repositionné derrière T08.
 - **Migration CMake** : faite pour Android (qmake n'y est plus supporté) et pour le build iOS ; reste le build desktop (`desktop.pro`), préalable recommandé au split transport complet de CalaosConnection.
-- **Android** : traité par la phase P-AND (build CMake seul via `tools/build_android.sh`, Qt 6.12, `targetSdkVersion` 36 / `minSdkVersion` 28, OpenSSL 3 KDAB, AGP 9.2.1 / Gradle 9.5.1 sans `jcenter()`, push FCM par le SDK Java Firebase, identifiants dans le Keystore Android). Il ne reste hors périmètre que : le pinning TLS côté worker de notification Java (serveur à certificat auto-signé → notification texte seule, voir `doc/android.md` §6.3), un éventuel workflow CI de release Android (`doc/cmake.md` §6.2), l'activation de R8/minify (`doc/android.md` §7.2) et un rapport de bug Qt sur la course du bouton retour en chemin « key event » (`doc/android.md` §7.3).
+- **Android** : traité par la phase P-AND (build CMake seul via `tools/build_android.sh`, Qt 6.12, `targetSdkVersion` 36 / `minSdkVersion` 28, OpenSSL 3 KDAB, AGP 9.2.1 / Gradle 9.5.1 sans `jcenter()`, push FCM par le SDK Java Firebase, identifiants dans le Keystore Android). Il ne reste hors périmètre que : un éventuel workflow CI de release Android (`doc/cmake.md` §6.2), l'activation de R8/minify (`doc/android.md` §7.2) et un rapport de bug Qt sur la course du bouton retour en chemin « key event » (`doc/android.md` §7.3).
 - **iOS** : APIs UIKit dépréciées (`UIAlertView`…), `KeychainItemWrapper` mort à supprimer, étapes Xcode manuelles non scriptables.
 - **Docker** : image de base non pinnée, fetch AUR sans checksum.
 - **Version applicative** : `src/version.h` codé en dur à `"git"` — injecter la vraie version au build.

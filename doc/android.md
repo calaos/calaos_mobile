@@ -357,10 +357,14 @@ Session semantics (decided for AND-7, reversible):
 
 Limits:
 
-- **TLS is validated by the system trust store**, like `NSURLSession` on iOS.
-  A calaos_server with a **self-signed certificate gets the text notification
-  only**; the TOFU pinning of the Qt side (`CalaosConnection`) is not shared
-  with the worker. Follow-up: export the pinned fingerprint to Java.
+- **TLS**: a certificate the system trust store accepts for the host is used
+  as is. Otherwise (self-signed box, certificate for another name) the worker
+  accepts only the key the user trusted in the app: C++ copies the pins
+  (`host:port` -> SHA-256 of the SubjectPublicKeyInfo, `src/TlsPinning.h`) to
+  `CredentialStore` (`tls_pins`, JSON, not encrypted: not a secret), and the
+  worker checks `PublicKey.getEncoded()` of the leaf against it, for the chain
+  and for the host name. No pin or another key: text notification only (the
+  worker cannot ask the user).
 - The manifest sets `android:usesCleartextTraffic="true"` so a server
   configured with `http://` / `ws://` works from the Java network stack too
   (Qt's own sockets are not subject to that policy, so the app already talks
@@ -465,8 +469,9 @@ in with a user that is **not** the demo one. Watch with
    `credentials migrated to the secure store` in the log, the `.conf` no
    longer has the pair, `shared_prefs/calaos_credentials.xml` holds
    base64 blobs only.
-10. **Self-signed server** (if applicable): text notification only; note it
-   as the documented limit.
+10. **Self-signed server** (if applicable): picture shown once the certificate
+   was trusted in the app; text notification only before that, or after the
+   pin was forgotten in Settings.
 
 ## 7. Project layout and packaging
 

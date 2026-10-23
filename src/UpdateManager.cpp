@@ -322,6 +322,7 @@ void UpdateManager::beginUpgrade(const QStringList &queue, bool usesUpgradeAll)
     {
         m_jobIdBeforePost = m_lastSeenJobId;
         m_postSentAt = QDateTime::currentDateTimeUtc();
+        m_postFailedAt = QDateTime();
         m_jobs.startPending();
         m_api->upgradeAll([this](const CalaosOsReply &reply)
         {
@@ -351,6 +352,7 @@ void UpdateManager::postNextInQueue()
     //is over, or a job whose terminal state advances the queue
     m_jobIdBeforePost = m_lastSeenJobId;
     m_postSentAt = QDateTime::currentDateTimeUtc();
+    m_postFailedAt = QDateTime();
     m_jobs.startPending();
     m_api->upgradePackage(pkg, [this](const CalaosOsReply &reply)
     {
@@ -398,8 +400,6 @@ void UpdateManager::handleUpgradeReply(const CalaosOsReply &reply)
         const QString runningId = reply.data.toObject()["job_id"].toString();
         if (!runningId.isEmpty())
         {
-            m_installedBeforeForeign = m_queueDone > 0 ?
-                QSet<QString>(m_queue.begin(), m_queue.begin() + m_queueDone) : QSet<QString>();
             followForeignJob(runningId, tr("Another update was running. Check for updates again, then retry."));
             pollStatus();
             return;
@@ -412,6 +412,7 @@ void UpdateManager::handleUpgradeReply(const CalaosOsReply &reply)
 
     if (reply.httpStatus == 0 && reply.api == ApiVersion::V2)
     {
+        m_postFailedAt = QDateTime::currentDateTimeUtc();
         if (reply.neverReachedDaemon())
         {
             m_jobs.clear();
@@ -497,9 +498,11 @@ bool UpdateManager::claimJobOfOurPost(const Job &job)
 
 bool UpdateManager::isJobOfOurPost(const Job &job) const
 {
+    //started by our POST: not before it was sent, nor after it died
     return job.valid && job.id != m_jobIdBeforePost &&
            m_postSentAt.isValid() && job.startedAt.isValid() &&
-           job.startedAt >= m_postSentAt.addSecs(-2);
+           job.startedAt >= m_postSentAt.addSecs(-2) &&
+           (!m_postFailedAt.isValid() || job.startedAt <= m_postFailedAt.addSecs(2));
 }
 
 void UpdateManager::handleJobAction(UpgradeJobTracker::Action action)
@@ -592,8 +595,16 @@ void UpdateManager::resumeAfterDaemonRestart()
     });
 }
 
+void UpdateManager::keepInstalledPart()
+{
+    //what our queue already installed still needs its restart/reboot prompt
+    if (m_installedBeforeForeign.isEmpty() && !m_usesUpgradeAll && m_queueDone > 0)
+        m_installedBeforeForeign = QSet<QString>(m_queue.begin(), m_queue.begin() + m_queueDone);
+}
+
 void UpdateManager::followForeignJob(const QString &id, const QString &message)
 {
+    keepInstalledPart();
     m_resyncMode = true;
     m_foreignRun = true;
     m_foreignMessage = message;
@@ -792,6 +803,7 @@ bool UpdateManager::endUpgrade()
 void UpdateManager::finishUnclaimed(const QString &message)
 {
     const QString text = message;
+    keepInstalledPart();
     if (!endUpgrade())
         return;
 
@@ -815,11 +827,11 @@ void UpdateManager::finishUnclaimed(const QString &message)
                      { "button", tr("Close") }};
     QFAppDispatcher::instance(engine)->dispatch("showNotificationMsg", m);
     if (!m_installedBeforeForeign.isEmpty())
-        showPostUpgradeDialog(m_installedBeforeForeign);
+        showPostUpgradeDialog(m_installedBeforeForeign, false);
     m_installedBeforeForeign.clear();
 }
 
-void UpdateManager::showPostUpgradeDialog(const QSet<QString> &pkgs)
+void UpdateManager::showPostUpgradeDialog(const QSet<QString> &pkgs, bool notifyWhenNothingToDo)
 {
     bool hasKernel = false;
     for (const QString &p: pkgs)
@@ -848,7 +860,7 @@ void UpdateManager::showPostUpgradeDialog(const QSet<QString> &pkgs)
                          { "showApp", false }};
         appDispatcher->dispatch("showRebootDialog", m);
     }
-    else
+    else if (notifyWhenNothingToDo)
     {
         QVariantMap m = {{ "title", tr("Software update") },
                          { "message", tr("Update installed successfully.") },

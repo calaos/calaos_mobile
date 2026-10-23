@@ -96,7 +96,9 @@ private:
     void finishJob(const CalaosOsProtocol::Job &job);
     void resumeAfterDaemonRestart();
     void followForeignJob(const QString &id, const QString &message);
-    void showPostUpgradeDialog(const QSet<QString> &pkgs);
+    //notifyWhenNothingToDo false: keep a warning already shown on screen
+    void showPostUpgradeDialog(const QSet<QString> &pkgs, bool notifyWhenNothingToDo = true);
+    void keepInstalledPart();
     bool endUpgrade();
     void finishUnclaimed(const QString &message);
     void applyStatusSnapshot(const QJsonObject &st);
@@ -156,6 +158,7 @@ private:
     QString m_lastSeenJobId;
     QString m_jobIdBeforePost;
     QDateTime m_postSentAt;
+    QDateTime m_postFailedAt;
     bool m_postOutcomeUnknown = false; //v2 POST got no answer: a job may or may not exist
 
     //following a run of another client: never claim it installed our packages

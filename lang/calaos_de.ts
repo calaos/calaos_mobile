@@ -23,8 +23,8 @@
         <location filename="../src/Application.cpp" line="280"/>
         <location filename="../src/Application.cpp" line="292"/>
         <location filename="../src/Application.cpp" line="304"/>
-        <location filename="../src/Application.cpp" line="718"/>
-        <location filename="../src/Application.cpp" line="883"/>
+        <location filename="../src/Application.cpp" line="719"/>
+        <location filename="../src/Application.cpp" line="884"/>
         <source>Close</source>
         <translation>Schliessen</translation>
     </message>
@@ -74,12 +74,12 @@
         <translation>Die Anmeldedaten wurden erfolgreich geändert.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="881"/>
+        <location filename="../src/Application.cpp" line="882"/>
         <source>Reboot</source>
         <translation type="unfinished">Neustart</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="882"/>
+        <location filename="../src/Application.cpp" line="883"/>
         <source>An update is being installed. Reboot once it has finished.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -88,12 +88,12 @@
         <translation type="vanished">Keine Netzwerkverbindung gefunden, diese Anwendung benötigt eine Netzwerkverbindung, um zu funktionieren.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="716"/>
+        <location filename="../src/Application.cpp" line="717"/>
         <source>Login failed</source>
         <translation>Anmeldung fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="717"/>
+        <location filename="../src/Application.cpp" line="718"/>
         <source>Connection failed, please check your credentials.</source>
         <translation>Verbindung fehlgeschlagen, bitte überprüfen Sie Ihre Zugangsdaten.</translation>
     </message>
@@ -1547,62 +1547,67 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
 <context>
     <name>DialogTlsTrust</name>
     <message>
-        <location filename="../qml/desktop/DialogTlsTrust.qml" line="18"/>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="21"/>
         <source>Certificate changed!</source>
         <translation>Zertifikat geändert!</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogTlsTrust.qml" line="18"/>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="21"/>
         <source>Unknown certificate</source>
         <translation>Unbekanntes Zertifikat</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogTlsTrust.qml" line="20"/>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="23"/>
         <source>The certificate key of %1 has changed since the last connection. This is expected if the certificate of your Calaos box was regenerated, but it can also mean that someone is intercepting the connection. Only trust it if you know why it changed.</source>
         <translation>Der Schlüssel des Zertifikats von %1 hat sich seit der letzten Verbindung geändert. Das ist normal, wenn das Zertifikat Ihrer Calaos-Box neu erzeugt wurde, kann aber auch bedeuten, dass jemand die Verbindung abfängt. Vertrauen Sie ihm nur, wenn Sie wissen, warum es sich geändert hat.</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogTlsTrust.qml" line="24"/>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="28"/>
+        <source>The certificate of %1 cannot be verified. A server reached by its domain name, or presenting a certificate issued for another name, normally has a valid certificate: someone may be intercepting the connection. Only trust it if you know this server uses its own certificate.</source>
+        <translation>Das Zertifikat von %1 kann nicht überprüft werden. Ein Server, der über seinen Domainnamen erreicht wird oder ein für einen anderen Namen ausgestelltes Zertifikat vorlegt, hat normalerweise ein gültiges Zertifikat: Möglicherweise fängt jemand die Verbindung ab. Vertrauen Sie ihm nur, wenn Sie wissen, dass dieser Server ein eigenes Zertifikat verwendet.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="33"/>
         <source>The certificate of %1 cannot be verified. This is usual for a Calaos box on a home network. Check that the fingerprint below is the one of your box before trusting it.</source>
         <translation>Das Zertifikat von %1 kann nicht überprüft werden. Das ist bei einer Calaos-Box im Heimnetz üblich. Prüfen Sie, ob der folgende Fingerabdruck der Ihrer Box ist, bevor Sie ihm vertrauen.</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogTlsTrust.qml" line="27"/>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="36"/>
         <source>Do not connect</source>
         <translation>Nicht verbinden</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogTlsTrust.qml" line="28"/>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="37"/>
         <source>Trust</source>
         <translation>Vertrauen</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogTlsTrust.qml" line="58"/>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="67"/>
         <source>Key fingerprint (SHA-256)</source>
         <translation>Fingerabdruck des Schlüssels (SHA-256)</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogTlsTrust.qml" line="63"/>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="72"/>
         <source>Previously trusted key</source>
         <translation>Bisher vertrauter Schlüssel</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogTlsTrust.qml" line="71"/>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="80"/>
         <source>Certificate fingerprint (SHA-256)</source>
         <translation>Fingerabdruck des Zertifikats (SHA-256)</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogTlsTrust.qml" line="80"/>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="89"/>
         <source>Issued to: %1</source>
         <translation>Ausgestellt für: %1</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogTlsTrust.qml" line="81"/>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="90"/>
         <source>Issued by: %1</source>
         <translation>Ausgestellt von: %1</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogTlsTrust.qml" line="82"/>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="91"/>
         <source>Expires: %1</source>
         <translation>Läuft ab: %1</translation>
     </message>
@@ -2536,64 +2541,74 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
 <context>
     <name>TlsTrustSheet</name>
     <message>
-        <location filename="../qml/mobile/TlsTrustSheet.qml" line="80"/>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="87"/>
         <source>Certificate changed!</source>
         <translation>Zertifikat geändert!</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/TlsTrustSheet.qml" line="80"/>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="87"/>
         <source>Unknown certificate</source>
         <translation>Unbekanntes Zertifikat</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/TlsTrustSheet.qml" line="97"/>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="104"/>
         <source>The certificate key of %1 has changed since the last connection. This is expected if the certificate of your Calaos box was regenerated, but it can also mean that someone is intercepting the connection. Only trust it if you know why it changed.</source>
         <translation>Der Schlüssel des Zertifikats von %1 hat sich seit der letzten Verbindung geändert. Das ist normal, wenn das Zertifikat Ihrer Calaos-Box neu erzeugt wurde, kann aber auch bedeuten, dass jemand die Verbindung abfängt. Vertrauen Sie ihm nur, wenn Sie wissen, warum es sich geändert hat.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/TlsTrustSheet.qml" line="101"/>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="109"/>
+        <source>The certificate of %1 cannot be verified. A server reached by its domain name, or presenting a certificate issued for another name, normally has a valid certificate: someone may be intercepting the connection. Only trust it if you know this server uses its own certificate.</source>
+        <translation>Das Zertifikat von %1 kann nicht überprüft werden. Ein Server, der über seinen Domainnamen erreicht wird oder ein für einen anderen Namen ausgestelltes Zertifikat vorlegt, hat normalerweise ein gültiges Zertifikat: Möglicherweise fängt jemand die Verbindung ab. Vertrauen Sie ihm nur, wenn Sie wissen, dass dieser Server ein eigenes Zertifikat verwendet.</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="114"/>
         <source>The certificate of %1 cannot be verified. This is usual for a Calaos box on a home network. Check that the fingerprint below is the one of your box before trusting it.</source>
         <translation>Das Zertifikat von %1 kann nicht überprüft werden. Das ist bei einer Calaos-Box im Heimnetz üblich. Prüfen Sie, ob der folgende Fingerabdruck der Ihrer Box ist, bevor Sie ihm vertrauen.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/TlsTrustSheet.qml" line="106"/>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="119"/>
         <source>Key fingerprint (SHA-256)</source>
         <translation>Fingerabdruck des Schlüssels (SHA-256)</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/TlsTrustSheet.qml" line="111"/>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="124"/>
         <source>Previously trusted key</source>
         <translation>Bisher vertrauter Schlüssel</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/TlsTrustSheet.qml" line="119"/>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="132"/>
         <source>Certificate fingerprint (SHA-256)</source>
         <translation>Fingerabdruck des Zertifikats (SHA-256)</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/TlsTrustSheet.qml" line="128"/>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="141"/>
         <source>Issued to: %1</source>
         <translation>Ausgestellt für: %1</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/TlsTrustSheet.qml" line="129"/>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="142"/>
         <source>Issued by: %1</source>
         <translation>Ausgestellt von: %1</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/TlsTrustSheet.qml" line="130"/>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="143"/>
         <source>Expires: %1</source>
         <translation>Läuft ab: %1</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/TlsTrustSheet.qml" line="142"/>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="155"/>
         <source>Do not connect</source>
         <translation>Nicht verbinden</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/TlsTrustSheet.qml" line="150"/>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="166"/>
         <source>Trust</source>
         <translation>Vertrauen</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="166"/>
+        <source>Tap again to trust</source>
+        <translation>Zum Vertrauen erneut tippen</translation>
     </message>
 </context>
 <context>

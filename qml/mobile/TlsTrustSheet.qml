@@ -13,6 +13,12 @@ Item {
     property string fontFamily: calaosFont.fontFamily
     property var info: ({})
     readonly property bool keyChanged: info.keyChanged === true
+    //Reached by DNS name, or a valid certificate for another name: what an
+    //interception would look like, so nothing here reassures.
+    readonly property bool suspicious: info.suspicious === true
+    //Trusting a changed or suspicious certificate takes a second tap.
+    readonly property bool needsConfirm: keyChanged || suspicious
+    property bool trustArmed: false
     readonly property bool opened: sheet.opened
 
     //Set once the question got its answer, so onClosed does not refuse it
@@ -64,6 +70,7 @@ Item {
         function onTlsTrustRequested(i) {
             host.info = i
             host.answered = false
+            host.trustArmed = false
             sheet.open()
         }
         function onTlsTrustCanceled() {
@@ -92,12 +99,18 @@ Item {
 
                 Body {
                     objectName: "tlsTrustText"
-                    color: host.keyChanged ? Theme.amberColor : Theme.whiteColor
+                    color: host.needsConfirm ? Theme.amberColor : Theme.whiteColor
                     text: host.keyChanged ?
                               qsTr("The certificate key of %1 has changed since the last connection. "
                                    + "This is expected if the certificate of your Calaos box was "
                                    + "regenerated, but it can also mean that someone is intercepting "
                                    + "the connection. Only trust it if you know why it changed.").arg(host.info.host) :
+                          host.suspicious ?
+                              qsTr("The certificate of %1 cannot be verified. A server reached by its "
+                                   + "domain name, or presenting a certificate issued for another name, "
+                                   + "normally has a valid certificate: someone may be intercepting the "
+                                   + "connection. Only trust it if you know this server uses its own "
+                                   + "certificate.").arg(host.info.host) :
                               qsTr("The certificate of %1 cannot be verified. This is usual for a Calaos "
                                    + "box on a home network. Check that the fingerprint below is the one "
                                    + "of your box before trusting it.").arg(host.info.host)
@@ -147,8 +160,16 @@ Item {
                         objectName: "tlsTrustButton"
                         Layout.fillWidth: true
                         Layout.preferredHeight: Units.dp(40)
-                        text: qsTr("Trust")
-                        onButtonClicked: host.answer(true)
+                        //De-emphasised when the certificate is suspicious:
+                        //"Do not connect" is the obvious choice.
+                        opacity: host.needsConfirm && !host.trustArmed ? 0.5 : 1
+                        text: host.trustArmed ? qsTr("Tap again to trust") : qsTr("Trust")
+                        onButtonClicked: {
+                            if (host.needsConfirm && !host.trustArmed)
+                                host.trustArmed = true
+                            else
+                                host.answer(true)
+                        }
                     }
                 }
             }

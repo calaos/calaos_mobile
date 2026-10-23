@@ -10,6 +10,9 @@ Dialog {
 
     property var info: ({})
     readonly property bool keyChanged: info.keyChanged === true
+    //Reached by DNS name, or a valid certificate for another name: what an
+    //interception would look like, so nothing here reassures.
+    readonly property bool suspicious: info.suspicious === true
 
     //A tap outside must not count as an answer: the connection waits for one.
     dismissOnTap: false
@@ -21,6 +24,12 @@ Dialog {
                    + "This is expected if the certificate of your Calaos box was "
                    + "regenerated, but it can also mean that someone is intercepting "
                    + "the connection. Only trust it if you know why it changed.").arg(info.host) :
+          suspicious ?
+              qsTr("The certificate of %1 cannot be verified. A server reached by its "
+                   + "domain name, or presenting a certificate issued for another name, "
+                   + "normally has a valid certificate: someone may be intercepting the "
+                   + "connection. Only trust it if you know this server uses its own "
+                   + "certificate.").arg(info.host) :
               qsTr("The certificate of %1 cannot be verified. This is usual for a Calaos "
                    + "box on a home network. Check that the fingerprint below is the one "
                    + "of your box before trusting it.").arg(info.host)

@@ -1,5 +1,4 @@
 #include "UpdateManager.h"
-#include "CalaosOsAPI.h"
 #include "UpdateGrouping.h"
 #include "HardwareUtils.h"
 #include <qfappdispatcher.h>
@@ -8,10 +7,14 @@
 #include <QJsonDocument>
 #include <QUrl>
 #include <QDebug>
+#include <QScopedValueRollback>
 
-UpdateManager::UpdateManager(QQmlApplicationEngine *eng, QObject *parent):
+using namespace CalaosOsProtocol;
+
+UpdateManager::UpdateManager(QQmlApplicationEngine *eng, QObject *parent, CalaosOsAPI *api):
     QObject(parent),
-    engine(eng)
+    engine(eng),
+    m_api(api ? api : CalaosOsAPI::Instance())
 {
     m_calaosModel = new UpdatePackagesModel(this);
     m_groupsModel = new UpdateGroupsModel(this);
@@ -25,6 +28,7 @@ UpdateManager::UpdateManager(QQmlApplicationEngine *eng, QObject *parent):
     update_daemonAvailable(true);
     update_installedListAvailable(false);
     update_lastErrorString(QString());
+    update_rebootRequired(false);
     update_totalPercent(0);
     update_currentPackage(QString());
     update_currentStep(QString());
@@ -35,6 +39,12 @@ UpdateManager::UpdateManager(QQmlApplicationEngine *eng, QObject *parent):
     m_pollTimer = new QTimer(this);
     m_pollTimer->setInterval(2000);
     connect(m_pollTimer, &QTimer::timeout, this, &UpdateManager::pollStatus);
+
+    //a subscriber that falls behind loses events, the terminal upgrade_job
+    //included: update/status is the source of truth
+    m_jobPollTimer = new QTimer(this);
+    m_jobPollTimer->setInterval(15000);
+    connect(m_jobPollTimer, &QTimer::timeout, this, &UpdateManager::pollStatus);
 
     m_wsReconnectTimer = new QTimer(this);
     m_wsReconnectTimer->setSingleShot(true);
@@ -52,7 +62,7 @@ UpdateManager::UpdateManager(QQmlApplicationEngine *eng, QObject *parent):
     connect(&m_ws, &QWebSocket::textMessageReceived, this, &UpdateManager::wsTextMessageReceived);
 
     //initial data: updates found by a previous daemon check + installed packages
-    CalaosOsAPI::Instance()->getAvailableUpdates([this](bool ok, const QJsonObject &pkgs, const QString &)
+    m_api->getAvailableUpdates([this](bool ok, const QJsonObject &pkgs, const QString &)
     {
         update_daemonAvailable(ok);
         if (ok)
@@ -111,11 +121,14 @@ void UpdateManager::doCheck(bool automatic)
     update_isChecking(true);
     update_updateState(QStringLiteral("checking"));
 
-    CalaosOsAPI::Instance()->checkUpdates([this, automatic](bool ok, const QJsonObject &pkgs, const QString &err)
+    m_api->checkUpdates([this, automatic](const CalaosOsReply &reply)
     {
         update_isChecking(false);
 
-        if (ok)
+        const QJsonObject pkgs = reply.data.toObject();
+        const QString &err = reply.error;
+
+        if (reply.ok)
         {
             update_daemonAvailable(true);
             update_lastErrorString(QString());
@@ -132,7 +145,7 @@ void UpdateManager::doCheck(bool automatic)
 
         if (automatic)
         {
-            if (err.contains(QStringLiteral("in progress"), Qt::CaseInsensitive))
+            if (reply.upgradeInProgress)
             {
                 //an upgrade holds the apt lock, silently skip this automatic check
             }
@@ -149,7 +162,7 @@ void UpdateManager::doCheck(bool automatic)
             update_lastErrorString(err.isEmpty() ? tr("Cannot contact the update service") : err);
             update_updateState(QStringLiteral("error"));
             //daemon rejecting the check because an upgrade runs means it is alive
-            if (!err.contains(QStringLiteral("in progress"), Qt::CaseInsensitive))
+            if (!reply.upgradeInProgress)
                 update_daemonAvailable(false);
         }
     });
@@ -184,7 +197,7 @@ void UpdateManager::refreshInstalledList()
     //is not reachable from here, the calaos-container daemon is the only
     //source for the installed package list. If the endpoint is missing (old
     //daemon, 404) or the daemon is unreachable, the UI simply degrades.
-    CalaosOsAPI::Instance()->getInstalledPackages([this](bool ok, int, const QJsonObject &pkgs)
+    m_api->getInstalledPackages([this](bool ok, int, const QJsonObject &pkgs)
     {
         if (ok)
         {
@@ -277,6 +290,9 @@ void UpdateManager::beginUpgrade(const QStringList &queue, bool usesUpgradeAll)
     m_terminalMessage.clear();
     m_resyncMode = false;
     m_upgradeSet = QSet<QString>(queue.begin(), queue.end());
+    m_jobs.clear();
+    m_jobRebootKnown = false;
+    m_jobRebootRequired = false;
 
     update_isUpgrading(true);
     update_updateState(QStringLiteral("upgrading"));
@@ -302,26 +318,12 @@ void UpdateManager::beginUpgrade(const QStringList &queue, bool usesUpgradeAll)
 
     if (usesUpgradeAll)
     {
-        CalaosOsAPI::Instance()->upgradeAll([this](bool ok, int httpStatus, const QString &err)
+        m_jobs.startPending();
+        m_api->upgradeAll([this](const CalaosOsReply &reply)
         {
             if (m_finishHandled)
                 return;
-
-            if (!ok && httpStatus == 0)
-            {
-                //transport severed, not a rejection: upgrade-all installs
-                //calaos-container first, which restarts the daemon and kills
-                //this in-flight POST while the transaction goes on. Switch to
-                //resync mode: the status stream (WS/poll) concludes the upgrade
-                m_resyncMode = true;
-                if (m_ws.state() != QAbstractSocket::ConnectedState &&
-                    m_ws.state() != QAbstractSocket::ConnectingState)
-                    scheduleWsReconnect();
-                startStatusPolling();
-                return;
-            }
-
-            finishUpgrade(ok, err);
+            handleUpgradeReply(reply);
         });
     }
     else
@@ -341,58 +343,154 @@ void UpdateManager::postNextInQueue()
     const QString pkg = m_queue.at(m_queueIndex);
     m_queueIndex++;
 
-    //the POST returns only when the whole apt transaction is over: its result
-    //is authoritative and is the only thing advancing the queue
-    CalaosOsAPI::Instance()->upgradePackage(pkg, [this](bool ok, int httpStatus, const QString &err)
+    //each package is one apt transaction: a legacy POST that returns when it
+    //is over, or a job whose terminal state advances the queue
+    m_jobs.startPending();
+    m_api->upgradePackage(pkg, [this](const CalaosOsReply &reply)
     {
         if (m_finishHandled)
             return;
-
-        //re-enter the queue through the event loop so a deep queue (or a
-        //synchronous request-start failure) can never recurse
-        auto continueQueue = [this]()
-        {
-            QMetaObject::invokeMethod(this, [this]()
-            {
-                if (!m_finishHandled)
-                    postNextInQueue();
-            }, Qt::QueuedConnection);
-        };
-
-        if (ok)
-        {
-            m_queueDone++;
-            continueQueue();
-            return;
-        }
-
-        if (httpStatus == 0)
-        {
-            //transport error (connection severed/refused, no HTTP reply):
-            //this is NOT an authoritative rejection, the transaction may
-            //still be running (e.g. calaos-container upgraded itself and
-            //restarted the daemon). Switch to resync mode: the status
-            //stream (WS/poll) concludes the upgrade
-            m_resyncMode = true;
-            if (m_ws.state() != QAbstractSocket::ConnectedState &&
-                m_ws.state() != QAbstractSocket::ConnectingState)
-                scheduleWsReconnect();
-            startStatusPolling();
-            return;
-        }
-
-        if (err.contains(QStringLiteral("package not found"), Qt::CaseInsensitive) &&
-            m_queueTotal > 1)
-        {
-            //the package was already pulled in as a dependency of an earlier
-            //transaction of this queue: treat as done and continue
-            m_queueDone++;
-            continueQueue();
-            return;
-        }
-
-        finishUpgrade(false, err);
+        handleUpgradeReply(reply);
     });
+}
+
+void UpdateManager::continueQueue()
+{
+    //re-enter the queue through the event loop so a deep queue (or a
+    //synchronous request-start failure) can never recurse
+    QMetaObject::invokeMethod(this, [this]()
+    {
+        if (!m_finishHandled)
+            postNextInQueue();
+    }, Qt::QueuedConnection);
+}
+
+void UpdateManager::handleUpgradeReply(const CalaosOsReply &reply)
+{
+    const bool queued = !m_usesUpgradeAll;
+
+    if (reply.api == ApiVersion::V2 && reply.ok)
+    {
+        //202: the run goes on as a job, only its terminal state ends it
+        const Job job = parseJob(reply.data);
+        if (!job.valid)
+        {
+            m_jobs.clear();
+            finishUpgrade(false, tr("Invalid answer from the update service"));
+            return;
+        }
+
+        m_pollGeneration++; //a status read sent before the POST knows an older job
+        startJobPolling();
+        handleJobAction(m_jobs.follow(job.id));
+        return;
+    }
+
+    if (reply.api == ApiVersion::V2 && reply.upgradeInProgress)
+    {
+        //another client's run holds the lock: show it rather than fail
+        const QString runningId = reply.data.toObject()["job_id"].toString();
+        if (!runningId.isEmpty())
+        {
+            m_resyncMode = true;
+            m_usesUpgradeAll = false;
+            m_queue.clear();
+            m_queueIndex = 0;
+            m_queueDone = 0;
+            m_queueTotal = 0;
+            m_pollGeneration++;
+            startJobPolling();
+            handleJobAction(m_jobs.follow(runningId));
+            pollStatus();
+            return;
+        }
+
+        m_jobs.clear();
+        finishUpgrade(false, tr("Another update operation is in progress, try again later."));
+        return;
+    }
+
+    m_jobs.clear();
+
+    if (reply.ok)
+    {
+        //legacy synchronous POST: the whole apt transaction is over, its
+        //result is authoritative and is the only thing advancing the queue
+        if (queued)
+        {
+            m_queueDone++;
+            continueQueue();
+        }
+        else
+            finishUpgrade(true, QString());
+        return;
+    }
+
+    if (reply.httpStatus == 0)
+    {
+        //transport error (connection severed/refused, no HTTP reply):
+        //this is NOT an authoritative rejection, the transaction may
+        //still be running (e.g. calaos-container upgraded itself and
+        //restarted the daemon). Switch to resync mode: the status
+        //stream (WS/poll) concludes the upgrade
+        m_resyncMode = true;
+        if (m_ws.state() != QAbstractSocket::ConnectedState &&
+            m_ws.state() != QAbstractSocket::ConnectingState)
+            scheduleWsReconnect();
+        startStatusPolling();
+        return;
+    }
+
+    if (queued && reply.packageNotFound && m_queueTotal > 1)
+    {
+        //the package was already pulled in as a dependency of an earlier
+        //transaction of this queue: treat as done and continue
+        m_queueDone++;
+        continueQueue();
+        return;
+    }
+
+    finishUpgrade(false, reply.error);
+}
+
+void UpdateManager::handleJobAction(UpgradeJobTracker::Action action)
+{
+    switch (action)
+    {
+    case UpgradeJobTracker::Action::None:
+        break;
+    case UpgradeJobTracker::Action::Adopt:
+        startJobPolling();
+        break;
+    case UpgradeJobTracker::Action::Finish:
+    {
+        //a copy: finishing clears the tracker that holds it
+        const Job finished = m_jobs.finishedJob();
+        concludeJob(finished);
+        break;
+    }
+    case UpgradeJobTracker::Action::Lost:
+        finishUpgrade(false, tr("The update service lost track of the update"));
+        break;
+    }
+}
+
+void UpdateManager::concludeJob(const Job &job)
+{
+    m_jobPollTimer->stop();
+    m_jobRebootKnown = true;
+    m_jobRebootRequired = m_jobRebootRequired || job.rebootRequired;
+    update_rebootRequired(m_jobRebootRequired);
+
+    //a job of our own package queue: the next package follows it
+    if (job.succeeded() && !m_resyncMode && !m_usesUpgradeAll && m_queueTotal > 0)
+    {
+        m_queueDone++;
+        continueQueue();
+        return;
+    }
+
+    finishUpgrade(job.succeeded(), job.error);
 }
 
 void UpdateManager::applyStatusSnapshot(const QJsonObject &st)
@@ -405,9 +503,15 @@ void UpdateManager::applyStatusSnapshot(const QJsonObject &st)
     //mode the status stream is the only finisher and the terminal frame
     //itself may have been missed (daemon restart, poll-only visibility):
     //conclude with the last observed terminal outcome, success if none
-    if (status == QStringLiteral("idle"))
+    if (isIdleProgress(st))
     {
-        if (m_resyncMode && get_isUpgrading())
+        if (m_jobs.isFollowing())
+        {
+            //the run is over: read its job, its terminal event may be lost
+            if (!m_inStatusReply)
+                pollStatus();
+        }
+        else if (m_resyncMode && get_isUpgrading())
             finishUpgrade(!m_terminalWasError, m_terminalMessage);
         return;
     }
@@ -498,8 +602,14 @@ void UpdateManager::applyStatusSnapshot(const QJsonObject &st)
         m_terminalMessage = st["error"].toString();
 
         //for upgrades we initiated the POST result is authoritative; the
-        //snapshot terminal only concludes an adopted (resync) upgrade
-        if (m_resyncMode)
+        //snapshot terminal only concludes an adopted (resync) upgrade, and
+        //a job only ends on its own terminal state
+        if (m_jobs.isFollowing())
+        {
+            if (!m_inStatusReply)
+                pollStatus();
+        }
+        else if (m_resyncMode)
             finishUpgrade(status == QStringLiteral("done"), st["error"].toString());
     }
 }
@@ -517,6 +627,8 @@ void UpdateManager::adoptInFlightUpgrade(const QJsonObject &st)
     m_queueIndex = 0;
     m_queueDone = 0;
     m_queueTotal = 0;
+    m_jobRebootKnown = false;
+    m_jobRebootRequired = false;
 
     //applyStatusSnapshot below refills it from the snapshot's packages[]
     m_upgradeSet.clear();
@@ -533,7 +645,9 @@ void UpdateManager::adoptInFlightUpgrade(const QJsonObject &st)
         startStatusPolling();
     }
 
-    applyStatusSnapshot(st);
+    //adopted from an upgrade_job event: no progress to show yet
+    if (!st.isEmpty())
+        applyStatusSnapshot(st);
 }
 
 void UpdateManager::finishUpgrade(bool ok, const QString &err)
@@ -543,6 +657,8 @@ void UpdateManager::finishUpgrade(bool ok, const QString &err)
     m_finishHandled = true;
 
     stopStatusPolling();
+    m_jobPollTimer->stop();
+    m_jobs.clear();
     m_pollGeneration++; //drop poll replies still in flight
     update_isUpgrading(false);
 
@@ -565,7 +681,7 @@ void UpdateManager::finishUpgrade(bool ok, const QString &err)
         //(the daemon refreshes its available cache after a successful upgrade)
         m_calaosModel->clearAvailable();
 
-        CalaosOsAPI::Instance()->getAvailableUpdates([this](bool ok2, const QJsonObject &pkgs, const QString &)
+        m_api->getAvailableUpdates([this](bool ok2, const QJsonObject &pkgs, const QString &)
         {
             if (ok2)
                 applyAvailable(pkgs);
@@ -582,13 +698,17 @@ void UpdateManager::finishUpgrade(bool ok, const QString &err)
             }
         }
 
+        //a job tells from what it really installed; legacy runs only have
+        //the package names to guess from
+        const bool needsReboot = m_jobRebootKnown ? m_jobRebootRequired : hasKernel;
+
         if (m_upgradeSet.contains(QStringLiteral("calaos-home")))
         {
-            QVariantMap m = {{ "showMachine", hasKernel },
+            QVariantMap m = {{ "showMachine", needsReboot },
                              { "showApp", true }};
             appDispatcher->dispatch("showRebootDialog", m);
         }
-        else if (hasKernel)
+        else if (needsReboot)
         {
             QVariantMap m = {{ "showMachine", true },
                              { "showApp", false }};
@@ -623,6 +743,17 @@ void UpdateManager::finishUpgrade(bool ok, const QString &err)
     m_resyncMode = false;
 }
 
+void UpdateManager::setJobPollInterval(int ms)
+{
+    m_jobPollTimer->setInterval(ms);
+}
+
+void UpdateManager::startJobPolling()
+{
+    if (!m_jobPollTimer->isActive())
+        m_jobPollTimer->start();
+}
+
 void UpdateManager::clearError()
 {
     if (get_isUpgrading() || get_isChecking())
@@ -640,15 +771,35 @@ void UpdateManager::connectWs()
         return;
     if (st != QAbstractSocket::UnconnectedState)
         m_ws.abort();
+    if (m_wsDetecting)
+        return;
 
-    QString addr = CalaosOsAPI::Instance()->getBaseAddr();
-    if (addr.startsWith(QStringLiteral("https://")))
-        addr.replace(0, 8, QStringLiteral("wss://"));
-    else if (addr.startsWith(QStringLiteral("http://")))
-        addr.replace(0, 7, QStringLiteral("ws://"));
+    //the token may have changed while the daemon was away
+    m_api->reloadToken();
 
-    m_ws.open(QUrl(addr + QStringLiteral("/api/events?token=") +
-                   CalaosOsAPI::Instance()->getToken()));
+    //the event stream path depends on the daemon version
+    if (m_api->apiVersion() == ApiVersion::Unknown)
+    {
+        m_wsDetecting = true;
+        m_api->detectApiVersion([this]()
+        {
+            m_wsDetecting = false;
+            openWs();
+        });
+        return;
+    }
+
+    openWs();
+}
+
+void UpdateManager::openWs()
+{
+    const QAbstractSocket::SocketState st = m_ws.state();
+    if (st == QAbstractSocket::ConnectedState ||
+        st == QAbstractSocket::ConnectingState)
+        return;
+
+    m_ws.open(m_api->eventsRequest());
 }
 
 void UpdateManager::wsConnected()
@@ -660,11 +811,18 @@ void UpdateManager::wsConnected()
 
     if (m_pollTimer->isActive())
         stopStatusPolling();
+
+    //events are not replayed: the persisted job is the source of truth
+    if (m_api->apiVersion() == ApiVersion::V2)
+        pollStatus();
 }
 
 void UpdateManager::wsClosed()
 {
     m_expectSnapshot = false;
+    //the daemon may come back as another version (it restarts after
+    //upgrading itself): detect again before the next connection
+    m_api->resetApiVersion();
     scheduleWsReconnect();
 
     if (get_isUpgrading())
@@ -687,10 +845,35 @@ void UpdateManager::wsTextMessageReceived(const QString &msg)
         return;
 
     const QJsonObject obj = doc.object();
-    if (obj["type"].toString() != QStringLiteral("upgrade_progress"))
+    const QString type = obj["type"].toString();
+
+    if (type == QStringLiteral("upgrade_job"))
+    {
+        const Job job = parseJob(obj["data"]);
+        if (!job.valid)
+            return;
+        update_rebootRequired(job.rebootRequired);
+
+        const bool adoptedWithoutId = get_isUpgrading() && m_resyncMode &&
+                                      !m_jobs.isFollowing() && !m_jobs.isPending();
+        const UpgradeJobTracker::Action action = m_jobs.onEvent(job, adoptedWithoutId);
+
+        if (action == UpgradeJobTracker::Action::Adopt)
+        {
+            m_pollGeneration++; //a status read already in flight may predate this job
+            //a run started by another client (webapp, calaos-os CLI)
+            if (!get_isUpgrading())
+                adoptInFlightUpgrade(QJsonObject());
+        }
+        handleJobAction(action);
+        return;
+    }
+
+    if (type != QStringLiteral("upgrade_progress"))
         return;
 
     const QJsonObject data = obj["data"].toObject();
+    const bool v2 = m_api->apiVersion() == ApiVersion::V2;
 
     if (m_expectSnapshot)
     {
@@ -701,7 +884,11 @@ void UpdateManager::wsTextMessageReceived(const QString &msg)
         if (data["status"].toString() == QStringLiteral("upgrading"))
         {
             if (!get_isUpgrading())
+            {
                 adoptInFlightUpgrade(data); //resync after app restart
+                if (v2)
+                    pollStatus(); //learn the job of that run
+            }
             else
                 applyStatusSnapshot(data);  //display for the upgrade we own
         }
@@ -723,7 +910,11 @@ void UpdateManager::wsTextMessageReceived(const QString &msg)
         //while we are connected in steady state: adopt it like a
         //restart-time resync, its terminal frames will conclude it
         if (data["status"].toString() == QStringLiteral("upgrading"))
+        {
             adoptInFlightUpgrade(data);
+            if (v2)
+                pollStatus();
+        }
         return;
     }
 
@@ -745,21 +936,46 @@ void UpdateManager::pollStatus()
 {
     const quint64 gen = m_pollGeneration;
 
-    CalaosOsAPI::Instance()->getUpdateStatus([this, gen](bool ok, const QJsonObject &status)
+    m_api->getUpdateStatus([this, gen](bool ok, const UpdateStatus &status)
     {
         if (!ok)
             return;
         if (gen != m_pollGeneration)
             return; //reply from before the upgrade finished, drop it
 
+        //this reply is the fresh read: never chain another one from it
+        const QScopedValueRollback<bool> inReply(m_inStatusReply, true);
+
+        if (status.hasJobField)
+        {
+            //the daemon clears it once the box has rebooted
+            update_rebootRequired(status.job.valid && status.job.rebootRequired);
+
+            const UpgradeJobTracker::Action action = m_jobs.onStatus(status.job, true);
+            if (action == UpgradeJobTracker::Action::Adopt)
+            {
+                if (!get_isUpgrading())
+                    adoptInFlightUpgrade(status.progress);
+                else
+                    applyStatusSnapshot(status.progress);
+                handleJobAction(action);
+                return;
+            }
+            if (action != UpgradeJobTracker::Action::None)
+            {
+                handleJobAction(action);
+                return;
+            }
+        }
+
         if (!get_isUpgrading())
         {
             //resync rule: an upgrade is running that we do not know about
-            if (status["status"].toString() == QStringLiteral("upgrading"))
-                adoptInFlightUpgrade(status);
+            if (status.progress["status"].toString() == QStringLiteral("upgrading"))
+                adoptInFlightUpgrade(status.progress);
             return;
         }
 
-        applyStatusSnapshot(status);
+        applyStatusSnapshot(status.progress);
     });
 }

@@ -1,6 +1,7 @@
 import QtQuick
 import SharedComponents
 import QtQuick.Layouts
+import "../quickflux"
 
 Item {
 
@@ -197,6 +198,59 @@ Item {
                                     anchors.fill: parent
                                     anchors.margins: -Units.dp(10)
                                     onClicked: updateManager.clearError()
+                                }
+                            }
+                        }
+
+                        //The daemon says the last update needs a reboot
+                        //(kernel, firmware), until the box has rebooted
+                        Item {
+                            width: parent.width
+                            visible: updateManager.rebootRequired
+                            height: rebootText.implicitHeight + Units.dp(12)
+
+                            Rectangle {
+                                id: rebootBar
+                                width: Units.dp(3)
+                                radius: width / 2
+                                color: Theme.amberColor
+
+                                anchors {
+                                    left: parent.left
+                                    top: parent.top; topMargin: Units.dp(2)
+                                    bottom: parent.bottom; bottomMargin: Units.dp(2)
+                                }
+                            }
+
+                            Text {
+                                id: rebootText
+                                font { family: calaosFont.fontFamily; weight: Font.Light; pixelSize: Units.dp(13) }
+                                color: Theme.colorAlpha(Theme.amberColor, 0.9)
+                                wrapMode: Text.WordWrap
+                                text: qsTr("A reboot is required to finish installing the updates.")
+
+                                anchors {
+                                    left: rebootBar.right; leftMargin: Units.dp(12)
+                                    right: rebootButton.left; rightMargin: Units.dp(12)
+                                    verticalCenter: parent.verticalCenter
+                                }
+                            }
+
+                            Text {
+                                id: rebootButton
+                                font { family: calaosFont.fontFamily; weight: Font.Normal; pixelSize: Units.dp(13) }
+                                color: Theme.blueColor
+                                text: qsTr("Reboot")
+
+                                anchors {
+                                    right: parent.right; rightMargin: Units.dp(6)
+                                    verticalCenter: parent.verticalCenter
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    anchors.margins: -Units.dp(10)
+                                    onClicked: AppActions.showRebootDialog(true, false)
                                 }
                             }
                         }

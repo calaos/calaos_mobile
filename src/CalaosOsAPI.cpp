@@ -3,6 +3,8 @@
 #include <QUrlQuery>
 #include <memory>
 
+using namespace CalaosOsProtocol;
+
 #ifdef Q_OS_LINUX
 #define TOKEN_FILE  "/run/calaos/calaos-ct.token"
 #else
@@ -16,44 +18,114 @@ CalaosOsAPI::CalaosOsAPI(QNetworkAccessManager *nm, QObject *parent):
     if (!netManager)
         netManager = new QNetworkAccessManager(this);
 
-    QFile file(TOKEN_FILE);
-    if (file.open(QIODevice::ReadOnly | QIODevice::Text))
-        token = file.readAll().trimmed();
-    else
-        qWarning() << "unable to read " << TOKEN_FILE;
+    tokenFile = QStringLiteral(TOKEN_FILE);
+    reloadToken();
 
     calaosAddr = "http://127.0.0.1:8000";
 }
 
 CalaosOsAPI::~CalaosOsAPI()
 {
+    //requests abort their reply when deleted: do it while the manager owning
+    //the replies still exists, and without calling back anyone
+    const auto requests = findChildren<NetworkRequest *>(Qt::FindDirectChildrenOnly);
+    for (NetworkRequest *n: requests)
+    {
+        disconnect(n, nullptr, this, nullptr);
+        delete n;
+    }
 }
 
-void CalaosOsAPI::rebootMachine(std::function<void (bool)> callback)
+void CalaosOsAPI::setTokenFile(const QString &path)
 {
-    doPost("/api/system/reboot", {}, callback);
+    tokenFile = path;
+    tokenReadable = true;
+    reloadToken();
+}
+
+void CalaosOsAPI::reloadToken()
+{
+    QFile file(tokenFile);
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        token = QString::fromUtf8(file.readAll().trimmed());
+        tokenReadable = true;
+        return;
+    }
+
+    //re-read on every reconnect: only warn once per outage
+    if (tokenReadable)
+        qWarning() << "unable to read " << tokenFile;
+    tokenReadable = false;
+    token.clear();
+}
+
+void CalaosOsAPI::rebootMachine(std::function<void (const CalaosOsReply &)> callback)
+{
+    Route r;
+    r.method = NetworkRequest::HttpPost;
+    r.v2Path = QStringLiteral("/system/reboot");
+    r.legacyPath = QStringLiteral("/api/system/reboot");
+    r.legacyShape = LegacyBody::Output;
+    call(r, callback);
 }
 
 void CalaosOsAPI::restartApp(std::function<void (bool)> callback)
 {
-    doPost("/api/system/restart", {}, callback);
+    Route r;
+    r.method = NetworkRequest::HttpPost;
+    r.v2Path = QStringLiteral("/system/restart");
+    r.legacyPath = QStringLiteral("/api/system/restart");
+    r.legacyShape = LegacyBody::Output;
+    call(r, [callback](const CalaosOsReply &reply)
+    {
+        if (callback)
+            callback(reply.ok);
+    });
 }
 
 void CalaosOsAPI::getFsStatus(std::function<void (bool, const QJsonValue &)> callback)
 {
-    doGet("/api/system/fs_status", callback);
+    Route r;
+    r.v2Path = QStringLiteral("/system/fs_status");
+    r.legacyPath = QStringLiteral("/api/system/fs_status");
+    r.legacyShape = LegacyBody::Output;
+    call(r, [callback](const CalaosOsReply &reply)
+    {
+        if (callback)
+            callback(reply.ok, reply.ok ? reply.data : QJsonValue());
+    });
 }
 
 void CalaosOsAPI::rollbackSnapshot(std::function<void (bool)> callback)
 {
-    doPost("/api/system/rollback_snapshot", {}, callback);
+    Route r;
+    r.method = NetworkRequest::HttpPost;
+    r.v2Path = QStringLiteral("/system/rollback_snapshot");
+    r.legacyPath = QStringLiteral("/api/system/rollback_snapshot");
+    r.legacyShape = LegacyBody::Output;
+    call(r, [callback](const CalaosOsReply &reply)
+    {
+        if (callback)
+            callback(reply.ok);
+    });
 }
 
 void CalaosOsAPI::listInstallDevices(std::function<void (bool, const QJsonValue &)> callback)
 {
-    doGet("/api/system/install/list_devices", callback);
+    Route r;
+    r.v2Path = QStringLiteral("/system/install/list_devices");
+    r.legacyPath = QStringLiteral("/api/system/install/list_devices");
+    r.legacyShape = LegacyBody::Output;
+    call(r, [callback](const CalaosOsReply &reply)
+    {
+        if (callback)
+            callback(reply.ok, reply.ok ? reply.data : QJsonValue());
+    });
 }
 
+//The installer stays on the legacy routes: it runs from a live image whose
+//daemon version is fixed, and the v2 install/status has another shape.
 void CalaosOsAPI::startInstallation(QString device, std::function<void (bool)> callbackFinished, std::function<void (QString)> callbackStdout)
 {
     AsyncJobs *jobs = new AsyncJobs(this);
@@ -65,7 +137,7 @@ void CalaosOsAPI::startInstallation(QString device, std::function<void (bool)> c
 
                                   NetworkRequest *n = new NetworkRequest(url, NetworkRequest::HttpPost, this);
                                   n->setNetManager(netManager);
-                                  n->setCustomHeader("Authorization", QStringLiteral("bearer %1").arg(token));
+                                  n->setCustomHeader("Authorization", CalaosOsProtocol::authorizationHeader(token));
                                   n->setCustomHeader("Content-Type", "application/json");
                                   n->setResultType(NetworkRequest::TypeRawData);
 
@@ -105,7 +177,7 @@ void CalaosOsAPI::startInstallation(QString device, std::function<void (bool)> c
 
                                   NetworkRequest *n = new NetworkRequest(url, NetworkRequest::HttpGet, this);
                                   n->setNetManager(netManager);
-                                  n->setCustomHeader("Authorization", QStringLiteral("bearer %1").arg(token));
+                                  n->setCustomHeader("Authorization", CalaosOsProtocol::authorizationHeader(token));
                                   n->setCustomHeader("Content-Type", "application/json");
                                   n->setResultType(NetworkRequest::TypeJson);
 
@@ -166,81 +238,147 @@ void CalaosOsAPI::startInstallation(QString device, std::function<void (bool)> c
 
 void CalaosOsAPI::getNetworkInterfaces(std::function<void (bool, const QJsonValue &)> callback)
 {
-    doGet("/api/network/list", callback);
+    Route r;
+    r.v2Path = QStringLiteral("/network/list");
+    r.legacyPath = QStringLiteral("/api/network/list");
+    r.legacyShape = LegacyBody::Output;
+    call(r, [callback](const CalaosOsReply &reply)
+    {
+        if (callback)
+            callback(reply.ok, reply.ok ? reply.data : QJsonValue());
+    });
 }
 
 void CalaosOsAPI::getSystemInfo(std::function<void (bool, const QJsonValue &)> callback)
 {
-    doGet("/api/system/info", callback);
+    Route r;
+    r.v2Path = QStringLiteral("/system/info");
+    r.legacyPath = QStringLiteral("/api/system/info");
+    r.legacyShape = LegacyBody::Output;
+    call(r, [callback](const CalaosOsReply &reply)
+    {
+        if (callback)
+            callback(reply.ok, reply.ok ? reply.data : QJsonValue());
+    });
 }
 
 void CalaosOsAPI::configureNetwork(const QJsonObject &networkConfig, std::function<void (bool)> callback)
 {
     QByteArray data = QJsonDocument(networkConfig).toJson(QJsonDocument::Compact);
     qDebug() << "Configure network:" << QString(data);
-    doPost(QStringLiteral("/api/network/%1").arg(networkConfig["name"].toString()), data, callback);
+
+    const QString intf = networkConfig["name"].toString();
+    Route r;
+    r.method = NetworkRequest::HttpPost;
+    r.v2Path = QStringLiteral("/network/%1").arg(intf);
+    r.v2Body = data;
+    r.legacyPath = QStringLiteral("/api/network/%1").arg(intf);
+    r.legacyBody = data;
+    r.legacyShape = LegacyBody::Output;
+    call(r, [callback](const CalaosOsReply &reply)
+    {
+        if (callback)
+            callback(reply.ok);
+    });
 }
 
-void CalaosOsAPI::checkUpdates(std::function<void (bool, const QJsonObject &, const QString &)> callback)
+void CalaosOsAPI::checkUpdates(std::function<void (const CalaosOsReply &)> callback)
 {
-    doGetRaw("/api/update/check", [this, callback](bool success, int, const QJsonDocument &doc)
-             {
-                 callback(success, doc.object(), success ? QString() : lastError);
-             });
+    Route r;
+    r.v2Path = QStringLiteral("/update/check");
+    r.legacyPath = QStringLiteral("/api/update/check");
+    call(r, callback);
 }
 
 void CalaosOsAPI::getAvailableUpdates(std::function<void (bool, const QJsonObject &, const QString &)> callback)
 {
-    doGetRaw("/api/update/available", [this, callback](bool success, int, const QJsonDocument &doc)
-             {
-                 callback(success, doc.object(), success ? QString() : lastError);
-             });
+    Route r;
+    r.v2Path = QStringLiteral("/update/available");
+    r.legacyPath = QStringLiteral("/api/update/available");
+    call(r, [callback](const CalaosOsReply &reply)
+    {
+        callback(reply.ok, reply.data.toObject(), reply.error);
+    });
 }
 
 void CalaosOsAPI::getInstalledPackages(std::function<void (bool, int, const QJsonObject &)> callback)
 {
-    doGetRaw("/api/update/installed", [callback](bool success, int httpStatus, const QJsonDocument &doc)
-             {
-                 callback(success, httpStatus, doc.object());
-             });
+    Route r;
+    r.v2Path = QStringLiteral("/update/installed");
+    r.legacyPath = QStringLiteral("/api/update/installed");
+    call(r, [callback](const CalaosOsReply &reply)
+    {
+        callback(reply.ok, reply.httpStatus, reply.data.toObject());
+    });
 }
 
-void CalaosOsAPI::upgradePackage(const QString &package, std::function<void (bool, int, const QString &)> callback)
+void CalaosOsAPI::upgradePackage(const QString &package, std::function<void (const CalaosOsReply &)> callback)
 {
     QUrlQuery query;
     query.addQueryItem("package", package);
-    QString apiPath = QStringLiteral("/api/update/upgrade?") + query.toString(QUrl::FullyEncoded);
 
-    doPostRaw(apiPath, QByteArray(), [this, callback](bool success, int httpStatus, const QJsonDocument &)
-              {
-                  callback(success, httpStatus, success ? QString() : lastError);
-              });
+    Route r;
+    r.method = NetworkRequest::HttpPost;
+    r.upgradeRoute = true;
+    r.v2Path = QStringLiteral("/update/upgrade");
+    r.v2Body = QJsonDocument(QJsonObject{{ "package", package }}).toJson(QJsonDocument::Compact);
+    r.legacyPath = QStringLiteral("/api/update/upgrade?") + query.toString(QUrl::FullyEncoded);
+    call(r, callback);
 }
 
-void CalaosOsAPI::upgradeAll(std::function<void (bool, int, const QString &)> callback)
+void CalaosOsAPI::upgradeAll(std::function<void (const CalaosOsReply &)> callback)
 {
-    doPostRaw("/api/update/upgrade-all", QByteArray(), [this, callback](bool success, int httpStatus, const QJsonDocument &)
-              {
-                  callback(success, httpStatus, success ? QString() : lastError);
-              });
+    Route r;
+    r.method = NetworkRequest::HttpPost;
+    r.upgradeRoute = true;
+    r.v2Path = QStringLiteral("/update/upgrade-all");
+    r.legacyPath = QStringLiteral("/api/update/upgrade-all");
+    call(r, callback);
 }
 
-void CalaosOsAPI::getUpdateStatus(std::function<void (bool, const QJsonObject &)> callback)
+void CalaosOsAPI::getUpdateStatus(std::function<void (bool, const UpdateStatus &)> callback)
 {
-    doGetRaw("/api/update/status", [callback](bool success, int, const QJsonDocument &doc)
-             {
-                 callback(success, doc.object());
-             });
+    Route r;
+    r.v2Path = QStringLiteral("/update/status");
+    r.legacyPath = QStringLiteral("/api/update/status");
+    call(r, [callback](const CalaosOsReply &reply)
+    {
+        callback(reply.ok, parseUpdateStatus(reply.api, reply.data));
+    });
 }
 
-QString CalaosOsAPI::getToken() const
+void CalaosOsAPI::detectApiVersion(std::function<void ()> callback)
 {
-    return token;
+    if (m_apiVersion != ApiVersion::Unknown)
+    {
+        callback();
+        return;
+    }
+
+    //any v2 route tells; update/status is cheap and allowed to every bearer
+    Route r;
+    r.v2Path = QStringLiteral("/update/status");
+    call(r, [callback](const CalaosOsReply &)
+    {
+        callback();
+    });
 }
 
-QString CalaosOsAPI::getBaseAddr() const
+QNetworkRequest CalaosOsAPI::eventsRequest() const
 {
-    return calaosAddr;
+    QString addr = calaosAddr;
+    if (addr.startsWith(QStringLiteral("https://")))
+        addr.replace(0, 8, QStringLiteral("wss://"));
+    else if (addr.startsWith(QStringLiteral("http://")))
+        addr.replace(0, 7, QStringLiteral("ws://"));
+
+    //the token goes in the header only: a URL ends up in logs
+    const QString path = m_apiVersion == ApiVersion::Legacy ?
+                             QStringLiteral("/api/events") :
+                             QStringLiteral("/api/v2/events");
+    QNetworkRequest req(QUrl(addr + path));
+    req.setRawHeader("Authorization", authorizationHeader(token).toUtf8());
+    return req;
 }
 
 void CalaosOsAPI::checkErrors(const QJsonDocument &jdoc, NetworkRequest *n)
@@ -255,239 +393,142 @@ void CalaosOsAPI::checkErrors(const QJsonDocument &jdoc, NetworkRequest *n)
         lastError.append(n->getLastError());
 }
 
-void CalaosOsAPI::doPost(QString apiPath, const QByteArray &postData, std::function<void (bool)> callback)
+void CalaosOsAPI::call(const Route &route, std::function<void (const CalaosOsReply &)> callback)
 {
-    AsyncJobs *jobs = new AsyncJobs(this);
-
-    jobs->append(new AsyncJob([this, apiPath, postData](AsyncJob *job, const QVariant &)
-                              {
-                                  lastError.clear();
-                                  QString url = calaosAddr % apiPath;
-
-                                  NetworkRequest *n = new NetworkRequest(url, NetworkRequest::HttpPost, this);
-                                  n->setNetManager(netManager);
-                                  n->setCustomHeader("Authorization", QStringLiteral("bearer %1").arg(token));
-                                  n->setCustomHeader("Content-Type", "application/json");
-                                  n->setResultType(NetworkRequest::TypeJson);
-                                  n->setPostData(postData);
-
-                                  connect(n, &NetworkRequest::finishedJson, this, [this, n, job](int success, const QJsonDocument &jdoc)
-                                          {
-                                              n->deleteLater();
-
-                                              if (success == NetworkRequest::RequestSuccess)
-                                              {
-                                                  job->emitSuccess();
-                                              }
-                                              else
-                                              {
-                                                  checkErrors(jdoc, n);
-                                                  job->emitFailed();
-                                              }
-                                          });
-
-                                  if (!n->start())
-                                  {
-                                      delete n;
-                                      lastError = tr("Failed to start network request");
-                                      job->emitFailed();
-                                  }
-                              }));
-
-    connect(jobs, &AsyncJobs::failed, this, [callback](AsyncJob *)
-            {
-                callback(false);
-            });
-
-    connect(jobs, &AsyncJobs::finished, this, [callback](const QVariant &)
-            {
-                callback(true);
-            });
-
-    jobs->start();
+    const bool useV2 = !route.v2Path.isEmpty() &&
+                       (m_apiVersion != ApiVersion::Legacy || route.legacyPath.isEmpty());
+    send(route, useV2, false, callback);
 }
 
-void CalaosOsAPI::doGet(QString apiPath, std::function<void (bool, const QJsonValue &)> callback)
+void CalaosOsAPI::send(const Route &route, bool useV2, bool authRetried, std::function<void (const CalaosOsReply &)> callback)
 {
-    AsyncJobs *jobs = new AsyncJobs(this);
+    const QString url = calaosAddr % (useV2 ? QStringLiteral("/api/v2") % route.v2Path : route.legacyPath);
 
-    jobs->append(new AsyncJob([this, apiPath](AsyncJob *job, const QVariant &)
-                              {
-                                  lastError.clear();
-                                  QString url = calaosAddr % apiPath;
+    NetworkRequest *n = new NetworkRequest(url, route.method, this);
+    n->setNetManager(netManager);
+    n->setCustomHeader("Authorization", authorizationHeader(token));
+    if (route.method != NetworkRequest::HttpGet)
+        n->setCustomHeader("Content-Type", "application/json");
+    n->setResultType(NetworkRequest::TypeJson);
+    n->setPostData(useV2 ? route.v2Body : route.legacyBody);
 
-                                  NetworkRequest *n = new NetworkRequest(url, NetworkRequest::HttpGet, this);
-                                  n->setNetManager(netManager);
-                                  n->setCustomHeader("Authorization", QStringLiteral("bearer %1").arg(token));
-                                  n->setResultType(NetworkRequest::TypeJson);
+    connect(n, &NetworkRequest::finishedJson, this,
+            [this, n, route, useV2, authRetried, callback](int success, const QJsonDocument &doc)
+    {
+        const int httpStatus = n->getHttpStatusCode();
+        const QString netError = n->getLastError();
+        n->deleteLater();
 
-                                  connect(n, &NetworkRequest::finishedJson, this, [this, n, job](int success, const QJsonDocument &jdoc)
-                                          {
-                                              n->deleteLater();
+        //the token may have been rewritten since we read it: re-read, retry once
+        if (httpStatus == 401 && !authRetried)
+        {
+            reloadToken();
+            send(route, useV2, true, callback);
+            return;
+        }
 
-                                              if (success == NetworkRequest::RequestSuccess)
-                                              {
-                                                  QJsonObject jobj = jdoc.object();
-                                                  if (jobj["error"].toBool())
-                                                  {
-                                                      checkErrors(jdoc, n);
-                                                      job->emitFailed();
-                                                  }
-                                                  else
-                                                  {
-                                                      QJsonValue v = jobj["output"];
-                                                      job->emitSuccess(v);
-                                                  }
-                                              }
-                                              else
-                                              {
-                                                  checkErrors(jdoc, n);
-                                                  job->emitFailed();
-                                              }
-                                          });
+        //no HTTP answer: the daemon may be restarting into another version
+        if (httpStatus == 0)
+            m_apiVersion = ApiVersion::Unknown;
 
-                                  if (!n->start())
-                                  {
-                                      delete n;
-                                      lastError = tr("Failed to start network request");
-                                      job->emitFailed();
-                                  }
-                              }));
-
-    connect(jobs, &AsyncJobs::failed, this, [callback](AsyncJob *)
+        if (useV2 && httpStatus != 0)
+        {
+            const Envelope env = parseEnvelope(doc);
+            if (isLegacyDaemonReply(httpStatus, doc))
             {
-                callback(false, {});
-            });
-
-    connect(jobs, &AsyncJobs::finished, this, [callback](const QVariant &data)
+                m_apiVersion = ApiVersion::Legacy;
+                if (!route.legacyPath.isEmpty())
+                {
+                    send(route, false, false, callback);
+                    return;
+                }
+            }
+            else if (env.isEnvelope)
             {
-                callback(true, data.toJsonValue());
-            });
+                //only an envelope proves /api/v2: an old daemon's 401 is not one
+                m_apiVersion = ApiVersion::V2;
+                if (route.upgradeRoute && isUpgradeRouteMissing(httpStatus, env) &&
+                    !route.legacyPath.isEmpty())
+                {
+                    send(route, false, false, callback);
+                    return;
+                }
+            }
+        }
 
-    jobs->start();
+        const CalaosOsReply reply = useV2 ?
+                                        v2Reply(success, httpStatus, doc, netError) :
+                                        legacyReply(route, success, httpStatus, doc, netError);
+        if (callback)
+            callback(reply);
+    });
+
+    if (!n->start())
+    {
+        delete n;
+        CalaosOsReply reply;
+        reply.error = tr("Failed to start network request");
+        if (callback)
+            callback(reply);
+    }
 }
 
-void CalaosOsAPI::doPostRaw(QString apiPath, const QByteArray &postData, std::function<void (bool, int, const QJsonDocument &)> callback)
+CalaosOsReply CalaosOsAPI::v2Reply(int success, int httpStatus, const QJsonDocument &doc, const QString &netError) const
 {
-    AsyncJobs *jobs = new AsyncJobs(this);
+    CalaosOsReply reply;
+    reply.api = ApiVersion::V2;
+    reply.httpStatus = httpStatus;
 
-    auto httpStatus = std::make_shared<int>(0);
-    auto resultDoc = std::make_shared<QJsonDocument>();
+    const Envelope env = parseEnvelope(doc);
+    reply.code = env.code;
+    reply.data = env.data;
+    reply.ok = success == NetworkRequest::RequestSuccess && env.isEnvelope && !env.error;
+    if (!reply.ok)
+    {
+        if (!env.msg.isEmpty())
+            reply.error = env.msg;
+        else if (!netError.isEmpty())
+            reply.error = netError;
+        else
+            reply.error = tr("Invalid answer from the update service");
+    }
 
-    jobs->append(new AsyncJob([this, apiPath, postData, httpStatus, resultDoc](AsyncJob *job, const QVariant &)
-                              {
-                                  lastError.clear();
-                                  QString url = calaosAddr % apiPath;
-
-                                  NetworkRequest *n = new NetworkRequest(url, NetworkRequest::HttpPost, this);
-                                  n->setNetManager(netManager);
-                                  n->setCustomHeader("Authorization", QStringLiteral("bearer %1").arg(token));
-                                  n->setCustomHeader("Content-Type", "application/json");
-                                  n->setResultType(NetworkRequest::TypeJson);
-                                  n->setPostData(postData);
-
-                                  connect(n, &NetworkRequest::finishedJson, this, [this, n, job, httpStatus, resultDoc](int success, const QJsonDocument &jdoc)
-                                          {
-                                              *httpStatus = n->getHttpStatusCode();
-                                              *resultDoc = jdoc;
-
-                                              if (success == NetworkRequest::RequestSuccess)
-                                              {
-                                                  job->emitSuccess();
-                                              }
-                                              else
-                                              {
-                                                  QJsonObject jobj = jdoc.object();
-                                                  if (jobj["error"].toBool())
-                                                      lastError = jobj["msg"].toString();
-                                                  else
-                                                      lastError = n->getLastError();
-
-                                                  job->emitFailed();
-                                              }
-
-                                              n->deleteLater();
-                                          });
-
-                                  if (!n->start())
-                                  {
-                                      delete n;
-                                      lastError = tr("Failed to start network request");
-                                      job->emitFailed();
-                                  }
-                              }));
-
-    connect(jobs, &AsyncJobs::failed, this, [callback, httpStatus, resultDoc](AsyncJob *)
-            {
-                callback(false, *httpStatus, *resultDoc);
-            });
-
-    connect(jobs, &AsyncJobs::finished, this, [callback, httpStatus, resultDoc](const QVariant &)
-            {
-                callback(true, *httpStatus, *resultDoc);
-            });
-
-    jobs->start();
+    reply.upgradeInProgress = isUpgradeInProgress(ApiVersion::V2, httpStatus, env, QString());
+    reply.packageNotFound = isPackageNotFound(ApiVersion::V2, httpStatus, env, QString());
+    return reply;
 }
 
-void CalaosOsAPI::doGetRaw(QString apiPath, std::function<void (bool, int, const QJsonDocument &)> callback)
+CalaosOsReply CalaosOsAPI::legacyReply(const Route &route, int success, int httpStatus, const QJsonDocument &doc, const QString &netError) const
 {
-    AsyncJobs *jobs = new AsyncJobs(this);
+    CalaosOsReply reply;
+    reply.api = ApiVersion::Legacy;
+    reply.httpStatus = httpStatus;
 
-    auto httpStatus = std::make_shared<int>(0);
-    auto resultDoc = std::make_shared<QJsonDocument>();
+    const QJsonObject jobj = doc.object();
+    if (success == NetworkRequest::RequestSuccess)
+    {
+        if (route.legacyShape == LegacyBody::Output)
+        {
+            reply.ok = !jobj["error"].toBool();
+            reply.data = jobj["output"];
+            if (!reply.ok)
+                reply.error = jobj["msg"].toString();
+        }
+        else
+        {
+            reply.ok = true;
+            reply.data = jobj;
+        }
+    }
+    else
+    {
+        reply.error = jobj["error"].toBool() ? jobj["msg"].toString() : netError;
+    }
 
-    jobs->append(new AsyncJob([this, apiPath, httpStatus, resultDoc](AsyncJob *job, const QVariant &)
-                              {
-                                  lastError.clear();
-                                  QString url = calaosAddr % apiPath;
-
-                                  NetworkRequest *n = new NetworkRequest(url, NetworkRequest::HttpGet, this);
-                                  n->setNetManager(netManager);
-                                  n->setCustomHeader("Authorization", QStringLiteral("bearer %1").arg(token));
-                                  n->setResultType(NetworkRequest::TypeJson);
-
-                                  connect(n, &NetworkRequest::finishedJson, this, [this, n, job, httpStatus, resultDoc](int success, const QJsonDocument &jdoc)
-                                          {
-                                              *httpStatus = n->getHttpStatusCode();
-                                              *resultDoc = jdoc;
-
-                                              if (success == NetworkRequest::RequestSuccess)
-                                              {
-                                                  job->emitSuccess();
-                                              }
-                                              else
-                                              {
-                                                  QJsonObject jobj = jdoc.object();
-                                                  if (jobj["error"].toBool())
-                                                      lastError = jobj["msg"].toString();
-                                                  else
-                                                      lastError = n->getLastError();
-
-                                                  job->emitFailed();
-                                              }
-
-                                              n->deleteLater();
-                                          });
-
-                                  if (!n->start())
-                                  {
-                                      delete n;
-                                      lastError = tr("Failed to start network request");
-                                      job->emitFailed();
-                                  }
-                              }));
-
-    connect(jobs, &AsyncJobs::failed, this, [callback, httpStatus, resultDoc](AsyncJob *)
-            {
-                callback(false, *httpStatus, *resultDoc);
-            });
-
-    connect(jobs, &AsyncJobs::finished, this, [callback, httpStatus, resultDoc](const QVariant &)
-            {
-                callback(true, *httpStatus, *resultDoc);
-            });
-
-    jobs->start();
+    if (!reply.ok)
+    {
+        reply.upgradeInProgress = isUpgradeInProgress(ApiVersion::Legacy, httpStatus, Envelope(), reply.error);
+        reply.packageNotFound = isPackageNotFound(ApiVersion::Legacy, httpStatus, Envelope(), reply.error);
+    }
+    return reply;
 }
-

@@ -108,8 +108,12 @@ docs/               Refactoring board (BOARD.md) and tickets (tasks/), in French
   widget under [qml/SharedComponents/](qml/SharedComponents).
 - **Calaos OS system calls**: [`CalaosOsAPI`](src/CalaosOsAPI.h) (desktop only):
   HTTP to the `calaos-container` daemon at `http://127.0.0.1:8000`, bearer token
-  read from `/run/calaos/calaos-ct.token`; the update flow is
-  [`UpdateManager`](src/UpdateManager.h) (also uses its `/api/events` WebSocket).
+  read from `/run/calaos/calaos-ct.token` (header only, re-read on 401 and on
+  reconnect). Uses `/api/v2` (envelope, upgrade jobs) and falls back to the
+  legacy unprefixed routes on a plain-text 404 (daemon without `/api/v2`); wire
+  rules in [`CalaosOsProtocol`](src/CalaosOsProtocol.h). The update flow is
+  [`UpdateManager`](src/UpdateManager.h) (also uses the `/api/v2/events`
+  WebSocket, `/api/events` on an old daemon).
 - **Desktop settings**: `local_config.xml` (`<calaos:option name= value=>`), looked
   up in `~/.config/calaos`, `/etc/calaos`, `$PREFIX/etc/calaos`, overridable
   with `--config`/`--cache`; keys listed in [README.md](README.md). Mobile uses

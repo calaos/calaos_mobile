@@ -914,6 +914,13 @@ void TstPushNotif::httpRotationWhileConnectedRegistersAgain()
     QCOMPARE(http->registrations.size(), 2);
     QCOMPARE(http->logins, 1);
     QCOMPARE(http->rejected, QStringList());
+    QVERIFY(!connection->hasPendingTlsTrust());
+
+    //The store dies with this scope.
+    connection->logout();
+    pump(50);
+    delete connection;
+    connection = nullptr;
 }
 
 void TstPushNotif::httpTokenArrivingAfterLoginIsRegistered()
@@ -997,7 +1004,15 @@ void TstPushNotif::httpFallbackFromWebsocketRegistersOnce()
     //fallback logs in and must register the token exactly once.
     http = new FakeHttpServer(&tlsConfig);
     QVERIFY(http->listen(QHostAddress::LocalHost, 0));
-    startConnection(QStringLiteral("127.0.0.1:%1").arg(http->serverPort()));
+
+    //A self-signed certificate is only accepted once pinned: as if the user
+    //had confirmed it at an earlier login.
+    TlsPinStore pins(certDir.filePath(QStringLiteral("pins.ini")));
+    pins.setPin(TlsPinning::hostKey(QStringLiteral("127.0.0.1"), http->serverPort()),
+                TlsPinning::spkiSha256(tlsConfig.localCertificate()));
+    connection = new CalaosConnection();
+    connection->setPinStore(&pins);
+    connection->login(TestUser, TestPass, QStringLiteral("127.0.0.1:%1").arg(http->serverPort()));
 
     QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
     QVERIFY(connection->isHttp());

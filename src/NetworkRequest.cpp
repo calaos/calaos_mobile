@@ -1,4 +1,5 @@
 #include "NetworkRequest.h"
+#include "TlsPinning.h"
 
 //Abort a transfer that stops making progress. Set on the request and not on
 //the manager because setNetManager() can hand us a manager owned by someone
@@ -273,6 +274,7 @@ void NetworkRequest::nmSslErrors(const QList<QSslError> &errors)
         qWarning() << e.errorString();
     }
 
-    QNetworkReply *reply = qobject_cast<QNetworkReply *>(sender());
-    reply->ignoreSslErrors();
+    //No one to ask from here: a certificate the user did not pin through the
+    //Calaos connection fails the request.
+    TlsPinning::acceptIfPinned(qobject_cast<QNetworkReply *>(sender()), errors);
 }

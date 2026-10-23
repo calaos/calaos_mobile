@@ -31,4 +31,5 @@ SUBDIRS += \
     tst_reconnectpolicy \
     tst_roomfiltermodel \
     tst_sessionlifecycle \
+    tst_tlspinning \
     tst_updateclient

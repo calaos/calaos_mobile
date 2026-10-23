@@ -71,6 +71,9 @@ public:
     //on desktop (HardwareUtils reports it always connected).
     QML_READONLY_PROPERTY(bool, waitingForNetwork)
 
+    //Pinned server certificates, for the settings: {host, fingerprint}.
+    QML_READONLY_PROPERTY(QVariantList, tlsPinList)
+
 public:
     Application(int &argc, char **argv);
 
@@ -84,6 +87,11 @@ public:
     //platform is told the session is over (see HardwareUtils::setSessionActive).
     Q_INVOKABLE void userLogout();
     Q_INVOKABLE void resetAllData();
+
+    //Answer to tlsTrustRequested() (see CalaosConnection::answerTlsTrust()).
+    Q_INVOKABLE void answerTlsTrust(bool accept);
+    //host is the host:port of a tlsPinList entry.
+    Q_INVOKABLE void forgetTlsPin(const QString &host);
 
     Q_INVOKABLE void addItemFavorite(QString ioid, int type);
     Q_INVOKABLE void delItemFavorite(int idx);
@@ -122,6 +130,11 @@ signals:
     //Login was tapped without network (FIX-10): the login waits for the
     //network, the banner tells it.
     void loginWaitsForNetwork();
+
+    //The certificate of a server needs the user's confirmation, see
+    //CalaosConnection::tlsTrustRequested() for info.
+    void tlsTrustRequested(const QVariantMap &info);
+    void tlsTrustCanceled();
 
 private slots:
     void homeLoaded(const QVariantMap &homeData);
@@ -189,6 +202,10 @@ private:
     void saveSettings();
 
     void setupLanguage();
+
+    //tlsPinList, and the copy the platform keeps for the push extension or
+    //worker, from TlsPinStore.
+    void updateTlsPins();
 };
 
 #endif // APPLICATION_H

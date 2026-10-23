@@ -23,6 +23,7 @@ set(CALAOS_SOURCES
     src/EventLogModel.cpp
     src/BookmarkModel.cpp
     src/ModelImageProvider.cpp
+    src/TlsPinning.cpp
 )
 
 set(CALAOS_HEADERS
@@ -47,4 +48,5 @@ set(CALAOS_HEADERS
     src/EventLogModel.h
     src/BookmarkModel.h
     src/ModelImageProvider.h
+    src/TlsPinning.h
 )

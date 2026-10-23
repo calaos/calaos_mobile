@@ -163,6 +163,8 @@ void HardwareUtils::clearDeviceToken()
 
 QString HardwareUtils::getDeviceName()
 {
+    //Only the tests see it: desktop builds never get a push token, so they
+    //never send register_push.
     return QSysInfo::machineHostName();
 }
 

@@ -14,6 +14,8 @@ Plan admin de calaos_base (`docs/admin/PLAN.md`, « Second facteur : code par pu
 
 Le plan signale aussi `register_push` envoyé sans identifiants en mode HTTP (un échec de login par session, qui pollue `LoginThrottle`). Vérifié le 2026-10-23 : déjà corrigé par FIX-3 (`03541bd`, `CalaosConnection::registerPushToken()` ajoute `cn_user`/`cn_pass` en HTTP ; `tst_pushnotif` le vérifie contre un faux `api.php` qui refuse en 400 sans identifiants). Le constat du plan date de l'app 3.1.x des stores.
 
+Limite iOS : depuis iOS 16, sans l'entitlement `com.apple.developer.device-information.user-assigned-device-name`, tous les iPhone se déclarent « iPhone ». AP1b et WA3 doivent donc afficher de quoi les distinguer (plateforme, date d'enregistrement, dernière activité). Décision en attente avec Raoul : demander l'entitlement ou ajouter un nom saisi dans l'app.
+
 ## Fichiers
 
 - `src/CalaosConnection.h|cpp` (`PushFormat::registration`), `src/JsonKeys.h`

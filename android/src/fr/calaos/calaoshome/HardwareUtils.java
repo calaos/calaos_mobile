@@ -297,11 +297,14 @@ public class HardwareUtils extends QtActivity
             }
         }
 
-        final String manufacturer = Build.MANUFACTURER == null ? "" : Build.MANUFACTURER;
         final String model = Build.MODEL == null ? "" : Build.MODEL;
+        String manufacturer = Build.MANUFACTURER == null ? "" : Build.MANUFACTURER;
         // Some vendors already start MODEL with the brand ("Xiaomi Redmi 9").
-        if (manufacturer.isEmpty() || model.toLowerCase(Locale.ROOT).startsWith(manufacturer.toLowerCase(Locale.ROOT)))
+        if (manufacturer.isEmpty() ||
+            model.toLowerCase(Locale.ROOT).startsWith(manufacturer.toLowerCase(Locale.ROOT)))
             return model;
+        // Some vendors report it in lower case ("samsung").
+        manufacturer = manufacturer.substring(0, 1).toUpperCase(Locale.ROOT) + manufacturer.substring(1);
         return manufacturer + " " + model;
     }
 

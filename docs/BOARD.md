@@ -162,6 +162,14 @@ Exécution parallèle : chaque ticket lancé en parallèle travaille dans son pr
 | [FIX-12](tasks/FIX-12-effacer-mot-de-passe.md) | Le bouton « effacer » du champ mot de passe n'efface rien | S | FIX-10 | G-QML-MOBILE | Terminé |
 | [EVLOG-1](tasks/EVLOG-1-historique-fige.md) | Historique des événements figé après une requête perdue | M | — | G-CONN + G-MODELS | Terminé |
 
+## P-ADMIN — Administration de la box
+
+Tickets calaos_mobile du plan admin de calaos_base (`docs/admin/PLAN.md`, phase 2 : console web et téléphone approbateur).
+
+| ID | Titre | Taille | Bloqué par | Groupe | Statut |
+|---|---|---|---|---|---|
+| [AP2](tasks/AP2-nom-appareil-register-push.md) | Nom d'appareil dans `register_push`, identifiants en HTTP | S | — | G-CONN + G-ANDROID + G-IOS | En revue |
+
 ## Diagramme de parallélisation
 
 Chaque colonne est une lane exécutable par un agent indépendant ; `→` = séquence obligatoire, `‖` = parallèle.

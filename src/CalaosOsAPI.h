@@ -20,6 +20,18 @@ struct CalaosOsReply
     QJsonValue data;
     bool upgradeInProgress = false;
     bool packageNotFound = false;
+    //with httpStatus 0: why no HTTP answer came
+    QNetworkReply::NetworkError networkError = QNetworkReply::NoError;
+    bool requestStarted = true;
+
+    //the request provably never reached the daemon (nothing can have started)
+    bool neverReachedDaemon() const
+    {
+        return httpStatus == 0 &&
+               (!requestStarted ||
+                networkError == QNetworkReply::ConnectionRefusedError ||
+                networkError == QNetworkReply::HostNotFoundError);
+    }
 };
 
 class CalaosOsAPI: public QObject
@@ -59,18 +71,15 @@ public:
     void getAvailableUpdates(std::function<void(bool ok, const QJsonObject &pkgs, const QString &err)> callback);
     //get currently installed packages (GET update/installed). May 404 on older daemons, hence the httpStatus.
     void getInstalledPackages(std::function<void(bool ok, int httpStatus, const QJsonObject &pkgs)> callback);
-    //upgrade a single package by name / all packages (POST update/upgrade, update/upgrade-all).
-    //On /api/v2 the daemon answers 202 at once with the job in reply.data, followed on the events.
-    //On the legacy surface (or a v2 daemon without jobs) the POST is synchronous and answers when
-    //apt ends; a transport error is then not an upgrade failure: upgrade-all installs
-    //calaos-container first, which restarts the daemon and severs this POST while the run goes on.
+    //upgrade a package / all packages: 202 + job in reply.data on /api/v2, synchronous on legacy,
+    //where a transport error is not a failure (a self-upgrading daemon severs the POST)
     void upgradePackage(const QString &package, std::function<void(const CalaosOsReply &reply)> callback);
     void upgradeAll(std::function<void(const CalaosOsReply &reply)> callback);
     //progress of an ongoing (or last) upgrade, plus the job on /api/v2 (GET update/status)
     void getUpdateStatus(std::function<void(bool ok, const CalaosOsProtocol::UpdateStatus &status)> callback);
 
     //WebSocket handshake of the daemon event stream, for the detected API version
-    QNetworkRequest eventsRequest() const;
+    QNetworkRequest eventsRequest();
 
     CalaosOsProtocol::ApiVersion apiVersion() const { return m_apiVersion; }
     //forget the detected API version: the daemon may have been replaced by another version
@@ -112,8 +121,11 @@ private:
 
     QNetworkAccessManager *netManager;
 
+    void ensureToken();
+
     QString calaosAddr, token, tokenFile;
     bool tokenReadable = true;
+    bool tokenLoaded = false;
 
     CalaosOsProtocol::ApiVersion m_apiVersion = CalaosOsProtocol::ApiVersion::Unknown;
 

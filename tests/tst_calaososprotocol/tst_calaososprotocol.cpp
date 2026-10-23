@@ -166,7 +166,9 @@ void TstCalaosOsProtocol::upgradeInProgress_data()
     QTest::newRow("v2 message only") << v2 << 500 << QByteArray(R"({"error":true,"code":"internal","msg":"upgrade in progress"})") << QString() << false;
     QTest::newRow("v2 other 409") << v2 << 409 << QByteArray(R"({"error":true,"code":"admin_already_set","msg":"x"})") << QString() << false;
     QTest::newRow("legacy check 500") << legacy << 500 << QByteArray() << "upgrade already in progress" << true;
-    QTest::newRow("legacy reboot 409") << legacy << 409 << QByteArray() << "whatever" << true;
+    QTest::newRow("legacy reboot 409") << legacy << 409 << QByteArray() << "upgrade already in progress" << true;
+    //legacy keeps its message rule only: the status alone proves nothing
+    QTest::newRow("legacy bare 409") << legacy << 409 << QByteArray() << "whatever" << false;
     QTest::newRow("legacy other") << legacy << 500 << QByteArray() << "apt failed" << false;
 }
 

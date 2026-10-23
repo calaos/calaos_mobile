@@ -40,8 +40,7 @@ bool isUpgradeInProgress(ApiVersion api, int httpStatus, const Envelope &env, co
 {
     if (api == ApiVersion::V2)
         return httpStatus == 409 && env.code == QStringLiteral("upgrade_in_progress");
-    //legacy routes use 409 for that only (system/reboot during a run)
-    return httpStatus == 409 || legacyMsg.contains(QStringLiteral("in progress"), Qt::CaseInsensitive);
+    return legacyMsg.contains(QStringLiteral("in progress"), Qt::CaseInsensitive);
 }
 
 bool isPackageNotFound(ApiVersion api, int httpStatus, const Envelope &env, const QString &legacyMsg)

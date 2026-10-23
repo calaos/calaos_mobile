@@ -21,30 +21,9 @@
  * UpdateGrouping) and UpdateProgressModel (per-package progress rows of the
  * ongoing upgrade).
  *
- * Upgrade state machine, single source of truth rules:
- *  - On /api/v2 the upgrade POST answers 202 with a job at once. Only the
- *    terminal state of that job ends the upgrade, as seen on an upgrade_job
- *    event or on update/status, read every 15 s as a safety net because
- *    events are best effort. Progress frames are display-only for a job.
- *  - On the legacy surface (daemon without /api/v2, or without jobs) the
- *    upgrade POST is synchronous server-side: it returns only when the whole
- *    apt transaction ends and is the ONLY thing that advances/finishes an
- *    upgrade we initiated. It also carries pre-start rejections (lock held,
- *    package not found) as HTTP errors, which never produce WebSocket events.
- *  - A transport-severed POST (httpStatus 0, no HTTP reply) is NOT a
- *    rejection: upgrade-all installs calaos-container first, which restarts
- *    the daemon and kills the in-flight POST while the transaction goes on.
- *    We then switch to resync mode and let the status stream conclude.
- *  - WebSocket/poll status snapshots are display-only for upgrades we own.
- *    They finish the upgrade ONLY in resync mode, i.e. when we own no POST:
- *    the app restarted mid-upgrade, another client started the upgrade, or
- *    our POST was severed. Once the job of such a run is known, its terminal
- *    state concludes it instead.
- *  - Each status frame is a full snapshot: local progress state is replaced
- *    wholesale. After a terminal done/error the daemon publishes one trailing
- *    "idle" frame: a no-op for a finished upgrade, but in resync mode it
- *    also concludes the upgrade when the terminal frame itself was missed
- *    (daemon restart, poll-only visibility).
+ * An upgrade ends on the terminal state of its /api/v2 job, or on the legacy
+ * synchronous POST result; status snapshots only conclude runs we do not own
+ * (resync mode: adopted, or our legacy POST severed by a daemon restart).
  */
 class UpdateManager : public QObject
 {
@@ -86,6 +65,8 @@ public:
 
     //safety-net read of update/status while a job runs (tests shorten it)
     void setJobPollInterval(int ms);
+    //fallback when a self-upgrading daemon never drops the events connection
+    void setDaemonRestartTimeout(int ms);
 
 private slots:
     void connectWs();
@@ -107,6 +88,11 @@ private:
     void handleUpgradeReply(const CalaosOsReply &reply);
     void handleJobAction(CalaosOsProtocol::UpgradeJobTracker::Action action);
     void concludeJob(const CalaosOsProtocol::Job &job);
+    void finishJob(const CalaosOsProtocol::Job &job);
+    void resumeAfterDaemonRestart();
+    void followForeignJob(const QString &id, const QString &message);
+    bool endUpgrade();
+    void finishUnclaimed(const QString &message);
     void applyStatusSnapshot(const QJsonObject &st);
     void adoptInFlightUpgrade(const QJsonObject &st);
     void finishUpgrade(bool ok, const QString &err);
@@ -137,6 +123,7 @@ private:
     bool m_wsGotSnapshot = false;  //a connect-time snapshot was ever received
     quint64 m_pollGeneration = 0;  //bumped on finishUpgrade to drop in-flight poll replies
     bool m_inStatusReply = false;  //handling an update/status reply
+    bool m_wsWasConnected = false; //only a drop of a working connection may mean a new daemon
 
     //state of the ongoing upgrade
     QStringList m_queue;      //packages left to POST (single/group upgrade loop)
@@ -154,6 +141,24 @@ private:
     CalaosOsProtocol::UpgradeJobTracker m_jobs;
     bool m_jobRebootKnown = false;    //a job ended: its reboot_required replaces the package heuristic
     bool m_jobRebootRequired = false;
+
+    //last job the daemon showed, to tell a job our severed POST may have started
+    QString m_lastSeenJobId;
+    bool m_jobHistoryKnown = false;
+    QString m_jobIdBeforePost;
+    bool m_jobHistoryKnownAtPost = false;
+    bool m_postOutcomeUnknown = false; //v2 POST got no answer: a job may or may not exist
+
+    //following a run of another client: never claim it installed our packages
+    bool m_foreignRun = false;
+    QString m_foreignMessage;
+
+    //the job replaced the daemon binary: wait for the new daemon before going on
+    bool m_awaitingRestart = false;
+    bool m_restartDropped = false;
+    bool m_statusFromNewDaemon = false; //handling a status read that shows the daemon at rest
+    CalaosOsProtocol::Job m_restartJob;
+    QTimer *m_restartTimer = nullptr;
 };
 
 #endif // UPDATEMANAGER_H

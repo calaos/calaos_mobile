@@ -7,16 +7,8 @@
 #include <QJsonValue>
 #include <QHash>
 
-/*
- * Wire rules of the calaos-container daemon API (desktop only), kept free of
- * any network code so they can be unit tested.
- *
- * The daemon serves two surfaces: the versioned /api/v2 (one JSON envelope
- * {error, code, msg, data}, error codes, asynchronous upgrade jobs) and the
- * frozen unprefixed legacy routes. A daemon that predates /api/v2 answers a
- * plain-text 404 on every /api/v2 route: that, and only that, sends us back
- * to the legacy routes.
- */
+//calaos-container API rules, without network code so they can be unit tested.
+//Only a plain-text 404 on /api/v2 means an old daemon that needs the legacy routes.
 namespace CalaosOsProtocol {
 
 enum class ApiVersion
@@ -83,12 +75,8 @@ struct UpdateStatus
 
 UpdateStatus parseUpdateStatus(ApiVersion api, const QJsonValue &payload);
 
-/*
- * Which upgrade job we follow and when it ends. Only the terminal state of
- * that job ends the upgrade: a 2xx on the POST only means it was accepted.
- * Events are best effort and the daemon restarts after upgrading itself, so
- * the same job is also read from update/status, which is authoritative.
- */
+//A 2xx on the upgrade POST only means accepted: only the terminal state of the
+//followed job ends it, seen on events (best effort) or update/status (authoritative).
 class UpgradeJobTracker
 {
 public:

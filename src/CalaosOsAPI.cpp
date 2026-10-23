@@ -18,8 +18,8 @@ CalaosOsAPI::CalaosOsAPI(QNetworkAccessManager *nm, QObject *parent):
     if (!netManager)
         netManager = new QNetworkAccessManager(this);
 
+    //read on first use: tests and tools point at another file first
     tokenFile = QStringLiteral(TOKEN_FILE);
-    reloadToken();
 
     calaosAddr = "http://127.0.0.1:8000";
 }
@@ -40,11 +40,18 @@ void CalaosOsAPI::setTokenFile(const QString &path)
 {
     tokenFile = path;
     tokenReadable = true;
-    reloadToken();
+    tokenLoaded = false;
+}
+
+void CalaosOsAPI::ensureToken()
+{
+    if (!tokenLoaded)
+        reloadToken();
 }
 
 void CalaosOsAPI::reloadToken()
 {
+    tokenLoaded = true;
     QFile file(tokenFile);
     if (file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
@@ -128,6 +135,7 @@ void CalaosOsAPI::listInstallDevices(std::function<void (bool, const QJsonValue 
 //daemon version is fixed, and the v2 install/status has another shape.
 void CalaosOsAPI::startInstallation(QString device, std::function<void (bool)> callbackFinished, std::function<void (QString)> callbackStdout)
 {
+    ensureToken();
     AsyncJobs *jobs = new AsyncJobs(this);
 
     jobs->append(new AsyncJob([this, device, callbackStdout](AsyncJob *job, const QVariant &)
@@ -364,8 +372,10 @@ void CalaosOsAPI::detectApiVersion(std::function<void ()> callback)
     });
 }
 
-QNetworkRequest CalaosOsAPI::eventsRequest() const
+QNetworkRequest CalaosOsAPI::eventsRequest()
 {
+    ensureToken();
+
     QString addr = calaosAddr;
     if (addr.startsWith(QStringLiteral("https://")))
         addr.replace(0, 8, QStringLiteral("wss://"));
@@ -402,6 +412,7 @@ void CalaosOsAPI::call(const Route &route, std::function<void (const CalaosOsRep
 
 void CalaosOsAPI::send(const Route &route, bool useV2, bool authRetried, std::function<void (const CalaosOsReply &)> callback)
 {
+    ensureToken();
     const QString url = calaosAddr % (useV2 ? QStringLiteral("/api/v2") % route.v2Path : route.legacyPath);
 
     NetworkRequest *n = new NetworkRequest(url, route.method, this);
@@ -417,6 +428,7 @@ void CalaosOsAPI::send(const Route &route, bool useV2, bool authRetried, std::fu
     {
         const int httpStatus = n->getHttpStatusCode();
         const QString netError = n->getLastError();
+        const QNetworkReply::NetworkError networkError = n->getNetworkError();
         n->deleteLater();
 
         //the token may have been rewritten since we read it: re-read, retry once
@@ -456,9 +468,10 @@ void CalaosOsAPI::send(const Route &route, bool useV2, bool authRetried, std::fu
             }
         }
 
-        const CalaosOsReply reply = useV2 ?
-                                        v2Reply(success, httpStatus, doc, netError) :
-                                        legacyReply(route, success, httpStatus, doc, netError);
+        CalaosOsReply reply = useV2 ?
+                                  v2Reply(success, httpStatus, doc, netError) :
+                                  legacyReply(route, success, httpStatus, doc, netError);
+        reply.networkError = networkError;
         if (callback)
             callback(reply);
     });
@@ -467,6 +480,8 @@ void CalaosOsAPI::send(const Route &route, bool useV2, bool authRetried, std::fu
     {
         delete n;
         CalaosOsReply reply;
+        reply.api = useV2 ? ApiVersion::V2 : ApiVersion::Legacy;
+        reply.requestStarted = false;
         reply.error = tr("Failed to start network request");
         if (callback)
             callback(reply);

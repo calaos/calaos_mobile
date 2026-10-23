@@ -655,6 +655,9 @@ private slots:
     void upgradeInProgressWithoutJobIdFails();
     void upgradeInProgressDoesNotClaimOurPackages();
     void upgradeInProgressMidQueueIsReported();
+    void severedMidQueueKeepsTheRestartPrompt();
+    void severedMidQueueDoesNotClaimSuccess();
+    void severedPostIgnoresAJobStartedLongAfterTheCut();
     void checkDuringUpgradeKeepsDaemonAvailable();
     void rebootDuringUpgradeIsRefused_data();
     void rebootDuringUpgradeIsRefused();
@@ -1671,6 +1674,127 @@ void TstUpdateClient::foreignSelfUpgradeIsNotConcludedByTheNewDaemonSnapshot()
     QCOMPARE(msgs.size(), 1);
     QVERIFY(msgs.first().message.value("message").toString().contains(QStringLiteral("Another update was running")));
     QVERIFY(dispatchedOf("showRebootDialog").isEmpty());
+}
+
+//queue [first, second] through the kernel group, whatever their names
+static void forceGroupQueue(UpdateManager *mgr, const QStringList &queue)
+{
+    UpdateGroupItem *group = mgr->groupsModel()->itemForGroup(QStringLiteral("kernel"));
+    QVERIFY(group);
+    group->update_groupPackages(queue);
+}
+
+static QJsonObject package(const QString &name)
+{
+    return QJsonObject{{ "name", name }, { "version", "5" }, { "current_version", "4" }};
+}
+
+void TstUpdateClient::severedMidQueueKeepsTheRestartPrompt()
+{
+    FakeDaemon daemon;
+    daemon.token = makeToken('b');
+    daemon.available = kernelPackages();
+    daemon.available["calaos-home"] = package("calaos-home");
+    daemon.available["calaos-server"] = package("calaos-server");
+    writeToken(daemon.token);
+    QVERIFY(daemon.start());
+    startClient(daemon);
+    m_mgr->setJobPollInterval(200);
+    QTRY_COMPARE(daemon.clients.size(), 1);
+    QTRY_COMPARE(m_mgr->get_updatesCount(), 4);
+    forceGroupQueue(m_mgr, { QStringLiteral("calaos-home"), QStringLiteral("calaos-server") });
+
+    //the second POST is cut before it starts any job
+    int posts = 0;
+    daemon.beforeUpgradePost = [&daemon, &posts]()
+    {
+        if (++posts == 2)
+            daemon.severPath = QStringLiteral("/api/v2/update/upgrade");
+    };
+
+    m_mgr->upgradeGroup(QStringLiteral("kernel"));
+    QTRY_COMPARE(daemon.count("POST", "/api/v2/update/upgrade"), 1);
+    QCOMPARE(daemon.upgradedPackage(0), QStringLiteral("calaos-home"));
+    daemon.finishJob(QStringLiteral("done"), false);
+
+    QTRY_VERIFY(!m_mgr->get_isUpgrading());
+    QCOMPARE(daemon.count("POST", "/api/v2/update/upgrade"), 2);
+    QCOMPARE(m_mgr->get_updateState(), QStringLiteral("idle"));
+
+    //calaos-home was installed: the kiosk still offers its restart
+    const QList<Dispatched> dialogs = dispatchedOf("showRebootDialog");
+    QCOMPARE(dialogs.size(), 1);
+    QCOMPARE(dialogs.first().message.value("showApp").toBool(), true);
+    QCOMPARE(dialogs.first().message.value("showMachine").toBool(), false);
+    const QList<Dispatched> msgs = dispatchedOf("showNotificationMsg");
+    QCOMPARE(msgs.size(), 1);
+    QVERIFY(msgs.first().message.value("message").toString().contains(QStringLiteral("unknown")));
+}
+
+void TstUpdateClient::severedMidQueueDoesNotClaimSuccess()
+{
+    FakeDaemon daemon;
+    daemon.token = makeToken('c');
+    daemon.available = kernelPackages();
+    daemon.available["calaos-server"] = package("calaos-server");
+    writeToken(daemon.token);
+    QVERIFY(daemon.start());
+    startClient(daemon);
+    m_mgr->setJobPollInterval(200);
+    QTRY_COMPARE(daemon.clients.size(), 1);
+    QTRY_COMPARE(m_mgr->get_updatesCount(), 3);
+    forceGroupQueue(m_mgr, { QStringLiteral("calaos-server"), QStringLiteral("linux-image-amd64") });
+
+    int posts = 0;
+    daemon.beforeUpgradePost = [&daemon, &posts]()
+    {
+        if (++posts == 2)
+            daemon.severPath = QStringLiteral("/api/v2/update/upgrade");
+    };
+
+    m_mgr->upgradeGroup(QStringLiteral("kernel"));
+    QTRY_COMPARE(daemon.count("POST", "/api/v2/update/upgrade"), 1);
+    daemon.finishJob(QStringLiteral("done"), false);
+
+    //nothing to restart for calaos-server: the warning must stay the only notice
+    QTRY_VERIFY(!m_mgr->get_isUpgrading());
+    QVERIFY(dispatchedOf("showRebootDialog").isEmpty());
+    const QList<Dispatched> msgs = dispatchedOf("showNotificationMsg");
+    QCOMPARE(msgs.size(), 1);
+    QVERIFY(msgs.first().message.value("message").toString().contains(QStringLiteral("unknown")));
+    QVERIFY(!msgs.first().message.value("message").toString().contains(QStringLiteral("successfully")));
+}
+
+void TstUpdateClient::severedPostIgnoresAJobStartedLongAfterTheCut()
+{
+    FakeDaemon daemon;
+    daemon.token = makeToken('d');
+    daemon.severPath = QStringLiteral("/api/v2/update/upgrade-all");
+    writeToken(daemon.token);
+    QVERIFY(daemon.start());
+    startClient(daemon);
+    m_mgr->setJobPollInterval(200);
+    QTRY_COMPARE(daemon.clients.size(), 1);
+    QTRY_COMPARE(m_mgr->get_updatesCount(), 1);
+    QTest::qWait(200);
+
+    //status answers come late (and show the state of when they were asked):
+    //the kiosk is still waiting when another client starts a run
+    daemon.statusDelayMs = 5000;
+    m_mgr->upgradeAll();
+    QTRY_COMPARE(daemon.count("POST", "/api/v2/update/upgrade-all"), 1);
+    QTest::qWait(3500);
+    QVERIFY(m_mgr->get_isUpgrading());
+
+    daemon.startJob(QStringLiteral("upgrade_all"), QString());
+    QTest::qWait(300);
+    daemon.finishJob(QStringLiteral("done"), false);
+
+    QTRY_VERIFY_WITH_TIMEOUT(!m_mgr->get_isUpgrading(), 10000);
+    const QList<Dispatched> msgs = dispatchedOf("showNotificationMsg");
+    QCOMPARE(msgs.size(), 1);
+    QVERIFY(msgs.first().message.value("message").toString().contains(QStringLiteral("unknown")));
+    QVERIFY(!msgs.first().message.value("message").toString().contains(QStringLiteral("successfully")));
 }
 
 int main(int argc, char **argv)

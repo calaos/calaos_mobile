@@ -156,6 +156,7 @@ private:
     //the job replaced the daemon binary: wait for the new daemon before going on
     bool m_awaitingRestart = false;
     bool m_restartDropped = false;
+    bool m_resumingAfterRestart = false; //the status read after the restart is in flight
     bool m_statusFromNewDaemon = false; //handling a status read that shows the daemon at rest
     CalaosOsProtocol::Job m_restartJob;
     QTimer *m_restartTimer = nullptr;

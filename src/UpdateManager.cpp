@@ -484,6 +484,9 @@ void UpdateManager::handleJobAction(UpgradeJobTracker::Action action)
     case UpgradeJobTracker::Action::None:
         break;
     case UpgradeJobTracker::Action::Adopt:
+        //the job our severed POST started: back to owning it, queue included
+        if (m_postOutcomeUnknown)
+            m_resyncMode = false;
         m_postOutcomeUnknown = false;
         startJobPolling();
         break;
@@ -503,6 +506,8 @@ void UpdateManager::handleJobAction(UpgradeJobTracker::Action action)
 void UpdateManager::concludeJob(const Job &job)
 {
     m_jobPollTimer->stop();
+    if (m_postOutcomeUnknown)
+        m_resyncMode = false; //proven ours: the queue goes on
     m_postOutcomeUnknown = false;
     m_jobRebootKnown = true;
     m_jobRebootRequired = m_jobRebootRequired || job.rebootRequired;
@@ -546,12 +551,14 @@ void UpdateManager::resumeAfterDaemonRestart()
     if (!m_awaitingRestart)
         return;
     m_awaitingRestart = false;
+    m_resumingAfterRestart = true;
     m_restartTimer->stop();
 
     const Job job = m_restartJob;
     const quint64 gen = m_pollGeneration;
     m_api->getUpdateStatus([this, job, gen](bool ok, const UpdateStatus &status)
     {
+        m_resumingAfterRestart = false;
         if (gen != m_pollGeneration || m_finishHandled)
             return;
         if (ok && status.hasJobField)
@@ -746,6 +753,7 @@ bool UpdateManager::endUpgrade()
     m_jobPollTimer->stop();
     m_restartTimer->stop();
     m_awaitingRestart = false;
+    m_resumingAfterRestart = false;
     m_postOutcomeUnknown = false;
     m_jobs.clear();
     m_pollGeneration++; //drop poll replies still in flight
@@ -958,7 +966,8 @@ void UpdateManager::wsConnected()
 void UpdateManager::wsClosed()
 {
     m_expectSnapshot = false;
-    if (m_awaitingRestart)
+    //a failed attempt while the old daemon is still up is not its exit
+    if (m_awaitingRestart && m_wsWasConnected)
         m_restartDropped = true;
     //a working connection dropped: the daemon may come back as another
     //version; failed retries keep the cached one (no probe per retry)
@@ -991,8 +1000,9 @@ void UpdateManager::wsTextMessageReceived(const QString &msg)
     const QJsonObject obj = doc.object();
     const QString type = obj["type"].toString();
 
-    //the leaving daemon has nothing more to say
-    if (m_awaitingRestart)
+    //the leaving daemon has nothing more to say; the new one's connect
+    //snapshot must not conclude anything before the resume read
+    if (m_awaitingRestart || m_resumingAfterRestart)
         return;
 
     if (type == QStringLiteral("upgrade_job"))
@@ -1104,7 +1114,7 @@ void UpdateManager::pollStatus()
             m_jobHistoryKnown = true;
         }
 
-        if (m_awaitingRestart)
+        if (m_awaitingRestart || m_resumingAfterRestart)
             return;
 
         if (m_postOutcomeUnknown && get_isUpgrading())
@@ -1116,6 +1126,7 @@ void UpdateManager::pollStatus()
             {
                 //our POST did start it
                 m_postOutcomeUnknown = false;
+                m_resyncMode = false;
                 m_pollGeneration++;
                 handleJobAction(m_jobs.follow(job.id));
                 startJobPolling();

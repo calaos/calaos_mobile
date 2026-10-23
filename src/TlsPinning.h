@@ -10,6 +10,7 @@
 #include <QVariantMap>
 
 class QNetworkReply;
+class TlsPinStore;
 
 //Trust on first use for the TLS certificate of a Calaos server.
 //
@@ -36,8 +37,10 @@ enum class Decision
     Refuse,         //an error no pin may override (revoked, bad signature...)
 };
 
-//"host:port" the pin is stored under: host lowercased, IPv6 in brackets, the
-//default port of the scheme made explicit (wss:// and https:// share 443).
+//"host:port" the pin is stored under: host in ACE form and lowercased, IPv6
+//in brackets, the default port of the scheme made explicit (wss:// and
+//https:// share 443). A host spelled another way gets another key: the
+//question comes back, it never matches the wrong pin.
 QString hostKey(const QUrl &url);
 QString hostKey(const QString &host, int port);
 
@@ -57,13 +60,18 @@ bool isOverridable(QSslError::SslError error);
 
 Decision decide(const QList<QSslError> &errors, const QString &storedPin, const QString &peerPin);
 
-//Leaf certificate of the peer, from the connection or, when the backend did
-//not fill it in yet, from the errors.
+//Leaf certificate of the peer (the connection's peer certificate); null
+//when the backend did not report it, which refuses the handshake.
 QSslCertificate peerCertificate(const QSslCertificate &fromConfig, const QList<QSslError> &errors);
 
+//A host given by DNS name (not an IP, not .local): a Calaos box reached that
+//way normally has a valid certificate, so an untrusted one is suspicious.
+bool isDnsName(const QString &host);
+
 //For the paths that cannot ask the user (QML images, desktop daemon client):
-//ignores the errors only on a pin match, returns whether it did.
-bool acceptIfPinned(QNetworkReply *reply, const QList<QSslError> &errors);
+//ignores exactly these errors on a pin match, returns whether it did.
+//store: default TlsPinStore::instance().
+bool acceptIfPinned(QNetworkReply *reply, const QList<QSslError> &errors, TlsPinStore *store = nullptr);
 
 }
 

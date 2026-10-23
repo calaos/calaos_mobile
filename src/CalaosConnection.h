@@ -491,7 +491,7 @@ public:
     //loop. An explicit login from the login screen asks again.
     void forgetTlsRefusals() { tlsRefused.clear(); }
     //Tests use a store of their own; default TlsPinStore::instance().
-    void setPinStore(TlsPinStore *store) { pinStore = store; }
+    void setPinStore(TlsPinStore *store);
 
     //Network discovery found a server: try again *now* instead of waiting for
     //the pending backoff delay. Never stacks a second timer or a second login,
@@ -636,6 +636,7 @@ private:
     void handleWebsocketFailure(const QString &reason);
 
     TlsPinStore *pins() const;
+    void dropCachedConnections();
     //The decision for one handshake; true means "ignore the errors" (pin
     //match). Otherwise the attempt is marked as blocked by the certificate.
     bool checkTls(const QUrl &url, const QSslCertificate &peer, const QList<QSslError> &errors);
@@ -721,7 +722,8 @@ signals:
 
     //See answerTlsTrust(). info: host (host:port), fingerprint (SPKI
     //SHA-256), certFingerprint (whole certificate SHA-256), subject, issuer,
-    //expiry, keyChanged, previousFingerprint.
+    //expiry, keyChanged, previousFingerprint, suspicious (DNS name, or a
+    //valid chain for another name: no reassuring wording).
     void tlsTrustRequested(const QVariantMap &info);
     //The pending question is void (logout): close the dialog.
     void tlsTrustCanceled();

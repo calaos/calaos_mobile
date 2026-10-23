@@ -48,11 +48,16 @@ CalaosConnection::CalaosConnection(QObject *parent) :
     accessManagerCam = new QNetworkAccessManager(this);
     accessManager->setTransferTimeout(HTTP_TRANSFER_TIMEOUT);
     accessManagerCam->setTransferTimeout(HTTP_TRANSFER_TIMEOUT);
+    //The credentials travel in the body (and in the query string of the
+    //picture urls): never replay them to another host.
+    accessManager->setRedirectPolicy(QNetworkRequest::SameOriginRedirectPolicy);
+    accessManagerCam->setRedirectPolicy(QNetworkRequest::SameOriginRedirectPolicy);
     pollReply = nullptr;
     connect(accessManager, &QNetworkAccessManager::sslErrors,
             this, &CalaosConnection::sslErrors);
     connect(accessManagerCam, &QNetworkAccessManager::sslErrors,
             this, &CalaosConnection::sslErrors);
+    connect(pins(), &TlsPinStore::pinsChanged, this, &CalaosConnection::dropCachedConnections);
 
     //A token reported while the session is up (rotation, or a token that only
     //arrived after the login) is registered right away, not at the next login.
@@ -65,8 +70,10 @@ void CalaosConnection::sslErrors(QNetworkReply *reply, const QList<QSslError> &e
     //Synchronous on purpose: ignoreSslErrors() only counts from inside this
     //slot, so an unknown certificate fails the request and is asked about
     //afterwards.
+    //These errors only, never all: the flag would stay on QNAM's cached
+    //channel and let a later handshake with another certificate through.
     if (checkTls(reply->url(), reply->sslConfiguration().peerCertificate(), errors))
-        reply->ignoreSslErrors();
+        reply->ignoreSslErrors(errors);
 }
 
 void CalaosConnection::sslErrorsWebsocket(const QList<QSslError> &errors)
@@ -74,12 +81,26 @@ void CalaosConnection::sslErrorsWebsocket(const QList<QSslError> &errors)
     if (!wsocket)
         return;
     if (checkTls(wsocket->requestUrl(), wsocket->sslConfiguration().peerCertificate(), errors))
-        wsocket->ignoreSslErrors();
+        wsocket->ignoreSslErrors(errors);
 }
 
 TlsPinStore *CalaosConnection::pins() const
 {
     return pinStore ? pinStore : TlsPinStore::instance();
+}
+
+void CalaosConnection::setPinStore(TlsPinStore *store)
+{
+    disconnect(pins(), &TlsPinStore::pinsChanged, this, &CalaosConnection::dropCachedConnections);
+    pinStore = store;
+    connect(pins(), &TlsPinStore::pinsChanged, this, &CalaosConnection::dropCachedConnections);
+}
+
+void CalaosConnection::dropCachedConnections()
+{
+    //A forgotten pin must not survive in a kept-alive connection.
+    accessManager->clearConnectionCache();
+    accessManagerCam->clearConnectionCache();
 }
 
 bool CalaosConnection::checkTls(const QUrl &url, const QSslCertificate &peer, const QList<QSslError> &errors)
@@ -130,10 +151,26 @@ bool CalaosConnection::checkTls(const QUrl &url, const QSslCertificate &peer, co
         qWarning() << "TLS: first certificate seen for" << key << "SPKI sha256" << spki
                    << "-" << reasons.join(QStringLiteral("; "));
 
-    //Every request of the attempt reports the same certificate: one question.
-    if (pendingTrust.value(QStringLiteral("host")).toString() == key &&
-        pendingTrust.value(QStringLiteral("spki")).toString() == spki)
+    //One question at a time: every request of the attempt reports the same
+    //certificate, and a different one meanwhile must not replace what the
+    //user is reading. It is asked about at the next attempt.
+    if (!pendingTrust.isEmpty())
+    {
+        if (pendingTrust.value(QStringLiteral("host")).toString() != key ||
+            pendingTrust.value(QStringLiteral("spki")).toString() != spki)
+            qInfo() << "TLS: a question is already pending, certificate of" << key << "refused for now";
         return false;
+    }
+
+    //Reached by DNS name, or a valid chain issued for another name: what a
+    //man in the middle would present, so the dialog does not reassure.
+    bool nameMismatchOnly = true;
+    for (const QSslError &e: errors)
+    {
+        if (e.error() != QSslError::HostNameMismatch)
+            nameMismatchOnly = false;
+    }
+    const bool suspicious = TlsPinning::isDnsName(url.host(QUrl::FullyEncoded)) || nameMismatchOnly;
 
     QVariantMap info;
     info[QStringLiteral("host")] = key;
@@ -144,6 +181,7 @@ bool CalaosConnection::checkTls(const QUrl &url, const QSslCertificate &peer, co
     info[QStringLiteral("issuer")] = cert.issuerDisplayName();
     info[QStringLiteral("expiry")] = QLocale().toString(cert.expiryDate().date(), QLocale::ShortFormat);
     info[QStringLiteral("keyChanged")] = keyChanged;
+    info[QStringLiteral("suspicious")] = suspicious;
     info[QStringLiteral("previousFingerprint")] = TlsPinning::formatFingerprint(stored);
     pendingTrust = info;
     emit tlsTrustRequested(info);

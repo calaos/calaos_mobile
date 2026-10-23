@@ -165,6 +165,11 @@ public:
     explicit TlsHttpServer(const QSslConfiguration &tls): tlsConfig(tls) {}
 
     int logins = 0;
+    //Every request whose body reached this server, whatever its action.
+    int requests = 0;
+    //Answer the long-poll at once (an empty event list) instead of holding
+    //it: the client then polls in a loop, closing each exchange cleanly.
+    bool answerPolls = false;
 
 protected:
     void incomingConnection(qintptr handle) override
@@ -192,6 +197,7 @@ protected:
                 return;
             buf->clear();
 
+            requests++;
             const QJsonObject j = QJsonDocument::fromJson(body).object();
             const QString action = j.value(QStringLiteral("action")).toString();
             if (action == QLatin1String("get_home"))
@@ -208,7 +214,11 @@ protected:
             {
                 reply(sock, "{\"success\":\"true\"}");
             }
-            //poll_listen "get": held open, a quiet installation.
+            else if (answerPolls)
+            {
+                reply(sock, "{\"success\":\"true\",\"events\":[]}");
+            }
+            //poll_listen "get": otherwise held open, a quiet installation.
         });
         connect(sock, &QSslSocket::disconnected, this, [sock, buf]()
         {
@@ -250,6 +260,9 @@ private slots:
     void decision_data();
     void decision();
     void overridableErrors();
+    void leafOnly();
+    void dnsName_data();
+    void dnsName();
 
     //TlsPinStore
     void storePerHostAndPersistent();
@@ -264,10 +277,16 @@ private slots:
     void wsRefusalDoesNotLoop();
     void logoutCancelsTheQuestion();
     void httpFirstUseAsksOnceThenConnects();
+    void httpKeyChangeOnCachedChannelSendsNothing();
+    void namKeyChangeOnCachedChannelSendsNothing();
+    void secondCertificateDoesNotReplaceTheQuestion();
 
 private:
     static void pump(int ms);
     bool makeServerConfig(const QString &name, QSslConfiguration &config);
+    //Without TLS the handshake cases cannot run: fatal in CI, skipped on a
+    //developer machine without the openssl CLI.
+    bool needTls();
     CalaosConnection *newConnection();
 
     QTemporaryDir dir;
@@ -347,6 +366,15 @@ void TstTlsPinning::cleanup()
     http = nullptr;
     delete store;
     store = nullptr;
+}
+
+bool TstTlsPinning::needTls()
+{
+    if (tlsReady)
+        return true;
+    if (qEnvironmentVariableIsSet("CI"))
+        qFatal("No TLS backend or no openssl CLI to make a test certificate");
+    return false;
 }
 
 CalaosConnection *TstTlsPinning::newConnection()
@@ -504,6 +532,42 @@ void TstTlsPinning::overridableErrors()
     QVERIFY(!TlsPinning::isOverridable(QSslError::CertificateRevoked));
     QVERIFY(!TlsPinning::isOverridable(QSslError::CertificateBlacklisted));
     QVERIFY(!TlsPinning::isOverridable(QSslError::NoSslSupport));
+    QVERIFY(!TlsPinning::isOverridable(QSslError::CertificateSignatureFailed));
+    QVERIFY(!TlsPinning::isOverridable(QSslError::UnspecifiedError));
+    QVERIFY(!TlsPinning::isOverridable(QSslError::OcspStatusUnknown));
+}
+
+void TstTlsPinning::leafOnly()
+{
+    //An error may carry an intermediate: its key is never the server's.
+    const QSslCertificate a = fixture(QStringLiteral("tls_a.pem"));
+    const QSslCertificate b = fixture(QStringLiteral("tls_b.pem"));
+    QVERIFY(TlsPinning::peerCertificate(QSslCertificate(), selfSigned(a)).isNull());
+    QCOMPARE(TlsPinning::peerCertificate(b, selfSigned(a)), b);
+    QCOMPARE(TlsPinning::decide(selfSigned(a), SpkiA,
+                                TlsPinning::spkiSha256(TlsPinning::peerCertificate(QSslCertificate(), selfSigned(a)))),
+             Decision::Refuse);
+}
+
+void TstTlsPinning::dnsName_data()
+{
+    QTest::addColumn<QString>("host");
+    QTest::addColumn<bool>("dns");
+
+    QTest::newRow("ipv4") << "192.168.1.10" << false;
+    QTest::newRow("ipv6") << "[fe80::1]" << false;
+    QTest::newRow("ipv6 bare") << "fe80::1" << false;
+    QTest::newRow("mdns") << "calaos.local" << false;
+    QTest::newRow("single label") << "calaos" << false;
+    QTest::newRow("ddns") << "home.example.org" << true;
+    QTest::newRow("ddns upper") << "Home.Example.ORG" << true;
+}
+
+void TstTlsPinning::dnsName()
+{
+    QFETCH(QString, host);
+    QFETCH(bool, dns);
+    QCOMPARE(TlsPinning::isDnsName(host), dns);
 }
 
 // ---------------------------------------------------------------- TlsPinStore
@@ -576,7 +640,7 @@ void TstTlsPinning::storeSignalsOnlyOnChange()
 
 void TstTlsPinning::wsFirstUseAsksOnceThenConnects()
 {
-    if (!tlsReady)
+    if (!needTls())
         QSKIP("No TLS backend or no openssl CLI to make a test certificate");
 
     ws = new TlsWsServer(tlsA);
@@ -619,7 +683,7 @@ void TstTlsPinning::wsFirstUseAsksOnceThenConnects()
 
 void TstTlsPinning::wsPinnedConnectsWithoutAsking()
 {
-    if (!tlsReady)
+    if (!needTls())
         QSKIP("No TLS backend or no openssl CLI to make a test certificate");
 
     ws = new TlsWsServer(tlsA);
@@ -637,7 +701,7 @@ void TstTlsPinning::wsPinnedConnectsWithoutAsking()
 
 void TstTlsPinning::wsKeyChangeAsksAgain()
 {
-    if (!tlsReady)
+    if (!needTls())
         QSKIP("No TLS backend or no openssl CLI to make a test certificate");
 
     //The box got a new key (certificate regenerated, renewal without
@@ -671,7 +735,7 @@ void TstTlsPinning::wsKeyChangeAsksAgain()
 
 void TstTlsPinning::wsPinIsPerHost()
 {
-    if (!tlsReady)
+    if (!needTls())
         QSKIP("No TLS backend or no openssl CLI to make a test certificate");
 
     //The same key pinned for another name or another port of the box.
@@ -691,7 +755,7 @@ void TstTlsPinning::wsPinIsPerHost()
 
 void TstTlsPinning::wsRefusalDoesNotLoop()
 {
-    if (!tlsReady)
+    if (!needTls())
         QSKIP("No TLS backend or no openssl CLI to make a test certificate");
 
     ws = new TlsWsServer(tlsA);
@@ -736,7 +800,7 @@ void TstTlsPinning::wsRefusalDoesNotLoop()
 
 void TstTlsPinning::logoutCancelsTheQuestion()
 {
-    if (!tlsReady)
+    if (!needTls())
         QSKIP("No TLS backend or no openssl CLI to make a test certificate");
 
     ws = new TlsWsServer(tlsA);
@@ -761,7 +825,7 @@ void TstTlsPinning::logoutCancelsTheQuestion()
 
 void TstTlsPinning::httpFirstUseAsksOnceThenConnects()
 {
-    if (!tlsReady)
+    if (!needTls())
         QSKIP("No TLS backend or no openssl CLI to make a test certificate");
 
     http = new TlsHttpServer(tlsA);
@@ -784,6 +848,116 @@ void TstTlsPinning::httpFirstUseAsksOnceThenConnects()
     QVERIFY(connection->isHttp());
     QCOMPARE(http->logins, 1);
     QCOMPARE(asked.count(), 1);
+}
+
+void TstTlsPinning::httpKeyChangeOnCachedChannelSendsNothing()
+{
+    if (!needTls())
+        QSKIP("No TLS backend or no openssl CLI to make a test certificate");
+
+    //Session up over HTTP with the pinned key A, then another server with an
+    //unrelated key B takes the same address. The long-poll retries on the
+    //same QNAM, whose channel once ignored A's errors: B must not get a
+    //single request (they carry the credentials).
+    http = new TlsHttpServer(tlsA);
+    http->answerPolls = true;
+    QVERIFY(http->listen(QHostAddress::LocalHost, 0));
+    const quint16 port = http->serverPort();
+    const QString key = TlsPinning::hostKey(QStringLiteral("127.0.0.1"), port);
+    newConnection();
+    store->setPin(key, TlsPinning::spkiSha256(tlsA.localCertificate()));
+    QSignalSpy asked(connection, &CalaosConnection::tlsTrustRequested);
+
+    connection->login(TestUser, TestPass, QStringLiteral("https://127.0.0.1:%1/api.php").arg(port));
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
+    QTRY_VERIFY(http->requests >= 5); //get_home, registration, polls
+
+    delete http;
+    http = new TlsHttpServer(tlsB);
+    QVERIFY(http->listen(QHostAddress::LocalHost, port));
+
+    //The long-poll retry goes out on the channel that carried the session.
+    QTRY_COMPARE_WITH_TIMEOUT(asked.count(), 1, 10000);
+    QCOMPARE(asked.at(0).at(0).toMap().value(QStringLiteral("keyChanged")).toBool(), true);
+    pump(2500);
+    QCOMPARE(http->requests, 0);
+    QCOMPARE(connection->connectionState(), ReconnectPolicy::Disconnected);
+}
+
+void TstTlsPinning::namKeyChangeOnCachedChannelSendsNothing()
+{
+    if (!needTls())
+        QSKIP("No TLS backend or no openssl CLI to make a test certificate");
+
+    //The check-only path (QML images, desktop daemon client).
+    http = new TlsHttpServer(tlsA);
+    QVERIFY(http->listen(QHostAddress::LocalHost, 0));
+    const quint16 port = http->serverPort();
+    store = new TlsPinStore(dir.filePath(QStringLiteral("nam.ini")));
+    store->setPin(TlsPinning::hostKey(QStringLiteral("127.0.0.1"), port),
+                  TlsPinning::spkiSha256(tlsA.localCertificate()));
+
+    QNetworkAccessManager nam;
+    TlsPinStore *pins = store;
+    connect(&nam, &QNetworkAccessManager::sslErrors, &nam,
+            [pins](QNetworkReply *reply, const QList<QSslError> &errors)
+    {
+        TlsPinning::acceptIfPinned(reply, errors, pins);
+    });
+
+    auto post = [&nam, port]() -> QNetworkReply::NetworkError
+    {
+        QNetworkRequest req(QUrl(QStringLiteral("https://127.0.0.1:%1/api.php").arg(port)));
+        req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        QNetworkReply *reply = nam.post(req, QByteArray("{\"action\":\"get_home\"}"));
+        QSignalSpy done(reply, &QNetworkReply::finished);
+        if (!done.wait(10000))
+            return QNetworkReply::TimeoutError;
+        const QNetworkReply::NetworkError e = reply->error();
+        reply->deleteLater();
+        return e;
+    };
+
+    QCOMPARE(post(), QNetworkReply::NoError);
+    QCOMPARE(http->requests, 1);
+
+    delete http;
+    http = new TlsHttpServer(tlsB);
+    QVERIFY(http->listen(QHostAddress::LocalHost, port));
+    QVERIFY(post() != QNetworkReply::NoError);
+    QVERIFY(post() != QNetworkReply::NoError);
+    QCOMPARE(http->requests, 0);
+}
+
+void TstTlsPinning::secondCertificateDoesNotReplaceTheQuestion()
+{
+    if (!needTls())
+        QSKIP("No TLS backend or no openssl CLI to make a test certificate");
+
+    ws = new TlsWsServer(tlsA);
+    QVERIFY(ws->listen(QHostAddress::LocalHost, 0));
+    TlsWsServer other(tlsB);
+    QVERIFY(other.listen(QHostAddress::LocalHost, 0));
+    newConnection();
+    QSignalSpy asked(connection, &CalaosConnection::tlsTrustRequested);
+
+    connection->login(TestUser, TestPass, QStringLiteral("127.0.0.1:%1").arg(ws->serverPort()));
+    QTRY_COMPARE(asked.count(), 1);
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Disconnected);
+
+    //While the user reads the first question, another server is tried.
+    connection->login(TestUser, TestPass, QStringLiteral("127.0.0.1:%1").arg(other.serverPort()));
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Disconnected);
+    pump(500);
+    QCOMPARE(asked.count(), 1);
+    QCOMPARE(other.logins, 0);
+
+    //The answer still applies to the certificate the user saw.
+    connection->answerTlsTrust(true);
+    QCOMPARE(store->pin(TlsPinning::hostKey(QStringLiteral("127.0.0.1"), ws->serverPort())),
+             TlsPinning::spkiSha256(tlsA.localCertificate()));
+    QVERIFY(store->pin(TlsPinning::hostKey(QStringLiteral("127.0.0.1"), other.serverPort())).isEmpty());
+    connection->logout();
 }
 
 QTEST_MAIN(TstTlsPinning)

@@ -2,6 +2,7 @@
 #include <QCoreApplication>
 #include <QCryptographicHash>
 #include <QDebug>
+#include <QHostAddress>
 #include <QMutexLocker>
 #include <QNetworkReply>
 #include <QSettings>
@@ -23,14 +24,16 @@ QString hostKey(const QUrl &url)
 {
     const QString scheme = url.scheme().toLower();
     const int defaultPort = (scheme == QLatin1String("http") || scheme == QLatin1String("ws")) ? 80 : 443;
-    return hostKey(url.host(), url.port(defaultPort));
+    //ACE form: an internationalised name is keyed the same way by the
+    //platform code (Java IDN.toASCII, NSURLProtectionSpace).
+    return hostKey(url.host(QUrl::FullyEncoded), url.port(defaultPort));
 }
 
-//One DER TLV header at pos. Lengths over 4 bytes cannot occur in a
-//certificate we could handle and are refused.
+//One DER TLV header at pos. A certificate never needs more than 3 length
+//bytes; the bounds are written so that nothing can overflow.
 static bool readTlv(const QByteArray &d, qsizetype pos, int &tag, qsizetype &hdr, qsizetype &len)
 {
-    if (pos < 0 || pos + 2 > d.size())
+    if (pos < 0 || pos >= d.size() || d.size() - pos < 2)
         return false;
 
     tag = uchar(d.at(pos));
@@ -39,14 +42,14 @@ static bool readTlv(const QByteArray &d, qsizetype pos, int &tag, qsizetype &hdr
     if (l & 0x80)
     {
         const int n = int(l & 0x7f);
-        if (n == 0 || n > 4 || pos + 2 + n > d.size())
+        if (n == 0 || n > 3 || d.size() - pos - 2 < n)
             return false;
         l = 0;
         for (int i = 0; i < n; i++)
             l = (l << 8) | uchar(d.at(pos + 2 + i));
         hdr += n;
     }
-    if (l < 0 || pos + hdr + l > d.size())
+    if (l > d.size() - pos - hdr)
         return false;
     len = l;
     return true;
@@ -117,20 +120,27 @@ QString formatFingerprint(const QString &hex)
 
 bool isOverridable(QSslError::SslError error)
 {
-    //What a self-signed or wrong-name certificate produces may be overridden
-    //by a pin. A revoked or forged certificate, or no certificate at all, is
-    //never acceptable, whatever the user once confirmed.
+    //Allow-list: what a self-signed box, or a certificate reached through
+    //another name (LAN IP, overlay IP), produces. Anything else (revoked,
+    //forged signature, no certificate, unknown) is never acceptable,
+    //whatever the user once confirmed. Expiry is overridable: the pin is on
+    //the key, and many boxes run an old self-signed certificate.
     switch (error)
     {
-    case QSslError::CertificateSignatureFailed:
-    case QSslError::UnableToDecryptCertificateSignature:
-    case QSslError::CertificateRevoked:
-    case QSslError::CertificateBlacklisted:
-    case QSslError::NoPeerCertificate:
-    case QSslError::NoSslSupport:
-        return false;
-    default:
+    case QSslError::SelfSignedCertificate:
+    case QSslError::SelfSignedCertificateInChain:
+    case QSslError::UnableToGetIssuerCertificate:
+    case QSslError::UnableToGetLocalIssuerCertificate:
+    case QSslError::UnableToVerifyFirstCertificate:
+    case QSslError::CertificateUntrusted:
+    case QSslError::InvalidCaCertificate:
+    case QSslError::InvalidPurpose:
+    case QSslError::HostNameMismatch:
+    case QSslError::CertificateExpired:
+    case QSslError::CertificateNotYetValid:
         return true;
+    default:
+        return false;
     }
 }
 
@@ -156,26 +166,39 @@ Decision decide(const QList<QSslError> &errors, const QString &storedPin, const 
 
 QSslCertificate peerCertificate(const QSslCertificate &fromConfig, const QList<QSslError> &errors)
 {
-    if (!fromConfig.isNull())
-        return fromConfig;
-    for (const QSslError &e: errors)
-    {
-        if (!e.certificate().isNull())
-            return e.certificate();
-    }
-    return QSslCertificate();
+    //Only the leaf: an error may carry an intermediate of the chain, whose
+    //key must never be taken for the server's.
+    Q_UNUSED(errors);
+    return fromConfig;
 }
 
-bool acceptIfPinned(QNetworkReply *reply, const QList<QSslError> &errors)
+bool isDnsName(const QString &host)
+{
+    QString h = host.toLower();
+    if (h.startsWith(QLatin1Char('[')))
+        return false;
+    if (!QHostAddress(h).isNull())
+        return false;
+    if (h.endsWith(QLatin1String(".local")))
+        return false;
+    return h.contains(QLatin1Char('.'));
+}
+
+bool acceptIfPinned(QNetworkReply *reply, const QList<QSslError> &errors, TlsPinStore *store)
 {
     if (!reply)
         return false;
 
     const QString key = hostKey(reply->url());
     const QString peer = spkiSha256(peerCertificate(reply->sslConfiguration().peerCertificate(), errors));
-    if (decide(errors, TlsPinStore::instance()->pin(key), peer) == Decision::PinMatch)
+    if (!store)
+        store = TlsPinStore::instance();
+    if (decide(errors, store->pin(key), peer) == Decision::PinMatch)
     {
-        reply->ignoreSslErrors();
+        //These errors only, never all: QNAM keeps the flag on its cached
+        //channel, and a blanket ignore would let a later handshake with
+        //another certificate through.
+        reply->ignoreSslErrors(errors);
         return true;
     }
 

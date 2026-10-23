@@ -600,6 +600,7 @@ void Application::resetAllData()
     HardwareUtils::Instance()->resetAuthKeychain();
     //A pin is trust in one particular box: it goes with the host.
     TlsPinStore::instance()->clear();
+    calaosConnect->forgetTlsRefusals();
     //Also reset hostname
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
     settings.setValue("calaos/host", Common::getDemoHost());

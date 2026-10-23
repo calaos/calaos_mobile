@@ -14,7 +14,7 @@
 #import "ios/SimpleKeychain/A0SimpleKeychain.h"
 #import "ios/SimpleKeychain/A0SimpleKeychain+KeyPair.h"
 
-@interface NotificationService () <NSURLSessionDelegate>
+@interface NotificationService () <NSURLSessionTaskDelegate>
 
 @property (nonatomic, strong) void (^contentHandler)(UNNotificationContent *contentToDeliver);
 @property (nonatomic, strong) UNMutableNotificationContent *bestAttemptContent;
@@ -36,25 +36,26 @@ static NSString *const kBadgeLockFile = @"calaos.badge_count.lock";
 //the app (src/TlsPinning.h), written by HardwareUtils_iOS::setTlsPins().
 static NSString *const kTlsPinsKey = @"calaos.tls_pins";
 
-//One DER TLV header at pos, same walk as TlsPinning::subjectPublicKeyInfo().
+//One DER TLV header at pos, same walk as TlsPinning::subjectPublicKeyInfo():
+//at most 3 length bytes, bounds written so that nothing can overflow.
 static BOOL readTlv(const uint8_t *d, NSUInteger size, NSUInteger pos,
                     uint8_t *tag, NSUInteger *hdr, NSUInteger *len)
 {
-    if (pos + 2 > size)
+    if (pos >= size || size - pos < 2)
         return NO;
     *tag = d[pos];
     NSUInteger l = d[pos + 1];
     *hdr = 2;
     if (l & 0x80) {
         NSUInteger n = l & 0x7f;
-        if (n == 0 || n > 4 || pos + 2 + n > size)
+        if (n == 0 || n > 3 || size - pos - 2 < n)
             return NO;
         l = 0;
         for (NSUInteger i = 0; i < n; i++)
             l = (l << 8) | d[pos + 2 + i];
         *hdr += n;
     }
-    if (pos + *hdr + l > size)
+    if (l > size - pos - *hdr)
         return NO;
     *len = l;
     return YES;
@@ -192,6 +193,14 @@ static NSString *tlsHostKey(NSString *host, NSInteger port)
         [self.session finishTasksAndInvalidate];
         handler(self.bestAttemptContent);
     }
+}
+
+//The urls carry the credentials: never follow a redirect, which could take
+//them to another host.
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
+willPerformHTTPRedirection:(NSHTTPURLResponse *)response newRequest:(NSURLRequest *)request
+ completionHandler:(void (^)(NSURLRequest *))completionHandler {
+    completionHandler(nil);
 }
 
 //A certificate the system trusts for this host is used as is. Anything else

@@ -25,6 +25,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.IDN;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
@@ -399,11 +400,21 @@ public class PushPictureWorker extends Worker
 
     // ── TLS pinning ──────────────────────────────────────────────────────
 
-    // Same key as TlsPinning::hostKey(): lowercase host, IPv6 in brackets,
-    // explicit port.
+    // Same key as TlsPinning::hostKey(): ACE form, lowercase host, IPv6 in
+    // brackets, explicit port.
     static String hostKey(URL url)
     {
-        String h = url.getHost().toLowerCase(Locale.ROOT);
+        String h = url.getHost();
+        try
+        {
+            if (!h.startsWith("["))
+                h = IDN.toASCII(h);
+        }
+        catch (IllegalArgumentException e)
+        {
+            // Not a valid name: kept as is, it will simply match no pin.
+        }
+        h = h.toLowerCase(Locale.ROOT);
         if (h.contains(":") && !h.startsWith("["))
             h = "[" + h + "]";
         int port = url.getPort() == -1 ? url.getDefaultPort() : url.getPort();

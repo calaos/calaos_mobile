@@ -169,6 +169,7 @@ Tickets du plan `docs/admin/PLAN.md` de calaos_base qui touchent ce dépôt.
 | ID | Titre | Taille | Bloqué par | Groupe | Statut |
 |---|---|---|---|---|---|
 | [CM2](tasks/CM2-tls-tofu-pinning.md) | TLS TOFU : épinglage de la clé du certificat par hôte, re-confirmation au changement de clé | L | — | G-CONN + G-APP + G-ANDROID + G-IOS | En revue |
+| [CM2b](tasks/CM2b-mode-ca-par-hote.md) | Mode d'épinglage par hôte : accepter un certificat CA à la place d'un pin arrête l'épinglage | S | CM2 | G-CONN + G-APP | En revue |
 
 ## Diagramme de parallélisation
 

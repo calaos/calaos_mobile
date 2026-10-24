@@ -38,10 +38,16 @@ public:
     QNetworkAccessManager *create(QObject *parent) override
     {
         QNetworkAccessManager *nam = new QNetworkAccessManager(parent);
+        //Picture urls carry the credentials in their query string.
+        nam->setRedirectPolicy(QNetworkRequest::SameOriginRedirectPolicy);
         QObject::connect(nam, &QNetworkAccessManager::sslErrors, nam,
                          [](QNetworkReply *reply, const QList<QSslError> &errors)
         {
             TlsPinning::acceptIfPinned(reply, errors);
+        });
+        QObject::connect(nam, &QNetworkAccessManager::encrypted, nam, [](QNetworkReply *reply)
+        {
+            TlsPinning::keyMatchesPin(reply);
         });
         return nam;
     }
@@ -272,12 +278,17 @@ void Application::createQmlApp()
                                                     tr("Close"));
     });
     connect(calaosConnect, &CalaosConnection::tlsCertificateRefused, this,
-            [=](const QString &host, const QString &reason)
+            [=](const QString &host, const QString &reason, bool weakKey)
     {
-        HardwareUtils::Instance()->showAlertMessage(tr("Certificate refused"),
-                                                    tr("The certificate of %1 is not valid (%2). "
-                                                       "The connection was cancelled.").arg(host, reason),
-                                                    tr("Close"));
+        //Old boxes made RSA-1024 certificates, which recent TLS libraries
+        //refuse outright: the user needs to know the fix is on the box.
+        const QString text = weakKey ?
+                    tr("The certificate of %1 uses a key that is too weak (%2). "
+                       "The connection was cancelled. Regenerate the certificate of the "
+                       "Calaos box (/mnt/calaos/haproxy/server.pem).").arg(host, reason) :
+                    tr("The certificate of %1 is not valid (%2). "
+                       "The connection was cancelled.").arg(host, reason);
+        HardwareUtils::Instance()->showAlertMessage(tr("Certificate refused"), text, tr("Close"));
     });
     connect(TlsPinStore::instance(), &TlsPinStore::pinsChanged,
             this, &Application::updateTlsPins);

@@ -6,6 +6,7 @@
 #include <QMutexLocker>
 #include <QNetworkReply>
 #include <QSettings>
+#include <QSslKey>
 
 static const char *const PinsKey = "tls/pins";
 
@@ -144,10 +145,23 @@ bool isOverridable(QSslError::SslError error)
     }
 }
 
+bool isWeakRsaKey(const QSslCertificate &cert)
+{
+    const QSslKey key = cert.publicKey();
+    return !key.isNull() && key.algorithm() == QSsl::Rsa && key.length() < 2048;
+}
+
 Decision decide(const QList<QSslError> &errors, const QString &storedPin, const QString &peerPin)
 {
+    //A pinned host keeps its key even behind a publicly valid certificate:
+    //a CA-valid certificate for this name with another key is exactly what
+    //a mis-issued or compelled certificate would look like.
     if (errors.isEmpty())
+    {
+        if (!storedPin.isEmpty() && storedPin.compare(peerPin, Qt::CaseInsensitive) != 0)
+            return Decision::AskKeyChanged;
         return Decision::Trusted;
+    }
 
     for (const QSslError &e: errors)
     {
@@ -182,6 +196,23 @@ bool isDnsName(const QString &host)
     if (h.endsWith(QLatin1String(".local")))
         return false;
     return h.contains(QLatin1Char('.'));
+}
+
+bool keyMatchesPin(QNetworkReply *reply, TlsPinStore *store)
+{
+    if (!reply)
+        return false;
+    if (!store)
+        store = TlsPinStore::instance();
+    const QString pin = store->pin(hostKey(reply->url()));
+    const QString peer = spkiSha256(reply->sslConfiguration().peerCertificate());
+    if (decide({}, pin, peer) == Decision::Trusted)
+        return true;
+
+    qWarning() << "TLS: valid certificate for" << hostKey(reply->url()) << "but its key" << peer
+               << "is not the pinned one" << pin << "- request aborted";
+    reply->abort();
+    return false;
 }
 
 bool acceptIfPinned(QNetworkReply *reply, const QList<QSslError> &errors, TlsPinStore *store)

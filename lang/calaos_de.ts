@@ -4,7 +4,7 @@
 <context>
     <name>Application</name>
     <message>
-        <location filename="../src/Application.cpp" line="249"/>
+        <location filename="../src/Application.cpp" line="255"/>
         <source>Network error</source>
         <translation>Netzwerkfehler</translation>
     </message>
@@ -13,73 +13,78 @@
         <translation type="vanished">Die Verbindung zu calaos_server wurde unterbrochen. Die Verbindung wird automatisch wiederhergestellt, wenn calaos_server wieder verfügbar ist.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="250"/>
+        <location filename="../src/Application.cpp" line="256"/>
         <source>The connection to calaos_server was lost. It will reconnect automatically when calaos_server is available again.</source>
         <translation>Die Verbindung zu calaos_server wurde unterbrochen. Die Verbindung wird automatisch wiederhergestellt, wenn calaos_server wieder verfügbar ist.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="253"/>
-        <location filename="../src/Application.cpp" line="272"/>
-        <location filename="../src/Application.cpp" line="280"/>
-        <location filename="../src/Application.cpp" line="292"/>
-        <location filename="../src/Application.cpp" line="304"/>
-        <location filename="../src/Application.cpp" line="719"/>
-        <location filename="../src/Application.cpp" line="884"/>
+        <location filename="../src/Application.cpp" line="259"/>
+        <location filename="../src/Application.cpp" line="278"/>
+        <location filename="../src/Application.cpp" line="291"/>
+        <location filename="../src/Application.cpp" line="303"/>
+        <location filename="../src/Application.cpp" line="315"/>
+        <location filename="../src/Application.cpp" line="730"/>
+        <location filename="../src/Application.cpp" line="895"/>
         <source>Close</source>
         <translation>Schliessen</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="263"/>
+        <location filename="../src/Application.cpp" line="269"/>
         <source>Not connected</source>
         <translation>Nicht verbunden</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="265"/>
+        <location filename="../src/Application.cpp" line="271"/>
         <source>The certificate of %1 was not trusted, the connection was cancelled.</source>
         <translation>Dem Zertifikat von %1 wurde nicht vertraut, die Verbindung wurde abgebrochen.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="268"/>
+        <location filename="../src/Application.cpp" line="274"/>
         <source>The certificate of %1 was not trusted, the connection was cancelled. Tap Login to check it again.</source>
         <translation>Dem Zertifikat von %1 wurde nicht vertraut, die Verbindung wurde abgebrochen. Tippen Sie auf Anmelden, um es erneut zu prüfen.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="277"/>
+        <location filename="../src/Application.cpp" line="291"/>
         <source>Certificate refused</source>
         <translation>Zertifikat abgelehnt</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="278"/>
+        <location filename="../src/Application.cpp" line="289"/>
         <source>The certificate of %1 is not valid (%2). The connection was cancelled.</source>
         <translation>Das Zertifikat von %1 ist ungültig (%2). Die Verbindung wurde abgebrochen.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="290"/>
+        <location filename="../src/Application.cpp" line="286"/>
+        <source>The certificate of %1 uses a key that is too weak (%2). The connection was cancelled. Regenerate the certificate of the Calaos box (/mnt/calaos/haproxy/server.pem).</source>
+        <translation>Das Zertifikat von %1 verwendet einen zu schwachen Schlüssel (%2). Die Verbindung wurde abgebrochen. Erzeugen Sie das Zertifikat der Calaos-Box neu (/mnt/calaos/haproxy/server.pem).</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="301"/>
         <source>Credentials change failed</source>
         <translation>Änderung der Anmeldedaten fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="291"/>
+        <location filename="../src/Application.cpp" line="302"/>
         <source>Credentials were not changed. Please try again.</source>
         <translation>Die Anmeldedaten wurden nicht geändert. Bitte versuchen Sie es erneut.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="302"/>
+        <location filename="../src/Application.cpp" line="313"/>
         <source>Credentials changed</source>
         <translation>Anmeldedaten geändert</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="303"/>
+        <location filename="../src/Application.cpp" line="314"/>
         <source>Credentials were successfully changed.</source>
         <translation>Die Anmeldedaten wurden erfolgreich geändert.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="882"/>
+        <location filename="../src/Application.cpp" line="893"/>
         <source>Reboot</source>
         <translation type="unfinished">Neustart</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="883"/>
+        <location filename="../src/Application.cpp" line="894"/>
         <source>An update is being installed. Reboot once it has finished.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -88,12 +93,12 @@
         <translation type="vanished">Keine Netzwerkverbindung gefunden, diese Anwendung benötigt eine Netzwerkverbindung, um zu funktionieren.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="717"/>
+        <location filename="../src/Application.cpp" line="728"/>
         <source>Login failed</source>
         <translation>Anmeldung fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="718"/>
+        <location filename="../src/Application.cpp" line="729"/>
         <source>Connection failed, please check your credentials.</source>
         <translation>Verbindung fehlgeschlagen, bitte überprüfen Sie Ihre Zugangsdaten.</translation>
     </message>

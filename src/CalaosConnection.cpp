@@ -58,6 +58,8 @@ CalaosConnection::CalaosConnection(QObject *parent) :
     connect(accessManagerCam, &QNetworkAccessManager::sslErrors,
             this, &CalaosConnection::sslErrors);
     connect(pins(), &TlsPinStore::pinsChanged, this, &CalaosConnection::dropCachedConnections);
+    connect(accessManager, &QNetworkAccessManager::encrypted, this, &CalaosConnection::encrypted);
+    connect(accessManagerCam, &QNetworkAccessManager::encrypted, this, &CalaosConnection::encrypted);
 
     //A token reported while the session is up (rotation, or a token that only
     //arrived after the login) is registered right away, not at the next login.
@@ -82,6 +84,14 @@ void CalaosConnection::sslErrorsWebsocket(const QList<QSslError> &errors)
         return;
     if (checkTls(wsocket->requestUrl(), wsocket->sslConfiguration().peerCertificate(), errors))
         wsocket->ignoreSslErrors(errors);
+}
+
+void CalaosConnection::encrypted(QNetworkReply *reply)
+{
+    //Emitted before any request data: a CA-valid certificate never reaches
+    //sslErrors, so a pinned host's key is checked here too.
+    if (!checkTls(reply->url(), reply->sslConfiguration().peerCertificate(), {}))
+        reply->abort();
 }
 
 TlsPinStore *CalaosConnection::pins() const
@@ -139,7 +149,7 @@ bool CalaosConnection::checkTls(const QUrl &url, const QSslCertificate &peer, co
     {
         qWarning() << "TLS: certificate of" << key << "refused:" << reasons.join(QStringLiteral("; "));
         tlsRefused.insert(refusalId);
-        emit tlsCertificateRefused(key, reasons.join(QStringLiteral("; ")));
+        emit tlsCertificateRefused(key, reasons.join(QStringLiteral("; ")), TlsPinning::isWeakRsaKey(cert));
         return false;
     }
 
@@ -164,7 +174,7 @@ bool CalaosConnection::checkTls(const QUrl &url, const QSslCertificate &peer, co
 
     //Reached by DNS name, or a valid chain issued for another name: what a
     //man in the middle would present, so the dialog does not reassure.
-    bool nameMismatchOnly = true;
+    bool nameMismatchOnly = !errors.isEmpty();
     for (const QSslError &e: errors)
     {
         if (e.error() != QSslError::HostNameMismatch)
@@ -460,6 +470,14 @@ void CalaosConnection::startConnection(QString user, QString pass, QString h, Re
     if (!reconnectPolicy.canBeginAttempt(trigger))
         return;
 
+    //A question left open belongs to the previous attempt (maybe another
+    //host): it must neither block this one nor be answered for it.
+    if (!pendingTrust.isEmpty())
+    {
+        pendingTrust.clear();
+        emit tlsTrustCanceled();
+    }
+
     //Tear the previous transport down first: aborting its replies can report
     //failures synchronously, and those must land while the policy still knows
     //about the old attempt.
@@ -603,6 +621,15 @@ void CalaosConnection::closeWebsocket()
 
 void CalaosConnection::onWsConnected()
 {
+    //A CA-valid certificate never reaches sslErrorsWebsocket(): check the
+    //pinned key before the login frame carries the credentials.
+    if (wsocket->requestUrl().scheme() == QLatin1String("wss") &&
+        !checkTls(wsocket->requestUrl(), wsocket->sslConfiguration().peerCertificate(), {}))
+    {
+        handleWebsocketFailure(QStringLiteral("untrusted server certificate"));
+        return;
+    }
+
     qDebug() << "Websocket connected";
     connect(wsocket, &QWebSocket::textMessageReceived, this, &CalaosConnection::onWsTextMessageReceived);
 

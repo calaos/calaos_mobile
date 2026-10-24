@@ -58,6 +58,10 @@ QString formatFingerprint(const QString &hex);
 
 bool isOverridable(QSslError::SslError error);
 
+//RSA under 2048 bits: refused by OpenSSL's default security level, the fix
+//is a new certificate on the box rather than a pin.
+bool isWeakRsaKey(const QSslCertificate &cert);
+
 Decision decide(const QList<QSslError> &errors, const QString &storedPin, const QString &peerPin);
 
 //Leaf certificate of the peer (the connection's peer certificate); null
@@ -72,6 +76,12 @@ bool isDnsName(const QString &host);
 //ignores exactly these errors on a pin match, returns whether it did.
 //store: default TlsPinStore::instance().
 bool acceptIfPinned(QNetworkReply *reply, const QList<QSslError> &errors, TlsPinStore *store = nullptr);
+
+//For QNetworkAccessManager::encrypted, which comes before any request data:
+//a valid certificate raises no sslErrors, so a pinned host whose key changed
+//behind a CA-valid certificate is caught here. Aborts the reply on a
+//mismatch, returns whether the key is acceptable.
+bool keyMatchesPin(QNetworkReply *reply, TlsPinStore *store = nullptr);
 
 }
 

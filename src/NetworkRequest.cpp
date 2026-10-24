@@ -60,6 +60,9 @@ bool NetworkRequest::start()
     QNetworkRequest request;
     request.setUrl(QUrl(url));
     request.setTransferTimeout(HTTP_TRANSFER_TIMEOUT);
+    //Per request, the manager may be shared: credentials or tokens must not
+    //follow a redirect to another host.
+    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::SameOriginRedirectPolicy);
     lastError.clear();
     request.setSslConfiguration(sslConfiguration);
 
@@ -95,6 +98,10 @@ bool NetworkRequest::start()
     }
 
     connect(reply, &QNetworkReply::sslErrors, this, &NetworkRequest::nmSslErrors);
+    connect(reply, &QNetworkReply::encrypted, this, [this]()
+    {
+        TlsPinning::keyMatchesPin(reply);
+    });
 
     dataRead.clear();
 

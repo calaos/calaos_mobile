@@ -730,7 +730,8 @@ signals:
     //The user refused the certificate of host.
     void tlsTrustRejected(const QString &host);
     //A certificate no pin can make acceptable (revoked, forged signature).
-    void tlsCertificateRefused(const QString &host, const QString &reason);
+    //weakKey: RSA under 2048 bits, the box needs a new certificate.
+    void tlsCertificateRefused(const QString &host, const QString &reason, bool weakKey);
 
 public slots:
     void login(QString user, QString pass, QString host);
@@ -745,6 +746,7 @@ public slots:
 private slots:
     void sslErrors(QNetworkReply *reply, const QList<QSslError> &);
     void sslErrorsWebsocket(const QList<QSslError> &errors);
+    void encrypted(QNetworkReply *reply);
     void loginFinished(QNetworkReply *reply);
 
     void requestFinished();

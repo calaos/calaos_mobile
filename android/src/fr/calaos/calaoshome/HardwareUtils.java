@@ -14,11 +14,13 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.WindowInsetsController;
 import android.widget.EditText;
 import com.google.firebase.messaging.FirebaseMessaging;
 import org.qtproject.qt.android.bindings.QtActivity;
+import java.util.Locale;
 
 // Native callbacks implemented in android/HardwareUtils_Android.cpp. They are
 // registered by HardwareUtilsAndroid::platformInit() through
@@ -273,6 +275,37 @@ public class HardwareUtils extends QtActivity
             Log.e(TAG, "getNetworkStatus: ACCESS_NETWORK_STATE denied", e);
             return NETWORK_WWAN;
         }
+    }
+
+    // The name the user gave the phone in the system settings (no permission
+    // needed); devices that do not expose it get "<manufacturer> <model>".
+    public static String getDeviceName()
+    {
+        final Context ctx = _context;
+        if (ctx != null)
+        {
+            try
+            {
+                String name = Settings.Global.getString(ctx.getContentResolver(),
+                                                        Settings.Global.DEVICE_NAME);
+                if (name != null && !name.trim().isEmpty())
+                    return name;
+            }
+            catch (SecurityException e)
+            {
+                Log.w(TAG, "getDeviceName: DEVICE_NAME not readable", e);
+            }
+        }
+
+        final String model = Build.MODEL == null ? "" : Build.MODEL;
+        String manufacturer = Build.MANUFACTURER == null ? "" : Build.MANUFACTURER;
+        // Some vendors already start MODEL with the brand ("Xiaomi Redmi 9").
+        if (manufacturer.isEmpty() ||
+            model.toLowerCase(Locale.ROOT).startsWith(manufacturer.toLowerCase(Locale.ROOT)))
+            return model;
+        // Some vendors report it in lower case ("samsung").
+        manufacturer = manufacturer.substring(0, 1).toUpperCase(Locale.ROOT) + manufacturer.substring(1);
+        return manufacturer + " " + model;
     }
 
     // Returns false when no dialog can be shown; the caller then reports a

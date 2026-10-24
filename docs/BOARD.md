@@ -162,12 +162,13 @@ Exécution parallèle : chaque ticket lancé en parallèle travaille dans son pr
 | [FIX-12](tasks/FIX-12-effacer-mot-de-passe.md) | Le bouton « effacer » du champ mot de passe n'efface rien | S | FIX-10 | G-QML-MOBILE | Terminé |
 | [EVLOG-1](tasks/EVLOG-1-historique-fige.md) | Historique des événements figé après une requête perdue | M | — | G-CONN + G-MODELS | Terminé |
 
-## P-ADM — Plan admin de calaos_base (côté mobile)
+## P-ADMIN — Administration de la box
 
-Tickets du plan `docs/admin/PLAN.md` de calaos_base qui touchent ce dépôt.
+Tickets calaos_mobile du plan admin de calaos_base (`docs/admin/PLAN.md`, phase 2 : console web et téléphone approbateur).
 
 | ID | Titre | Taille | Bloqué par | Groupe | Statut |
 |---|---|---|---|---|---|
+| [AP2](tasks/AP2-nom-appareil-register-push.md) | Nom d'appareil dans `register_push`, identifiants en HTTP | S | — | G-CONN + G-ANDROID + G-IOS | En revue |
 | [CM2](tasks/CM2-tls-tofu-pinning.md) | TLS TOFU : épinglage de la clé du certificat par hôte, re-confirmation au changement de clé | L | — | G-CONN + G-APP + G-ANDROID + G-IOS | En revue |
 
 ## Diagramme de parallélisation

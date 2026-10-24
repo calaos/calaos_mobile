@@ -210,7 +210,12 @@ Shared rules (in [src/HardwareUtils.cpp](../src/HardwareUtils.cpp) and
   again when the token changes while the session is up (FCM rotation, APNs
   token arriving after the login). The same token is never sent twice in one
   session (`PushRegistration` in `CalaosConnection.h`). Over HTTP the request
-  carries `cn_user`/`cn_pass` like every api.php call. The token is a
+  carries `cn_user`/`cn_pass` like every api.php call. It also carries
+  `device_name` (`HardwareUtils::getDeviceName()`: iOS `UIDevice.name`, the
+  generic model since iOS 16; Android `Settings.Global.DEVICE_NAME`, else
+  manufacturer + model), which the admin uses to pick the approver phone in
+  the web app. A renamed phone only reaches the server with the next
+  `register_push` (next login or token rotation). The token is a
   per-device credential: it is only ever logged truncated
   (`HardwareUtils::describeToken()`), and redacted from the HTTP debug dumps.
 - **Notification tap**: platform code calls

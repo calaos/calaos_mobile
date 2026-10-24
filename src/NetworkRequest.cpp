@@ -97,6 +97,10 @@ bool NetworkRequest::start()
         return false;
     }
 
+    //A kept-alive channel was validated against the old pins; the manager
+    //may be shared, hence unique.
+    connect(TlsPinStore::instance(), &TlsPinStore::pinsChanged,
+            netmanager, &QNetworkAccessManager::clearConnectionCache, Qt::UniqueConnection);
     connect(reply, &QNetworkReply::sslErrors, this, &NetworkRequest::nmSslErrors);
     connect(reply, &QNetworkReply::encrypted, this, [this]()
     {

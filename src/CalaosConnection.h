@@ -483,7 +483,8 @@ public:
     //certificate Qt does not trust and that is not pinned fails with
     //TrustFailure (no automatic retry) and asks the user once through
     //tlsTrustRequested(); the answer comes back here. Accepting pins the key
-    //and logs in again, refusing keeps the session down.
+    //(or, for a CA-valid certificate, drops the pin of the host) and logs in
+    //again, refusing keeps the session down.
     void answerTlsTrust(bool accept);
     bool hasPendingTlsTrust() const { return !pendingTrust.isEmpty(); }
     //A certificate refused in this run is refused silently afterwards (the
@@ -723,7 +724,8 @@ signals:
     //See answerTlsTrust(). info: host (host:port), fingerprint (SPKI
     //SHA-256), certFingerprint (whole certificate SHA-256), subject, issuer,
     //expiry, keyChanged, previousFingerprint, suspicious (DNS name, or a
-    //valid chain for another name: no reassuring wording).
+    //valid chain for another name: no reassuring wording), caValid (Qt
+    //validated the certificate: only asked when it contradicts a pin).
     void tlsTrustRequested(const QVariantMap &info);
     //The pending question is void (logout): close the dialog.
     void tlsTrustCanceled();

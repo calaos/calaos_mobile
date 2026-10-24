@@ -132,7 +132,9 @@ docs/               Refactoring board (BOARD.md) and tickets (tasks/), in French
   automatic retry) and asks the user. Only the errors of that handshake are
   ignored (`ignoreSslErrors(errors)`, never the blanket form: QNAM caches
   it per channel). Expired or wrong-name certificates pass when the key is
-  pinned; revoked or forged ones never do. The pins are copied to the
+  pinned; revoked or forged ones never do. A pinned host keeps its key even
+  behind a CA-valid certificate (checked on `encrypted` and in
+  `onWsConnected()`, before any credentials are sent). The pins are copied to the
   Android push worker (`CredentialStore`) and the iOS extension (App Group).
 - **Platform abstraction**: [`HardwareUtils`](src/HardwareUtils.h) +
   per-platform subclasses in

@@ -42,5 +42,4 @@ OTHER_FILES += \
     tst_climateshots.qml \
     tst_climatecapturesmobile.qml \
     tst_climatecapturesdesktop.qml \
-    tst_settingsdevicename.qml \
     stubs/QuickFlux/qmldir

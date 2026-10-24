@@ -220,23 +220,25 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response newRequest:(NSURLReques
         completionHandler(NSURLSessionAuthChallengeCancelAuthenticationChallenge, nil);
         return;
     }
-    if (SecTrustEvaluateWithError(trust, NULL)) {
+    NSString *key = tlsHostKey(space.host, space.port);
+    NSUserDefaults *sharedDefaults = [[NSUserDefaults alloc] initWithSuiteName:kAppGroup];
+    id stored = [sharedDefaults dictionaryForKey:kTlsPinsKey][key];
+    NSString *pin = ([stored isKindOfClass:[NSString class]] && [(NSString *)stored length] > 0) ? stored : nil;
+    NSString *peer = leafSpkiSha256(trust);
+    BOOL pinMatches = pin != nil && peer != nil && [pin caseInsensitiveCompare:peer] == NSOrderedSame;
+
+    //A pinned host keeps its key even behind a certificate the system
+    //trusts: a mis-issued one would be trusted too.
+    if (SecTrustEvaluateWithError(trust, NULL) && (pin == nil || pinMatches)) {
         completionHandler(NSURLSessionAuthChallengePerformDefaultHandling, nil);
         return;
     }
-
-    NSString *key = tlsHostKey(space.host, space.port);
-    NSUserDefaults *sharedDefaults = [[NSUserDefaults alloc] initWithSuiteName:kAppGroup];
-    NSDictionary *pins = [sharedDefaults dictionaryForKey:kTlsPinsKey];
-    id pin = pins[key];
-    NSString *peer = leafSpkiSha256(trust);
-    if ([pin isKindOfClass:[NSString class]] && [(NSString *)pin length] > 0 && peer != nil &&
-        [(NSString *)pin caseInsensitiveCompare:peer] == NSOrderedSame) {
+    if (pinMatches) {
         completionHandler(NSURLSessionAuthChallengeUseCredential, [NSURLCredential credentialForTrust:trust]);
         return;
     }
 
-    NSLog(@"PushNotif: certificate of %@ is neither trusted nor pinned (SPKI sha256 %@), no picture", key, peer);
+    NSLog(@"PushNotif: certificate of %@ is not trusted or not the pinned key (SPKI sha256 %@), no picture", key, peer);
     completionHandler(NSURLSessionAuthChallengeCancelAuthenticationChallenge, nil);
 }
 

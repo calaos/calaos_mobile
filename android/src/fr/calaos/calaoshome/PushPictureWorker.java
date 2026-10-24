@@ -439,6 +439,13 @@ public class PushPictureWorker extends Worker
         }
     }
 
+    // A pinned host keeps its key even behind a certificate the system
+    // trusts (a mis-issued one would be trusted too).
+    private static boolean pinContradicts(Certificate[] chain, String pin)
+    {
+        return pin != null && !pin.isEmpty() && !pinMatches(chain, pin);
+    }
+
     private static boolean pinMatches(Certificate[] chain, String pin)
     {
         return pin != null && !pin.isEmpty() && chain != null && chain.length > 0
@@ -456,7 +463,8 @@ public class PushPictureWorker extends Worker
     }
 
     // System validation first, the pin only when it fails, for the chain and
-    // for the host name alike (a pinned box is usually reached by IP).
+    // for the host name alike (a pinned box is usually reached by IP). A
+    // pinned host must present its pinned key either way.
     private static void applyPinning(HttpsURLConnection https, final String pin) throws IOException
     {
         final X509TrustManager system;
@@ -483,7 +491,10 @@ public class PushPictureWorker extends Worker
                     {
                         if (!pinMatches(chain, pin))
                             throw e;
+                        return;
                     }
+                    if (pinContradicts(chain, pin))
+                        throw new CertificateException("valid certificate, but not the pinned key");
                 }
 
                 @Override
@@ -507,11 +518,12 @@ public class PushPictureWorker extends Worker
             @Override
             public boolean verify(String host, SSLSession session)
             {
-                if (defaultVerifier.verify(host, session))
-                    return true;
                 try
                 {
-                    return pinMatches(session.getPeerCertificates(), pin);
+                    Certificate[] chain = session.getPeerCertificates();
+                    if (defaultVerifier.verify(host, session))
+                        return !pinContradicts(chain, pin);
+                    return pinMatches(chain, pin);
                 }
                 catch (SSLPeerUnverifiedException e)
                 {

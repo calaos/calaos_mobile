@@ -18,7 +18,9 @@ class TlsPinStore;
 //never pinned. Anything else (self-signed LAN box, Let's Encrypt certificate
 //reached through its LAN or overlay IP) is accepted only when the SHA-256 of
 //its public key matches the pin stored for that host:port; a first contact or
-//a changed key needs an explicit confirmation from the user.
+//a changed key needs an explicit confirmation from the user. A pinned host
+//that later presents a CA-valid certificate with another key is asked too;
+//trusting it drops the pin, so later CA renewals pass without a question.
 //
 //The pin is the SubjectPublicKeyInfo, not the whole certificate: a renewal
 //that keeps the key (self-signed regenerated with the same key, certbot

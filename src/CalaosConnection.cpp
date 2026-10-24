@@ -195,6 +195,7 @@ bool CalaosConnection::checkTls(const QUrl &url, const QSslCertificate &peer, co
     info[QStringLiteral("expiry")] = QLocale().toString(cert.expiryDate().date(), QLocale::ShortFormat);
     info[QStringLiteral("keyChanged")] = keyChanged;
     info[QStringLiteral("suspicious")] = suspicious;
+    info[QStringLiteral("caValid")] = errors.isEmpty();
     info[QStringLiteral("previousFingerprint")] = TlsPinning::formatFingerprint(stored);
     pendingTrust = info;
     emit tlsTrustRequested(info);
@@ -219,8 +220,18 @@ void CalaosConnection::answerTlsTrust(bool accept)
         return;
     }
 
-    qInfo() << "TLS: user trusted" << key << "SPKI sha256" << spki;
-    pins()->setPin(key, spki);
+    //A CA-valid certificate is trusted for what it is: pinning its key would
+    //ask again at every renewal that changes the key (certbot's default).
+    if (info.value(QStringLiteral("caValid")).toBool())
+    {
+        qInfo() << "TLS: user trusted the CA-valid certificate of" << key << "- no longer pinned";
+        pins()->forget(key);
+    }
+    else
+    {
+        qInfo() << "TLS: user trusted" << key << "SPKI sha256" << spki;
+        pins()->setPin(key, spki);
+    }
     tlsRefused.remove(key + QLatin1Char('|') + spki);
 
     //An explicit answer: start over now, like a tap on Login. Refused while

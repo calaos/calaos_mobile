@@ -345,6 +345,10 @@ private:
 //nothing. The contract with calaos_base is kept in this one place: the key
 //is JsonKeys::PushFormat, the value AndroidPushFormat.
 //
+//JsonKeys::DeviceName lets the admin pick the approver phone among the
+//registered tokens; an older calaos_server ignores it. Left out rather than
+//sent empty when the platform has no name.
+//
 //Header-only so tests/tst_pushnotif checks the payload for each hardware
 //without a Q_OS_ANDROID build.
 namespace PushFormat
@@ -352,7 +356,8 @@ namespace PushFormat
 inline constexpr QLatin1StringView AndroidHardware{"android"};
 inline constexpr QLatin1StringView AndroidPushFormat{"data"};
 
-inline QJsonObject registration(const QString &token, const QString &hardware)
+inline QJsonObject registration(const QString &token, const QString &hardware,
+                                const QString &deviceName = QString())
 {
     QJsonObject o = {
         { JsonKeys::Token, token },
@@ -360,6 +365,9 @@ inline QJsonObject registration(const QString &token, const QString &hardware)
     };
     if (hardware == AndroidHardware)
         o[JsonKeys::PushFormat] = AndroidPushFormat;
+    const QString name = deviceName.trimmed();
+    if (!name.isEmpty())
+        o[JsonKeys::DeviceName] = name;
     return o;
 }
 }

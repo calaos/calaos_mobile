@@ -28,6 +28,8 @@ public:
     };
     virtual int getNetworkStatus();
 
+    virtual QString getDeviceName();
+
     virtual void showNetworkActivity(bool en);
     
     virtual void setConfigOption(QString key, QString value);

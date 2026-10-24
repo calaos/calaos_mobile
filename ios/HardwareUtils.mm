@@ -498,6 +498,13 @@ int HardwareUtils_iOS::getNetworkStatus()
     return (int)[reach currentReachabilityStatus];
 }
 
+QString HardwareUtils_iOS::getDeviceName()
+{
+    //Since iOS 16 this is the generic model ("iPhone") unless the app holds
+    //the user-assigned-device-name entitlement, which it does not request.
+    return QString::fromNSString([UIDevice currentDevice].name);
+}
+
 void HardwareUtils_iOS::showNetworkActivity(bool en)
 {
     [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:en];

@@ -15,6 +15,9 @@
  *  3. The push token was dumped in clear by the debug log of the HTTP
  *     fallback (sendHttp()): "token" is now a redacted key.
  *
+ * register_push also carries the device name the admin chooses the approver
+ * phone by, over both transports.
+ *
  * The CalaosConnection cases run a real connection against in-process fake
  * servers (HTTP api.php, websocket /api, and TLS for the websocket -> HTTP
  * fallback): no calaos_server, no network outside the loopback.
@@ -365,6 +368,8 @@ private slots:
     //host build (hardware unknown) never sends the field.
     void payloadAsksDataFormatForAndroid();
     void payloadHasNoFormatForOtherHardware();
+    void payloadCarriesTheDeviceName();
+    void payloadWithoutDeviceNameOmitsTheField();
 
     //CalaosConnection over HTTP (the transport whose debug log leaked).
     void httpRegistersAtLogin();
@@ -389,6 +394,8 @@ private:
     static QStringList &usedTokens();
     //The register_push of an HTTP fake carries the right credentials.
     static void verifyAuthenticated(const QJsonObject &registration);
+    //The name the base HardwareUtils reports, sent next to the token.
+    static void verifyDeviceName(const QJsonObject &registration);
 
     void startConnection(const QString &host);
 
@@ -494,6 +501,17 @@ void TstPushNotif::verifyAuthenticated(const QJsonObject &registration)
     QCOMPARE(registration.value(QStringLiteral("cn_pass")).toString(), TestPass);
     //Not an Android build: no push_format (see payloadAsksDataFormatForAndroid).
     QVERIFY(!registration.contains(QStringLiteral("push_format")));
+    //At the root next to the credentials, where api.php reads every argument.
+    verifyDeviceName(registration);
+}
+
+void TstPushNotif::verifyDeviceName(const QJsonObject &registration)
+{
+    const QString expected = QSysInfo::machineHostName().trimmed();
+    if (expected.isEmpty())
+        QVERIFY(!registration.contains(QStringLiteral("device_name")));
+    else
+        QCOMPARE(registration.value(QStringLiteral("device_name")).toString(), expected);
 }
 
 void TstPushNotif::startConnection(const QString &host)
@@ -1030,6 +1048,10 @@ void TstPushNotif::wsRegistersAfterTheLoginIsAccepted()
     QTRY_COMPARE(ws->registrations.size(), 1);
     QCOMPARE(ws->registrations.at(0).value(QStringLiteral("token")).toString(), t);
     QVERIFY(!ws->registrations.at(0).contains(QStringLiteral("push_format")));
+    verifyDeviceName(ws->registrations.at(0));
+    //The websocket session is already authenticated: no credentials repeated.
+    QVERIFY(!ws->registrations.at(0).contains(QStringLiteral("cn_user")));
+    QVERIFY(!ws->registrations.at(0).contains(QStringLiteral("cn_pass")));
     QVERIFY(ws->received.indexOf(QStringLiteral("login")) <
             ws->received.indexOf(QStringLiteral("register_push")));
 
@@ -1080,6 +1102,34 @@ void TstPushNotif::payloadHasNoFormatForOtherHardware()
         QCOMPARE(o.value(QStringLiteral("token")).toString(), QStringLiteral("tok"));
         QCOMPARE(o.value(QStringLiteral("hardware")).toString(), hw);
         QVERIFY(!o.contains(QStringLiteral("push_format")));
+        QCOMPARE(o.size(), 2);
+    }
+}
+
+//The admin picks the approver phone by this name: sent as is, trimmed.
+void TstPushNotif::payloadCarriesTheDeviceName()
+{
+    const QJsonObject a = PushFormat::registration(QStringLiteral("tok"), QStringLiteral("android"),
+                                                   QStringLiteral("  Pixel de Raoul\n"));
+    QCOMPARE(a.value(QStringLiteral("device_name")).toString(), QStringLiteral("Pixel de Raoul"));
+    QCOMPARE(a.value(QStringLiteral("push_format")).toString(), QStringLiteral("data"));
+    QCOMPARE(a.size(), 4);
+
+    const QJsonObject i = PushFormat::registration(QStringLiteral("tok"), QStringLiteral("ios"),
+                                                   QStringLiteral("iPhone"));
+    QCOMPARE(i.value(QStringLiteral("device_name")).toString(), QStringLiteral("iPhone"));
+    QCOMPARE(i.value(QStringLiteral("token")).toString(), QStringLiteral("tok"));
+    QCOMPARE(i.value(QStringLiteral("hardware")).toString(), QStringLiteral("ios"));
+    QCOMPARE(i.size(), 3);
+}
+
+//No usable name: the field is left out rather than sent empty.
+void TstPushNotif::payloadWithoutDeviceNameOmitsTheField()
+{
+    for (const QString &name: { QString(), QStringLiteral(""), QStringLiteral(" \t ") })
+    {
+        const QJsonObject o = PushFormat::registration(QStringLiteral("tok"), QStringLiteral("ios"), name);
+        QVERIFY(!o.contains(QStringLiteral("device_name")));
         QCOMPARE(o.size(), 2);
     }
 }

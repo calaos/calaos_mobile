@@ -654,7 +654,8 @@ void CalaosConnection::registerPushToken()
 
     //Send the push device token to register the mobile device to calaos_server
     //for push notif (Android also asks for data-only messages, see PushFormat).
-    QJsonObject o = PushFormat::registration(token, hw);
+    QJsonObject o = PushFormat::registration(token, hw,
+                                             HardwareUtils::Instance()->getDeviceName());
 
     if (isWebsocket())
     {

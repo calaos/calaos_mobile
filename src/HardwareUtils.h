@@ -113,6 +113,10 @@ public:
     //tests start a case from "no token yet" on the singleton.
     void clearDeviceToken();
 
+    //Name of this device as its owner knows it (sent with register_push so
+    //the admin can tell the phones apart). Base implementation: host name.
+    virtual QString getDeviceName();
+
     //A push token is a per-device credential: never log it in full. Returns
     //the first characters and the length, for diagnostics.
     static QString describeToken(const QString &token);

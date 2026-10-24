@@ -169,6 +169,7 @@ Tickets calaos_mobile du plan admin de calaos_base (`docs/admin/PLAN.md`, phase 
 | ID | Titre | Taille | Bloqué par | Groupe | Statut |
 |---|---|---|---|---|---|
 | [AP2](tasks/AP2-nom-appareil-register-push.md) | Nom d'appareil dans `register_push`, identifiants en HTTP | S | — | G-CONN + G-ANDROID + G-IOS | En revue |
+| [AP2b](tasks/AP2b-reglage-nom-appareil.md) | Réglage « Nom de cet appareil », renvoyé par `register_push` dès sa modification | S | AP2 | G-CONN + G-QML-MOBILE + G-QML-DESKTOP | En revue |
 | [CM2](tasks/CM2-tls-tofu-pinning.md) | TLS TOFU : épinglage de la clé du certificat par hôte, re-confirmation au changement de clé | L | — | G-CONN + G-APP + G-ANDROID + G-IOS | En revue |
 
 ## Diagramme de parallélisation

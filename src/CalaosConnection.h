@@ -326,6 +326,7 @@ public:
     {
         m_sessionUp = true;
         m_registered.clear();
+        m_registeredName.clear();
     }
 
     //The transport is gone (logout, lost connection, new attempt).
@@ -333,22 +334,27 @@ public:
     {
         m_sessionUp = false;
         m_registered.clear();
+        m_registeredName.clear();
     }
 
-    //Called both at the start of a session and on every token change.
-    //Returns true when register_push must be sent for this token now; the
-    //token is then considered registered for the rest of the session.
-    bool shouldRegister(const QString &token)
+    //Called at the start of a session and on every token or device name
+    //change. Returns true when register_push must be sent for this token and
+    //name now; the pair is then considered registered for the rest of the
+    //session, so a rename is sent once and an unchanged one never.
+    bool shouldRegister(const QString &token, const QString &name = QString())
     {
-        if (!m_sessionUp || token.isEmpty() || token == m_registered)
+        if (!m_sessionUp || token.isEmpty() ||
+            (token == m_registered && name == m_registeredName))
             return false;
         m_registered = token;
+        m_registeredName = name;
         return true;
     }
 
 private:
     bool m_sessionUp = false;
     QString m_registered;
+    QString m_registeredName;
 };
 
 //The "data" object of register_push (AND-7).
@@ -620,7 +626,7 @@ private:
     //When to send register_push, see PushRegistration.
     PushRegistration pushRegistration;
     //Sends register_push over the current transport if pushRegistration says
-    //the current token is not registered in this session yet.
+    //the current token and device name are not registered in this session yet.
     void registerPushToken();
 
     //Set as soon as one of onWsDisconnected()/onWsError() switched to HTTP, so

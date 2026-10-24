@@ -9,6 +9,11 @@ class HardwareUtils: public QObject
 {
     Q_OBJECT
 
+    //For the settings screens: the name register_push sends, see
+    //effectiveDeviceName().
+    Q_PROPERTY(QString deviceName READ effectiveDeviceName NOTIFY deviceNameChanged)
+    Q_PROPERTY(int deviceNameMaxLength READ deviceNameMaxLength CONSTANT)
+
 protected:
     HardwareUtils(QObject *parent = 0);
 
@@ -122,6 +127,25 @@ public:
     //the admin can tell the phones apart). Base implementation: host name.
     virtual QString getDeviceName();
 
+    //Since iOS 16 every iPhone reports "iPhone", so the user can name the
+    //device in the settings. The name actually sent: that override when set,
+    //else getDeviceName(), always through sanitizeDeviceName().
+    QString effectiveDeviceName();
+    //Stored sanitized (config option "device_name"). Empty, or the platform
+    //name itself, means no override: the platform name is followed again.
+    //deviceNameChanged() is emitted when effectiveDeviceName() changes.
+    Q_INVOKABLE void setDeviceNameOverride(const QString &name);
+    QString deviceNameOverride();
+
+    //In UTF-16 code units, what a QML TextField's maximumLength counts.
+    static constexpr int DeviceNameMaxLength = 64;
+    static int deviceNameMaxLength() { return DeviceNameMaxLength; }
+    //Control characters and line breaks become spaces, whitespace runs
+    //collapse to one space, edges are trimmed, and the result is cut to
+    //DeviceNameMaxLength on a grapheme boundary (never inside a surrogate
+    //pair or an emoji sequence).
+    static QString sanitizeDeviceName(const QString &name);
+
     //A push token is a per-device credential: never log it in full. Returns
     //the first characters and the length, for diagnostics.
     static QString describeToken(const QString &token);
@@ -154,6 +178,9 @@ signals:
 
     //emited when the push token changed (see setDeviceToken())
     void deviceTokenChanged();
+
+    //emited when effectiveDeviceName() changed (see setDeviceNameOverride())
+    void deviceNameChanged();
 };
 
 //When Application opens a deferred notification tap (FIX-3).

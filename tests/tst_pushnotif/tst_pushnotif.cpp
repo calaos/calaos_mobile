@@ -16,7 +16,9 @@
  *     fallback (sendHttp()): "token" is now a redacted key.
  *
  * register_push also carries the device name the admin chooses the approver
- * phone by, over both transports.
+ * phone by, over both transports. The user can override it in the settings
+ * (every iPhone reports "iPhone" since iOS 16): the override is sanitized,
+ * and a rename while connected is sent right away, once.
  *
  * The CalaosConnection cases run a real connection against in-process fake
  * servers (HTTP api.php, websocket /api, and TLS for the websocket -> HTTP
@@ -333,6 +335,7 @@ private slots:
     void registrationRotationWhileUp();
     void registrationNewSessionRegistersAgain();
     void registrationIgnoresEmptyToken();
+    void registrationRenameRegistersAgain();
 
     //HardwareUtils: deferred notification tap.
     void tapWhileDisconnectedIsDeferred();
@@ -363,6 +366,13 @@ private slots:
     void clearedTokenIsSignalled();
     void describedTokenIsTruncated();
 
+    //HardwareUtils: device name shown to the admin.
+    void deviceNameDefaultsToThePlatformName();
+    void deviceNameIsSanitized_data();
+    void deviceNameIsSanitized();
+    void deviceNameOverrideIsSignalledOnChangeOnly();
+    void deviceNameOverrideEqualToThePlatformNameIsNone();
+
     //register_push payload (AND-7): Android asks for data-only FCM messages,
     //no other hardware does. The connection tests below also check that this
     //host build (hardware unknown) never sends the field.
@@ -378,10 +388,13 @@ private slots:
     void httpTokenChangeDuringLoginIsSentOnce();
     void httpTokenChangeWhileLoggedOutWaitsForLogin();
     void httpFallbackFromWebsocketRegistersOnce();
+    void httpRenameWhileConnectedRegistersAgain();
+    void httpRenameWhileLoggedOutWaitsForLogin();
 
     //CalaosConnection over websocket.
     void wsRegistersAfterTheLoginIsAccepted();
     void wsRotationWhileConnectedRegistersAgain();
+    void wsRenameWhileConnectedRegistersAgain();
 
     //No token in clear in the logs, whatever ran above.
     void cleanupTestCase();
@@ -394,8 +407,12 @@ private:
     static QStringList &usedTokens();
     //The register_push of an HTTP fake carries the right credentials.
     static void verifyAuthenticated(const QJsonObject &registration);
-    //The name the base HardwareUtils reports, sent next to the token.
-    static void verifyDeviceName(const QJsonObject &registration);
+    //The name the base HardwareUtils reports (or expected, when given), sent
+    //next to the token.
+    static void verifyDeviceName(const QJsonObject &registration, const QString &expected = QString());
+    //Sanitized host name: what the base class sends without an override.
+    static QString platformName();
+    static void clearStore();
 
     void startConnection(const QString &host);
 
@@ -411,6 +428,11 @@ private:
 void TstPushNotif::initTestCase()
 {
     s_previousHandler = qInstallMessageHandler(captureMessages);
+
+    //The device name override lives in QSettings: a store of our own.
+    QCoreApplication::setOrganizationName(QStringLiteral("CalaosTests"));
+    QCoreApplication::setApplicationName(QStringLiteral("tst_pushnotif"));
+    clearStore();
 
     //TLS for the websocket -> HTTP fallback case only: the mobile build
     //derives wss:// and https:// from a bare host. A throwaway self-signed
@@ -455,6 +477,7 @@ void TstPushNotif::init()
     hw()->updateCalaosConnectState(false);
     hw()->takePendingNotif();
     hw()->clearDeviceToken();
+    hw()->setDeviceNameOverride(QString());
 }
 
 void TstPushNotif::cleanup()
@@ -505,9 +528,21 @@ void TstPushNotif::verifyAuthenticated(const QJsonObject &registration)
     verifyDeviceName(registration);
 }
 
-void TstPushNotif::verifyDeviceName(const QJsonObject &registration)
+QString TstPushNotif::platformName()
 {
-    const QString expected = QSysInfo::machineHostName().trimmed();
+    return HardwareUtils::sanitizeDeviceName(QSysInfo::machineHostName());
+}
+
+void TstPushNotif::clearStore()
+{
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    settings.clear();
+    settings.sync();
+}
+
+void TstPushNotif::verifyDeviceName(const QJsonObject &registration, const QString &name)
+{
+    const QString expected = name.isEmpty() ? platformName() : name;
     if (expected.isEmpty())
         QVERIFY(!registration.contains(QStringLiteral("device_name")));
     else
@@ -572,6 +607,19 @@ void TstPushNotif::registrationIgnoresEmptyToken()
     r.sessionStarted();
     QVERIFY(!r.shouldRegister(QString()));
     QVERIFY(r.shouldRegister(QStringLiteral("tok")));
+}
+
+void TstPushNotif::registrationRenameRegistersAgain()
+{
+    PushRegistration r;
+    QVERIFY(!r.shouldRegister(QStringLiteral("tok"), QStringLiteral("A")));
+    r.sessionStarted();
+    QVERIFY(r.shouldRegister(QStringLiteral("tok"), QStringLiteral("A")));
+    QVERIFY(!r.shouldRegister(QStringLiteral("tok"), QStringLiteral("A")));
+    QVERIFY(r.shouldRegister(QStringLiteral("tok"), QStringLiteral("B")));
+    QVERIFY(!r.shouldRegister(QStringLiteral("tok"), QStringLiteral("B")));
+    //A name without a token has nothing to register.
+    QVERIFY(!r.shouldRegister(QString(), QStringLiteral("C")));
 }
 
 // ---------------------------------------------------------------- deferred tap
@@ -887,6 +935,118 @@ void TstPushNotif::describedTokenIsTruncated()
     QCOMPARE(HardwareUtils::describeToken(QString()), QStringLiteral("<empty>"));
 }
 
+// ---------------------------------------------------------------- device name
+
+void TstPushNotif::deviceNameDefaultsToThePlatformName()
+{
+    QVERIFY(hw()->deviceNameOverride().isEmpty());
+    QCOMPARE(hw()->effectiveDeviceName(), platformName());
+    QCOMPARE(hw()->property("deviceName").toString(), platformName());
+    QCOMPARE(hw()->property("deviceNameMaxLength").toInt(), 64);
+}
+
+void TstPushNotif::deviceNameIsSanitized_data()
+{
+    QTest::addColumn<QString>("input");
+    QTest::addColumn<QString>("expected");
+
+    const QString emoji = QString::fromUtf8("\xF0\x9F\x93\xB1"); //U+1F4F1, a surrogate pair
+    //Family emoji: four people joined by ZWJ, one grapheme of 11 code units.
+    const QString family = QString::fromUtf8("\xF0\x9F\x91\xA8\xE2\x80\x8D\xF0\x9F\x91\xA9"
+                                             "\xE2\x80\x8D\xF0\x9F\x91\xA7\xE2\x80\x8D\xF0\x9F\x91\xA6");
+    QCOMPARE(family.size(), 11);
+
+    QTest::newRow("plain") << QStringLiteral("iPhone de Raoul") << QStringLiteral("iPhone de Raoul");
+    QTest::newRow("edges trimmed") << QStringLiteral("  \t iPhone \n") << QStringLiteral("iPhone");
+    QTest::newRow("whitespace collapsed") << QStringLiteral("Pixel   de\t\tRaoul") << QStringLiteral("Pixel de Raoul");
+    QTest::newRow("line breaks") << QStringLiteral("Pixel\r\nde\u2028Raoul\u2029")
+                                 << QStringLiteral("Pixel de Raoul");
+    QTest::newRow("control chars") << QStringLiteral("Pi\x01xel\x7F de\u0085Raoul\x1B")
+                                   << QStringLiteral("Pi xel de Raoul");
+    QTest::newRow("only controls") << QStringLiteral("\x01\x02 \t") << QString();
+    QTest::newRow("empty") << QString() << QString();
+    QTest::newRow("accents kept") << QStringLiteral("T\u00E9l\u00E9phone de Zo\u00E9")
+                                  << QStringLiteral("T\u00E9l\u00E9phone de Zo\u00E9");
+    QTest::newRow("emoji kept") << (QStringLiteral("Mon ") + emoji) << (QStringLiteral("Mon ") + emoji);
+    QTest::newRow("lone surrogate dropped") << (QStringLiteral("ab") + QChar(0xD83D) + QStringLiteral("cd"))
+                                            << QStringLiteral("abcd");
+    QTest::newRow("64 kept") << QString(64, QLatin1Char('a')) << QString(64, QLatin1Char('a'));
+    QTest::newRow("65 cut") << QString(65, QLatin1Char('a')) << QString(64, QLatin1Char('a'));
+    QTest::newRow("cap after collapsing") << (QStringLiteral("  ") + QString(60, QLatin1Char('a'))
+                                              + QStringLiteral("    bc"))
+                                          << (QString(60, QLatin1Char('a')) + QStringLiteral(" bc"));
+    QTest::newRow("pair across the cap") << (QString(63, QLatin1Char('a')) + emoji)
+                                         << QString(63, QLatin1Char('a'));
+    QTest::newRow("pair inside the cap") << (QString(62, QLatin1Char('a')) + emoji + QStringLiteral("zz"))
+                                         << (QString(62, QLatin1Char('a')) + emoji);
+    QTest::newRow("zwj sequence across the cap") << (QString(60, QLatin1Char('a')) + family)
+                                                 << QString(60, QLatin1Char('a'));
+    QTest::newRow("trailing space after the cut") << (QString(63, QLatin1Char('a')) + QStringLiteral(" bcd"))
+                                                  << QString(63, QLatin1Char('a'));
+    QTest::newRow("one huge cluster") << (QStringLiteral("e") + QString(80, QChar(0x0301)))
+                                      << (QStringLiteral("e") + QString(63, QChar(0x0301)));
+}
+
+void TstPushNotif::deviceNameIsSanitized()
+{
+    QFETCH(QString, input);
+    QFETCH(QString, expected);
+
+    const QString out = HardwareUtils::sanitizeDeviceName(input);
+    QCOMPARE(out, expected);
+    QVERIFY(out.size() <= HardwareUtils::DeviceNameMaxLength);
+    QVERIFY(out.isEmpty() || !out.back().isHighSurrogate());
+    //Valid UTF-16 all the way: survives a UTF-8 round trip unchanged.
+    QCOMPARE(QString::fromUtf8(out.toUtf8()), out);
+    //Idempotent: what is stored reads back the same.
+    QCOMPARE(HardwareUtils::sanitizeDeviceName(out), out);
+}
+
+void TstPushNotif::deviceNameOverrideIsSignalledOnChangeOnly()
+{
+    QSignalSpy changed(hw(), &HardwareUtils::deviceNameChanged);
+
+    hw()->setDeviceNameOverride(QStringLiteral("  iPhone   de Raoul\n"));
+    QCOMPARE(changed.count(), 1);
+    QCOMPARE(hw()->deviceNameOverride(), QStringLiteral("iPhone de Raoul"));
+    QCOMPARE(hw()->effectiveDeviceName(), QStringLiteral("iPhone de Raoul"));
+
+    //Persisted: what a fresh QSettings (the next process) reads.
+    {
+        QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+        QCOMPARE(settings.value(QStringLiteral("config/device_name")).toString(),
+                 QStringLiteral("iPhone de Raoul"));
+    }
+
+    //Same name once sanitized: nothing to tell the server.
+    hw()->setDeviceNameOverride(QStringLiteral("iPhone de Raoul "));
+    QCOMPARE(changed.count(), 1);
+
+    hw()->setDeviceNameOverride(QStringLiteral("iPhone cuisine"));
+    QCOMPARE(changed.count(), 2);
+    QCOMPARE(hw()->effectiveDeviceName(), QStringLiteral("iPhone cuisine"));
+
+    //Emptied: back to the platform name.
+    hw()->setDeviceNameOverride(QStringLiteral(" \t"));
+    QCOMPARE(changed.count(), 3);
+    QVERIFY(hw()->deviceNameOverride().isEmpty());
+    QCOMPARE(hw()->effectiveDeviceName(), platformName());
+
+    hw()->setDeviceNameOverride(QString());
+    QCOMPARE(changed.count(), 3);
+}
+
+void TstPushNotif::deviceNameOverrideEqualToThePlatformNameIsNone()
+{
+    if (platformName().isEmpty())
+        QSKIP("This host reports no name");
+
+    QSignalSpy changed(hw(), &HardwareUtils::deviceNameChanged);
+    hw()->setDeviceNameOverride(QStringLiteral(" ") + platformName());
+    QCOMPARE(changed.count(), 0);
+    QVERIFY(hw()->deviceNameOverride().isEmpty());
+}
+
 // ---------------------------------------------------------------- HTTP transport
 
 void TstPushNotif::httpRegistersAtLogin()
@@ -1045,6 +1205,61 @@ void TstPushNotif::httpFallbackFromWebsocketRegistersOnce()
     QCOMPARE(http->rejected, QStringList());
 }
 
+void TstPushNotif::httpRenameWhileConnectedRegistersAgain()
+{
+    const QString t = freshToken();
+    hw()->setDeviceToken(t);
+
+    http = new FakeHttpServer();
+    QVERIFY(http->listen(QHostAddress::LocalHost, 0));
+    startConnection(http->baseUrl());
+    QTRY_COMPARE(http->registrations.size(), 1);
+    verifyAuthenticated(http->registrations.at(0));
+
+    //Renamed in the settings while logged in: sent now, same token.
+    hw()->setDeviceNameOverride(QStringLiteral("iPhone de Raoul"));
+    QTRY_COMPARE(http->registrations.size(), 2);
+    QCOMPARE(http->registrations.at(1).value(QStringLiteral("token")).toString(), t);
+    QCOMPARE(http->registrations.at(1).value(QStringLiteral("cn_user")).toString(), TestUser);
+    QCOMPARE(http->registrations.at(1).value(QStringLiteral("cn_pass")).toString(), TestPass);
+    verifyDeviceName(http->registrations.at(1), QStringLiteral("iPhone de Raoul"));
+
+    //Unchanged once sanitized: nothing more.
+    hw()->setDeviceNameOverride(QStringLiteral(" iPhone  de Raoul "));
+    pump(200);
+    QCOMPARE(http->registrations.size(), 2);
+
+    //Back to the default: sent too, so the admin is not left with a stale name.
+    hw()->setDeviceNameOverride(QString());
+    QTRY_COMPARE(http->registrations.size(), 3);
+    verifyDeviceName(http->registrations.at(2));
+    pump(200);
+    QCOMPARE(http->registrations.size(), 3);
+    QCOMPARE(http->logins, 1);
+    QCOMPARE(http->rejected, QStringList());
+}
+
+void TstPushNotif::httpRenameWhileLoggedOutWaitsForLogin()
+{
+    hw()->setDeviceToken(freshToken());
+
+    http = new FakeHttpServer();
+    QVERIFY(http->listen(QHostAddress::LocalHost, 0));
+    startConnection(http->baseUrl());
+    QTRY_COMPARE(http->registrations.size(), 1);
+
+    connection->logout();
+    hw()->setDeviceNameOverride(QStringLiteral("Pixel salon"));
+    pump(200);
+    QCOMPARE(http->registrations.size(), 1);
+
+    connection->login(TestUser, TestPass, http->baseUrl());
+    QTRY_COMPARE(http->registrations.size(), 2);
+    verifyDeviceName(http->registrations.at(1), QStringLiteral("Pixel salon"));
+    pump(200);
+    QCOMPARE(http->registrations.size(), 2);
+}
+
 // ---------------------------------------------------------------- websocket transport
 
 void TstPushNotif::wsRegistersAfterTheLoginIsAccepted()
@@ -1091,6 +1306,29 @@ void TstPushNotif::wsRotationWhileConnectedRegistersAgain()
     hw()->setDeviceToken(rotated);
     pump(200);
     QCOMPARE(ws->registrations.size(), 2);
+}
+
+void TstPushNotif::wsRenameWhileConnectedRegistersAgain()
+{
+    const QString t = freshToken();
+    hw()->setDeviceToken(t);
+
+    ws = new FakeWsServer();
+    QVERIFY(ws->listen(QHostAddress::LocalHost, 0));
+    startConnection(ws->url());
+    QTRY_COMPARE(ws->registrations.size(), 1);
+    verifyDeviceName(ws->registrations.at(0));
+
+    hw()->setDeviceNameOverride(QStringLiteral("iPhone de Raoul"));
+    QTRY_COMPARE(ws->registrations.size(), 2);
+    QCOMPARE(ws->registrations.at(1).value(QStringLiteral("token")).toString(), t);
+    verifyDeviceName(ws->registrations.at(1), QStringLiteral("iPhone de Raoul"));
+    QVERIFY(!ws->registrations.at(1).contains(QStringLiteral("cn_pass")));
+
+    hw()->setDeviceNameOverride(QStringLiteral("iPhone de Raoul"));
+    pump(200);
+    QCOMPARE(ws->registrations.size(), 2);
+    QCOMPARE(ws->received.count(QStringLiteral("login")), 1);
 }
 
 // ---------------------------------------------------------------- push format
@@ -1154,6 +1392,7 @@ void TstPushNotif::payloadWithoutDeviceNameOmitsTheField()
 void TstPushNotif::cleanupTestCase()
 {
     qInstallMessageHandler(s_previousHandler);
+    clearStore();
 
     //Whatever subset of the functions ran: no token and no password in clear.
     for (const QString &line: std::as_const(s_logLines))

@@ -61,6 +61,40 @@ Item {
                 }
             }
 
+            //Sent with register_push: since iOS 16 every iPhone reports the
+            //same generic name, the admin needs one that tells them apart.
+            ListGroupHeader { width: listFlick.width; title: qsTr("Name of this device:") }
+            Item {
+                width: listFlick.width
+                height: Units.dp(48)
+                CalaosTextField {
+                    id: deviceNameField
+                    anchors {
+                        left: parent.left; leftMargin: Units.dp(16)
+                        right: parent.right; rightMargin: Units.dp(16)
+                        verticalCenter: parent.verticalCenter
+                    }
+                    text: hardwareUtils.deviceName
+                    maximumLength: hardwareUtils.deviceNameMaxLength
+                    EnterKey.type: Qt.EnterKeyDone
+                    onAccepted: focus = false
+                    onEditingFinished: {
+                        hardwareUtils.setDeviceNameOverride(text)
+                        //Shows what is stored: sanitized, or the default
+                        //again when emptied.
+                        text = Qt.binding(function() { return hardwareUtils.deviceName })
+                    }
+                }
+            }
+            Text {
+                x: Units.dp(16)
+                width: listFlick.width - Units.dp(32)
+                wrapMode: Text.WordWrap
+                color: Theme.mutedColor
+                font { family: calaosFont.fontFamily; pixelSize: Units.dp(12) }
+                text: qsTr("This name lets you recognise this phone in the box administration")
+            }
+
             //Certificates the user trusted (self-signed boxes): forgetting
             //one asks again at the next connection to that host.
             ListGroupHeader {

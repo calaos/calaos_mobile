@@ -25,12 +25,14 @@ AP2 envoie `device_name` avec `register_push` (`HardwareUtils::getDeviceName()`)
 
 - Réglage « Nom de cet appareil » : mobile dans Réglages (champ texte prérempli, sous « Connexion »), desktop dans « Informations utilisateur » (bouton « Modifier », clavier virtuel). Ligne d'aide : « Ce nom permet de reconnaître ce téléphone dans l'administration de la box ».
 - Stockage local : option de config `device_name` (QSettings `config/device_name` sur mobile, `local_config.xml` sur desktop), via `HardwareUtils::setConfigOption()`. Vide, ou égal au nom de la plateforme, = pas de surcharge : le nom de la plateforme est suivi.
-- Assainissement (`HardwareUtils::sanitizeDeviceName()`) : caractères de contrôle (Cc) et séparateurs de ligne/paragraphe remplacés par une espace, espaces internes fusionnées en une seule, bords supprimés, demi-paires de substitution isolées retirées ; plafond de 64 unités UTF-16 (ce que compte `maximumLength` en QML), coupé sur une limite de graphème (jamais au milieu d'une paire de substitution ni d'une séquence emoji ZWJ).
+- Assainissement (`HardwareUtils::sanitizeDeviceName()`) : caractères de contrôle (Cc) et séparateurs de ligne/paragraphe remplacés par une espace, contrôles bidi et caractères invisibles retirés (U+061C, U+200B, U+200E, U+200F, U+202A–U+202E, U+2060, U+2066–U+2069, U+FEFF ; ZWJ/ZWNJ, sélecteurs de variante et caractères d'étiquette gardés pour les emoji), espaces internes fusionnées en une seule, bords supprimés, demi-paires de substitution isolées retirées ; plafond de 64 unités UTF-16 (ce que compte `maximumLength` en QML), coupé sur une limite de graphème (jamais au milieu d'une paire de substitution ni d'une séquence emoji ZWJ).
 - `register_push` envoie `HardwareUtils::effectiveDeviceName()` (surcharge, sinon `getDeviceName()`, toujours assaini). `PushRegistration::shouldRegister()` compare le jeton **et** le nom : un renommage émet `deviceNameChanged()`, `CalaosConnection` renvoie `register_push` tout de suite sur le transport courant (WebSocket ou HTTP avec identifiants) si une session et un jeton existent, sinon au prochain login. Un nom inchangé après assainissement n'émet rien et n'envoie rien.
+- Mobile : ce qui est tapé est aussi enregistré en quittant la page (retour, barre du bas, Déconnexion, Reset all data, passage en arrière-plan), pas seulement sur « Terminé ». Desktop : bouton « Modifier » soumis au verrou des réglages, comme les identifiants.
 - « Reset all data » efface la surcharge, après le `logout()` (l'ancienne box ne reçoit pas le nom par défaut).
 
 ## Hors périmètre
 
+- Côté serveur/webapp (AP1b, WA3) : afficher le nom isolé (`<bdi>` ou `unicode-bidi: isolate`) ; le nom de la plateforme est lui aussi choisi par l'utilisateur, et les versions précédentes de l'app (ou d'autres clients) l'envoient sans filtrage.
 - L'entitlement iOS du nom utilisateur de l'appareil.
 - Le kiosque desktop n'envoie pas `register_push` (pas de jeton push) : le réglage y est stocké mais sans effet aujourd'hui.
 

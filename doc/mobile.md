@@ -214,8 +214,8 @@ Shared rules (in [src/HardwareUtils.cpp](../src/HardwareUtils.cpp) and
   `device_name` (`HardwareUtils::effectiveDeviceName()`), which the admin
   uses to pick the approver phone in the web app: the name typed in
   Settings → "Name of this device" (config option `device_name`, sanitized:
-  control characters and line breaks become spaces, whitespace collapsed,
-  trimmed, at most 64 UTF-16 code units cut on a grapheme boundary; empty =
+  control characters and line breaks become spaces, bidi controls and
+  invisible characters dropped, whitespace collapsed, trimmed, at most 64 UTF-16 code units cut on a grapheme boundary; empty =
   no override), else `HardwareUtils::getDeviceName()` (iOS `UIDevice.name`,
   the generic "iPhone" since iOS 16; Android `Settings.Global.DEVICE_NAME`,
   else manufacturer + model). A rename in the app emits `deviceNameChanged()`

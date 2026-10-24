@@ -10,6 +10,9 @@ Dialog {
 
     property var info: ({})
     readonly property bool keyChanged: info.keyChanged === true
+    //Pinned host now behind a CA-valid certificate: trusting it stops
+    //pinning the host instead of pinning the new key.
+    readonly property bool caValid: info.caValid === true
     //Reached by DNS name, or a valid certificate for another name: what an
     //interception would look like, so nothing here reassures.
     readonly property bool suspicious: info.suspicious === true
@@ -19,7 +22,13 @@ Dialog {
     minimumWidth: Units.dp(560)
 
     title: keyChanged ? qsTr("Certificate changed!") : qsTr("Unknown certificate")
-    text: keyChanged ?
+    text: keyChanged && caValid ?
+              qsTr("The certificate key of %1 has changed since the last connection. "
+                   + "The box now presents a certificate from a public authority: if you "
+                   + "trust it, this host will no longer be pinned and its renewals will be "
+                   + "accepted without asking. It can also mean that someone is intercepting "
+                   + "the connection. Only trust it if you know why it changed.").arg(info.host) :
+          keyChanged ?
               qsTr("The certificate key of %1 has changed since the last connection. "
                    + "This is expected if the certificate of your Calaos box was "
                    + "regenerated, but it can also mean that someone is intercepting "

@@ -10,28 +10,62 @@ Item {
     signal favoriteAddClicked()
     signal favoriteEditClicked()
 
+    //Only what the user typed is saved: an untouched field would otherwise
+    //freeze the platform name as an override when the phone is renamed in
+    //the system settings while this page is open.
+    property bool deviceNameEdited: false
+
+    //Typing does not remove the text binding: without this, a rename
+    //reported meanwhile would overwrite what is being typed.
+    function markDeviceNameEdited() {
+        if (deviceNameEdited)
+            return
+        deviceNameEdited = true
+        deviceNameField.text = deviceNameField.text
+    }
+
+    function bindDeviceName() {
+        deviceNameField.text = Qt.binding(function() { return hardwareUtils.deviceName })
+    }
+
     //Leaving the page (back, bottom bar, logout, backgrounding) never emits
-    //editingFinished: whatever is typed is saved from here too. The setter
-    //is idempotent, and rebinding keeps a later reset from being undone.
+    //editingFinished: what is typed is saved from here too.
     function commitDeviceName() {
         if (deviceNameField.activeFocus) {
+            if (deviceNameField.preeditText !== "")
+                markDeviceNameEdited()
             // Qt.inputMethod is seen as a plain QObject by the linter
             // qmllint disable missing-property
             Qt.inputMethod.commit()
             // qmllint enable missing-property
         }
-        hardwareUtils.setDeviceNameOverride(deviceNameField.text)
-        deviceNameField.text = Qt.binding(function() { return hardwareUtils.deviceName })
+        if (deviceNameEdited) {
+            deviceNameEdited = false
+            hardwareUtils.setDeviceNameOverride(deviceNameField.text)
+        }
+        //Still being typed (saved because the app went to the background):
+        //left as is under the user's fingers.
+        if (!deviceNameField.focus)
+            bindDeviceName()
+    }
+
+    //What was typed must not follow the user to the next box.
+    function discardDeviceName() {
+        deviceNameEdited = false
+        bindDeviceName()
     }
 
     QuickControls.StackView.onDeactivating: commitDeviceName()
     Component.onDestruction: commitDeviceName()
 
+    //Not on Inactive (iOS Control Center, a system alert): the user comes
+    //back to the field. Hidden/Suspended is the app going away.
     Connections {
         target: Qt.application
         function onStateChanged() {
             // qmllint disable missing-property
-            if (Qt.application.state !== Qt.ApplicationActive)
+            if (Qt.application.state === Qt.ApplicationSuspended ||
+                Qt.application.state === Qt.ApplicationHidden)
                 settingsPage.commitDeviceName()
             // qmllint enable missing-property
         }
@@ -88,7 +122,7 @@ Item {
                     width: Units.dp(200)
                     height: parent.height
                     onButtonClicked: {
-                        settingsPage.commitDeviceName()
+                        settingsPage.discardDeviceName()
                         calaosApp.resetAllData()
                     }
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -103,6 +137,7 @@ Item {
                 height: Units.dp(48)
                 CalaosTextField {
                     id: deviceNameField
+                    objectName: "deviceNameField"
                     anchors {
                         left: parent.left; leftMargin: Units.dp(16)
                         right: parent.right; rightMargin: Units.dp(16)
@@ -111,10 +146,18 @@ Item {
                     text: hardwareUtils.deviceName
                     maximumLength: hardwareUtils.deviceNameMaxLength
                     EnterKey.type: Qt.EnterKeyDone
+                    onTextEdited: settingsPage.markDeviceNameEdited()
+                    onClearButtonClicked: settingsPage.markDeviceNameEdited()
                     onAccepted: focus = false
                     //Then shows what is stored: sanitized, or the default
-                    //again when emptied.
-                    onEditingFinished: settingsPage.commitDeviceName()
+                    //again when emptied. A window losing activation (iOS
+                    //Inactive) also ends the editing: not a save.
+                    onEditingFinished: {
+                        // qmllint disable missing-property
+                        if (Qt.application.state === Qt.ApplicationActive)
+                            settingsPage.commitDeviceName()
+                        // qmllint enable missing-property
+                    }
                 }
             }
             Text {

@@ -1,5 +1,6 @@
 #include "HardwareUtils.h"
 #include <QSettings>
+#include <QTextBoundaryFinder>
 #include "Common.h"
 
 #ifdef Q_OS_IOS
@@ -166,6 +167,89 @@ QString HardwareUtils::getDeviceName()
     //Only the tests see it: desktop builds never get a push token, so they
     //never send register_push.
     return QSysInfo::machineHostName();
+}
+
+QString HardwareUtils::deviceNameOverride()
+{
+    //Sanitized again: the desktop config file can be edited by hand.
+    return sanitizeDeviceName(getConfigOption(QStringLiteral("device_name")));
+}
+
+QString HardwareUtils::effectiveDeviceName()
+{
+    const QString name = deviceNameOverride();
+    return name.isEmpty() ? sanitizeDeviceName(getDeviceName()) : name;
+}
+
+void HardwareUtils::setDeviceNameOverride(const QString &name)
+{
+    const QString before = effectiveDeviceName();
+
+    QString value = sanitizeDeviceName(name);
+    //Typing the platform name back is no override: a later rename of the
+    //phone in the system settings is then followed.
+    if (value == sanitizeDeviceName(getDeviceName()))
+        value.clear();
+    if (value != deviceNameOverride())
+        setConfigOption(QStringLiteral("device_name"), value);
+
+    if (effectiveDeviceName() != before)
+        emit deviceNameChanged();
+}
+
+//Invisible characters that reorder or hide text: a name could otherwise
+//pose as another one in the admin's list. ZWJ/ZWNJ, variation selectors and
+//tag characters stay, emoji sequences need them.
+static bool isSpoofingFormatChar(char32_t cp)
+{
+    return cp == 0x061C || cp == 0x200B || cp == 0x200E || cp == 0x200F ||
+           (cp >= 0x202A && cp <= 0x202E) || cp == 0x2060 ||
+           (cp >= 0x2066 && cp <= 0x2069) || cp == 0xFEFF;
+}
+
+QString HardwareUtils::sanitizeDeviceName(const QString &name)
+{
+    QString s;
+    s.reserve(name.size());
+    for (qsizetype i = 0; i < name.size(); i++)
+    {
+        const QChar c = name.at(i);
+        char32_t cp = c.unicode();
+        qsizetype units = 1;
+        if (c.isHighSurrogate() && i + 1 < name.size() && name.at(i + 1).isLowSurrogate())
+        {
+            cp = QChar::surrogateToUcs4(c, name.at(i + 1));
+            units = 2;
+        }
+        //A lone surrogate is not valid UTF-16 and would not survive the JSON.
+        else if (c.isSurrogate())
+            continue;
+
+        const qsizetype at = i;
+        i += units - 1;
+        if (isSpoofingFormatChar(cp))
+            continue;
+
+        const QChar::Category cat = QChar::category(cp);
+        if (cat == QChar::Other_Control || cat == QChar::Separator_Line ||
+            cat == QChar::Separator_Paragraph)
+            s += QLatin1Char(' ');
+        else
+            s += name.mid(at, units);
+    }
+
+    s = s.simplified();
+    if (s.size() <= DeviceNameMaxLength)
+        return s;
+
+    QTextBoundaryFinder graphemes(QTextBoundaryFinder::Grapheme, s);
+    graphemes.setPosition(DeviceNameMaxLength);
+    qsizetype cut = graphemes.isAtBoundary() ? DeviceNameMaxLength : graphemes.toPreviousBoundary();
+    //A single cluster longer than the limit (stacked combining marks): cut
+    //between code points rather than lose the whole name.
+    if (cut <= 0)
+        cut = s.at(DeviceNameMaxLength - 1).isHighSurrogate() ? DeviceNameMaxLength - 1 : DeviceNameMaxLength;
+    return s.left(cut).trimmed();
 }
 
 QString HardwareUtils::describeToken(const QString &token)

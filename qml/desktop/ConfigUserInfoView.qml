@@ -143,6 +143,41 @@ Item {
             }
         }
 
+        //Only sent with register_push, which needs a push token: the kiosk
+        //has none today, the setting is kept for parity with the mobile app.
+        RowLayout {
+            Text {
+                Layout.fillWidth: true
+                font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pixelSize: Units.dp(18) }
+                color: Theme.whiteColor
+                text: qsTr("Name of this device:")
+            }
+
+            Item { Layout.fillWidth: true; height: 1 }
+
+            Text {
+                Layout.fillWidth: true
+                elide: Text.ElideRight
+                font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pixelSize: Units.dp(18) }
+                color: Theme.blueColor
+                text: hardwareUtils.deviceName
+            }
+
+            CalaosButton {
+                text: qsTr("Change")
+                onButtonClicked: AppActions.openKeyboard(qsTr("Name of this device"),
+                                                         qsTr("This name lets you recognise this device in the box administration"),
+                                                         hardwareUtils.deviceName,
+                                                         TextInput.Normal,
+                                                         false,
+                                                         function(txt) {
+                                                             hardwareUtils.setDeviceNameOverride(txt)
+                                                         })
+                hoverEnabled: false
+                disabled: calaosApp.settingsLocked
+            }
+        }
+
         Item { Layout.preferredHeight: Units.dp(10); width: 1 }
 
         Rectangle {

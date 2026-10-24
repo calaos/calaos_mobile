@@ -65,6 +65,9 @@ CalaosConnection::CalaosConnection(QObject *parent) :
     //arrived after the login) is registered right away, not at the next login.
     connect(HardwareUtils::Instance(), &HardwareUtils::deviceTokenChanged,
             this, &CalaosConnection::registerPushToken);
+    //Same for a rename in the settings: the admin sees the new name now.
+    connect(HardwareUtils::Instance(), &HardwareUtils::deviceNameChanged,
+            this, &CalaosConnection::registerPushToken);
 }
 
 void CalaosConnection::sslErrors(QNetworkReply *reply, const QList<QSslError> &errors)
@@ -842,7 +845,8 @@ void CalaosConnection::registerPushToken()
         return;
 
     const QString token = HardwareUtils::Instance()->getDeviceToken();
-    if (!pushRegistration.shouldRegister(token))
+    const QString name = HardwareUtils::Instance()->effectiveDeviceName();
+    if (!pushRegistration.shouldRegister(token, name))
         return;
 
 #if defined(Q_OS_ANDROID)
@@ -858,8 +862,7 @@ void CalaosConnection::registerPushToken()
 
     //Send the push device token to register the mobile device to calaos_server
     //for push notif (Android also asks for data-only messages, see PushFormat).
-    QJsonObject o = PushFormat::registration(token, hw,
-                                             HardwareUtils::Instance()->getDeviceName());
+    QJsonObject o = PushFormat::registration(token, hw, name);
 
     if (isWebsocket())
     {

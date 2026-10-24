@@ -26,6 +26,7 @@ SUBDIRS += \
     tst_httpapiversion \
     tst_httpreplies \
     tst_iobase \
+    tst_mobilesettings \
     tst_pushnotif \
     tst_qqmlhelpers \
     tst_reconnectpolicy \

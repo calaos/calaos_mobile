@@ -160,6 +160,7 @@ Exécution parallèle : chaque ticket lancé en parallèle travaille dans son pr
 | [FIX-10](tasks/FIX-10-bandeau-hors-ligne.md) | Bandeau « hors ligne » à la place de l'alerte modale « No network » | S | FIX-11, AND-9 | G-QML-MOBILE + G-CONN | Terminé |
 | [FIX-11](tasks/FIX-11-deconnexion-persistante.md) | Mémoriser la déconnexion volontaire entre deux lancements | S | FIX-9 | G-CONN + G-ANDROID | Terminé |
 | [FIX-12](tasks/FIX-12-effacer-mot-de-passe.md) | Le bouton « effacer » du champ mot de passe n'efface rien | S | FIX-10 | G-QML-MOBILE | Terminé |
+| [FIX-13](tasks/FIX-13-test-climatesheet-macos.md) | `ClimateSheet::test_theModelLetsGoOfTheDeviceWhenTheSheetCloses` échoue en local sur macOS (passe seul et sur la CI Linux) | S | — | G-QML-MOBILE | À faire |
 | [EVLOG-1](tasks/EVLOG-1-historique-fige.md) | Historique des événements figé après une requête perdue | M | — | G-CONN + G-MODELS | Terminé |
 
 ## P-ADMIN — Administration de la box
@@ -169,6 +170,7 @@ Tickets calaos_mobile du plan admin de calaos_base (`docs/admin/PLAN.md`, phase 
 | ID | Titre | Taille | Bloqué par | Groupe | Statut |
 |---|---|---|---|---|---|
 | [AP2](tasks/AP2-nom-appareil-register-push.md) | Nom d'appareil dans `register_push`, identifiants en HTTP | S | — | G-CONN + G-ANDROID + G-IOS | En revue |
+| [AP2b](tasks/AP2b-reglage-nom-appareil.md) | Réglage « Nom de cet appareil », renvoyé par `register_push` dès sa modification | S | AP2 | G-CONN + G-QML-MOBILE + G-QML-DESKTOP | En revue |
 | [CM2](tasks/CM2-tls-tofu-pinning.md) | TLS TOFU : épinglage de la clé du certificat par hôte, re-confirmation au changement de clé | L | — | G-CONN + G-APP + G-ANDROID + G-IOS | En revue |
 | [CM2b](tasks/CM2b-mode-ca-par-hote.md) | Mode d'épinglage par hôte : accepter un certificat CA à la place d'un pin arrête l'épinglage | S | CM2 | G-CONN + G-APP | En revue |
 

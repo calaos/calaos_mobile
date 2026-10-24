@@ -364,8 +364,9 @@ Limits:
   `CredentialStore` (`tls_pins`, JSON, not encrypted: not a secret), and the
   worker checks `PublicKey.getEncoded()` of the leaf against it, for the chain
   and for the host name. A pinned host must present its pinned key even when
-  the system trusts the certificate. No pin or another key: text
-  notification only (the worker cannot ask the user).
+  the system trusts the certificate (a host whose CA-valid certificate the
+  user trusted in the app has no pin any more, CM2b). Untrusted with no pin,
+  or another key: text notification only (the worker cannot ask the user).
 - The manifest sets `android:usesCleartextTraffic="true"` so a server
   configured with `http://` / `ws://` works from the Java network stack too
   (Qt's own sockets are not subject to that policy, so the app already talks

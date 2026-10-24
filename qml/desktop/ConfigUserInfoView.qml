@@ -166,7 +166,7 @@ Item {
             CalaosButton {
                 text: qsTr("Change")
                 onButtonClicked: AppActions.openKeyboard(qsTr("Name of this device"),
-                                                         qsTr("This name lets you recognise this phone in the box administration"),
+                                                         qsTr("This name lets you recognise this device in the box administration"),
                                                          hardwareUtils.deviceName,
                                                          TextInput.Normal,
                                                          false,
@@ -174,6 +174,7 @@ Item {
                                                              hardwareUtils.setDeviceNameOverride(txt)
                                                          })
                 hoverEnabled: false
+                disabled: calaosApp.settingsLocked
             }
         }
 

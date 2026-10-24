@@ -5,9 +5,37 @@ import SharedComponents
 import "../quickflux"
 
 Item {
+    id: settingsPage
 
     signal favoriteAddClicked()
     signal favoriteEditClicked()
+
+    //Leaving the page (back, bottom bar, logout, backgrounding) never emits
+    //editingFinished: whatever is typed is saved from here too. The setter
+    //is idempotent, and rebinding keeps a later reset from being undone.
+    function commitDeviceName() {
+        if (deviceNameField.activeFocus) {
+            // Qt.inputMethod is seen as a plain QObject by the linter
+            // qmllint disable missing-property
+            Qt.inputMethod.commit()
+            // qmllint enable missing-property
+        }
+        hardwareUtils.setDeviceNameOverride(deviceNameField.text)
+        deviceNameField.text = Qt.binding(function() { return hardwareUtils.deviceName })
+    }
+
+    QuickControls.StackView.onDeactivating: commitDeviceName()
+    Component.onDestruction: commitDeviceName()
+
+    Connections {
+        target: Qt.application
+        function onStateChanged() {
+            // qmllint disable missing-property
+            if (Qt.application.state !== Qt.ApplicationActive)
+                settingsPage.commitDeviceName()
+            // qmllint enable missing-property
+        }
+    }
 
     Image {
         source: calaosApp.getPictureSized(isLandscape?
@@ -45,7 +73,10 @@ Item {
                     text: qsTr("Logout")
                     width: Units.dp(200)
                     height: parent.height
-                    onButtonClicked: calaosApp.userLogout()
+                    onButtonClicked: {
+                        settingsPage.commitDeviceName()
+                        calaosApp.userLogout()
+                    }
                     anchors.horizontalCenter: parent.horizontalCenter
                 }
             }
@@ -56,7 +87,10 @@ Item {
                     text: qsTr("Reset all data")
                     width: Units.dp(200)
                     height: parent.height
-                    onButtonClicked: calaosApp.resetAllData()
+                    onButtonClicked: {
+                        settingsPage.commitDeviceName()
+                        calaosApp.resetAllData()
+                    }
                     anchors.horizontalCenter: parent.horizontalCenter
                 }
             }
@@ -78,12 +112,9 @@ Item {
                     maximumLength: hardwareUtils.deviceNameMaxLength
                     EnterKey.type: Qt.EnterKeyDone
                     onAccepted: focus = false
-                    onEditingFinished: {
-                        hardwareUtils.setDeviceNameOverride(text)
-                        //Shows what is stored: sanitized, or the default
-                        //again when emptied.
-                        text = Qt.binding(function() { return hardwareUtils.deviceName })
-                    }
+                    //Then shows what is stored: sanitized, or the default
+                    //again when emptied.
+                    onEditingFinished: settingsPage.commitDeviceName()
                 }
             }
             Text {

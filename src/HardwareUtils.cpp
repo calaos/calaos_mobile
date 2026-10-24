@@ -197,6 +197,16 @@ void HardwareUtils::setDeviceNameOverride(const QString &name)
         emit deviceNameChanged();
 }
 
+//Invisible characters that reorder or hide text: a name could otherwise
+//pose as another one in the admin's list. ZWJ/ZWNJ, variation selectors and
+//tag characters stay, emoji sequences need them.
+static bool isSpoofingFormatChar(char32_t cp)
+{
+    return cp == 0x061C || cp == 0x200B || cp == 0x200E || cp == 0x200F ||
+           (cp >= 0x202A && cp <= 0x202E) || cp == 0x2060 ||
+           (cp >= 0x2066 && cp <= 0x2069) || cp == 0xFEFF;
+}
+
 QString HardwareUtils::sanitizeDeviceName(const QString &name)
 {
     QString s;
@@ -204,22 +214,28 @@ QString HardwareUtils::sanitizeDeviceName(const QString &name)
     for (qsizetype i = 0; i < name.size(); i++)
     {
         const QChar c = name.at(i);
+        char32_t cp = c.unicode();
+        qsizetype units = 1;
         if (c.isHighSurrogate() && i + 1 < name.size() && name.at(i + 1).isLowSurrogate())
         {
-            s += c;
-            s += name.at(++i);
-            continue;
+            cp = QChar::surrogateToUcs4(c, name.at(i + 1));
+            units = 2;
         }
         //A lone surrogate is not valid UTF-16 and would not survive the JSON.
-        if (c.isSurrogate())
+        else if (c.isSurrogate())
             continue;
 
-        const QChar::Category cat = c.category();
+        const qsizetype at = i;
+        i += units - 1;
+        if (isSpoofingFormatChar(cp))
+            continue;
+
+        const QChar::Category cat = QChar::category(cp);
         if (cat == QChar::Other_Control || cat == QChar::Separator_Line ||
             cat == QChar::Separator_Paragraph)
             s += QLatin1Char(' ');
         else
-            s += c;
+            s += name.mid(at, units);
     }
 
     s = s.simplified();

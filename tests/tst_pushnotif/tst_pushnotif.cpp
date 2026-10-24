@@ -390,6 +390,9 @@ private slots:
     void httpFallbackFromWebsocketRegistersOnce();
     void httpRenameWhileConnectedRegistersAgain();
     void httpRenameWhileLoggedOutWaitsForLogin();
+    void httpRenameWithoutTokenWaitsForTheToken();
+    void httpRenameDuringLoginIsSentOnce();
+    void httpOverrideClearedAfterLogoutSendsNothing();
 
     //CalaosConnection over websocket.
     void wsRegistersAfterTheLoginIsAccepted();
@@ -983,6 +986,29 @@ void TstPushNotif::deviceNameIsSanitized_data()
                                                  << QString(60, QLatin1Char('a'));
     QTest::newRow("trailing space after the cut") << (QString(63, QLatin1Char('a')) + QStringLiteral(" bcd"))
                                                   << QString(63, QLatin1Char('a'));
+    //Bidi controls and invisible characters could make a name pose as another.
+    const struct { const char *tag; char16_t cp; } stripped[] = {
+        { "U+061C ALM", 0x061C }, { "U+200B ZWSP", 0x200B }, { "U+200E LRM", 0x200E },
+        { "U+200F RLM", 0x200F }, { "U+202A LRE", 0x202A }, { "U+202B RLE", 0x202B },
+        { "U+202C PDF", 0x202C }, { "U+202D LRO", 0x202D }, { "U+202E RLO", 0x202E },
+        { "U+2060 WJ", 0x2060 }, { "U+2066 LRI", 0x2066 }, { "U+2067 RLI", 0x2067 },
+        { "U+2068 FSI", 0x2068 }, { "U+2069 PDI", 0x2069 }, { "U+FEFF BOM", 0xFEFF },
+    };
+    for (const auto &st: stripped)
+        QTest::newRow(st.tag) << (QStringLiteral("Pix") + QChar(st.cp) + QStringLiteral("el"))
+                              << QStringLiteral("Pixel");
+    QTest::newRow("RLO spoof") << QStringLiteral("iPhone \u202Eluoa\u202C") << QStringLiteral("iPhone luoa");
+    QTest::newRow("ZWNJ kept") << QStringLiteral("a\u200Cb") << QStringLiteral("a\u200Cb");
+    QTest::newRow("ZWJ kept") << family << family;
+    const QString heart = QStringLiteral("\u2764\uFE0F"); //VS16
+    QTest::newRow("variation selector kept") << heart << heart;
+    //Flag of England: U+1F3F4 then tag characters U+E0067... U+E007F.
+    const QString england = QString::fromUtf8("\xF0\x9F\x8F\xB4\xF3\xA0\x81\xA7\xF3\xA0\x81\xA2"
+                                              "\xF3\xA0\x81\xA5\xF3\xA0\x81\xAE\xF3\xA0\x81\xA7"
+                                              "\xF3\xA0\x81\xBF");
+    QCOMPARE(england.size(), 14);
+    QTest::newRow("tag characters kept") << (QStringLiteral("Go ") + england)
+                                         << (QStringLiteral("Go ") + england);
     QTest::newRow("one huge cluster") << (QStringLiteral("e") + QString(80, QChar(0x0301)))
                                       << (QStringLiteral("e") + QString(63, QChar(0x0301)));
 }
@@ -1258,6 +1284,65 @@ void TstPushNotif::httpRenameWhileLoggedOutWaitsForLogin()
     verifyDeviceName(http->registrations.at(1), QStringLiteral("Pixel salon"));
     pump(200);
     QCOMPARE(http->registrations.size(), 2);
+}
+
+void TstPushNotif::httpRenameWithoutTokenWaitsForTheToken()
+{
+    QVERIFY(hw()->getDeviceToken().isEmpty());
+
+    http = new FakeHttpServer();
+    QVERIFY(http->listen(QHostAddress::LocalHost, 0));
+    startConnection(http->baseUrl());
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
+
+    hw()->setDeviceNameOverride(QStringLiteral("Pixel salon"));
+    pump(200);
+    QCOMPARE(http->registrations.size(), 0);
+
+    hw()->setDeviceToken(freshToken());
+    QTRY_COMPARE(http->registrations.size(), 1);
+    verifyDeviceName(http->registrations.at(0), QStringLiteral("Pixel salon"));
+    pump(200);
+    QCOMPARE(http->registrations.size(), 1);
+}
+
+void TstPushNotif::httpRenameDuringLoginIsSentOnce()
+{
+    hw()->setDeviceToken(freshToken());
+
+    http = new FakeHttpServer();
+    http->loginDelayMs = 1000;
+    QVERIFY(http->listen(QHostAddress::LocalHost, 0));
+    startConnection(http->baseUrl());
+
+    pump(100);
+    QCOMPARE(connection->connectionState(), ReconnectPolicy::Connecting);
+    hw()->setDeviceNameOverride(QStringLiteral("iPhone de Raoul"));
+
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
+    QTRY_COMPARE(http->registrations.size(), 1);
+    verifyDeviceName(http->registrations.at(0), QStringLiteral("iPhone de Raoul"));
+    pump(200);
+    QCOMPARE(http->registrations.size(), 1);
+}
+
+void TstPushNotif::httpOverrideClearedAfterLogoutSendsNothing()
+{
+    hw()->setDeviceToken(freshToken());
+    hw()->setDeviceNameOverride(QStringLiteral("Pixel salon"));
+
+    http = new FakeHttpServer();
+    QVERIFY(http->listen(QHostAddress::LocalHost, 0));
+    startConnection(http->baseUrl());
+    QTRY_COMPARE(http->registrations.size(), 1);
+    verifyDeviceName(http->registrations.at(0), QStringLiteral("Pixel salon"));
+
+    //What "Reset all data" does: logout(), then the override goes.
+    connection->logout();
+    hw()->setDeviceNameOverride(QString());
+    pump(300);
+    QCOMPARE(http->registrations.size(), 1);
+    QCOMPARE(http->rejected, QStringList());
 }
 
 // ---------------------------------------------------------------- websocket transport

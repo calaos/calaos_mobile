@@ -140,10 +140,10 @@ public:
     //In UTF-16 code units, what a QML TextField's maximumLength counts.
     static constexpr int DeviceNameMaxLength = 64;
     static int deviceNameMaxLength() { return DeviceNameMaxLength; }
-    //Control characters and line breaks become spaces, whitespace runs
-    //collapse to one space, edges are trimmed, and the result is cut to
-    //DeviceNameMaxLength on a grapheme boundary (never inside a surrogate
-    //pair or an emoji sequence).
+    //Control characters and line breaks become spaces, bidi controls and
+    //invisible spaces are dropped, whitespace runs collapse to one space,
+    //edges are trimmed, and the result is cut to DeviceNameMaxLength on a
+    //grapheme boundary (never inside a surrogate pair or an emoji sequence).
     static QString sanitizeDeviceName(const QString &name);
 
     //A push token is a per-device credential: never log it in full. Returns

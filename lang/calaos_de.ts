@@ -957,11 +957,15 @@
     </message>
     <message>
         <location filename="../qml/desktop/ConfigUserInfoView.qml" line="169"/>
-        <source>This name lets you recognise this phone in the box administration</source>
-        <translation>An diesem Namen erkennen Sie dieses Telefon in der Verwaltung der Box</translation>
+        <source>This name lets you recognise this device in the box administration</source>
+        <translation>An diesem Namen erkennen Sie dieses Gerät in der Verwaltung der Box</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="194"/>
+        <source>This name lets you recognise this phone in the box administration</source>
+        <translation type="vanished">An diesem Namen erkennen Sie dieses Telefon in der Verwaltung der Box</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="195"/>
         <source>Here you can configure some personal information like your email address. It is used by Calaos to send you emails. For example, the Note widget can use those addresses to send notes to your mailbox.</source>
         <translation>Hier können Sie einige persönliche Informationen wie Ihre E-Mail-Adresse konfigurieren. Sie wird von Calaos verwendet, um Ihnen einige E-Mails zu senden. Zum Beispiel kann das Notiz-Widget diese Adressen verwenden, um Notizen an Ihre Mailbox zu senden.</translation>
     </message>
@@ -974,52 +978,52 @@
         <translation type="vanished">Hier können Sie einige persönliche Informationen wie Ihre E-Mail-Adresse konfigurieren. Sie wird von Calaos verwendet, um Ihnen einige E-Mails zu senden. Zum Beispiel kann das Notiz-Widget diese Adressen verwenden, um Notizen an Ihre Mailbox zu senden.</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="272"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="273"/>
         <source>Add email</source>
         <translation>E-Mail hinzufügen</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="273"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="274"/>
         <source>Email</source>
         <translation>E-Mail</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="274"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="275"/>
         <source>Add a new email address to the list</source>
         <translation>Eine neue E-Mail-Adresse zur Liste hinzufügen</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="313"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="314"/>
         <source>User information</source>
         <translation>Benutzerinformationen</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="340"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="341"/>
         <source>Back to config</source>
         <translation>Zurück zu Konfig</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="347"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="348"/>
         <source>Quit</source>
         <translation>Beenden</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="359"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="360"/>
         <source>Remove email</source>
         <translation>E-Mail entfernen</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="360"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="361"/>
         <source>Remove this email &apos;%1&apos; from the list?</source>
         <translation>Diese E-Mail &apos;%1&apos; aus der Liste entfernen?</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="362"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="363"/>
         <source>Yes, remove</source>
         <translation>Ja, entfernen</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="363"/>
+        <location filename="../qml/desktop/ConfigUserInfoView.qml" line="364"/>
         <source>No</source>
         <translation>Nein</translation>
     </message>
@@ -2461,72 +2465,72 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
 <context>
     <name>SettingsView</name>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="27"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="52"/>
         <source>Event log:</source>
         <translation>Ereignisprotokoll:</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="32"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="57"/>
         <source>Show log</source>
         <translation>Protokoll anzeigen</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="40"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="65"/>
         <source>Connection:</source>
         <translation>Verbindung:</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="45"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="70"/>
         <source>Logout</source>
         <translation>Abmelden</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="56"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="84"/>
         <source>Reset all data</source>
         <translation>Alle Daten zurücksetzen</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="66"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="97"/>
         <source>Name of this device:</source>
         <translation>Name dieses Geräts:</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="95"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="123"/>
         <source>This name lets you recognise this phone in the box administration</source>
         <translation>An diesem Namen erkennen Sie dieses Telefon in der Verwaltung der Box</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="102"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="130"/>
         <source>Trusted certificates:</source>
         <translation>Vertraute Zertifikate:</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="141"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="169"/>
         <source>Forget</source>
         <translation>Vergessen</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="153"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="181"/>
         <source>Favorites:</source>
         <translation>Favoriten:</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="159"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="187"/>
         <source>Add a favorite</source>
         <translation>Einen Favoriten hinzufügen</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="171"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="199"/>
         <source>Edit favorites list</source>
         <translation>Favoritenliste bearbeiten</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="179"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="207"/>
         <source>Language:</source>
         <translation>Sprache:</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="216"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="244"/>
         <source>Settings</source>
         <translation>Einstellungen</translation>
     </message>

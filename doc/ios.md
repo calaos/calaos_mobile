@@ -148,8 +148,19 @@ the defaults are written through cfprefsd whose ordering across processes is
 not guaranteed. In those cases, or if the extension is killed after the
 increment but before its content is delivered, the badge can be off by one
 until the next launch, which resets it. The App Group suite therefore carries `calaos.hostname`,
-`calaos.session_active` and `calaos.badge_count` (privacy reason 1C8F.1 in both
-manifests).
+`calaos.session_active`, `calaos.badge_count` and `calaos.tls_pins` (privacy
+reason 1C8F.1 in both manifests).
+
+TLS in the extension: its `NSURLSession` has a delegate. A certificate that
+passes `SecTrustEvaluateWithError()` (public CA, matching name) is used as is;
+otherwise the SHA-256 of the leaf's SubjectPublicKeyInfo must match
+`calaos.tls_pins[host:port]`, the pins the user confirmed in the app
+(`src/TlsPinning.h`, copied by `HardwareUtils_iOS::setTlsPins()`). A pinned
+host must present its pinned key even when the system trusts the
+certificate. The extension cannot ask: no pin or another key skips the picture, the text
+notification is still shown. ATS does not apply to IP addresses and `.local`
+names; a self-signed box reached through a DNS name may additionally need an
+ATS exception in the extension (to check on a device).
 
 Background mode `remote-notification` is declared in
 [ios/AppInfo.plist](../ios/AppInfo.plist) (`UIBackgroundModes`).

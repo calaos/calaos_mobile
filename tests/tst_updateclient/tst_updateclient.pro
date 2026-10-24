@@ -23,6 +23,7 @@ HEADERS += \
     $$SRC_DIR/CalaosOsAPI.h \
     $$SRC_DIR/CalaosOsProtocol.h \
     $$SRC_DIR/NetworkRequest.h \
+    $$SRC_DIR/TlsPinning.h \
     $$SRC_DIR/AsyncJobs.h \
     $$SRC_DIR/UpdateManager.h \
     $$SRC_DIR/UpdateModel.h \
@@ -34,6 +35,7 @@ SOURCES += \
     $$SRC_DIR/CalaosOsAPI.cpp \
     $$SRC_DIR/CalaosOsProtocol.cpp \
     $$SRC_DIR/NetworkRequest.cpp \
+    $$SRC_DIR/TlsPinning.cpp \
     $$SRC_DIR/AsyncJobs.cpp \
     $$SRC_DIR/UpdateManager.cpp \
     $$SRC_DIR/UpdateModel.cpp \

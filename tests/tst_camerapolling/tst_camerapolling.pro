@@ -23,6 +23,7 @@ HEADERS += \
     $$SRC_DIR/CameraModel.h \
     $$SRC_DIR/ModelImageProvider.h \
     $$SRC_DIR/CalaosConnection.h \
+    $$SRC_DIR/TlsPinning.h \
     $$SRC_DIR/HardwareUtils.h \
     $$SRC_DIR/Common.h \
     $$SRC_DIR/IOTypeRegistry.h \
@@ -32,6 +33,7 @@ SOURCES += \
     $$SRC_DIR/CameraModel.cpp \
     $$SRC_DIR/ModelImageProvider.cpp \
     $$SRC_DIR/CalaosConnection.cpp \
+    $$SRC_DIR/TlsPinning.cpp \
     $$SRC_DIR/CalaosEventDecoder.cpp \
     $$SRC_DIR/HardwareUtils.cpp \
     $$SRC_DIR/Common.cpp \

@@ -7,6 +7,8 @@
 #include "RoomFilterModel.h"
 #include "ControlPanelModel.h"
 #include "LaunchLogin.h"
+#include "TlsPinning.h"
+#include <QQmlNetworkAccessManagerFactory>
 
 #include "version.h"
 
@@ -26,6 +28,30 @@
 #elif defined (Q_OS_ANDROID)
 #include <QStyleHints>
 #endif
+
+//QML Image elements fetch event pictures from the server with a manager of
+//their own: same pins, but no prompt from a loader thread, an unknown
+//certificate just leaves the picture empty.
+class PinnedNetworkAccessManagerFactory: public QQmlNetworkAccessManagerFactory
+{
+public:
+    QNetworkAccessManager *create(QObject *parent) override
+    {
+        QNetworkAccessManager *nam = new QNetworkAccessManager(parent);
+        //Picture urls carry the credentials in their query string.
+        nam->setRedirectPolicy(QNetworkRequest::SameOriginRedirectPolicy);
+        QObject::connect(nam, &QNetworkAccessManager::sslErrors, nam,
+                         [](QNetworkReply *reply, const QList<QSslError> &errors)
+        {
+            TlsPinning::acceptIfPinned(reply, errors);
+        });
+        QObject::connect(nam, &QNetworkAccessManager::encrypted, nam, [](QNetworkReply *reply)
+        {
+            TlsPinning::keyMatchesPin(reply);
+        });
+        return nam;
+    }
+};
 
 Application::Application(int & argc, char ** argv) :
     QAPP(argc, argv)
@@ -56,6 +82,8 @@ void Application::createQmlApp()
     setupLanguage();
 
     engine.addImportPath("qrc:/qml/");
+    static PinnedNetworkAccessManagerFactory namFactory;
+    engine.setNetworkAccessManagerFactory(&namFactory);
 
     connect(HardwareUtils::Instance(), &HardwareUtils::networkStatusChanged,
             this, &Application::networkStatusChanged);
@@ -232,6 +260,42 @@ void Application::createQmlApp()
         }
 #endif
     });
+    connect(calaosConnect, &CalaosConnection::tlsTrustRequested,
+            this, &Application::tlsTrustRequested);
+    connect(calaosConnect, &CalaosConnection::tlsTrustCanceled,
+            this, &Application::tlsTrustCanceled);
+    connect(calaosConnect, &CalaosConnection::tlsTrustRejected, this, [=](const QString &host)
+    {
+        HardwareUtils::Instance()->showAlertMessage(tr("Not connected"),
+#ifdef CALAOS_DESKTOP
+                                                    tr("The certificate of %1 was not trusted, "
+                                                       "the connection was cancelled.").arg(host),
+#else
+                                                    tr("The certificate of %1 was not trusted, "
+                                                       "the connection was cancelled. Tap Login "
+                                                       "to check it again.").arg(host),
+#endif
+                                                    tr("Close"));
+    });
+    connect(calaosConnect, &CalaosConnection::tlsCertificateRefused, this,
+            [=](const QString &host, const QString &reason, bool weakKey)
+    {
+        //Old boxes made RSA-1024 certificates, which recent TLS libraries
+        //refuse outright: the user needs to know the fix is on the box.
+        const QString text = weakKey ?
+                    tr("The certificate of %1 uses a key that is too weak (%2). "
+                       "The connection was cancelled. Regenerate the certificate of the "
+                       "Calaos box (/mnt/calaos/haproxy/server.pem).").arg(host, reason) :
+                    tr("The certificate of %1 is not valid (%2). "
+                       "The connection was cancelled.").arg(host, reason);
+        HardwareUtils::Instance()->showAlertMessage(tr("Certificate refused"), text, tr("Close"));
+    });
+    connect(TlsPinStore::instance(), &TlsPinStore::pinsChanged,
+            this, &Application::updateTlsPins);
+    //Also hands the pins to the platform at every start, so an extension or
+    //worker never keeps a copy older than the app's.
+    updateTlsPins();
+
     connect(calaosConnect, &CalaosConnection::changeCredsFailed, this, [=]()
     {
         HardwareUtils::Instance()->showAlertMessage(tr("Credentials change failed"),
@@ -387,7 +451,35 @@ void Application::createQmlApp()
 
 void Application::login(QString user, QString pass, QString host)
 {
+    //The login screen: a certificate refused earlier is asked about again.
+    calaosConnect->forgetTlsRefusals();
     startLogin(user, pass, host, true);
+}
+
+void Application::answerTlsTrust(bool accept)
+{
+    calaosConnect->answerTlsTrust(accept);
+}
+
+void Application::forgetTlsPin(const QString &host)
+{
+    if (TlsPinStore::instance()->forget(host))
+        qInfo() << "TLS: pin forgotten for" << host;
+}
+
+void Application::updateTlsPins()
+{
+    const QVariantMap pins = TlsPinStore::instance()->pins();
+    QVariantList list;
+    for (auto it = pins.constBegin(); it != pins.constEnd(); ++it)
+    {
+        QVariantMap m;
+        m[QStringLiteral("host")] = it.key();
+        m[QStringLiteral("fingerprint")] = TlsPinning::formatFingerprint(it.value().toString());
+        list << m;
+    }
+    update_tlsPinList(list);
+    HardwareUtils::Instance()->setTlsPins(pins);
 }
 
 void Application::startLogin(QString user, QString pass, QString host, bool userAction)
@@ -517,6 +609,9 @@ void Application::resetAllData()
     //Also forgets a persisted logout (FIX-11): back to the state of a fresh
     //install, where the demo account is not logged in automatically.
     HardwareUtils::Instance()->resetAuthKeychain();
+    //A pin is trust in one particular box: it goes with the host.
+    TlsPinStore::instance()->clear();
+    calaosConnect->forgetTlsRefusals();
     //Also reset hostname
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
     settings.setValue("calaos/host", Common::getDemoHost());

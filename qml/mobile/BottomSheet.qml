@@ -17,6 +17,10 @@ Drawer {
     //With no ratio the sheet is as tall as its title and this
     property real fitHeight: 0
 
+    //Sheets showing data of the session close when it ends. A question
+    //asked while logging in (an unknown server certificate) must stay.
+    property bool closeOnLogout: true
+
     default property alias sheetContent: body.data
 
     parent: Overlay.overlay
@@ -59,7 +63,7 @@ Drawer {
     Connections {
         target: calaosApp
         function onApplicationStatusChanged(status) {
-            if (status !== Common.LoggedIn)
+            if (status !== Common.LoggedIn && sheet.closeOnLogout)
                 sheet.close()
         }
     }

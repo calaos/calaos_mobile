@@ -6,16 +6,19 @@
 //
 
 #import "NotificationService.h"
+#import <CommonCrypto/CommonDigest.h>
+#import <Security/Security.h>
 #import <fcntl.h>
 #import <sys/file.h>
 #import <unistd.h>
 #import "ios/SimpleKeychain/A0SimpleKeychain.h"
 #import "ios/SimpleKeychain/A0SimpleKeychain+KeyPair.h"
 
-@interface NotificationService ()
+@interface NotificationService () <NSURLSessionTaskDelegate>
 
 @property (nonatomic, strong) void (^contentHandler)(UNNotificationContent *contentToDeliver);
 @property (nonatomic, strong) UNMutableNotificationContent *bestAttemptContent;
+@property (nonatomic, strong) NSURLSession *session;
 
 @end
 
@@ -29,6 +32,103 @@ static NSString *const kBadgeCountKey = @"calaos.badge_count";
 //read-increment-write here, the app's reset (separate process) and concurrent
 //requests in this process. Same name in HardwareUtils.mm.
 static NSString *const kBadgeLockFile = @"calaos.badge_count.lock";
+//host:port -> SHA-256 hex of the SubjectPublicKeyInfo the user confirmed in
+//the app (src/TlsPinning.h), written by HardwareUtils_iOS::setTlsPins().
+static NSString *const kTlsPinsKey = @"calaos.tls_pins";
+
+//One DER TLV header at pos, same walk as TlsPinning::subjectPublicKeyInfo():
+//at most 3 length bytes, bounds written so that nothing can overflow.
+static BOOL readTlv(const uint8_t *d, NSUInteger size, NSUInteger pos,
+                    uint8_t *tag, NSUInteger *hdr, NSUInteger *len)
+{
+    if (pos >= size || size - pos < 2)
+        return NO;
+    *tag = d[pos];
+    NSUInteger l = d[pos + 1];
+    *hdr = 2;
+    if (l & 0x80) {
+        NSUInteger n = l & 0x7f;
+        if (n == 0 || n > 3 || size - pos - 2 < n)
+            return NO;
+        l = 0;
+        for (NSUInteger i = 0; i < n; i++)
+            l = (l << 8) | d[pos + 2 + i];
+        *hdr += n;
+    }
+    if (l > size - pos - *hdr)
+        return NO;
+    *len = l;
+    return YES;
+}
+
+//SubjectPublicKeyInfo of a DER certificate, nil when it does not parse.
+static NSData *subjectPublicKeyInfo(NSData *der)
+{
+    const uint8_t *d = der.bytes;
+    NSUInteger size = der.length, pos = 0, hdr = 0, len = 0;
+    uint8_t tag = 0;
+
+    if (!readTlv(d, size, pos, &tag, &hdr, &len) || tag != 0x30)
+        return nil;
+    pos = hdr;
+    if (!readTlv(d, size, pos, &tag, &hdr, &len) || tag != 0x30)
+        return nil;
+    pos += hdr;
+    NSUInteger tbsEnd = pos + len;
+
+    if (!readTlv(d, size, pos, &tag, &hdr, &len))
+        return nil;
+    if (tag == 0xa0) {
+        pos += hdr + len;
+        if (!readTlv(d, size, pos, &tag, &hdr, &len))
+            return nil;
+    }
+
+    //serialNumber, signature, issuer, validity, subject
+    const uint8_t skipped[] = { 0x02, 0x30, 0x30, 0x30, 0x30 };
+    for (size_t i = 0; i < sizeof(skipped); i++) {
+        if (!readTlv(d, size, pos, &tag, &hdr, &len) || tag != skipped[i])
+            return nil;
+        pos += hdr + len;
+    }
+
+    if (!readTlv(d, size, pos, &tag, &hdr, &len) || tag != 0x30 || pos + hdr + len > tbsEnd)
+        return nil;
+    return [der subdataWithRange:NSMakeRange(pos, hdr + len)];
+}
+
+static NSString *leafSpkiSha256(SecTrustRef trust)
+{
+    CFArrayRef chain = SecTrustCopyCertificateChain(trust);
+    if (chain == NULL)
+        return nil;
+    NSString *hex = nil;
+    if (CFArrayGetCount(chain) > 0) {
+        SecCertificateRef leaf = (SecCertificateRef)CFArrayGetValueAtIndex(chain, 0);
+        NSData *der = (__bridge_transfer NSData *)SecCertificateCopyData(leaf);
+        NSData *spki = subjectPublicKeyInfo(der);
+        if (spki != nil) {
+            unsigned char digest[CC_SHA256_DIGEST_LENGTH];
+            CC_SHA256(spki.bytes, (CC_LONG)spki.length, digest);
+            NSMutableString *s = [NSMutableString stringWithCapacity:CC_SHA256_DIGEST_LENGTH * 2];
+            for (int i = 0; i < CC_SHA256_DIGEST_LENGTH; i++)
+                [s appendFormat:@"%02x", digest[i]];
+            hex = s;
+        }
+    }
+    CFRelease(chain);
+    return hex;
+}
+
+//Same key as TlsPinning::hostKey(): lowercase host, IPv6 in brackets,
+//explicit port.
+static NSString *tlsHostKey(NSString *host, NSInteger port)
+{
+    NSString *h = host.lowercaseString;
+    if ([h containsString:@":"] && ![h hasPrefix:@"["])
+        h = [NSString stringWithFormat:@"[%@]", h];
+    return [NSString stringWithFormat:@"%@:%ld", h, (long)(port > 0 ? port : 443)];
+}
 
 @implementation NotificationService
 
@@ -88,8 +188,58 @@ static NSString *const kBadgeLockFile = @"calaos.badge_count.lock";
         handler = self.contentHandler;
         self.contentHandler = nil;
     }
-    if (handler)
+    if (handler) {
+        //The session retains its delegate (self) until invalidated.
+        [self.session finishTasksAndInvalidate];
         handler(self.bestAttemptContent);
+    }
+}
+
+//The urls carry the credentials: never follow a redirect, which could take
+//them to another host.
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
+willPerformHTTPRedirection:(NSHTTPURLResponse *)response newRequest:(NSURLRequest *)request
+ completionHandler:(void (^)(NSURLRequest *))completionHandler {
+    completionHandler(nil);
+}
+
+//A certificate the system trusts for this host is used as is. Anything else
+//needs the key pinned by the app for this host:port; the extension cannot
+//ask the user, so without a matching pin the picture is skipped and the
+//notification shows its text only.
+- (void)URLSession:(NSURLSession *)session didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
+ completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition, NSURLCredential *))completionHandler {
+    NSURLProtectionSpace *space = challenge.protectionSpace;
+    if (![space.authenticationMethod isEqualToString:NSURLAuthenticationMethodServerTrust]) {
+        completionHandler(NSURLSessionAuthChallengePerformDefaultHandling, nil);
+        return;
+    }
+
+    SecTrustRef trust = space.serverTrust;
+    if (trust == NULL) {
+        completionHandler(NSURLSessionAuthChallengeCancelAuthenticationChallenge, nil);
+        return;
+    }
+    NSString *key = tlsHostKey(space.host, space.port);
+    NSUserDefaults *sharedDefaults = [[NSUserDefaults alloc] initWithSuiteName:kAppGroup];
+    id stored = [sharedDefaults dictionaryForKey:kTlsPinsKey][key];
+    NSString *pin = ([stored isKindOfClass:[NSString class]] && [(NSString *)stored length] > 0) ? stored : nil;
+    NSString *peer = leafSpkiSha256(trust);
+    BOOL pinMatches = pin != nil && peer != nil && [pin caseInsensitiveCompare:peer] == NSOrderedSame;
+
+    //A pinned host keeps its key even behind a certificate the system
+    //trusts: a mis-issued one would be trusted too.
+    if (SecTrustEvaluateWithError(trust, NULL) && (pin == nil || pinMatches)) {
+        completionHandler(NSURLSessionAuthChallengePerformDefaultHandling, nil);
+        return;
+    }
+    if (pinMatches) {
+        completionHandler(NSURLSessionAuthChallengeUseCredential, [NSURLCredential credentialForTrust:trust]);
+        return;
+    }
+
+    NSLog(@"PushNotif: certificate of %@ is not trusted or not the pinned key (SPKI sha256 %@), no picture", key, peer);
+    completionHandler(NSURLSessionAuthChallengeCancelAuthenticationChallenge, nil);
 }
 
 - (void)loadAttachmentForUuid:(NSString *)uuid
@@ -106,7 +256,10 @@ static NSString *const kBadgeLockFile = @"calaos.badge_count.lock";
                            uuid];
     NSURLRequest *eventURL = [NSURLRequest requestWithURL:[NSURL URLWithString:urlString]];
     
-    NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
+    NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]
+                                                          delegate:self
+                                                     delegateQueue:nil];
+    self.session = session;
     
     NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:eventURL
                                                 completionHandler:^(NSData *data, NSURLResponse *response, NSError *error)

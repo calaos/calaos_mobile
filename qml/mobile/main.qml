@@ -533,4 +533,8 @@ Window {
 
     //Settings of a climate device, a bottom sheet over the current view
     ClimateSheet { id: climateSheet }
+
+    //Unknown or changed server certificate: asked while logging in, over the
+    //login page.
+    TlsTrustSheet { id: tlsTrustSheet }
 }

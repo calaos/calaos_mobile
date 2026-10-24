@@ -9,6 +9,7 @@
 #include "CalaosEventDecoder.h"
 #include "IOConnection.h"
 #include "JsonKeys.h"
+#include "TlsPinning.h"
 
 //Reconnection state machine and exponential backoff (T14).
 //
@@ -38,6 +39,9 @@ public:
     {
         TransientFailure, //network or server hiccup: retry with backoff
         AuthFailure,      //credentials rejected: bounded number of retries
+        //Server certificate not trusted: only the user can change that
+        //(confirm it, or log in again), so nothing retries on its own.
+        TrustFailure,
     };
 
     enum Trigger
@@ -144,6 +148,19 @@ public:
     {
         if (m_state != Connecting && m_state != Connected)
             return false;
+
+        if (f == TrustFailure)
+        {
+            //Not counted as a network failure: no "connection lost" alert,
+            //and an automatic attempt must not prompt for the same
+            //certificate again.
+            m_givenUp = true;
+            m_wantsConnection = false;
+            m_pendingDelayMs = 0;
+            m_pollFailures = 0;
+            m_state = Disconnected;
+            return false;
+        }
 
         if (f == AuthFailure)
         {
@@ -470,6 +487,20 @@ public:
     bool failingOnCredentials() const { return reconnectPolicy.authFailureCount() > 0; }
     int reconnectFailureCount() const { return reconnectPolicy.failureCount(); }
 
+    //TLS trust on first use (TlsPinning.h). An attempt that meets a
+    //certificate Qt does not trust and that is not pinned fails with
+    //TrustFailure (no automatic retry) and asks the user once through
+    //tlsTrustRequested(); the answer comes back here. Accepting pins the key
+    //and logs in again, refusing keeps the session down.
+    void answerTlsTrust(bool accept);
+    bool hasPendingTlsTrust() const { return !pendingTrust.isEmpty(); }
+    //A certificate refused in this run is refused silently afterwards (the
+    //launch login, iOS become-active), so the prompt cannot come back in a
+    //loop. An explicit login from the login screen asks again.
+    void forgetTlsRefusals() { tlsRefused.clear(); }
+    //Tests use a store of their own; default TlsPinStore::instance().
+    void setPinStore(TlsPinStore *store);
+
     //Network discovery found a server: try again *now* instead of waiting for
     //the pending backoff delay. Never stacks a second timer or a second login,
     //the guard in ReconnectPolicy refuses the call when an attempt is already
@@ -611,6 +642,20 @@ private:
     //policy, notifies Application and arms the single retry timer.
     void connectionLost(const QString &reason, ReconnectPolicy::Failure kind = ReconnectPolicy::TransientFailure);
     void handleWebsocketFailure(const QString &reason);
+
+    TlsPinStore *pins() const;
+    void dropCachedConnections();
+    //The decision for one handshake; true means "ignore the errors" (pin
+    //match). Otherwise the attempt is marked as blocked by the certificate.
+    bool checkTls(const QUrl &url, const QSslCertificate &peer, const QList<QSslError> &errors);
+    TlsPinStore *pinStore = nullptr;
+    //What the dialog shows, empty when nothing is waiting for the user.
+    QVariantMap pendingTrust;
+    //"host:port|spki" the user refused (or that can never be accepted).
+    QSet<QString> tlsRefused;
+    //The current attempt met an untrusted certificate: its failure is a
+    //TrustFailure and the websocket must not fall back to HTTP.
+    bool tlsBlocked = false;
     void handlePollFailure(const QString &reason);
     void armReconnectTimer();
     void cancelReconnectTimer();
@@ -683,6 +728,19 @@ signals:
     //parallel.
     void connectionStateChanged(int state);
 
+    //See answerTlsTrust(). info: host (host:port), fingerprint (SPKI
+    //SHA-256), certFingerprint (whole certificate SHA-256), subject, issuer,
+    //expiry, keyChanged, previousFingerprint, suspicious (DNS name, or a
+    //valid chain for another name: no reassuring wording).
+    void tlsTrustRequested(const QVariantMap &info);
+    //The pending question is void (logout): close the dialog.
+    void tlsTrustCanceled();
+    //The user refused the certificate of host.
+    void tlsTrustRejected(const QString &host);
+    //A certificate no pin can make acceptable (revoked, forged signature).
+    //weakKey: RSA under 2048 bits, the box needs a new certificate.
+    void tlsCertificateRefused(const QString &host, const QString &reason, bool weakKey);
+
 public slots:
     void login(QString user, QString pass, QString host);
     void logout();
@@ -696,6 +754,7 @@ public slots:
 private slots:
     void sslErrors(QNetworkReply *reply, const QList<QSslError> &);
     void sslErrorsWebsocket(const QList<QSslError> &errors);
+    void encrypted(QNetworkReply *reply);
     void loginFinished(QNetworkReply *reply);
 
     void requestFinished();

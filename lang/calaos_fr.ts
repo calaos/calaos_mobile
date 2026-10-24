@@ -4,8 +4,7 @@
 <context>
     <name>Application</name>
     <message>
-        <location filename="../src/Application.cpp" line="207"/>
-        <location filename="../src/Application.cpp" line="391"/>
+        <location filename="../src/Application.cpp" line="255"/>
         <source>Network error</source>
         <translation>Erreur réseau</translation>
     </message>
@@ -14,50 +13,92 @@
         <translation type="vanished">La connection avec calaos_server a été perdu. Elle va être retentée lorsque calaos_server sera de nouveau disponible.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="208"/>
+        <location filename="../src/Application.cpp" line="256"/>
         <source>The connection to calaos_server was lost. It will reconnect automatically when calaos_server is available again.</source>
         <translation>La connexion avec calaos_server a été perdue. Elle sera rétablie automatiquement dès que calaos_server sera de nouveau disponible.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="211"/>
-        <location filename="../src/Application.cpp" line="219"/>
-        <location filename="../src/Application.cpp" line="231"/>
-        <location filename="../src/Application.cpp" line="395"/>
-        <location filename="../src/Application.cpp" line="551"/>
+        <location filename="../src/Application.cpp" line="259"/>
+        <location filename="../src/Application.cpp" line="278"/>
+        <location filename="../src/Application.cpp" line="291"/>
+        <location filename="../src/Application.cpp" line="303"/>
+        <location filename="../src/Application.cpp" line="315"/>
+        <location filename="../src/Application.cpp" line="730"/>
+        <location filename="../src/Application.cpp" line="895"/>
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="217"/>
+        <location filename="../src/Application.cpp" line="269"/>
+        <source>Not connected</source>
+        <translation>Non connecté</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="271"/>
+        <source>The certificate of %1 was not trusted, the connection was cancelled.</source>
+        <translation>Le certificat de %1 n&apos;a pas été accepté, la connexion a été annulée.</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="274"/>
+        <source>The certificate of %1 was not trusted, the connection was cancelled. Tap Login to check it again.</source>
+        <translation>Le certificat de %1 n&apos;a pas été accepté, la connexion a été annulée. Touchez Connexion pour le vérifier à nouveau.</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="291"/>
+        <source>Certificate refused</source>
+        <translation>Certificat refusé</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="289"/>
+        <source>The certificate of %1 is not valid (%2). The connection was cancelled.</source>
+        <translation>Le certificat de %1 n&apos;est pas valide (%2). La connexion a été annulée.</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="286"/>
+        <source>The certificate of %1 uses a key that is too weak (%2). The connection was cancelled. Regenerate the certificate of the Calaos box (/mnt/calaos/haproxy/server.pem).</source>
+        <translation>Le certificat de %1 utilise une clé trop faible (%2). La connexion a été annulée. Régénérez le certificat de la box Calaos (/mnt/calaos/haproxy/server.pem).</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="301"/>
         <source>Credentials change failed</source>
         <translation>Échec de la modification des identifiants</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="218"/>
+        <location filename="../src/Application.cpp" line="302"/>
         <source>Credentials were not changed. Please try again.</source>
         <translation>Les identifiants n&apos;ont pas été modifiés. Veuillez réessayer.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="229"/>
+        <location filename="../src/Application.cpp" line="313"/>
         <source>Credentials changed</source>
         <translation>Identifiants modifiés</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="230"/>
+        <location filename="../src/Application.cpp" line="314"/>
         <source>Credentials were successfully changed.</source>
         <translation>Les identifiants ont été modifiés avec succès.</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="893"/>
+        <source>Reboot</source>
+        <translation type="unfinished">Redémarrer</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="894"/>
+        <source>An update is being installed. Reboot once it has finished.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No network connection found, this application requires a network connection to work.</source>
         <translation type="vanished">Aucune connexion réseau trouvée, cette application nécessite une connexion réseau pour fonctionner.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="549"/>
+        <location filename="../src/Application.cpp" line="728"/>
         <source>Login failed</source>
         <translation>Échec de l&apos;authentification</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="550"/>
+        <location filename="../src/Application.cpp" line="729"/>
         <source>Connection failed, please check your credentials.</source>
         <translation>Échec de la connexion, veuillez vérifier vos identifiants.</translation>
     </message>
@@ -103,14 +144,16 @@
 <context>
     <name>CalaosOsAPI</name>
     <message>
-        <location filename="../src/CalaosOsAPI.cpp" line="96"/>
-        <location filename="../src/CalaosOsAPI.cpp" line="149"/>
-        <location filename="../src/CalaosOsAPI.cpp" line="292"/>
-        <location filename="../src/CalaosOsAPI.cpp" line="352"/>
-        <location filename="../src/CalaosOsAPI.cpp" line="415"/>
-        <location filename="../src/CalaosOsAPI.cpp" line="476"/>
+        <location filename="../src/CalaosOsAPI.cpp" line="177"/>
+        <location filename="../src/CalaosOsAPI.cpp" line="230"/>
+        <location filename="../src/CalaosOsAPI.cpp" line="475"/>
         <source>Failed to start network request</source>
         <translation>Échec du démarrage de la requête réseau</translation>
+    </message>
+    <message>
+        <location filename="../src/CalaosOsAPI.cpp" line="497"/>
+        <source>Invalid answer from the update service</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -653,82 +696,92 @@
 <context>
     <name>ConfigUpdateView</name>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="11"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="12"/>
         <source>Update installed</source>
         <translation>Mise à jour installée</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="12"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="13"/>
         <source>Update failed</source>
         <translation>Échec de la mise à jour</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="13"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="14"/>
         <source>Downloading</source>
         <translation>Téléchargement</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="14"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="15"/>
         <source>Unpacking</source>
         <translation>Décompression</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="15"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="16"/>
         <source>Installing</source>
         <translation>Installation</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="16"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="17"/>
         <source>Waiting</source>
         <translation>En attente</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="17"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="18"/>
         <source>Update available</source>
         <translation>Mise à jour disponible</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="17"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="18"/>
         <source>Up to date</source>
         <translation>À jour</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="30"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="31"/>
         <source>Linux kernel</source>
         <translation>Noyau Linux</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="31"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="32"/>
         <source>System packages</source>
         <translation>Paquets système</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="173"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="174"/>
         <source>Cannot contact the update service</source>
         <translation>Impossible de contacter le service de mise à jour</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="222"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="230"/>
+        <source>A reboot is required to finish installing the updates.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="243"/>
+        <source>Reboot</source>
+        <translation type="unfinished">Redémarrer</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="276"/>
         <source>Your system is up to date</source>
         <translation>Votre système est à jour</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="234"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="288"/>
         <source>Calaos components</source>
         <translation>Composants Calaos</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="241"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="295"/>
         <source>Component list unavailable</source>
         <translation>Liste des composants indisponible</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="333"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="387"/>
         <source>System updates</source>
         <translation>Mises à jour système</translation>
     </message>
     <message numerus="yes">
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="387"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="441"/>
         <source>%n package(s)</source>
         <translation>
             <numerusform>%n paquet</numerusform>
@@ -736,47 +789,47 @@
         </translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="431"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="485"/>
         <source>Checking for updates…</source>
         <translation>Recherche de mises à jour…</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="449"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="503"/>
         <source>Install all updates</source>
         <translation>Installer toutes les mises à jour</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="450"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="504"/>
         <source>All available updates will be installed. This may take several minutes.</source>
         <translation>Toutes les mises à jour disponibles seront installées. Cela peut prendre plusieurs minutes.</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="451"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="505"/>
         <source>Install</source>
         <translation>Installer</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="482"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="536"/>
         <source>Update your system</source>
         <translation>Mise à jour du système</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="509"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="563"/>
         <source>Refresh</source>
         <translation>Actualiser</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="518"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="572"/>
         <source>Update all (%1)</source>
         <translation>Tout mettre à jour (%1)</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="528"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="582"/>
         <source>Back to config</source>
         <translation>Retour à la config</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="536"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="590"/>
         <source>Quit</source>
         <translation>Quitter</translation>
     </message>
@@ -1517,46 +1570,114 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     </message>
 </context>
 <context>
+    <name>DialogTlsTrust</name>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="21"/>
+        <source>Certificate changed!</source>
+        <translation>Certificat modifié !</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="21"/>
+        <source>Unknown certificate</source>
+        <translation>Certificat inconnu</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="23"/>
+        <source>The certificate key of %1 has changed since the last connection. This is expected if the certificate of your Calaos box was regenerated, but it can also mean that someone is intercepting the connection. Only trust it if you know why it changed.</source>
+        <translation>La clé du certificat de %1 a changé depuis la dernière connexion. C&apos;est normal si le certificat de votre box Calaos a été régénéré, mais cela peut aussi signifier que quelqu&apos;un intercepte la connexion. Ne lui faites confiance que si vous savez pourquoi il a changé.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="28"/>
+        <source>The certificate of %1 cannot be verified. A server reached by its domain name, or presenting a certificate issued for another name, normally has a valid certificate: someone may be intercepting the connection. Only trust it if you know this server uses its own certificate.</source>
+        <translation>Le certificat de %1 ne peut pas être vérifié. Un serveur joint par son nom de domaine, ou qui présente un certificat émis pour un autre nom, a normalement un certificat valide : quelqu&apos;un intercepte peut-être la connexion. Ne lui faites confiance que si vous savez que ce serveur utilise son propre certificat.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="33"/>
+        <source>The certificate of %1 cannot be verified. This is usual for a Calaos box on a home network. Check that the fingerprint below is the one of your box before trusting it.</source>
+        <translation>Le certificat de %1 ne peut pas être vérifié. C&apos;est habituel pour une box Calaos sur un réseau local. Vérifiez que l&apos;empreinte ci-dessous est bien celle de votre box avant de lui faire confiance.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="36"/>
+        <source>Do not connect</source>
+        <translation>Ne pas se connecter</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="37"/>
+        <source>Trust</source>
+        <translation>Faire confiance</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="67"/>
+        <source>Key fingerprint (SHA-256)</source>
+        <translation>Empreinte de la clé (SHA-256)</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="72"/>
+        <source>Previously trusted key</source>
+        <translation>Clé acceptée précédemment</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="80"/>
+        <source>Certificate fingerprint (SHA-256)</source>
+        <translation>Empreinte du certificat (SHA-256)</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="89"/>
+        <source>Issued to: %1</source>
+        <translation>Délivré à : %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="90"/>
+        <source>Issued by: %1</source>
+        <translation>Délivré par : %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="91"/>
+        <source>Expires: %1</source>
+        <translation>Expire le : %1</translation>
+    </message>
+</context>
+<context>
     <name>EventLogItem</name>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="104"/>
+        <location filename="../src/EventLogModel.cpp" line="199"/>
         <source>Appliance change</source>
         <translation>Changement d&apos;un équipement</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="109"/>
+        <location filename="../src/EventLogModel.cpp" line="204"/>
         <source>Push Notification</source>
         <translation>Notification Push</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="129"/>
+        <location filename="../src/EventLogModel.cpp" line="224"/>
         <source>Unknown event!</source>
         <translation>Événement inconnu!</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="137"/>
+        <location filename="../src/EventLogModel.cpp" line="232"/>
         <source>Today</source>
         <translation>Aujourd&apos;hui</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="164"/>
-        <location filename="../src/EventLogModel.cpp" line="177"/>
+        <location filename="../src/EventLogModel.cpp" line="259"/>
+        <location filename="../src/EventLogModel.cpp" line="272"/>
         <source>On</source>
         <translation>Allumé</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="169"/>
-        <location filename="../src/EventLogModel.cpp" line="182"/>
+        <location filename="../src/EventLogModel.cpp" line="264"/>
+        <location filename="../src/EventLogModel.cpp" line="277"/>
         <source>Off</source>
         <translation>Éteint</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="188"/>
+        <location filename="../src/EventLogModel.cpp" line="283"/>
         <source>Temp changed</source>
         <translation>Changement de température</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="195"/>
+        <location filename="../src/EventLogModel.cpp" line="290"/>
         <source>Opened</source>
         <translation>Ouvert</translation>
     </message>
@@ -1565,12 +1686,12 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
         <translation type="vanished">Ouvert</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="200"/>
+        <location filename="../src/EventLogModel.cpp" line="295"/>
         <source>Closed</source>
         <translation>Fermé</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="206"/>
+        <location filename="../src/EventLogModel.cpp" line="301"/>
         <source>Started</source>
         <translation>Démarré</translation>
     </message>
@@ -1635,12 +1756,12 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>HardwareUtilsAndroid</name>
     <message>
-        <location filename="../android/HardwareUtils_Android.cpp" line="275"/>
+        <location filename="../android/HardwareUtils_Android.cpp" line="315"/>
         <source>Confirm</source>
         <translation>Valider</translation>
     </message>
     <message>
-        <location filename="../android/HardwareUtils_Android.cpp" line="277"/>
+        <location filename="../android/HardwareUtils_Android.cpp" line="317"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
@@ -1648,12 +1769,12 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>HardwareUtils_iOS</name>
     <message>
-        <location filename="../ios/HardwareUtils.mm" line="356"/>
+        <location filename="../ios/HardwareUtils.mm" line="584"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
     <message>
-        <location filename="../ios/HardwareUtils.mm" line="357"/>
+        <location filename="../ios/HardwareUtils.mm" line="585"/>
         <source>Confirm</source>
         <translation>Valider</translation>
     </message>
@@ -1875,27 +1996,27 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>LoginView</name>
     <message>
-        <location filename="../qml/mobile/LoginView.qml" line="49"/>
+        <location filename="../qml/mobile/LoginView.qml" line="85"/>
         <source>Login to your home</source>
         <translation>Se connecter à votre maison</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/LoginView.qml" line="74"/>
+        <location filename="../qml/mobile/LoginView.qml" line="110"/>
         <source>Username</source>
         <translation>Nom d&apos;utilisateur</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/LoginView.qml" line="84"/>
+        <location filename="../qml/mobile/LoginView.qml" line="119"/>
         <source>Password</source>
         <translation>Mot de passe</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/LoginView.qml" line="93"/>
+        <location filename="../qml/mobile/LoginView.qml" line="127"/>
         <source>Hostname</source>
         <translation>Adresse de la machine</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/LoginView.qml" line="100"/>
+        <location filename="../qml/mobile/LoginView.qml" line="133"/>
         <source>Login</source>
         <translation>Se connecter</translation>
     </message>
@@ -1980,27 +2101,27 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>MainMenuBar</name>
     <message>
-        <location filename="../qml/mobile/MainMenuBar.qml" line="44"/>
+        <location filename="../qml/mobile/MainMenuBar.qml" line="75"/>
         <source>Back</source>
         <translation>Retour</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/MainMenuBar.qml" line="92"/>
+        <location filename="../qml/mobile/MainMenuBar.qml" line="123"/>
         <source>Home</source>
         <translation>Maison</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/MainMenuBar.qml" line="106"/>
+        <location filename="../qml/mobile/MainMenuBar.qml" line="137"/>
         <source>Media</source>
         <translation>Médias</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/MainMenuBar.qml" line="120"/>
+        <location filename="../qml/mobile/MainMenuBar.qml" line="151"/>
         <source>Scenarios</source>
         <translation>Scénarios</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/MainMenuBar.qml" line="134"/>
+        <location filename="../qml/mobile/MainMenuBar.qml" line="165"/>
         <source>Config</source>
         <translation>Config</translation>
     </message>
@@ -2246,7 +2367,7 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>PushEventView</name>
     <message>
-        <location filename="../qml/mobile/PushEventView.qml" line="101"/>
+        <location filename="../qml/mobile/PushEventView.qml" line="102"/>
         <source>Push Notification</source>
         <translation>Notification Push</translation>
     </message>
@@ -2369,27 +2490,37 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
         <translation>Remise à zéro des données</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="64"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="68"/>
+        <source>Trusted certificates:</source>
+        <translation>Certificats de confiance :</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsView.qml" line="107"/>
+        <source>Forget</source>
+        <translation>Oublier</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsView.qml" line="119"/>
         <source>Favorites:</source>
         <translation>Favoris:</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="70"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="125"/>
         <source>Add a favorite</source>
         <translation>Ajouter un favori</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="82"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="137"/>
         <source>Edit favorites list</source>
         <translation>Éditer la liste des favoris</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="90"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="145"/>
         <source>Language:</source>
         <translation>Langue:</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="127"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="182"/>
         <source>Settings</source>
         <translation>Options</translation>
     </message>
@@ -2437,36 +2568,142 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
     </message>
 </context>
 <context>
+    <name>TlsTrustSheet</name>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="87"/>
+        <source>Certificate changed!</source>
+        <translation>Certificat modifié !</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="87"/>
+        <source>Unknown certificate</source>
+        <translation>Certificat inconnu</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="104"/>
+        <source>The certificate key of %1 has changed since the last connection. This is expected if the certificate of your Calaos box was regenerated, but it can also mean that someone is intercepting the connection. Only trust it if you know why it changed.</source>
+        <translation>La clé du certificat de %1 a changé depuis la dernière connexion. C&apos;est normal si le certificat de votre box Calaos a été régénéré, mais cela peut aussi signifier que quelqu&apos;un intercepte la connexion. Ne lui faites confiance que si vous savez pourquoi il a changé.</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="109"/>
+        <source>The certificate of %1 cannot be verified. A server reached by its domain name, or presenting a certificate issued for another name, normally has a valid certificate: someone may be intercepting the connection. Only trust it if you know this server uses its own certificate.</source>
+        <translation>Le certificat de %1 ne peut pas être vérifié. Un serveur joint par son nom de domaine, ou qui présente un certificat émis pour un autre nom, a normalement un certificat valide : quelqu&apos;un intercepte peut-être la connexion. Ne lui faites confiance que si vous savez que ce serveur utilise son propre certificat.</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="114"/>
+        <source>The certificate of %1 cannot be verified. This is usual for a Calaos box on a home network. Check that the fingerprint below is the one of your box before trusting it.</source>
+        <translation>Le certificat de %1 ne peut pas être vérifié. C&apos;est habituel pour une box Calaos sur un réseau local. Vérifiez que l&apos;empreinte ci-dessous est bien celle de votre box avant de lui faire confiance.</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="119"/>
+        <source>Key fingerprint (SHA-256)</source>
+        <translation>Empreinte de la clé (SHA-256)</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="124"/>
+        <source>Previously trusted key</source>
+        <translation>Clé acceptée précédemment</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="132"/>
+        <source>Certificate fingerprint (SHA-256)</source>
+        <translation>Empreinte du certificat (SHA-256)</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="141"/>
+        <source>Issued to: %1</source>
+        <translation>Délivré à : %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="142"/>
+        <source>Issued by: %1</source>
+        <translation>Délivré par : %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="143"/>
+        <source>Expires: %1</source>
+        <translation>Expire le : %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="155"/>
+        <source>Do not connect</source>
+        <translation>Ne pas se connecter</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="166"/>
+        <source>Trust</source>
+        <translation>Faire confiance</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="166"/>
+        <source>Tap again to trust</source>
+        <translation>Touchez à nouveau pour faire confiance</translation>
+    </message>
+</context>
+<context>
     <name>UpdateManager</name>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="149"/>
+        <location filename="../src/UpdateManager.cpp" line="167"/>
+        <location filename="../src/UpdateManager.cpp" line="419"/>
         <source>Cannot contact the update service</source>
         <translation>Impossible de contacter le service de mise à jour</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="599"/>
-        <location filename="../src/UpdateManager.cpp" line="611"/>
+        <location filename="../src/UpdateManager.cpp" line="387"/>
+        <source>Invalid answer from the update service</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/UpdateManager.cpp" line="403"/>
+        <source>Another update was running. Check for updates again, then retry.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/UpdateManager.cpp" line="409"/>
+        <source>Another update operation is in progress, try again later.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/UpdateManager.cpp" line="529"/>
+        <source>The update service lost track of the update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/UpdateManager.cpp" line="825"/>
+        <location filename="../src/UpdateManager.cpp" line="865"/>
+        <location filename="../src/UpdateManager.cpp" line="903"/>
         <source>Software update</source>
         <translation>Mise à jour logicielle</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="600"/>
+        <location filename="../src/UpdateManager.cpp" line="866"/>
         <source>Update installed successfully.</source>
         <translation>Mise à jour installée avec succès.</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="601"/>
-        <location filename="../src/UpdateManager.cpp" line="613"/>
+        <location filename="../src/UpdateManager.cpp" line="1214"/>
+        <source>The outcome of the update is unknown. Check for updates again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/UpdateManager.cpp" line="1236"/>
+        <source>The outcome of the update is unknown: another update ran meanwhile. Check for updates again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/UpdateManager.cpp" line="827"/>
+        <location filename="../src/UpdateManager.cpp" line="867"/>
+        <location filename="../src/UpdateManager.cpp" line="905"/>
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="607"/>
+        <location filename="../src/UpdateManager.cpp" line="899"/>
         <source>Upgrade failed</source>
         <translation>Échec de la mise à jour</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="612"/>
+        <location filename="../src/UpdateManager.cpp" line="904"/>
         <source>Upgrade failed: %1</source>
         <translation>Échec de la mise à jour : %1</translation>
     </message>
@@ -2726,22 +2963,22 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
 <context>
     <name>main</name>
     <message>
-        <location filename="../qml/desktop/main.qml" line="380"/>
+        <location filename="../qml/desktop/main.qml" line="382"/>
         <source>Keyboard</source>
         <translation>Clavier</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/main.qml" line="381"/>
+        <location filename="../qml/desktop/main.qml" line="383"/>
         <source>Change text for &apos;%1&apos;</source>
         <translation>Changer le texte pour &apos;%1&apos;</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/main.qml" line="405"/>
+        <location filename="../qml/mobile/main.qml" line="507"/>
         <source>Change value</source>
         <translation>Changer la valeur</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/main.qml" line="406"/>
+        <location filename="../qml/mobile/main.qml" line="508"/>
         <source>Enter new value</source>
         <translation>Entrez une nouvelle valeur</translation>
     </message>

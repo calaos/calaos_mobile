@@ -48,11 +48,18 @@ CalaosConnection::CalaosConnection(QObject *parent) :
     accessManagerCam = new QNetworkAccessManager(this);
     accessManager->setTransferTimeout(HTTP_TRANSFER_TIMEOUT);
     accessManagerCam->setTransferTimeout(HTTP_TRANSFER_TIMEOUT);
+    //The credentials travel in the body (and in the query string of the
+    //picture urls): never replay them to another host.
+    accessManager->setRedirectPolicy(QNetworkRequest::SameOriginRedirectPolicy);
+    accessManagerCam->setRedirectPolicy(QNetworkRequest::SameOriginRedirectPolicy);
     pollReply = nullptr;
     connect(accessManager, &QNetworkAccessManager::sslErrors,
             this, &CalaosConnection::sslErrors);
     connect(accessManagerCam, &QNetworkAccessManager::sslErrors,
             this, &CalaosConnection::sslErrors);
+    connect(pins(), &TlsPinStore::pinsChanged, this, &CalaosConnection::dropCachedConnections);
+    connect(accessManager, &QNetworkAccessManager::encrypted, this, &CalaosConnection::encrypted);
+    connect(accessManagerCam, &QNetworkAccessManager::encrypted, this, &CalaosConnection::encrypted);
 
     //A token reported while the session is up (rotation, or a token that only
     //arrived after the login) is registered right away, not at the next login.
@@ -60,14 +67,162 @@ CalaosConnection::CalaosConnection(QObject *parent) :
             this, &CalaosConnection::registerPushToken);
 }
 
-void CalaosConnection::sslErrors(QNetworkReply *reply, const QList<QSslError> &)
+void CalaosConnection::sslErrors(QNetworkReply *reply, const QList<QSslError> &errors)
 {
-    reply->ignoreSslErrors();
+    //Synchronous on purpose: ignoreSslErrors() only counts from inside this
+    //slot, so an unknown certificate fails the request and is asked about
+    //afterwards.
+    //These errors only, never all: the flag would stay on QNAM's cached
+    //channel and let a later handshake with another certificate through.
+    if (checkTls(reply->url(), reply->sslConfiguration().peerCertificate(), errors))
+        reply->ignoreSslErrors(errors);
 }
 
-void CalaosConnection::sslErrorsWebsocket(const QList<QSslError> &)
+void CalaosConnection::sslErrorsWebsocket(const QList<QSslError> &errors)
 {
-    wsocket->ignoreSslErrors();
+    if (!wsocket)
+        return;
+    if (checkTls(wsocket->requestUrl(), wsocket->sslConfiguration().peerCertificate(), errors))
+        wsocket->ignoreSslErrors(errors);
+}
+
+void CalaosConnection::encrypted(QNetworkReply *reply)
+{
+    //Emitted before any request data: a CA-valid certificate never reaches
+    //sslErrors, so a pinned host's key is checked here too.
+    if (!checkTls(reply->url(), reply->sslConfiguration().peerCertificate(), {}))
+        reply->abort();
+}
+
+TlsPinStore *CalaosConnection::pins() const
+{
+    return pinStore ? pinStore : TlsPinStore::instance();
+}
+
+void CalaosConnection::setPinStore(TlsPinStore *store)
+{
+    disconnect(pins(), &TlsPinStore::pinsChanged, this, &CalaosConnection::dropCachedConnections);
+    pinStore = store;
+    connect(pins(), &TlsPinStore::pinsChanged, this, &CalaosConnection::dropCachedConnections);
+}
+
+void CalaosConnection::dropCachedConnections()
+{
+    //A forgotten pin must not survive in a kept-alive connection.
+    accessManager->clearConnectionCache();
+    accessManagerCam->clearConnectionCache();
+}
+
+bool CalaosConnection::checkTls(const QUrl &url, const QSslCertificate &peer, const QList<QSslError> &errors)
+{
+    const QSslCertificate cert = TlsPinning::peerCertificate(peer, errors);
+    const QString key = TlsPinning::hostKey(url);
+    const QString spki = TlsPinning::spkiSha256(cert);
+    const QString stored = pins()->pin(key);
+    const TlsPinning::Decision decision = TlsPinning::decide(errors, stored, spki);
+
+    if (decision == TlsPinning::Decision::PinMatch || decision == TlsPinning::Decision::Trusted)
+        return true;
+
+    QStringList reasons;
+    for (const QSslError &e: errors)
+        reasons << e.errorString();
+
+    //The attempt is over whatever happens below; the transport failure that
+    //follows reports it as a TrustFailure. Queued for a request of a session
+    //already up, whose failure would otherwise only be logged.
+    tlsBlocked = true;
+    QTimer::singleShot(0, this, [this]()
+    {
+        if (tlsBlocked)
+            connectionLost(QStringLiteral("untrusted server certificate"), ReconnectPolicy::TrustFailure);
+    });
+
+    const QString refusalId = key + QLatin1Char('|') + spki;
+    if (tlsRefused.contains(refusalId))
+    {
+        qInfo() << "TLS: certificate of" << key << "already refused in this run, not asking again";
+        return false;
+    }
+
+    if (decision == TlsPinning::Decision::Refuse)
+    {
+        qWarning() << "TLS: certificate of" << key << "refused:" << reasons.join(QStringLiteral("; "));
+        tlsRefused.insert(refusalId);
+        emit tlsCertificateRefused(key, reasons.join(QStringLiteral("; ")), TlsPinning::isWeakRsaKey(cert));
+        return false;
+    }
+
+    const bool keyChanged = decision == TlsPinning::Decision::AskKeyChanged;
+    if (keyChanged)
+        qWarning() << "TLS: key CHANGED for" << key << "SPKI sha256" << spki << "pinned" << stored
+                   << "-" << reasons.join(QStringLiteral("; "));
+    else
+        qWarning() << "TLS: first certificate seen for" << key << "SPKI sha256" << spki
+                   << "-" << reasons.join(QStringLiteral("; "));
+
+    //One question at a time: every request of the attempt reports the same
+    //certificate, and a different one meanwhile must not replace what the
+    //user is reading. It is asked about at the next attempt.
+    if (!pendingTrust.isEmpty())
+    {
+        if (pendingTrust.value(QStringLiteral("host")).toString() != key ||
+            pendingTrust.value(QStringLiteral("spki")).toString() != spki)
+            qInfo() << "TLS: a question is already pending, certificate of" << key << "refused for now";
+        return false;
+    }
+
+    //Reached by DNS name, or a valid chain issued for another name: what a
+    //man in the middle would present, so the dialog does not reassure.
+    bool nameMismatchOnly = !errors.isEmpty();
+    for (const QSslError &e: errors)
+    {
+        if (e.error() != QSslError::HostNameMismatch)
+            nameMismatchOnly = false;
+    }
+    const bool suspicious = TlsPinning::isDnsName(url.host(QUrl::FullyEncoded)) || nameMismatchOnly;
+
+    QVariantMap info;
+    info[QStringLiteral("host")] = key;
+    info[QStringLiteral("spki")] = spki;
+    info[QStringLiteral("fingerprint")] = TlsPinning::formatFingerprint(spki);
+    info[QStringLiteral("certFingerprint")] = TlsPinning::formatFingerprint(TlsPinning::certSha256(cert));
+    info[QStringLiteral("subject")] = cert.subjectDisplayName();
+    info[QStringLiteral("issuer")] = cert.issuerDisplayName();
+    info[QStringLiteral("expiry")] = QLocale().toString(cert.expiryDate().date(), QLocale::ShortFormat);
+    info[QStringLiteral("keyChanged")] = keyChanged;
+    info[QStringLiteral("suspicious")] = suspicious;
+    info[QStringLiteral("previousFingerprint")] = TlsPinning::formatFingerprint(stored);
+    pendingTrust = info;
+    emit tlsTrustRequested(info);
+    return false;
+}
+
+void CalaosConnection::answerTlsTrust(bool accept)
+{
+    if (pendingTrust.isEmpty())
+        return;
+
+    const QVariantMap info = pendingTrust;
+    pendingTrust.clear();
+    const QString key = info.value(QStringLiteral("host")).toString();
+    const QString spki = info.value(QStringLiteral("spki")).toString();
+
+    if (!accept)
+    {
+        qInfo() << "TLS: user refused the certificate of" << key;
+        tlsRefused.insert(key + QLatin1Char('|') + spki);
+        emit tlsTrustRejected(key);
+        return;
+    }
+
+    qInfo() << "TLS: user trusted" << key << "SPKI sha256" << spki;
+    pins()->setPin(key, spki);
+    tlsRefused.remove(key + QLatin1Char('|') + spki);
+
+    //An explicit answer: start over now, like a tap on Login. Refused while
+    //an attempt is in flight or a session is up, which then simply goes on.
+    startConnection(username, password, lasthost, ReconnectPolicy::UserRequest);
 }
 
 QString CalaosConnection::redactUrl(const QUrl &url)
@@ -315,12 +470,21 @@ void CalaosConnection::startConnection(QString user, QString pass, QString h, Re
     if (!reconnectPolicy.canBeginAttempt(trigger))
         return;
 
+    //A question left open belongs to the previous attempt (maybe another
+    //host): it must neither block this one nor be answered for it.
+    if (!pendingTrust.isEmpty())
+    {
+        pendingTrust.clear();
+        emit tlsTrustCanceled();
+    }
+
     //Tear the previous transport down first: aborting its replies can report
     //failures synchronously, and those must land while the policy still knows
     //about the old attempt.
     resetTransport();
     cancelReconnectTimer();
     reconnectPolicy.beginAttempt(trigger);
+    tlsBlocked = false;
     lastAttemptTimer.restart();
     emitStateChanged();
 
@@ -457,6 +621,15 @@ void CalaosConnection::closeWebsocket()
 
 void CalaosConnection::onWsConnected()
 {
+    //A CA-valid certificate never reaches sslErrorsWebsocket(): check the
+    //pinned key before the login frame carries the credentials.
+    if (wsocket->requestUrl().scheme() == QLatin1String("wss") &&
+        !checkTls(wsocket->requestUrl(), wsocket->sslConfiguration().peerCertificate(), {}))
+    {
+        handleWebsocketFailure(QStringLiteral("untrusted server certificate"));
+        return;
+    }
+
     qDebug() << "Websocket connected";
     connect(wsocket, &QWebSocket::textMessageReceived, this, &CalaosConnection::onWsTextMessageReceived);
 
@@ -529,6 +702,14 @@ void CalaosConnection::handleWebsocketFailure(const QString &reason)
 
     closeWebsocket();
 
+    //The HTTP endpoint is the same server with the same certificate: falling
+    //back would only ask the same question twice.
+    if (tlsBlocked)
+    {
+        connectionLost(reason, ReconnectPolicy::TrustFailure);
+        return;
+    }
+
     if (engageFallback)
     {
         wsFallbackDone = true;
@@ -551,6 +732,12 @@ void CalaosConnection::logout()
 {
     cancelReconnectTimer();
     resetTransport();
+    //Answering after a logout would log in again behind the user's back.
+    if (!pendingTrust.isEmpty())
+    {
+        pendingTrust.clear();
+        emit tlsTrustCanceled();
+    }
     //Explicit logout: no automatic reconnection is wanted any more, and none
     //of suspend()/resume(), discovery or the retry timer may reopen it.
     reconnectPolicy.stop();
@@ -568,6 +755,12 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
     if (reply->error() != QNetworkReply::NoError)
     {
         qDebug() << "Error in " << redactUrl(reply->url()) << ":" << reply->errorString();
+
+        if (tlsBlocked)
+        {
+            connectionLost(reply->errorString(), ReconnectPolicy::TrustFailure);
+            return;
+        }
 
         //Credentials rejected by the server is not the same thing as a server
         //that is down: the first one must not be retried forever.

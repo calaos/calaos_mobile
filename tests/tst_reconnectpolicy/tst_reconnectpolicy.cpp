@@ -39,6 +39,7 @@ private slots:
     void wrongPasswordStopsRetrying();
     void wrongPasswordStillAllowsAManualLogin();
     void authFailureCounterIsResetByASuccess();
+    void untrustedCertificateNeverRetriesByItself();
 
     void singlePollFailureKeepsTheSession();
     void pollFailureCounterIsResetByASuccessfulPoll();
@@ -382,6 +383,31 @@ void TstReconnectPolicy::authFailureCounterIsResetByASuccess()
     //A rejection much later must start counting from scratch.
     QVERIFY(p.failed(ReconnectPolicy::AuthFailure));
     QCOMPARE(p.authFailureCount(), 1);
+    QVERIFY(!p.hasGivenUp());
+}
+
+//An unknown server certificate waits for the user: a retry, the network
+//coming back or server discovery must not ask again on their own.
+void TstReconnectPolicy::untrustedCertificateNeverRetriesByItself()
+{
+    ReconnectPolicy p;
+    p.setJitterEnabled(false);
+
+    QVERIFY(!attemptAndFail(p, ReconnectPolicy::TrustFailure, ReconnectPolicy::UserRequest));
+    QCOMPARE(p.state(), ReconnectPolicy::Disconnected);
+    QVERIFY(p.hasGivenUp());
+    QVERIFY(!p.wantsConnection());
+    QVERIFY(!p.canResume());
+    QCOMPARE(p.pendingDelayMs(), 0);
+    //Not a network failure: no "connection lost" alert on the desktop.
+    QCOMPARE(p.failureCount(), 0);
+    QCOMPARE(p.authFailureCount(), 0);
+    QVERIFY(!p.canBeginAttempt(ReconnectPolicy::AutoRetry));
+
+    //The user's answer (or a new login) starts again.
+    QVERIFY(p.canBeginAttempt(ReconnectPolicy::UserRequest));
+    p.beginAttempt(ReconnectPolicy::UserRequest);
+    p.attemptSucceeded();
     QVERIFY(!p.hasGivenUp());
 }
 

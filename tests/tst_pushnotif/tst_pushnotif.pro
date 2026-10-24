@@ -24,6 +24,7 @@ CONFIG += debug
 
 HEADERS += \
     $$SRC_DIR/CalaosConnection.h \
+    $$SRC_DIR/TlsPinning.h \
     $$SRC_DIR/HardwareUtils.h \
     $$SRC_DIR/Common.h \
     $$SRC_DIR/IOTypeRegistry.h \
@@ -31,6 +32,7 @@ HEADERS += \
 
 SOURCES += \
     $$SRC_DIR/CalaosConnection.cpp \
+    $$SRC_DIR/TlsPinning.cpp \
     $$SRC_DIR/CalaosEventDecoder.cpp \
     $$SRC_DIR/HardwareUtils.cpp \
     $$SRC_DIR/Common.cpp \

@@ -65,6 +65,11 @@ public:
     virtual void setSessionActive(bool active);
     virtual bool isSessionActive();
 
+    //Copy of the TLS pins (host:port -> SPKI SHA-256 hex, see TlsPinning.h)
+    //for the code that downloads push pictures without the app (Android
+    //worker, iOS notification extension). Not a secret. Base: nothing to do.
+    virtual void setTlsPins(const QVariantMap &pins) { Q_UNUSED(pins); }
+
     //Called from qml/mobile/main.qml: the QML layer decides when a value has
     //to be typed, the platform decides how. The answer comes back through the
     //dialogTextValid()/dialogCanceled() signals below.

@@ -43,6 +43,9 @@ public:
     virtual void setSessionActive(bool active);
     virtual bool isSessionActive();
 
+    //Copied to the App Group defaults for the notification service extension.
+    virtual void setTlsPins(const QVariantMap &pins);
+
     virtual void inputTextDialog(const QString &title, const QString &message);
 
     virtual QString getStartOption(const QString &key);

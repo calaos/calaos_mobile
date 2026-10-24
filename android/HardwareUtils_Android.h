@@ -44,6 +44,8 @@ public:
     //CredentialStore's session_active flag, shared with PushPictureWorker.
     virtual void setSessionActive(bool active);
     virtual bool isSessionActive();
+    //CredentialStore's copy of the TLS pins, for PushPictureWorker.
+    virtual void setTlsPins(const QVariantMap &pins);
 
 private:
     //Qt's Android backend (ConnectivityManager default-network callback) feeds

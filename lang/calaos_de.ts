@@ -4,8 +4,7 @@
 <context>
     <name>Application</name>
     <message>
-        <location filename="../src/Application.cpp" line="207"/>
-        <location filename="../src/Application.cpp" line="386"/>
+        <location filename="../src/Application.cpp" line="255"/>
         <source>Network error</source>
         <translation>Netzwerkfehler</translation>
     </message>
@@ -14,50 +13,92 @@
         <translation type="vanished">Die Verbindung zu calaos_server wurde unterbrochen. Die Verbindung wird automatisch wiederhergestellt, wenn calaos_server wieder verfügbar ist.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="208"/>
+        <location filename="../src/Application.cpp" line="256"/>
         <source>The connection to calaos_server was lost. It will reconnect automatically when calaos_server is available again.</source>
         <translation>Die Verbindung zu calaos_server wurde unterbrochen. Die Verbindung wird automatisch wiederhergestellt, wenn calaos_server wieder verfügbar ist.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="211"/>
-        <location filename="../src/Application.cpp" line="219"/>
-        <location filename="../src/Application.cpp" line="231"/>
-        <location filename="../src/Application.cpp" line="390"/>
-        <location filename="../src/Application.cpp" line="546"/>
+        <location filename="../src/Application.cpp" line="259"/>
+        <location filename="../src/Application.cpp" line="278"/>
+        <location filename="../src/Application.cpp" line="291"/>
+        <location filename="../src/Application.cpp" line="303"/>
+        <location filename="../src/Application.cpp" line="315"/>
+        <location filename="../src/Application.cpp" line="730"/>
+        <location filename="../src/Application.cpp" line="895"/>
         <source>Close</source>
         <translation>Schliessen</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="217"/>
+        <location filename="../src/Application.cpp" line="269"/>
+        <source>Not connected</source>
+        <translation>Nicht verbunden</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="271"/>
+        <source>The certificate of %1 was not trusted, the connection was cancelled.</source>
+        <translation>Dem Zertifikat von %1 wurde nicht vertraut, die Verbindung wurde abgebrochen.</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="274"/>
+        <source>The certificate of %1 was not trusted, the connection was cancelled. Tap Login to check it again.</source>
+        <translation>Dem Zertifikat von %1 wurde nicht vertraut, die Verbindung wurde abgebrochen. Tippen Sie auf Anmelden, um es erneut zu prüfen.</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="291"/>
+        <source>Certificate refused</source>
+        <translation>Zertifikat abgelehnt</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="289"/>
+        <source>The certificate of %1 is not valid (%2). The connection was cancelled.</source>
+        <translation>Das Zertifikat von %1 ist ungültig (%2). Die Verbindung wurde abgebrochen.</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="286"/>
+        <source>The certificate of %1 uses a key that is too weak (%2). The connection was cancelled. Regenerate the certificate of the Calaos box (/mnt/calaos/haproxy/server.pem).</source>
+        <translation>Das Zertifikat von %1 verwendet einen zu schwachen Schlüssel (%2). Die Verbindung wurde abgebrochen. Erzeugen Sie das Zertifikat der Calaos-Box neu (/mnt/calaos/haproxy/server.pem).</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="301"/>
         <source>Credentials change failed</source>
         <translation>Änderung der Anmeldedaten fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="218"/>
+        <location filename="../src/Application.cpp" line="302"/>
         <source>Credentials were not changed. Please try again.</source>
         <translation>Die Anmeldedaten wurden nicht geändert. Bitte versuchen Sie es erneut.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="229"/>
+        <location filename="../src/Application.cpp" line="313"/>
         <source>Credentials changed</source>
         <translation>Anmeldedaten geändert</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="230"/>
+        <location filename="../src/Application.cpp" line="314"/>
         <source>Credentials were successfully changed.</source>
         <translation>Die Anmeldedaten wurden erfolgreich geändert.</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="893"/>
+        <source>Reboot</source>
+        <translation type="unfinished">Neustart</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="894"/>
+        <source>An update is being installed. Reboot once it has finished.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No network connection found, this application requires a network connection to work.</source>
         <translation type="vanished">Keine Netzwerkverbindung gefunden, diese Anwendung benötigt eine Netzwerkverbindung, um zu funktionieren.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="544"/>
+        <location filename="../src/Application.cpp" line="728"/>
         <source>Login failed</source>
         <translation>Anmeldung fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="545"/>
+        <location filename="../src/Application.cpp" line="729"/>
         <source>Connection failed, please check your credentials.</source>
         <translation>Verbindung fehlgeschlagen, bitte überprüfen Sie Ihre Zugangsdaten.</translation>
     </message>
@@ -103,14 +144,16 @@
 <context>
     <name>CalaosOsAPI</name>
     <message>
-        <location filename="../src/CalaosOsAPI.cpp" line="96"/>
-        <location filename="../src/CalaosOsAPI.cpp" line="149"/>
-        <location filename="../src/CalaosOsAPI.cpp" line="292"/>
-        <location filename="../src/CalaosOsAPI.cpp" line="352"/>
-        <location filename="../src/CalaosOsAPI.cpp" line="415"/>
-        <location filename="../src/CalaosOsAPI.cpp" line="476"/>
+        <location filename="../src/CalaosOsAPI.cpp" line="177"/>
+        <location filename="../src/CalaosOsAPI.cpp" line="230"/>
+        <location filename="../src/CalaosOsAPI.cpp" line="475"/>
         <source>Failed to start network request</source>
         <translation>Netzwerkanfrage konnte nicht gestartet werden</translation>
+    </message>
+    <message>
+        <location filename="../src/CalaosOsAPI.cpp" line="497"/>
+        <source>Invalid answer from the update service</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -186,6 +229,233 @@
         <location filename="../qml/desktop/CameraSingleView.qml" line="113"/>
         <source>Quit</source>
         <translation>Beenden</translation>
+    </message>
+</context>
+<context>
+    <name>ClimateDetail</name>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateDetail.qml" line="48"/>
+        <source>Room %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ClimateModel</name>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="165"/>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="198"/>
+        <source>Off</source>
+        <translation type="unfinished">Aus</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="166"/>
+        <source>Heat</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="167"/>
+        <source>Cool</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="168"/>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="179"/>
+        <source>Auto</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="169"/>
+        <source>Dry</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="170"/>
+        <source>Fan only</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="177"/>
+        <source>Off</source>
+        <comment>fan option</comment>
+        <translation type="unfinished">Aus</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="178"/>
+        <source>On</source>
+        <translation type="unfinished">Ein</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="180"/>
+        <source>Low</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="181"/>
+        <source>Medium</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="182"/>
+        <source>High</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="183"/>
+        <source>Quiet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="184"/>
+        <source>Both</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="185"/>
+        <source>Vertical</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="186"/>
+        <source>Horizontal</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="193"/>
+        <source>Fixed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="199"/>
+        <source>Idle</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="200"/>
+        <source>Heating</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="201"/>
+        <source>Cooling</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="202"/>
+        <source>Drying</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="203"/>
+        <source>Fan</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="238"/>
+        <source>Sensor silent</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="239"/>
+        <source>Sensor missing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="240"/>
+        <source>Waiting for the sensor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="241"/>
+        <source>Sensor disconnected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="242"/>
+        <source>Sensor out of range</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="243"/>
+        <source>Humidity too high</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="244"/>
+        <source>Humidity sensor silent</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="251"/>
+        <source>Offline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="254"/>
+        <source>Stopped</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="257"/>
+        <source>Starts in %n min</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="267"/>
+        <source>Starts in %1 min %2 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateModel.qml" line="268"/>
+        <source>Starts in %1 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ClimateMore</name>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateMore.qml" line="47"/>
+        <source>Ventilation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateMore.qml" line="67"/>
+        <source>Swing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateMore.qml" line="87"/>
+        <source>Humidity %1 %</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ClimateReading</name>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateReading.qml" line="108"/>
+        <source>Minimum gap %1°</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ClimateSheet</name>
+    <message>
+        <location filename="../qml/mobile/ClimateSheet.qml" line="81"/>
+        <source>Mode unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/ClimateSheet.qml" line="117"/>
+        <location filename="../qml/mobile/ClimateSheet.qml" line="163"/>
+        <source>More settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/ClimateSheet.qml" line="134"/>
+        <source>Mode</source>
+        <translation type="unfinished">Modus</translation>
     </message>
 </context>
 <context>
@@ -430,82 +700,92 @@
         <translation type="obsolete">TODO: Arch pkg Update</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="11"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="12"/>
         <source>Update installed</source>
         <translation>Update installiert</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="12"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="13"/>
         <source>Update failed</source>
         <translation>Update fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="13"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="14"/>
         <source>Downloading</source>
         <translation>Wird heruntergeladen</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="14"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="15"/>
         <source>Unpacking</source>
         <translation>Wird entpackt</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="15"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="16"/>
         <source>Installing</source>
         <translation>Wird installiert</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="16"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="17"/>
         <source>Waiting</source>
         <translation>Wartet</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="17"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="18"/>
         <source>Update available</source>
         <translation>Update verfügbar</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="17"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="18"/>
         <source>Up to date</source>
         <translation>Aktuell</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="30"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="31"/>
         <source>Linux kernel</source>
         <translation>Linux-Kernel</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="31"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="32"/>
         <source>System packages</source>
         <translation>Systempakete</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="173"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="174"/>
         <source>Cannot contact the update service</source>
         <translation>Update-Dienst nicht erreichbar</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="222"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="230"/>
+        <source>A reboot is required to finish installing the updates.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="243"/>
+        <source>Reboot</source>
+        <translation type="unfinished">Neustart</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="276"/>
         <source>Your system is up to date</source>
         <translation>Ihr System ist auf dem neuesten Stand</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="234"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="288"/>
         <source>Calaos components</source>
         <translation>Calaos-Komponenten</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="241"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="295"/>
         <source>Component list unavailable</source>
         <translation>Komponentenliste nicht verfügbar</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="333"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="387"/>
         <source>System updates</source>
         <translation>System-Updates</translation>
     </message>
     <message numerus="yes">
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="387"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="441"/>
         <source>%n package(s)</source>
         <translation>
             <numerusform>%n Paket</numerusform>
@@ -513,47 +793,47 @@
         </translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="431"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="485"/>
         <source>Checking for updates…</source>
         <translation>Suche nach Updates…</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="449"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="503"/>
         <source>Install all updates</source>
         <translation>Alle Updates installieren</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="450"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="504"/>
         <source>All available updates will be installed. This may take several minutes.</source>
         <translation>Alle verfügbaren Updates werden installiert. Dies kann mehrere Minuten dauern.</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="451"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="505"/>
         <source>Install</source>
         <translation>Installieren</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="482"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="536"/>
         <source>Update your system</source>
         <translation>System aktualisieren</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="509"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="563"/>
         <source>Refresh</source>
         <translation>Aktualisieren</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="518"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="572"/>
         <source>Update all (%1)</source>
         <translation>Alle aktualisieren (%1)</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="528"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="582"/>
         <source>Back to config</source>
         <translation>Zurück zu Konfig</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigUpdateView.qml" line="536"/>
+        <location filename="../qml/desktop/ConfigUpdateView.qml" line="590"/>
         <source>Quit</source>
         <translation>Beenden</translation>
     </message>
@@ -892,24 +1172,54 @@
     </message>
 </context>
 <context>
+    <name>DialogClimate</name>
+    <message>
+        <location filename="../qml/desktop/DialogClimate.qml" line="50"/>
+        <location filename="../qml/desktop/DialogClimate.qml" line="114"/>
+        <location filename="../qml/desktop/DialogClimate.qml" line="139"/>
+        <source>Close</source>
+        <translation type="unfinished">Schliessen</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogClimate.qml" line="75"/>
+        <source>Mode unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogClimate.qml" line="94"/>
+        <source>More settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogClimate.qml" line="110"/>
+        <source>Mode — %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogClimate.qml" line="135"/>
+        <source>More settings — %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>DialogKeyboard</name>
     <message>
-        <location filename="../qml/desktop/DialogKeyboard.qml" line="70"/>
+        <location filename="../qml/desktop/DialogKeyboard.qml" line="72"/>
         <source>Title</source>
         <translation>Titel</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogKeyboard.qml" line="91"/>
+        <location filename="../qml/desktop/DialogKeyboard.qml" line="93"/>
         <source>Sub Title</source>
         <translation>Untertitel</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogKeyboard.qml" line="225"/>
+        <location filename="../qml/desktop/DialogKeyboard.qml" line="227"/>
         <source>Clear current text</source>
         <translation>Aktuellen Text löschen</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogKeyboard.qml" line="236"/>
+        <location filename="../qml/desktop/DialogKeyboard.qml" line="238"/>
         <source>Confirm</source>
         <translation>Bestätigen</translation>
     </message>
@@ -918,7 +1228,7 @@
         <translation type="vanished">Bestätigen</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogKeyboard.qml" line="250"/>
+        <location filename="../qml/desktop/DialogKeyboard.qml" line="252"/>
         <source>Quit</source>
         <translation>Beenden</translation>
     </message>
@@ -1057,22 +1367,22 @@
 <context>
     <name>DialogRGBColorPicker</name>
     <message>
-        <location filename="../qml/desktop/DialogRGBColorPicker.qml" line="17"/>
+        <location filename="../qml/desktop/DialogRGBColorPicker.qml" line="18"/>
         <source>Choose a color</source>
         <translation>Wählen Sie eine Farbe</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogRGBColorPicker.qml" line="18"/>
+        <location filename="../qml/desktop/DialogRGBColorPicker.qml" line="19"/>
         <source>Change the color of the light</source>
         <translation>Ändern Sie die Farbe des Lichts</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogRGBColorPicker.qml" line="20"/>
+        <location filename="../qml/desktop/DialogRGBColorPicker.qml" line="21"/>
         <source>Change color</source>
         <translation>Farbe ändern</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogRGBColorPicker.qml" line="21"/>
+        <location filename="../qml/desktop/DialogRGBColorPicker.qml" line="22"/>
         <source>Cancel</source>
         <translation>Abbrechen</translation>
     </message>
@@ -1161,52 +1471,52 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
 <context>
     <name>DialogSensorDetails</name>
     <message>
-        <location filename="../qml/desktop/DialogSensorDetails.qml" line="13"/>
+        <location filename="../qml/desktop/DialogSensorDetails.qml" line="14"/>
         <source>Sensor details</source>
         <translation>Sensordetails</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogSensorDetails.qml" line="17"/>
+        <location filename="../qml/desktop/DialogSensorDetails.qml" line="18"/>
         <source>Close</source>
         <translation>Schliessen</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogSensorDetails.qml" line="45"/>
+        <location filename="../qml/desktop/DialogSensorDetails.qml" line="46"/>
         <source>Connected</source>
         <translation>Verbunden</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogSensorDetails.qml" line="54"/>
+        <location filename="../qml/desktop/DialogSensorDetails.qml" line="55"/>
         <source>Yes</source>
         <translation>Ja</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogSensorDetails.qml" line="54"/>
+        <location filename="../qml/desktop/DialogSensorDetails.qml" line="55"/>
         <source>No</source>
         <translation>Nein</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogSensorDetails.qml" line="66"/>
+        <location filename="../qml/desktop/DialogSensorDetails.qml" line="67"/>
         <source>Battery level</source>
         <translation>Batteriestand</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogSensorDetails.qml" line="87"/>
+        <location filename="../qml/desktop/DialogSensorDetails.qml" line="88"/>
         <source>Wireless level</source>
         <translation>Signalstärke</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogSensorDetails.qml" line="108"/>
+        <location filename="../qml/desktop/DialogSensorDetails.qml" line="109"/>
         <source>Uptime</source>
         <translation>Betriebszeit</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogSensorDetails.qml" line="129"/>
+        <location filename="../qml/desktop/DialogSensorDetails.qml" line="130"/>
         <source>IP Address</source>
         <translation>IP-Adresse</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogSensorDetails.qml" line="150"/>
+        <location filename="../qml/desktop/DialogSensorDetails.qml" line="151"/>
         <source>Wifi SSID</source>
         <translation>WLAN-SSID</translation>
     </message>
@@ -1240,46 +1550,114 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
     </message>
 </context>
 <context>
+    <name>DialogTlsTrust</name>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="21"/>
+        <source>Certificate changed!</source>
+        <translation>Zertifikat geändert!</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="21"/>
+        <source>Unknown certificate</source>
+        <translation>Unbekanntes Zertifikat</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="23"/>
+        <source>The certificate key of %1 has changed since the last connection. This is expected if the certificate of your Calaos box was regenerated, but it can also mean that someone is intercepting the connection. Only trust it if you know why it changed.</source>
+        <translation>Der Schlüssel des Zertifikats von %1 hat sich seit der letzten Verbindung geändert. Das ist normal, wenn das Zertifikat Ihrer Calaos-Box neu erzeugt wurde, kann aber auch bedeuten, dass jemand die Verbindung abfängt. Vertrauen Sie ihm nur, wenn Sie wissen, warum es sich geändert hat.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="28"/>
+        <source>The certificate of %1 cannot be verified. A server reached by its domain name, or presenting a certificate issued for another name, normally has a valid certificate: someone may be intercepting the connection. Only trust it if you know this server uses its own certificate.</source>
+        <translation>Das Zertifikat von %1 kann nicht überprüft werden. Ein Server, der über seinen Domainnamen erreicht wird oder ein für einen anderen Namen ausgestelltes Zertifikat vorlegt, hat normalerweise ein gültiges Zertifikat: Möglicherweise fängt jemand die Verbindung ab. Vertrauen Sie ihm nur, wenn Sie wissen, dass dieser Server ein eigenes Zertifikat verwendet.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="33"/>
+        <source>The certificate of %1 cannot be verified. This is usual for a Calaos box on a home network. Check that the fingerprint below is the one of your box before trusting it.</source>
+        <translation>Das Zertifikat von %1 kann nicht überprüft werden. Das ist bei einer Calaos-Box im Heimnetz üblich. Prüfen Sie, ob der folgende Fingerabdruck der Ihrer Box ist, bevor Sie ihm vertrauen.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="36"/>
+        <source>Do not connect</source>
+        <translation>Nicht verbinden</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="37"/>
+        <source>Trust</source>
+        <translation>Vertrauen</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="67"/>
+        <source>Key fingerprint (SHA-256)</source>
+        <translation>Fingerabdruck des Schlüssels (SHA-256)</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="72"/>
+        <source>Previously trusted key</source>
+        <translation>Bisher vertrauter Schlüssel</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="80"/>
+        <source>Certificate fingerprint (SHA-256)</source>
+        <translation>Fingerabdruck des Zertifikats (SHA-256)</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="89"/>
+        <source>Issued to: %1</source>
+        <translation>Ausgestellt für: %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="90"/>
+        <source>Issued by: %1</source>
+        <translation>Ausgestellt von: %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DialogTlsTrust.qml" line="91"/>
+        <source>Expires: %1</source>
+        <translation>Läuft ab: %1</translation>
+    </message>
+</context>
+<context>
     <name>EventLogItem</name>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="104"/>
+        <location filename="../src/EventLogModel.cpp" line="199"/>
         <source>Appliance change</source>
         <translation>Geräteänderung</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="109"/>
+        <location filename="../src/EventLogModel.cpp" line="204"/>
         <source>Push Notification</source>
         <translation>Push-Benachrichtigung</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="129"/>
+        <location filename="../src/EventLogModel.cpp" line="224"/>
         <source>Unknown event!</source>
         <translation>Unbekanntes Ereignis!</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="137"/>
+        <location filename="../src/EventLogModel.cpp" line="232"/>
         <source>Today</source>
         <translation>Heute</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="164"/>
-        <location filename="../src/EventLogModel.cpp" line="177"/>
+        <location filename="../src/EventLogModel.cpp" line="259"/>
+        <location filename="../src/EventLogModel.cpp" line="272"/>
         <source>On</source>
         <translation>Ein</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="169"/>
-        <location filename="../src/EventLogModel.cpp" line="182"/>
+        <location filename="../src/EventLogModel.cpp" line="264"/>
+        <location filename="../src/EventLogModel.cpp" line="277"/>
         <source>Off</source>
         <translation>Aus</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="188"/>
+        <location filename="../src/EventLogModel.cpp" line="283"/>
         <source>Temp changed</source>
         <translation>Temperatur geändert</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="195"/>
+        <location filename="../src/EventLogModel.cpp" line="290"/>
         <source>Opened</source>
         <translation>Geöffnet</translation>
     </message>
@@ -1288,12 +1666,12 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <translation type="vanished">Geöffnet</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="200"/>
+        <location filename="../src/EventLogModel.cpp" line="295"/>
         <source>Closed</source>
         <translation>Geschlossen</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="206"/>
+        <location filename="../src/EventLogModel.cpp" line="301"/>
         <source>Started</source>
         <translation>Gestartet</translation>
     </message>
@@ -1358,12 +1736,12 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
 <context>
     <name>HardwareUtilsAndroid</name>
     <message>
-        <location filename="../android/HardwareUtils_Android.cpp" line="275"/>
+        <location filename="../android/HardwareUtils_Android.cpp" line="315"/>
         <source>Confirm</source>
         <translation>Bestätigen</translation>
     </message>
     <message>
-        <location filename="../android/HardwareUtils_Android.cpp" line="277"/>
+        <location filename="../android/HardwareUtils_Android.cpp" line="317"/>
         <source>Cancel</source>
         <translation>Abbrechen</translation>
     </message>
@@ -1371,12 +1749,12 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
 <context>
     <name>HardwareUtils_iOS</name>
     <message>
-        <location filename="../ios/HardwareUtils.mm" line="324"/>
+        <location filename="../ios/HardwareUtils.mm" line="584"/>
         <source>Cancel</source>
         <translation>Abbrechen</translation>
     </message>
     <message>
-        <location filename="../ios/HardwareUtils.mm" line="325"/>
+        <location filename="../ios/HardwareUtils.mm" line="585"/>
         <source>Confirm</source>
         <translation>Bestätigen</translation>
     </message>
@@ -1428,27 +1806,27 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
 <context>
     <name>IOBase</name>
     <message>
-        <location filename="../src/RoomModel.cpp" line="546"/>
+        <location filename="../src/RoomModel.cpp" line="594"/>
         <source>State: Opened.</source>
         <translation>Zustand: Geöffnet.</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="548"/>
+        <location filename="../src/RoomModel.cpp" line="596"/>
         <source>State: %1% Opened.</source>
         <translation>Zustand: %1% Geöffnet.</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="550"/>
+        <location filename="../src/RoomModel.cpp" line="598"/>
         <source>State: %1% Closed.</source>
         <translation>Zustand: %1% Geschlossen.</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="553"/>
+        <location filename="../src/RoomModel.cpp" line="601"/>
         <source>State: Closed.</source>
         <translation>Zustand: Geschlossen.</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="556"/>
+        <location filename="../src/RoomModel.cpp" line="604"/>
         <source>Action: Stopped.</source>
         <translation>Aktion: Gestoppt.</translation>
     </message>
@@ -1457,24 +1835,30 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <translation type="vanished">Aktion: gestoppt.</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="558"/>
+        <location filename="../src/RoomModel.cpp" line="606"/>
         <source>Action: Closing...</source>
         <translation>Aktion: Schließen...</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="560"/>
+        <location filename="../src/RoomModel.cpp" line="608"/>
         <source>Action: Opening...</source>
         <translation>Aktion: Öffnen...</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="706"/>
         <source>Change value</source>
-        <translation>Wert ändern</translation>
+        <translation type="vanished">Wert ändern</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="706"/>
         <source>Enter new value</source>
-        <translation>Neuen Wert eingeben</translation>
+        <translation type="vanished">Neuen Wert eingeben</translation>
+    </message>
+</context>
+<context>
+    <name>IOClimate</name>
+    <message>
+        <location filename="../qml/SharedComponents/IOClimate.qml" line="34"/>
+        <source>Mode unknown</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1592,27 +1976,27 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
 <context>
     <name>LoginView</name>
     <message>
-        <location filename="../qml/mobile/LoginView.qml" line="49"/>
+        <location filename="../qml/mobile/LoginView.qml" line="85"/>
         <source>Login to your home</source>
         <translation>Anmeldung bei Ihrem Zuhause</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/LoginView.qml" line="74"/>
+        <location filename="../qml/mobile/LoginView.qml" line="110"/>
         <source>Username</source>
         <translation>Benutzername</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/LoginView.qml" line="84"/>
+        <location filename="../qml/mobile/LoginView.qml" line="119"/>
         <source>Password</source>
         <translation>Passwort</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/LoginView.qml" line="93"/>
+        <location filename="../qml/mobile/LoginView.qml" line="127"/>
         <source>Hostname</source>
         <translation>Hostname</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/LoginView.qml" line="100"/>
+        <location filename="../qml/mobile/LoginView.qml" line="133"/>
         <source>Login</source>
         <translation>Anmelden</translation>
     </message>
@@ -1697,27 +2081,27 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
 <context>
     <name>MainMenuBar</name>
     <message>
-        <location filename="../qml/mobile/MainMenuBar.qml" line="44"/>
+        <location filename="../qml/mobile/MainMenuBar.qml" line="75"/>
         <source>Back</source>
         <translation>Zurück</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/MainMenuBar.qml" line="92"/>
+        <location filename="../qml/mobile/MainMenuBar.qml" line="123"/>
         <source>Home</source>
         <translation>Haus</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/MainMenuBar.qml" line="106"/>
+        <location filename="../qml/mobile/MainMenuBar.qml" line="137"/>
         <source>Media</source>
         <translation>Medien</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/MainMenuBar.qml" line="120"/>
+        <location filename="../qml/mobile/MainMenuBar.qml" line="151"/>
         <source>Scenarios</source>
         <translation>Szenarien</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/MainMenuBar.qml" line="134"/>
+        <location filename="../qml/mobile/MainMenuBar.qml" line="165"/>
         <source>Config</source>
         <translation>Konfig</translation>
     </message>
@@ -1959,7 +2343,7 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
 <context>
     <name>PushEventView</name>
     <message>
-        <location filename="../qml/mobile/PushEventView.qml" line="101"/>
+        <location filename="../qml/mobile/PushEventView.qml" line="102"/>
         <source>Push Notification</source>
         <translation>Push-Benachrichtigung</translation>
     </message>
@@ -2082,27 +2466,37 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <translation>Alle Daten zurücksetzen</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="64"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="68"/>
+        <source>Trusted certificates:</source>
+        <translation>Vertraute Zertifikate:</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsView.qml" line="107"/>
+        <source>Forget</source>
+        <translation>Vergessen</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsView.qml" line="119"/>
         <source>Favorites:</source>
         <translation>Favoriten:</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="70"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="125"/>
         <source>Add a favorite</source>
         <translation>Einen Favoriten hinzufügen</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="82"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="137"/>
         <source>Edit favorites list</source>
         <translation>Favoritenliste bearbeiten</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="90"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="145"/>
         <source>Language:</source>
         <translation>Sprache:</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="127"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="182"/>
         <source>Settings</source>
         <translation>Einstellungen</translation>
     </message>
@@ -2150,36 +2544,142 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
     </message>
 </context>
 <context>
+    <name>TlsTrustSheet</name>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="87"/>
+        <source>Certificate changed!</source>
+        <translation>Zertifikat geändert!</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="87"/>
+        <source>Unknown certificate</source>
+        <translation>Unbekanntes Zertifikat</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="104"/>
+        <source>The certificate key of %1 has changed since the last connection. This is expected if the certificate of your Calaos box was regenerated, but it can also mean that someone is intercepting the connection. Only trust it if you know why it changed.</source>
+        <translation>Der Schlüssel des Zertifikats von %1 hat sich seit der letzten Verbindung geändert. Das ist normal, wenn das Zertifikat Ihrer Calaos-Box neu erzeugt wurde, kann aber auch bedeuten, dass jemand die Verbindung abfängt. Vertrauen Sie ihm nur, wenn Sie wissen, warum es sich geändert hat.</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="109"/>
+        <source>The certificate of %1 cannot be verified. A server reached by its domain name, or presenting a certificate issued for another name, normally has a valid certificate: someone may be intercepting the connection. Only trust it if you know this server uses its own certificate.</source>
+        <translation>Das Zertifikat von %1 kann nicht überprüft werden. Ein Server, der über seinen Domainnamen erreicht wird oder ein für einen anderen Namen ausgestelltes Zertifikat vorlegt, hat normalerweise ein gültiges Zertifikat: Möglicherweise fängt jemand die Verbindung ab. Vertrauen Sie ihm nur, wenn Sie wissen, dass dieser Server ein eigenes Zertifikat verwendet.</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="114"/>
+        <source>The certificate of %1 cannot be verified. This is usual for a Calaos box on a home network. Check that the fingerprint below is the one of your box before trusting it.</source>
+        <translation>Das Zertifikat von %1 kann nicht überprüft werden. Das ist bei einer Calaos-Box im Heimnetz üblich. Prüfen Sie, ob der folgende Fingerabdruck der Ihrer Box ist, bevor Sie ihm vertrauen.</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="119"/>
+        <source>Key fingerprint (SHA-256)</source>
+        <translation>Fingerabdruck des Schlüssels (SHA-256)</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="124"/>
+        <source>Previously trusted key</source>
+        <translation>Bisher vertrauter Schlüssel</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="132"/>
+        <source>Certificate fingerprint (SHA-256)</source>
+        <translation>Fingerabdruck des Zertifikats (SHA-256)</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="141"/>
+        <source>Issued to: %1</source>
+        <translation>Ausgestellt für: %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="142"/>
+        <source>Issued by: %1</source>
+        <translation>Ausgestellt von: %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="143"/>
+        <source>Expires: %1</source>
+        <translation>Läuft ab: %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="155"/>
+        <source>Do not connect</source>
+        <translation>Nicht verbinden</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="166"/>
+        <source>Trust</source>
+        <translation>Vertrauen</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/TlsTrustSheet.qml" line="166"/>
+        <source>Tap again to trust</source>
+        <translation>Zum Vertrauen erneut tippen</translation>
+    </message>
+</context>
+<context>
     <name>UpdateManager</name>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="149"/>
+        <location filename="../src/UpdateManager.cpp" line="167"/>
+        <location filename="../src/UpdateManager.cpp" line="419"/>
         <source>Cannot contact the update service</source>
         <translation>Update-Dienst nicht erreichbar</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="599"/>
-        <location filename="../src/UpdateManager.cpp" line="611"/>
+        <location filename="../src/UpdateManager.cpp" line="387"/>
+        <source>Invalid answer from the update service</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/UpdateManager.cpp" line="403"/>
+        <source>Another update was running. Check for updates again, then retry.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/UpdateManager.cpp" line="409"/>
+        <source>Another update operation is in progress, try again later.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/UpdateManager.cpp" line="529"/>
+        <source>The update service lost track of the update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/UpdateManager.cpp" line="825"/>
+        <location filename="../src/UpdateManager.cpp" line="865"/>
+        <location filename="../src/UpdateManager.cpp" line="903"/>
         <source>Software update</source>
         <translation>Software-Update</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="600"/>
+        <location filename="../src/UpdateManager.cpp" line="866"/>
         <source>Update installed successfully.</source>
         <translation>Update erfolgreich installiert.</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="601"/>
-        <location filename="../src/UpdateManager.cpp" line="613"/>
+        <location filename="../src/UpdateManager.cpp" line="1214"/>
+        <source>The outcome of the update is unknown. Check for updates again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/UpdateManager.cpp" line="1236"/>
+        <source>The outcome of the update is unknown: another update ran meanwhile. Check for updates again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/UpdateManager.cpp" line="827"/>
+        <location filename="../src/UpdateManager.cpp" line="867"/>
+        <location filename="../src/UpdateManager.cpp" line="905"/>
         <source>Close</source>
         <translation>Schliessen</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="607"/>
+        <location filename="../src/UpdateManager.cpp" line="899"/>
         <source>Upgrade failed</source>
         <translation>Update fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="612"/>
+        <location filename="../src/UpdateManager.cpp" line="904"/>
         <source>Upgrade failed: %1</source>
         <translation>Update fehlgeschlagen: %1</translation>
     </message>
@@ -2439,14 +2939,24 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
 <context>
     <name>main</name>
     <message>
-        <location filename="../qml/desktop/main.qml" line="374"/>
+        <location filename="../qml/desktop/main.qml" line="382"/>
         <source>Keyboard</source>
         <translation>Tastatur</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/main.qml" line="375"/>
+        <location filename="../qml/desktop/main.qml" line="383"/>
         <source>Change text for &apos;%1&apos;</source>
         <translation>Text für &apos;%1&apos; ändern</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/main.qml" line="507"/>
+        <source>Change value</source>
+        <translation type="unfinished">Wert ändern</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/main.qml" line="508"/>
+        <source>Enter new value</source>
+        <translation type="unfinished">Neuen Wert eingeben</translation>
     </message>
 </context>
 </TS>

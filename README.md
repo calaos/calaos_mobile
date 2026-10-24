@@ -134,8 +134,12 @@ on `qml/` and `widgets/`, and `tools/check_sources.sh` checks that
 Enter the server address, user and password on the login screen. A bare host
 is contacted on `wss://<host>/api`, with `https://<host>/api.php` as fallback;
 a full `http(s)://` or `ws(s)://` URL is used as is. A demo account
-(`demo.calaos.fr`) is built in. TLS certificate errors are currently ignored,
-so self-signed servers work.
+(`demo.calaos.fr`) is built in. A certificate signed by a public CA for the
+host is used as is. Any other certificate (self-signed box, a certificate
+reached through a LAN or VPN address) is shown with its SHA-256 key
+fingerprint and must be trusted once; the key is then pinned for that
+`host:port`, and a new key asks again. Settings lists the trusted
+certificates (Forget), "Reset all data" clears them.
 
 ### Desktop kiosk
 

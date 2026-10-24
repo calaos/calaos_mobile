@@ -134,7 +134,9 @@ docs/               Refactoring board (BOARD.md) and tickets (tasks/), in French
   it per channel). Expired or wrong-name certificates pass when the key is
   pinned; revoked or forged ones never do. A pinned host keeps its key even
   behind a CA-valid certificate (checked on `encrypted` and in
-  `onWsConnected()`, before any credentials are sent). The pins are copied to the
+  `onWsConnected()`, before any credentials are sent); trusting that
+  certificate drops the pin (`caValid`, CM2b): the host is then CA-validated
+  only and later renewals with a new key pass silently. The pins are copied to the
   Android push worker (`CredentialStore`) and the iOS extension (App Group).
 - **Platform abstraction**: [`HardwareUtils`](src/HardwareUtils.h) +
   per-platform subclasses in

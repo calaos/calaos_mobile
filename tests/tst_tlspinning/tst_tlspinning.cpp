@@ -282,6 +282,8 @@ private slots:
     void newAttemptCancelsTheQuestion();
     void wsCaValidUnpinnedConnects();
     void wsCaValidPinnedOtherKeyAsksBeforeLogin();
+    void wsCaModeRenewalWithNewKeyConnects();
+    void wsCaValidKeyChangeRefusedKeepsThePin();
     void httpCaValidPinnedOtherKeySendsNothing();
     void namCaValidPinnedOtherKeySendsNothing();
 
@@ -298,8 +300,12 @@ private:
     //Leaf for 127.0.0.1 signed by a test CA added to the default client
     //configuration: a certificate Qt validates, like a public one.
     QSslConfiguration tlsCa;
+    //Another leaf of the same CA, with its own key: a renewal like certbot's.
+    QSslConfiguration tlsCa2;
     bool tlsReady = false;
     bool makeCaSignedConfig();
+    bool makeCaSignedLeaf(const QString &name, int serial, const QString &caKey,
+                          const QString &caCrt, QSslConfiguration &config);
     int pinFiles = 0;
 
     TlsPinStore *store = nullptr;
@@ -372,10 +378,34 @@ bool TstTlsPinning::makeCaSignedConfig()
 {
     const QString caKey = dir.filePath(QStringLiteral("ca_key.pem"));
     const QString caCrt = dir.filePath(QStringLiteral("ca_crt.pem"));
-    const QString key = dir.filePath(QStringLiteral("leaf_key.pem"));
-    const QString csr = dir.filePath(QStringLiteral("leaf.csr"));
-    const QString crt = dir.filePath(QStringLiteral("leaf_crt.pem"));
-    const QString ext = dir.filePath(QStringLiteral("leaf.ext"));
+    if (!runOpenssl({ QStringLiteral("req"), QStringLiteral("-x509"), QStringLiteral("-newkey"),
+                      QStringLiteral("rsa:2048"), QStringLiteral("-nodes"), QStringLiteral("-days"),
+                      QStringLiteral("2"), QStringLiteral("-subj"), QStringLiteral("/CN=CM2 test CA"),
+                      QStringLiteral("-addext"), QStringLiteral("basicConstraints=critical,CA:TRUE"),
+                      QStringLiteral("-addext"), QStringLiteral("keyUsage=critical,keyCertSign,cRLSign"),
+                      QStringLiteral("-keyout"), caKey, QStringLiteral("-out"), caCrt }))
+        return false;
+    const QList<QSslCertificate> ca = QSslCertificate::fromPath(caCrt, QSsl::Pem);
+    if (ca.isEmpty() ||
+        !makeCaSignedLeaf(QStringLiteral("leaf"), 7, caKey, caCrt, tlsCa) ||
+        !makeCaSignedLeaf(QStringLiteral("leaf2"), 8, caKey, caCrt, tlsCa2))
+        return false;
+
+    //Process-wide: the connection under test builds its requests and its
+    //websocket from the default configuration.
+    QSslConfiguration client = QSslConfiguration::defaultConfiguration();
+    client.addCaCertificates(ca);
+    QSslConfiguration::setDefaultConfiguration(client);
+    return true;
+}
+
+bool TstTlsPinning::makeCaSignedLeaf(const QString &name, int serial, const QString &caKey,
+                                     const QString &caCrt, QSslConfiguration &config)
+{
+    const QString key = dir.filePath(name + QStringLiteral("_key.pem"));
+    const QString csr = dir.filePath(name + QStringLiteral(".csr"));
+    const QString crt = dir.filePath(name + QStringLiteral("_crt.pem"));
+    const QString ext = dir.filePath(name + QStringLiteral(".ext"));
     {
         QFile f(ext);
         if (!f.open(QIODevice::WriteOnly))
@@ -383,18 +413,12 @@ bool TstTlsPinning::makeCaSignedConfig()
         f.write("basicConstraints=CA:FALSE\nkeyUsage=digitalSignature,keyEncipherment\n"
                 "extendedKeyUsage=serverAuth\nsubjectAltName=IP:127.0.0.1\n");
     }
-    if (!runOpenssl({ QStringLiteral("req"), QStringLiteral("-x509"), QStringLiteral("-newkey"),
-                      QStringLiteral("rsa:2048"), QStringLiteral("-nodes"), QStringLiteral("-days"),
-                      QStringLiteral("2"), QStringLiteral("-subj"), QStringLiteral("/CN=CM2 test CA"),
-                      QStringLiteral("-addext"), QStringLiteral("basicConstraints=critical,CA:TRUE"),
-                      QStringLiteral("-addext"), QStringLiteral("keyUsage=critical,keyCertSign,cRLSign"),
-                      QStringLiteral("-keyout"), caKey, QStringLiteral("-out"), caCrt }) ||
-        !runOpenssl({ QStringLiteral("req"), QStringLiteral("-newkey"), QStringLiteral("rsa:2048"),
+    if (!runOpenssl({ QStringLiteral("req"), QStringLiteral("-newkey"), QStringLiteral("rsa:2048"),
                       QStringLiteral("-nodes"), QStringLiteral("-subj"), QStringLiteral("/CN=127.0.0.1"),
                       QStringLiteral("-keyout"), key, QStringLiteral("-out"), csr }) ||
         !runOpenssl({ QStringLiteral("x509"), QStringLiteral("-req"), QStringLiteral("-in"), csr,
                       QStringLiteral("-CA"), caCrt, QStringLiteral("-CAkey"), caKey,
-                      QStringLiteral("-set_serial"), QStringLiteral("7"), QStringLiteral("-days"),
+                      QStringLiteral("-set_serial"), QString::number(serial), QStringLiteral("-days"),
                       QStringLiteral("1"), QStringLiteral("-extfile"), ext,
                       QStringLiteral("-out"), crt }))
         return false;
@@ -404,20 +428,13 @@ bool TstTlsPinning::makeCaSignedConfig()
         return false;
     const QSslKey sslKey(kf.readAll(), QSsl::Rsa, QSsl::Pem);
     const QList<QSslCertificate> leaf = QSslCertificate::fromPath(crt, QSsl::Pem);
-    const QList<QSslCertificate> ca = QSslCertificate::fromPath(caCrt, QSsl::Pem);
-    if (sslKey.isNull() || leaf.isEmpty() || ca.isEmpty())
+    if (sslKey.isNull() || leaf.isEmpty())
         return false;
 
-    tlsCa = QSslConfiguration::defaultConfiguration();
-    tlsCa.setLocalCertificate(leaf.first());
-    tlsCa.setPrivateKey(sslKey);
-    tlsCa.setPeerVerifyMode(QSslSocket::VerifyNone);
-
-    //Process-wide: the connection under test builds its requests and its
-    //websocket from the default configuration.
-    QSslConfiguration client = QSslConfiguration::defaultConfiguration();
-    client.addCaCertificates(ca);
-    QSslConfiguration::setDefaultConfiguration(client);
+    config = QSslConfiguration::defaultConfiguration();
+    config.setLocalCertificate(leaf.first());
+    config.setPrivateKey(sslKey);
+    config.setPeerVerifyMode(QSslSocket::VerifyNone);
     return true;
 }
 
@@ -734,6 +751,7 @@ void TstTlsPinning::wsFirstUseAsksOnceThenConnects()
     QCOMPARE(info.value(QStringLiteral("certFingerprint")).toString(),
              TlsPinning::formatFingerprint(TlsPinning::certSha256(tlsA.localCertificate())));
     QCOMPARE(info.value(QStringLiteral("keyChanged")).toBool(), false);
+    QCOMPARE(info.value(QStringLiteral("caValid")).toBool(), false);
     QVERIFY(connection->hasPendingTlsTrust());
 
     //Waiting for the user: no login went through, nothing retries (not even
@@ -792,6 +810,7 @@ void TstTlsPinning::wsKeyChangeAsksAgain()
     QTRY_COMPARE(asked.count(), 1);
     const QVariantMap info = asked.at(0).at(0).toMap();
     QCOMPARE(info.value(QStringLiteral("keyChanged")).toBool(), true);
+    QCOMPARE(info.value(QStringLiteral("caValid")).toBool(), false);
     QCOMPARE(info.value(QStringLiteral("previousFingerprint")).toString(),
              TlsPinning::formatFingerprint(oldSpki));
     QCOMPARE(info.value(QStringLiteral("fingerprint")).toString(),
@@ -1072,16 +1091,83 @@ void TstTlsPinning::wsCaValidPinnedOtherKeyAsksBeforeLogin()
 
     connection->login(TestUser, TestPass, QStringLiteral("127.0.0.1:%1").arg(ws->serverPort()));
     QTRY_COMPARE(asked.count(), 1);
-    QCOMPARE(asked.at(0).at(0).toMap().value(QStringLiteral("keyChanged")).toBool(), true);
+    const QVariantMap info = asked.at(0).at(0).toMap();
+    QCOMPARE(info.value(QStringLiteral("keyChanged")).toBool(), true);
+    QCOMPARE(info.value(QStringLiteral("caValid")).toBool(), true);
     QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Disconnected);
     pump(1000);
     QCOMPARE(ws->logins, 0);
     QCOMPARE(asked.count(), 1);
 
+    //Accepting moves the host to CA mode: no pin, the CA vouches for it.
     connection->answerTlsTrust(true);
-    QCOMPARE(store->pin(key), TlsPinning::spkiSha256(tlsCa.localCertificate()));
+    QCOMPARE(store->pin(key), QString());
+    QVERIFY(store->pins().isEmpty());
     QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
     QCOMPARE(ws->logins, 1);
+    QCOMPARE(asked.count(), 1);
+}
+
+void TstTlsPinning::wsCaModeRenewalWithNewKeyConnects()
+{
+    if (!needTls())
+        QSKIP("No TLS backend or no openssl CLI to make a test certificate");
+
+    //Pinned on A, moved to CA mode, then the CA-valid certificate is renewed
+    //with another key (certbot without --reuse-key): no question any more.
+    ws = new TlsWsServer(tlsCa);
+    QVERIFY(ws->listen(QHostAddress::LocalHost, 0));
+    const QString key = TlsPinning::hostKey(QStringLiteral("127.0.0.1"), ws->serverPort());
+    newConnection();
+    store->setPin(key, TlsPinning::spkiSha256(tlsA.localCertificate()));
+    QSignalSpy asked(connection, &CalaosConnection::tlsTrustRequested);
+
+    connection->login(TestUser, TestPass, QStringLiteral("127.0.0.1:%1").arg(ws->serverPort()));
+    QTRY_COMPARE(asked.count(), 1);
+    connection->answerTlsTrust(true);
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
+    QVERIFY(store->pins().isEmpty());
+
+    connection->logout();
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Disconnected);
+    QVERIFY(TlsPinning::spkiSha256(tlsCa2.localCertificate()) !=
+            TlsPinning::spkiSha256(tlsCa.localCertificate()));
+    //Same host:port, the renewed certificate.
+    const quint16 port = ws->serverPort();
+    delete ws;
+    ws = new TlsWsServer(tlsCa2);
+    QVERIFY(ws->listen(QHostAddress::LocalHost, port));
+
+    connection->login(TestUser, TestPass, QStringLiteral("127.0.0.1:%1").arg(port));
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
+    QCOMPARE(asked.count(), 1);
+    QCOMPARE(ws->logins, 1);
+    QVERIFY(store->pins().isEmpty());
+}
+
+void TstTlsPinning::wsCaValidKeyChangeRefusedKeepsThePin()
+{
+    if (!needTls())
+        QSKIP("No TLS backend or no openssl CLI to make a test certificate");
+
+    ws = new TlsWsServer(tlsCa);
+    QVERIFY(ws->listen(QHostAddress::LocalHost, 0));
+    const QString key = TlsPinning::hostKey(QStringLiteral("127.0.0.1"), ws->serverPort());
+    const QString pinned = TlsPinning::spkiSha256(tlsA.localCertificate());
+    newConnection();
+    store->setPin(key, pinned);
+    QSignalSpy asked(connection, &CalaosConnection::tlsTrustRequested);
+    QSignalSpy rejected(connection, &CalaosConnection::tlsTrustRejected);
+
+    connection->login(TestUser, TestPass, QStringLiteral("127.0.0.1:%1").arg(ws->serverPort()));
+    QTRY_COMPARE(asked.count(), 1);
+    QCOMPARE(asked.at(0).at(0).toMap().value(QStringLiteral("caValid")).toBool(), true);
+    connection->answerTlsTrust(false);
+    QCOMPARE(rejected.count(), 1);
+    QCOMPARE(store->pin(key), pinned);
+    pump(1000);
+    QCOMPARE(ws->logins, 0);
+    QCOMPARE(connection->connectionState(), ReconnectPolicy::Disconnected);
 }
 
 void TstTlsPinning::httpCaValidPinnedOtherKeySendsNothing()

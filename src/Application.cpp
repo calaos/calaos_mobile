@@ -49,6 +49,10 @@ public:
         {
             TlsPinning::keyMatchesPin(reply);
         });
+        //A kept-alive channel was validated against the old pins. Queued to
+        //the loader thread that owns nam when it is not the main one.
+        QObject::connect(TlsPinStore::instance(), &TlsPinStore::pinsChanged,
+                         nam, &QNetworkAccessManager::clearConnectionCache);
         return nam;
     }
 };

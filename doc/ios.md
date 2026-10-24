@@ -157,7 +157,8 @@ otherwise the SHA-256 of the leaf's SubjectPublicKeyInfo must match
 `calaos.tls_pins[host:port]`, the pins the user confirmed in the app
 (`src/TlsPinning.h`, copied by `HardwareUtils_iOS::setTlsPins()`). A pinned
 host must present its pinned key even when the system trusts the
-certificate. The extension cannot ask: no pin or another key skips the picture, the text
+certificate; trusting a CA-valid certificate in the app removes the pin of
+that host (CM2b), which the system then validates alone. The extension cannot ask: no pin or another key skips the picture, the text
 notification is still shown. ATS does not apply to IP addresses and `.local`
 names; a self-signed box reached through a DNS name may additionally need an
 ATS exception in the extension (to check on a device).

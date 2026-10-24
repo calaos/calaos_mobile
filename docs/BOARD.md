@@ -170,6 +170,7 @@ Tickets calaos_mobile du plan admin de calaos_base (`docs/admin/PLAN.md`, phase 
 |---|---|---|---|---|---|
 | [AP2](tasks/AP2-nom-appareil-register-push.md) | Nom d'appareil dans `register_push`, identifiants en HTTP | S | — | G-CONN + G-ANDROID + G-IOS | En revue |
 | [CM2](tasks/CM2-tls-tofu-pinning.md) | TLS TOFU : épinglage de la clé du certificat par hôte, re-confirmation au changement de clé | L | — | G-CONN + G-APP + G-ANDROID + G-IOS | En revue |
+| [CM2b](tasks/CM2b-mode-ca-par-hote.md) | Mode d'épinglage par hôte : accepter un certificat CA à la place d'un pin arrête l'épinglage | S | CM2 | G-CONN + G-APP | En revue |
 
 ## Diagramme de parallélisation
 

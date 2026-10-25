@@ -161,6 +161,7 @@ Exécution parallèle : chaque ticket lancé en parallèle travaille dans son pr
 | [FIX-11](tasks/FIX-11-deconnexion-persistante.md) | Mémoriser la déconnexion volontaire entre deux lancements | S | FIX-9 | G-CONN + G-ANDROID | Terminé |
 | [FIX-12](tasks/FIX-12-effacer-mot-de-passe.md) | Le bouton « effacer » du champ mot de passe n'efface rien | S | FIX-10 | G-QML-MOBILE | Terminé |
 | [FIX-13](tasks/FIX-13-test-climatesheet-macos.md) | `ClimateSheet::test_theModelLetsGoOfTheDeviceWhenTheSheetCloses` échoue en local sur macOS (passe seul et sur la CI Linux) | S | — | G-QML-MOBILE | À faire |
+| [FIX-14](tasks/FIX-14-push-premier-plan.md) | Push invisibles quand l'app est au premier plan (code admin) | S | — | G-IOS + G-ANDROID | En revue |
 | [EVLOG-1](tasks/EVLOG-1-historique-fige.md) | Historique des événements figé après une requête perdue | M | — | G-CONN + G-MODELS | Terminé |
 
 ## P-ADMIN — Administration de la box

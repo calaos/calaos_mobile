@@ -234,4 +234,25 @@ private:
     QString m_inFlight;
 };
 
+//How a push that arrives while the app is in the foreground is shown by the
+//system. Header-only so that tests/tst_pushnotif can check it.
+struct ForegroundPushPresentation
+{
+    bool banner = false;
+    bool list = false;
+    bool sound = false;
+};
+
+//The app only shows an event push itself (event viewer) when logged in;
+//anything else, like the admin code, would be invisible without a banner.
+//The badge is never set here: the user is looking at the app.
+inline ForegroundPushPresentation foregroundPushPresentation(bool hasEventUuid, bool connected)
+{
+    ForegroundPushPresentation p;
+    p.banner = !(hasEventUuid && connected);
+    p.list = true;
+    p.sound = true;
+    return p;
+}
+
 #endif // HARDWAREUTILS_H

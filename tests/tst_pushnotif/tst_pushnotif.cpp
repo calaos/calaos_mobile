@@ -345,6 +345,10 @@ private slots:
     void emptyTapIsIgnored();
     void restoredTapLosesToANewerOne();
 
+    //Foreground presentation (iOS willPresentNotification:).
+    void foregroundPushIsPresented_data();
+    void foregroundPushIsPresented();
+
     //DeferredNotifGate, alone and driven like Application drives it.
     void gateNothingToOpen();
     void gateOpensOnceAfterTheDelay();
@@ -695,6 +699,33 @@ void TstPushNotif::restoredTapLosesToANewerOne()
     hw()->handleNotificationOpened(QStringLiteral("uuid-newer"));
     hw()->restorePendingNotif(QStringLiteral("uuid-restored"));
     QCOMPARE(hw()->takePendingNotif(), QStringLiteral("uuid-newer"));
+}
+
+void TstPushNotif::foregroundPushIsPresented_data()
+{
+    QTest::addColumn<bool>("hasEventUuid");
+    QTest::addColumn<bool>("connected");
+    QTest::addColumn<bool>("banner");
+
+    //The admin code has no event uuid: it was dropped in the foreground.
+    QTest::newRow("admin code, logged in") << false << true << true;
+    QTest::newRow("admin code, logged out") << false << false << true;
+    //The event viewer opens in the app: no banner on top of it.
+    QTest::newRow("event, logged in") << true << true << false;
+    //Nothing in the app shows it until the next login.
+    QTest::newRow("event, logged out") << true << false << true;
+}
+
+void TstPushNotif::foregroundPushIsPresented()
+{
+    QFETCH(bool, hasEventUuid);
+    QFETCH(bool, connected);
+    QFETCH(bool, banner);
+
+    const ForegroundPushPresentation p = foregroundPushPresentation(hasEventUuid, connected);
+    QCOMPARE(p.banner, banner);
+    QVERIFY(p.list);
+    QVERIFY(p.sound);
 }
 
 // ---------------------------------------------------------------- DeferredNotifGate

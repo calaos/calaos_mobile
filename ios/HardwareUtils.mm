@@ -291,7 +291,16 @@ void resetBadge()
     //badge (the content's badge is not applied without the Badge option).
     resetBadge();
 
-    completionHandler(UNNotificationPresentationOptionNone);
+    const ForegroundPushPresentation p =
+        foregroundPushPresentation(uuid != nil, HardwareUtils::Instance()->isCalaosConnected());
+    UNNotificationPresentationOptions options = UNNotificationPresentationOptionNone;
+    if (p.banner)
+        options |= UNNotificationPresentationOptionBanner;
+    if (p.list)
+        options |= UNNotificationPresentationOptionList;
+    if (p.sound)
+        options |= UNNotificationPresentationOptionSound;
+    completionHandler(options);
 }
 
 //Called to let your app know which action was selected by the user for a given notification.

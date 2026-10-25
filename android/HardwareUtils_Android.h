@@ -6,7 +6,9 @@
 //Push: the FCM registration token (from Java: persisted value at startup, then
 //FirebaseMessaging.getToken() and every onNewToken()) goes through
 //HardwareUtils::setDeviceToken(), and notification taps through
-//HardwareUtils::handleNotificationOpened(): same policy as iOS.
+//HardwareUtils::handleNotificationOpened(): same policy as iOS. The push key
+//(CredentialStore.pushKey()) is read at startup; admin code arrivals and taps
+//go through HardwareUtils::handleAdminCodeNotified().
 class HardwareUtilsAndroid: public HardwareUtils
 {
 private:
@@ -46,6 +48,11 @@ public:
     virtual bool isSessionActive();
     //CredentialStore's copy of the TLS pins, for PushPictureWorker.
     virtual void setTlsPins(const QVariantMap &pins);
+
+    //Admin code stash written by CalaosMessagingService (CredentialStore);
+    //removing an entry also cancels its notification.
+    virtual QList<QJsonObject> adminCodeStash();
+    virtual void removeAdminCodes(const QStringList &codeIds);
 
 private:
     //Qt's Android backend (ConnectivityManager default-network callback) feeds

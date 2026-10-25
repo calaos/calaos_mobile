@@ -31,6 +31,7 @@ class HardwareUtilsNatives
     public static native void emitDialogCancel();
     public static native void emitDeviceToken(String token);
     public static native void emitNotificationOpened(String eventUuid);
+    public static native void emitAdminCodeNotified(String codeId);
 }
 
 public class HardwareUtils extends QtActivity
@@ -55,6 +56,9 @@ public class HardwareUtils extends QtActivity
     // Event uuid of the notification that started the activity, waiting for
     // Qt to come up and take it (takePendingEventUuid).
     private static volatile String pendingEventUuid;
+
+    // Same for an admin code notification tapped before Qt came up.
+    private static volatile String pendingAdminCodeId;
 
     private static final int REQUEST_POST_NOTIFICATIONS = 0x4A10;
 
@@ -132,6 +136,16 @@ public class HardwareUtils extends QtActivity
 
     private void rememberEventUuid(Intent intent)
     {
+        String codeId = adminCodeIdFromIntent(intent);
+        if (codeId != null)
+        {
+            if (nativesReady)
+                notifyAdminCode(codeId);
+            else
+                pendingAdminCodeId = codeId;
+            return;
+        }
+
         String uuid = eventUuidFromIntent(intent);
         if (uuid == null)
             return;
@@ -167,6 +181,26 @@ public class HardwareUtils extends QtActivity
             return null;
         }
         return CalaosMessagingService.sanitizeEventUuid(uuid);
+    }
+
+    // Same rules as eventUuidFromIntent(). The id only tells the app to read
+    // the stash: a forged one shows nothing.
+    static String adminCodeIdFromIntent(Intent intent)
+    {
+        if (intent == null)
+            return null;
+        if ((intent.getFlags() & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0)
+            return null;
+
+        try
+        {
+            return CalaosMessagingService.sanitizeAdminCodeId(
+                intent.getStringExtra(CalaosMessagingService.EXTRA_ADMIN_CODE_ID));
+        }
+        catch (RuntimeException e)
+        {
+            return null;
+        }
     }
 
     // Android 13+ only: below that, notifications need no runtime permission
@@ -465,6 +499,36 @@ public class HardwareUtils extends QtActivity
         {
             Log.w(TAG, "emitDeviceToken: native method not registered");
         }
+    }
+
+    // An admin code was stashed (CalaosMessagingService, FCM executor thread):
+    // the app reads it now if Qt runs, else at its next start or foreground.
+    static void deliverAdminCode(String codeId)
+    {
+        if (!nativesReady)
+            return;
+        notifyAdminCode(codeId);
+    }
+
+    private static void notifyAdminCode(String codeId)
+    {
+        try
+        {
+            HardwareUtilsNatives.emitAdminCodeNotified(codeId);
+        }
+        catch (UnsatisfiedLinkError e)
+        {
+            Log.w(TAG, "emitAdminCodeNotified: native method not registered");
+            pendingAdminCodeId = codeId;
+        }
+    }
+
+    // Admin code id the activity was started with, if any. Cleared on read.
+    public static String takePendingAdminCodeId()
+    {
+        String id = pendingAdminCodeId;
+        pendingAdminCodeId = null;
+        return id == null ? "" : id;
     }
 
     // Event uuid the activity was started with, if any. Cleared on read.

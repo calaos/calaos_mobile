@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.SystemClock;
 import android.util.Log;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
@@ -41,6 +42,16 @@ import java.util.regex.Pattern;
 //    HardwareUtils.eventUuidFromIntent).
 //
 // Both paths end in the same notification layout and the same tap intent.
+//
+// An encrypted admin code (calaos_base docs/08_http_api.md, "Code push
+// chiffré") is always a data-only message:
+//      data: { title, body, message, admin_code_id, admin_code_action,
+//              admin_code_expires, admin_code_nonce, admin_code_ct,
+//              admin_code_tag }
+// body/message is a generic notice, never the code. The six admin_code_*
+// strings are stashed as received (CredentialStore) before the notification
+// is posted; the app checks, decrypts and shows the code (AdminCode.h).
+// Nothing here does any cryptography.
 public class CalaosMessagingService extends FirebaseMessagingService
 {
     private static final String TAG = "CalaosHome";
@@ -57,6 +68,10 @@ public class CalaosMessagingService extends FirebaseMessagingService
     // and the push payload are untrusted input: anything else is dropped
     // before it is logged or handed to C++.
     private static final Pattern EVENT_UUID = Pattern.compile("^[0-9a-fA-F-]{8,64}$");
+
+    // Intent extra and payload key of an admin code: 16 lowercase hex.
+    public static final String EXTRA_ADMIN_CODE_ID = "admin_code_id";
+    private static final Pattern ADMIN_CODE_ID = Pattern.compile("^[0-9a-f]{16}$");
 
     // Payload keys.
     private static final String KEY_TITLE = "title";
@@ -77,12 +92,19 @@ public class CalaosMessagingService extends FirebaseMessagingService
         public final String title;
         public final String body;
         public final String eventUuid; // null when the payload has none
+        public final String adminCodeId; // null when the payload has none
 
         PushPayload(String title, String body, String eventUuid)
+        {
+            this(title, body, eventUuid, null);
+        }
+
+        PushPayload(String title, String body, String eventUuid, String adminCodeId)
         {
             this.title = title;
             this.body = body;
             this.eventUuid = eventUuid;
+            this.adminCodeId = adminCodeId;
         }
 
         static PushPayload from(RemoteMessage message)
@@ -97,7 +119,8 @@ public class CalaosMessagingService extends FirebaseMessagingService
                                         data.get(KEY_MESSAGE),
                                         notif != null ? notif.getBody() : null,
                                         "");
-            return new PushPayload(title, body, sanitizeEventUuid(data.get(EXTRA_EVENT_UUID)));
+            return new PushPayload(title, body, sanitizeEventUuid(data.get(EXTRA_EVENT_UUID)),
+                                   sanitizeAdminCodeId(data.get(EXTRA_ADMIN_CODE_ID)));
         }
 
         private static String firstNonEmpty(String... values)
@@ -116,6 +139,14 @@ public class CalaosMessagingService extends FirebaseMessagingService
         if (uuid == null || !EVENT_UUID.matcher(uuid).matches())
             return null;
         return uuid;
+    }
+
+    // Same rule for an admin code id, which also names its stash entry.
+    public static String sanitizeAdminCodeId(String id)
+    {
+        if (id == null || !ADMIN_CODE_ID.matcher(id).matches())
+            return null;
+        return id;
     }
 
     // Runs when Play services starts the service for a message, including in
@@ -186,6 +217,12 @@ public class CalaosMessagingService extends FirebaseMessagingService
     public static void handleMessage(Context ctx, RemoteMessage message)
     {
         PushPayload payload = PushPayload.from(message);
+        if (payload.adminCodeId != null)
+        {
+            handleAdminCode(ctx, message, payload);
+            return;
+        }
+
         Log.i(TAG, "FCM " + (message.getNotification() != null ? "notification+data" : "data")
               + " message received, event uuid: "
               + (payload.eventUuid != null ? payload.eventUuid : "<none>"));
@@ -195,6 +232,30 @@ public class CalaosMessagingService extends FirebaseMessagingService
 
         if (payload.eventUuid != null)
             PushPictureWorker.enqueue(ctx, id, payload);
+    }
+
+    // Stashed first, so a notification swiped away loses nothing; then the
+    // generic notice, whose tap opens the code sheet; then the app, if it
+    // runs, reads the stash right away.
+    private static void handleAdminCode(Context ctx, RemoteMessage message, PushPayload payload)
+    {
+        boolean stashed = CredentialStore.stashAdminCode(ctx, message.getData(),
+                                                         System.currentTimeMillis(),
+                                                         SystemClock.elapsedRealtime());
+        Log.i(TAG, "FCM admin code received" + (stashed ? "" : ", not stashed"));
+
+        showNotification(ctx, notificationId(payload), buildNotification(ctx, payload).build());
+        HardwareUtils.deliverAdminCode(payload.adminCodeId);
+    }
+
+    // The code was read (or expired, or rejected): its stash entry and its
+    // notification go. idsJson is a JSON array of code ids. Called by C++.
+    public static void consumeAdminCodes(Context ctx, String idsJson)
+    {
+        java.util.List<String> ids = CredentialStore.removeAdminCodes(ctx, idsJson);
+        NotificationManagerCompat nm = NotificationManagerCompat.from(ctx);
+        for (String id: ids)
+            nm.cancel(id.hashCode());
     }
 
     // ── Notification helpers (shared with the activity and AND-7) ────────
@@ -218,6 +279,13 @@ public class CalaosMessagingService extends FirebaseMessagingService
     // One notification per Calaos event, so a later update (picture, AND-7)
     // replaces the text-only one instead of stacking a second entry. Pushes
     // without an event uuid get a time-based id and never collide.
+    public static int notificationId(PushPayload payload)
+    {
+        if (payload.adminCodeId != null)
+            return payload.adminCodeId.hashCode();
+        return notificationId(payload.eventUuid);
+    }
+
     public static int notificationId(String eventUuid)
     {
         if (eventUuid != null && !eventUuid.isEmpty())
@@ -243,7 +311,7 @@ public class CalaosMessagingService extends FirebaseMessagingService
             // ring/vibrate a second time.
             .setOnlyAlertOnce(true)
             .setAutoCancel(true)
-            .setContentIntent(openAppIntent(ctx, payload.eventUuid));
+            .setContentIntent(openAppIntent(ctx, payload));
 
         return b;
     }
@@ -269,18 +337,26 @@ public class CalaosMessagingService extends FirebaseMessagingService
         }
     }
 
-    // Tap target: the (singleTop) Qt activity, carrying the event uuid. The
-    // request code is derived from the uuid so two pending notifications keep
-    // their own extras (FLAG_UPDATE_CURRENT would otherwise overwrite them).
-    private static PendingIntent openAppIntent(Context ctx, String eventUuid)
+    // Tap target: the (singleTop) Qt activity, carrying the event uuid or the
+    // admin code id. The request code is derived from it so two pending
+    // notifications keep their own extras (FLAG_UPDATE_CURRENT would
+    // otherwise overwrite them).
+    private static PendingIntent openAppIntent(Context ctx, PushPayload payload)
     {
         Intent intent = new Intent(ctx, HardwareUtils.class);
         intent.setAction(Intent.ACTION_MAIN);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        if (eventUuid != null)
-            intent.putExtra(EXTRA_EVENT_UUID, eventUuid);
-
-        int requestCode = eventUuid != null ? eventUuid.hashCode() : 0;
+        int requestCode = 0;
+        if (payload.adminCodeId != null)
+        {
+            intent.putExtra(EXTRA_ADMIN_CODE_ID, payload.adminCodeId);
+            requestCode = payload.adminCodeId.hashCode();
+        }
+        else if (payload.eventUuid != null)
+        {
+            intent.putExtra(EXTRA_EVENT_UUID, payload.eventUuid);
+            requestCode = payload.eventUuid.hashCode();
+        }
         return PendingIntent.getActivity(ctx, requestCode, intent,
                                          PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }

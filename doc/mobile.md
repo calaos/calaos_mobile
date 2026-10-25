@@ -255,13 +255,19 @@ code: [src/AdminCode.h](../src/AdminCode.h),
 
 - **Push key**: 32 bytes from the platform CSPRNG, created at the first start,
   kept in the platform key store (iOS keychain item `calaos-push-key`,
-  this-device-only, same service and access group as the credentials;
+  service `CalaosMobile.push`, this-device-only, credentials' access group;
   Android `CredentialStore.pushKey()`, Keystore-encrypted in `calaos_push.xml`),
-  never in `QSettings`, never logged. Reported with
-  `HardwareUtils::setPushKey()`; `register_push` carries it as `push_key`
-  (64 lowercase hex, WebSocket `data` and HTTP root alike) and is sent again
-  when it changes (`PushRegistration` keys on token, name and key). Redacted
-  from the HTTP debug dump. "Reset all data" keeps it: the box freezes the
+  never in `QSettings`, never logged. A new key is only created when the store
+  says the old one is really gone: a store that cannot answer now (iOS before
+  the first unlock, a transient Keystore error) leaves the key empty and
+  `HardwareUtils::loadPushKey()` is called again on the next foreground or
+  admin code notification (an approver's key is frozen on its box, replacing
+  it would lock the phone out). Reported with `HardwareUtils::setPushKey()`;
+  `register_push` carries it as `push_key` (64 lowercase hex, WebSocket
+  `data` and HTTP root alike) **over TLS only** (`wss://`, `https://`; never
+  on a plain `ws://`/`http://` connection) and is sent again when it changes
+  (`PushRegistration` keys on token, name and key). Redacted from the HTTP
+  debug dump. "Reset all data" keeps it: the box freezes the
   key of an approver phone. No key (desktop, key store failure) → no
   `push_key`, the box keeps pushing the legacy text, which still shows as
   before.
@@ -272,7 +278,8 @@ code: [src/AdminCode.h](../src/AdminCode.h),
   both count during sleep and are shared by all processes). Android: the
   messaging service, in `CredentialStore` (`admin_codes`). iOS: the
   notification extension, one file `admin_codes/<code_id>.json` in the App
-  Group container; the app stashes it itself (date of the notification,
+  Group container (both platforms drop entries more than 10 minutes old and
+  keep at most 16); the app stashes it itself (date of the notification,
   wall clock only) when it sees one the extension did not (presented,
   tapped, or still in the notification center at foreground). The
   notification only shows the generic notice; a swiped one loses nothing.
@@ -282,11 +289,16 @@ code: [src/AdminCode.h](../src/AdminCode.h),
   never needs the box to read a code. Per entry: shapes checked first
   (action in the table, strict `expires`, lowercase hex lengths), then the
   tag recomputed from the strings as received and compared in constant time,
-  then `code = ct XOR ks[0..6)`. A rejected entry is dropped silently (one
-  warning without values). The sheet lists the codes newest first with the
+  then `code = ct XOR ks[0..6)`. A rejected entry is dropped (one warning
+  without values) and the sheet says "A code arrived but could not be read on
+  this phone", so an approver knows its key must be recovered. Without a key
+  yet, nothing is decrypted and the stash is left untouched. The sheet lists the codes newest first with the
   purpose, the 6 digits, a 1 s countdown and a draining bar, and Copy
-  (iOS: pasteboard item expiring after 60 s; elsewhere `QClipboard`, cleared
-  after 60 s if it still holds the code). A code is shown 60 s from its
+  (iOS: pasteboard item expiring after 60 s; Android: `ClipData` flagged
+  sensitive; desktop test build: `QClipboard`; everywhere but iOS cleared
+  after 60 s if it still holds the code). While the sheet is open Android sets
+  `FLAG_SECURE`; the digits are hidden whenever the app is not active (best
+  effort against the iOS app switcher snapshot). A code is shown 60 s from its
   reception on the phone, never from `expires` (box clock; authenticated,
   not compared): the longer of the wall and boot clock ages counts, a boot
   clock below the stamp (reboot) or a wall clock set back drops it. At expiry

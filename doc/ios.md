@@ -132,8 +132,8 @@ embedded via `QMAKE_BUNDLE_DATA += splash`.
 | Receive APNs token | `application:didRegisterForRemoteNotificationsWithDeviceToken:` installed at runtime on Qt's application delegate (`hookApplicationDelegate()`) → `HardwareUtils_iOS::handleRegisterNotif()` → `HardwareUtils::setDeviceToken()` |
 | Token registered with `calaos_server` | `CalaosConnection` sends `register_push` at login, and again on `HardwareUtils::deviceTokenChanged()` while logged in (token arriving after the login) |
 | Push received in background | `PushNotif.appex` (`ios/PushNotif/NotificationService.m`) — badge, camera picture (credentials from the shared keychain), and the admin code stash below; it never decrypts anything |
-| Push key | `HardwareUtils_iOS::platformInit()`: keychain item `calaos-push-key` (32 bytes from `SecRandomCopyBytes`, `AfterFirstUnlockThisDeviceOnly`, service `CalaosMobile`, group `9WYC46992U.fr.calaos.CalaosMobile`), created at the first start → `HardwareUtils::setPushKey()` → `push_key` in `register_push` |
-| Encrypted admin code arrives (payload `admin_code_*` in `data`, generic `message` as alert, `mutable-content`) | The extension writes the six strings as received plus `received_at` (wall clock, ms) and `received_mono` (`CLOCK_MONOTONIC`, ms) and `notif_id` to `admin_codes/<code_id>.json` in the App Group container (atomic write, never overwritten), then delivers the alert unchanged. In the foreground `willPresentNotification:` hands it to the app (no banner, the code sheet opens); a tap goes through `didReceiveNotificationResponse:`; on `UIApplicationDidBecomeActiveNotification` the app also looks at the delivered notifications. Each time `captureAdminCode()` stashes it if the extension did not (stamped with the notification's delivery date, wall clock only) and calls `HardwareUtils::handleAdminCodeNotified()`. Consumed or expired codes: file removed and delivered notification withdrawn (`removeAdminCodes()`). Decryption and display: `src/AdminCode.h`, see [mobile.md](mobile.md) section 9.1 |
+| Push key | `HardwareUtils_iOS::loadPushKey()` (from `platformInit()`, again while empty): keychain item `calaos-push-key`, service `CalaosMobile.push` (kept apart from the credentials), group `9WYC46992U.fr.calaos.CalaosMobile`, 32 bytes from `SecRandomCopyBytes`, `AfterFirstUnlockThisDeviceOnly`. Created only when `SecItemCopyMatching` answers `errSecItemNotFound`; any other status (locked before the first unlock…) leaves the key empty until the next try. → `HardwareUtils::setPushKey()` → `push_key` in `register_push` (TLS connections only) |
+| Encrypted admin code arrives (payload `admin_code_*` in `data`, generic `message` as alert, `mutable-content`) | The extension writes the six strings as received plus `received_at` (wall clock, ms) and `received_mono` (`CLOCK_MONOTONIC`, ms) and `notif_id` to `admin_codes/<code_id>.json` in the App Group container (atomic write, never overwritten), then delivers the alert unchanged. Before writing, it drops stash files more than 10 minutes away from now and keeps at most 16 (the app applies the same rule to its own writes). In the foreground `willPresentNotification:` hands it to the app (no banner, the code sheet opens); a tap goes through `didReceiveNotificationResponse:`; on `UIApplicationDidBecomeActiveNotification` the app also looks at the delivered notifications. Each time `captureAdminCode()` stashes it if the extension did not (stamped with the notification's delivery date, wall clock only) and calls `HardwareUtils::handleAdminCodeNotified()`. Consumed or expired codes: file removed and delivered notification withdrawn (`removeAdminCodes()`). Decryption and display: `src/AdminCode.h`, see [mobile.md](mobile.md) section 9.1 |
 | User taps notification while logged in | `userNotificationCenter:didReceiveNotificationResponse:` (app-owned `CalaosNotificationDelegate`) → `HardwareUtils::handleNotificationOpened(uuid)` → `pushNotifReceived(uuid)` → `Application::pushNotificationReceived(uuid)` → QuickFlux dispatch |
 | User taps notification while not logged in (closed, background, reconnecting) | Same entry point; the uuid is kept and `Application::homeLoaded()` opens it once at the next login (`HardwareUtils::takePendingNotif()`, `DeferredNotifGate`: a session that drops before the event is shown hands it back to the next login) |
 | Push **arrives** (no tap), app in the foreground or woken in the background | `application:didReceiveRemoteNotification:fetchCompletionHandler:` (runtime hook on Qt's application delegate) → `HardwareUtils::handleNotificationOpened(uuid)`: the event is opened as if tapped, right away when logged in, otherwise at the next login. Long-standing product behaviour, deliberately unchanged by FIX-3 |
@@ -218,8 +218,18 @@ comment at the top of `ios/HardwareUtils.mm`.
 - Used by both the main app (credentials, push key) and the push extension
   (credentials for the camera picture), hence the shared
   `9WYC46992U.fr.calaos.CalaosMobile` keychain group. The push key item
-  (`calaos-push-key`) is this-device-only and survives "Reset all data"
-  (an approver phone's key is frozen on its box).
+  (`calaos-push-key`, service `CalaosMobile.push`) is this-device-only and
+  survives "Reset all data" (an approver phone's key is frozen on its box).
+  It shares the access group so the extension could read it, but the
+  extension never does: only the app decrypts.
+
+Copy of an admin code: a `UIPasteboard` item with an expiration date (60 s),
+nothing read back (no paste prompt). It is deliberately **not** local-only:
+Universal Clipboard lets the user paste the code into the web console that is
+often open on a Mac, at the cost of the code reaching the user's other Apple
+devices for that minute. The digits are hidden while the app is not active,
+best effort against the app switcher snapshot (Qt may not redraw before iOS
+takes it).
 - Old [ios/KeychainItemWrapper.m](../ios/KeychainItemWrapper.m) is kept for legacy
   reasons; new code should use `A0SimpleKeychain`.
 

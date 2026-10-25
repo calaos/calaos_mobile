@@ -319,11 +319,20 @@ admin_code_tag }`, where `body`/`message` is a generic notice, never the code.
    (`SystemClock.elapsedRealtime()`), keyed by `admin_code_id` (validated: 16
    lowercase hex), in `calaos_credentials` (`admin_codes`, JSON; entries older
    than 10 minutes and beyond 16 are pruned on write);
-2. posts the notice on `calaos_events`, id `admin_code_id.hashCode()`, tap
-   intent extra `admin_code_id` (validated again by the activity, replayed
-   intents ignored);
-3. if Qt runs, `HardwareUtilsNatives.emitAdminCodeNotified()`; a tap on a cold
-   start is parked and taken by `platformInit()` (`takePendingAdminCodeId()`).
+2. posts the notice on `calaos_events`, tag `admin_code:<code_id>`, id 0
+   (no hash clash with event notifications), tap intent extra
+   `admin_code_id` (validated again by the activity, replayed intents
+   ignored);
+3. if Qt runs, `HardwareUtilsNatives.emitAdminCodeNotified()` (not parked if
+   that fails: the app reads the whole stash at its next start or
+   foreground); a tap on a cold start is parked and taken by `platformInit()`
+   (`takePendingAdminCodeId()`).
+
+While the code sheet is open the activity has `FLAG_SECURE`
+(`HardwareUtils.setSecureScreen()`); Copy goes through
+`HardwareUtils.copySecret()`: `ClipData` flagged sensitive
+(`ClipDescription.EXTRA_IS_SENSITIVE`, `android.content.extra.IS_SENSITIVE`
+below API 33), cleared by the app after 60 s if it still holds the code.
 
 The app reads the stash through JNI (`CredentialStore.adminCodes()`), checks
 and decrypts in C++ ([src/AdminCode.h](../src/AdminCode.h), see
@@ -431,10 +440,16 @@ stored on the Java side, in the `calaos_credentials` SharedPreferences:
 - the **push key** is kept apart, in `calaos_push.xml` (excluded from backup
   like the token), encrypted with its own Keystore alias
   `calaos_push_key_v1`: created from `SecureRandom` on the first
-  `pushKey()` call, read at every start by `platformInit()`, **not** wiped by
-  "Reset all data" (the box freezes the key of an approver phone); a key that
-  cannot be decrypted any more is replaced by a new one; the admin code
-  stash (`admin_codes`, see 6.2b) is wiped with the credentials;
+  `pushKey()` call, read at every start by `platformInit()` (and again on
+  the next foreground or admin code while it is empty), **not** wiped by
+  "Reset all data" (the box freezes the key of an approver phone). It is
+  replaced only when really lost: no stored blob, alias absent after a
+  successful `KeyStore.load()`, corrupt blob, `AEADBadTagException` or
+  `KeyPermanentlyInvalidatedException`; any other failure answers "" and
+  writes nothing, so a transient Keystore error never overwrites an
+  approver's key. `setPushKeyForTesting()` refuses to run in a
+  non-debuggable app. The admin code stash (`admin_codes`, see 6.2b) is
+  wiped with the credentials (`clear()` takes the stash lock);
 - **migration**: on the first `loadAuthKeychain()` after the update, a pair
   found in QSettings (`calaos/cn_user`, `calaos/cn_pass` in
   `files/settings/Calaos/CalaosHome.conf`) is moved to the store and the

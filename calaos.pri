@@ -30,7 +30,8 @@ SOURCES += src/main.cpp \
     $$PWD/src/EventLogModel.cpp \
     $$PWD/src/BookmarkModel.cpp \
     $$PWD/src/ModelImageProvider.cpp \
-    $$PWD/src/TlsPinning.cpp
+    $$PWD/src/TlsPinning.cpp \
+    $$PWD/src/AdminCode.cpp
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH = qml
@@ -57,7 +58,8 @@ HEADERS += \
     $$PWD/src/EventLogModel.h \
     $$PWD/src/BookmarkModel.h \
     $$PWD/src/ModelImageProvider.h \
-    $$PWD/src/TlsPinning.h
+    $$PWD/src/TlsPinning.h \
+    $$PWD/src/AdminCode.h
 
 win32 {
 LIBS += -liphlpapi

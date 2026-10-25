@@ -327,6 +327,7 @@ public:
         m_sessionUp = true;
         m_registered.clear();
         m_registeredName.clear();
+        m_registeredKey.clear();
     }
 
     //The transport is gone (logout, lost connection, new attempt).
@@ -335,19 +336,22 @@ public:
         m_sessionUp = false;
         m_registered.clear();
         m_registeredName.clear();
+        m_registeredKey.clear();
     }
 
-    //Called at the start of a session and on every token or device name
-    //change. Returns true when register_push must be sent for this token and
-    //name now; the pair is then considered registered for the rest of the
-    //session, so a rename is sent once and an unchanged one never.
-    bool shouldRegister(const QString &token, const QString &name = QString())
+    //Called at the start of a session and on every token, device name or
+    //push key change. Returns true when register_push must be sent for these
+    //values now; they are then considered registered for the rest of the
+    //session, so a change is sent once and an unchanged one never.
+    bool shouldRegister(const QString &token, const QString &name = QString(),
+                        const QByteArray &pushKey = QByteArray())
     {
         if (!m_sessionUp || token.isEmpty() ||
-            (token == m_registered && name == m_registeredName))
+            (token == m_registered && name == m_registeredName && pushKey == m_registeredKey))
             return false;
         m_registered = token;
         m_registeredName = name;
+        m_registeredKey = pushKey;
         return true;
     }
 
@@ -355,6 +359,7 @@ private:
     bool m_sessionUp = false;
     QString m_registered;
     QString m_registeredName;
+    QByteArray m_registeredKey;
 };
 
 //The "data" object of register_push (AND-7).
@@ -372,6 +377,11 @@ private:
 //registered tokens; an older calaos_server ignores it. Left out rather than
 //sent empty when the platform has no name.
 //
+//JsonKeys::PushKey: the 32-byte key calaos_server seals the admin codes of
+//this token with, as 64 lowercase hex digits. Left out when the platform has
+//none (desktop, a key store that failed): the server then keeps the key it
+//knows, or pushes the legacy text.
+//
 //Header-only so tests/tst_pushnotif checks the payload for each hardware
 //without a Q_OS_ANDROID build.
 namespace PushFormat
@@ -379,8 +389,11 @@ namespace PushFormat
 inline constexpr QLatin1StringView AndroidHardware{"android"};
 inline constexpr QLatin1StringView AndroidPushFormat{"data"};
 
+inline constexpr int PushKeySize = 32;
+
 inline QJsonObject registration(const QString &token, const QString &hardware,
-                                const QString &deviceName = QString())
+                                const QString &deviceName = QString(),
+                                const QByteArray &pushKey = QByteArray())
 {
     QJsonObject o = {
         { JsonKeys::Token, token },
@@ -391,6 +404,8 @@ inline QJsonObject registration(const QString &token, const QString &hardware,
     const QString name = deviceName.trimmed();
     if (!name.isEmpty())
         o[JsonKeys::DeviceName] = name;
+    if (pushKey.size() == PushKeySize)
+        o[JsonKeys::PushKey] = QString::fromLatin1(pushKey.toHex());
     return o;
 }
 }

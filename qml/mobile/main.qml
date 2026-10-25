@@ -274,6 +274,17 @@ Window {
                 menuBar.menuType = Common.MenuBack
                 stackView.push(favEditView)
             }
+            onBoxUpdatesClicked: {
+                menuBar.menuType = Common.MenuBack
+                stackView.push(updatesView)
+            }
+        }
+    }
+
+    Component {
+        id: updatesView
+
+        UpdatesView {
         }
     }
 

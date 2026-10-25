@@ -402,6 +402,9 @@ private slots:
     void httpFallbackGate();
     void rateLimitedOnActionCountsDown();
     void unansweredUpgradeReadsStatus();
+    void rebootGuardedDuringUpgrade();
+    void oldSocketErrorClearedOnReconnect();
+    void replyForAnotherMessageIgnored();
 };
 
 void TstAdminRelay::unlockSuccessStoresSession()
@@ -1394,6 +1397,71 @@ void TstAdminRelay::unansweredUpgradeReadsStatus()
                       ok(QJsonObject{{ "progress", progress("upgrading", 10, 1, 1, { "calaos-server" }) },
                                      { "job", job("j9", "running") }}));
     QCOMPARE(screen.get_phase(), QStringLiteral("upgrading"));
+}
+
+void TstAdminRelay::rebootGuardedDuringUpgrade()
+{
+    FakeTransport t;
+    AdminRelay relay(&t);
+    AdminRelayBackend backend(&relay);
+    AdminUpdates screen(&backend, &relay);
+    screen.setPollInterval(60000);
+    unlockRelay(t, relay);
+
+    //refused by the box: the run started elsewhere is followed
+    const int before = t.count("update_status");
+    screen.reboot();
+    relay.handleReply("admin", t.frames[t.last("system_reboot")].msgId,
+                      err("upgrade_in_progress", QJsonObject{{ "job_id", "j10" }}));
+    QCOMPARE(t.count("update_status"), before + 1);
+    relay.handleReply("admin", t.frames[t.last("update_status")].msgId,
+                      ok(QJsonObject{{ "progress", progress("upgrading", 5, 1, 1) }, { "job", job("j10", "running") }}));
+    QCOMPARE(screen.get_phase(), QStringLiteral("upgrading"));
+
+    //and no reboot is even sent while it runs
+    const int reboots = t.count("system_reboot");
+    screen.reboot();
+    QCOMPARE(t.count("system_reboot"), reboots);
+}
+
+void TstAdminRelay::oldSocketErrorClearedOnReconnect()
+{
+    FakeTransport t;
+    AdminRelay relay(&t);
+    relay.setTimeouts(100, 300);
+    AdminRelayBackend backend(&relay);
+    AdminUpdates screen(&backend, &relay);
+    probeRelay(t, relay);
+    screen.unlock("typed");
+    relay.handleTransportLost();
+    QTRY_COMPARE(screen.get_errorCode(), QString()); //disconnected, then idle
+    QCOMPARE(screen.get_gate(), AdminRelay::GateIdle);
+    QCOMPARE(screen.get_errorText(), QString());
+
+    //a rate limit survives the reconnect
+    probeRelay(t, relay);
+    screen.unlock("typed");
+    relay.handleReply("admin_unlock", t.frames.last().msgId,
+                      err("rate_limited", QJsonObject{{ "retry_after", "30" }}));
+    relay.handleTransportLost();
+    QCOMPARE(screen.get_errorCode(), QStringLiteral("rate_limited"));
+    QVERIFY(screen.get_retryAfter() > 0);
+}
+
+void TstAdminRelay::replyForAnotherMessageIgnored()
+{
+    FakeTransport t;
+    AdminRelay relay(&t);
+    probeRelay(t, relay);
+    bool called = false;
+    relay.unlock(AdminPass, [&](const AdminRelay::Outcome &) { called = true; });
+    const QString id = t.frames.last().msgId;
+    //same msg_id, another message: not the answer to admin_unlock
+    relay.handleReply("admin", id, ok(QJsonObject()));
+    QVERIFY(!called);
+    relay.handleReply("admin_unlock", id, unlockOk());
+    QVERIFY(called);
+    QVERIFY(relay.isUnlocked());
 }
 
 QTEST_MAIN(TstAdminRelay)

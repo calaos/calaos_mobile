@@ -285,7 +285,7 @@ void AdminUpdates::upgradeAll()
 
 void AdminUpdates::reboot()
 {
-    if (!get_busy().isEmpty())
+    if (!get_busy().isEmpty() || isUpgrading())
         return;
 
     update_busy(QStringLiteral("system_reboot"));
@@ -294,9 +294,14 @@ void AdminUpdates::reboot()
     {
         update_busy(QString());
         if (r.ok)
+        {
             update_info(QStringLiteral("reboot_sent"));
-        else
-            showError(r);
+            return;
+        }
+        showError(r);
+        //a run started elsewhere (kiosk, webapp): follow it instead
+        if (r.upgradeInProgress)
+            refreshStatus();
     });
 }
 
@@ -382,6 +387,11 @@ void AdminUpdates::onGateChanged()
     const QString previous = get_gate();
     update_gate(gate);
 
+    //an error of the previous socket says nothing about the next one; a
+    //rate limit still holds whatever the socket
+    if (gate == AdminRelay::GateIdle && get_errorCode() != QLatin1String("rate_limited"))
+        dismissError();
+
     const bool blocked = gate == AdminRelay::GateUnavailable ||
                          gate == AdminRelay::GateTooOld ||
                          gate == AdminRelay::GateUnreachable;
@@ -435,6 +445,7 @@ void AdminUpdates::scheduleRetry()
     m_retryTimer->start(delay);
 }
 
+//Twin of the idle/terminal frame handling of UpdateManager::applyStatusSnapshot() (kiosk).
 QJsonObject AdminUpdates::held(const QJsonObject &next) const
 {
     //while a run is followed, its last frames (done, then idle at 0 %) must
@@ -511,6 +522,7 @@ void AdminUpdates::applyProgress(const QJsonObject &progress)
     }
 }
 
+//Twin of the terminal frame handling of UpdateManager::applyStatusSnapshot() (kiosk).
 void AdminUpdates::onProgressEvent(const QJsonObject &status)
 {
     const bool following = isUpgrading();
@@ -552,14 +564,7 @@ void AdminUpdates::applyAvailable(const QJsonObject &pkgs)
 
     QJsonObject calaosSubset;
     QMap<QString, QStringList> groups;
-    for (auto it = pkgs.begin(); it != pkgs.end(); ++it)
-    {
-        const QString group = UpdateGrouping::groupForPackage(it.key());
-        if (group.isEmpty())
-            calaosSubset[it.key()] = it.value();
-        else
-            groups[group].append(it.key());
-    }
+    UpdateGrouping::splitPackages(pkgs, calaosSubset, groups);
 
     //no installed list through the relay: the rows are the pending updates
     m_packages->clear();

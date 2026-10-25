@@ -103,6 +103,8 @@ void AdminRelay::unlock(const QString &password, Callback callback)
 
 void AdminRelay::request(const QString &action, const QJsonObject &params, Callback callback)
 {
+    //the timer may not have run (background): never send an expired session
+    checkExpiry();
     if (m_transport->hasPendingTlsTrust())
     {
         failLater(ErrTlsPending, callback);
@@ -172,7 +174,7 @@ void AdminRelay::handleReply(const QString &msg, const QString &msgId, const QJs
     m_spoken = true;
     if (msg == MsgAdmin)
         m_probeAnswered = true;
-    if (!m_pending.contains(msgId))
+    if (!m_pending.contains(msgId) || m_pending.value(msgId).msg != msg)
         return; //late answer to a request that timed out, or not ours
 
     Outcome o;
@@ -324,8 +326,6 @@ void AdminRelay::handleTransportLost()
     m_spoken = false;
     m_probeAnswered = false;
     forgetSession();
-    //nothing seen on the old socket says anything about the next one
-    setGate(GateIdle);
 
     for (auto it = pending.begin(); it != pending.end(); ++it)
     {
@@ -340,6 +340,10 @@ void AdminRelay::handleTransportLost()
         if (p.callback)
             p.callback(o);
     }
+
+    //nothing seen on the old socket says anything about the next one; last,
+    //so the screen drops what the failed requests above reported
+    setGate(GateIdle);
 }
 
 void AdminRelay::handleTransportUp()

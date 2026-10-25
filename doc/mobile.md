@@ -242,14 +242,17 @@ the phone: those stay in the webapp.
 - The password field is `TextInput.Password` with
   `Qt.ImhSensitiveData | Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase`,
   never bound to a setting, cleared on submit, when leaving the page, when the
-  gate leaves `locked` and when the app leaves the foreground. It is marked
-  `inputContentType: "password"` for the password manager: iOS AutoFill works
-  through the hook described in [ios.md](ios.md) section 5. Android has none:
-  Qt 6.12 routes every field through one proxy `QtEditText` (only
-  `TYPE_TEXT_VARIATION_PASSWORD` from `ImhHiddenText`), with no autofill hints
-  nor the virtual view structure the Android Autofill framework needs; giving
-  it hints from outside would make the system fill the proxy, not the QML
-  field, so it is left alone.
+  gate leaves `locked` and when the app leaves the foreground. On iOS and Android the password is typed in a
+  native dialog instead (`HardwareUtils::requestNativePassword()`, purpose
+  `admin_unlock`; the login screen uses it for its password, purpose
+  `login`): Qt's text fields get no password AutoFill on either platform
+  (iOS: see [ios.md](ios.md) section 5; Android: Qt 6.12 routes every field
+  through one proxy `QtEditText` without autofill hints or view structure).
+  The dialog has a username field (`admin`, or the typed household user) and
+  a password field marked for the password manager (`UITextContentTypePassword`,
+  `View.AUTOFILL_HINT_PASSWORD`), answers once, wipes its fields, stores and
+  logs nothing; the QML field stays where no native entry exists (desktop
+  test build).
 
 **What is shared with the kiosk, and what is not.** Shared sources (both
 builds): `UpdateBackend` (interface), `UpdateModel` (the three models),

@@ -24,12 +24,15 @@ TestCase {
     QtObject {
         id: model
         property var codes: []
+        property bool unreadable: false
         readonly property int lifetime: 60
         property var copied: []
         property int closes: 0
+        property var sheetVisible: []
         signal showRequested()
         function copy(id) { copied = copied.concat([id]) }
-        function close() { closes++; codes = [] }
+        function close() { closes++; codes = []; unreadable = false }
+        function setSheetVisible(v) { sheetVisible = sheetVisible.concat([v]) }
     }
 
     AdminCodeSheet {
@@ -75,8 +78,10 @@ TestCase {
 
     function init() {
         model.codes = []
+        model.unreadable = false
         model.copied = []
         model.closes = 0
+        model.sheetVisible = []
     }
 
     function cleanup() {
@@ -157,6 +162,26 @@ TestCase {
         //closed() comes at the end of the exit transition.
         tryCompare(model, "closes", 1, 3000)
         compare(model.codes.length, 0)
+        //Secure screen on while shown, off once closed.
+        compare(model.sheetVisible, [true, false])
+    }
+
+    function test_unreadableHint() {
+        showCodes([code("0123456789abcdef", "482913", 50)])
+        var hint = find(Overlay.overlay, "adminCodeUnreadable")
+        verify(hint)
+        verify(!hint.visible)
+        model.unreadable = true
+        verify(hint.visible)
+        compare(hint.text, "A code arrived but could not be read on this phone.")
+    }
+
+    function test_unreadableAlone() {
+        //Nothing readable: the sheet still tells the approver.
+        model.unreadable = true
+        showCodes([])
+        verify(find(Overlay.overlay, "adminCodeUnreadable").visible)
+        compare(find(Overlay.overlay, "adminCode_0123456789abcdef"), null)
     }
 
     function test_purposes() {

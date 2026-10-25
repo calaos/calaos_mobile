@@ -4,67 +4,72 @@
 <context>
     <name>AdminCodeSheet</name>
     <message>
-        <location filename="../qml/mobile/AdminCodeSheet.qml" line="24"/>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="29"/>
         <source>To open the web console</source>
         <translation>Pour ouvrir la console web</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/AdminCodeSheet.qml" line="25"/>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="30"/>
         <source>To change the admin password</source>
         <translation>Pour changer le mot de passe admin</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/AdminCodeSheet.qml" line="26"/>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="31"/>
         <source>To add an approver phone</source>
         <translation>Pour ajouter un téléphone approbateur</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/AdminCodeSheet.qml" line="27"/>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="32"/>
         <source>To remove an approver phone</source>
         <translation>Pour retirer un téléphone approbateur</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/AdminCodeSheet.qml" line="28"/>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="33"/>
         <source>To enroll this phone as the admin approver</source>
         <translation>Pour enregistrer ce téléphone comme approbateur admin</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/AdminCodeSheet.qml" line="29"/>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="34"/>
         <source>To change the network configuration</source>
         <translation>Pour modifier la configuration réseau</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/AdminCodeSheet.qml" line="45"/>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="50"/>
         <source>Admin code</source>
         <translation>Code admin</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/AdminCodeSheet.qml" line="124"/>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="137"/>
         <source>Expired</source>
         <translation>Expiré</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/AdminCodeSheet.qml" line="156"/>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="169"/>
         <source>Ask the web console for a new code.</source>
         <translation>Demandez un nouveau code dans la console web.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/AdminCodeSheet.qml" line="157"/>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="170"/>
         <source>Valid for %1 s</source>
         <translation>Valable %1 s</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/AdminCodeSheet.qml" line="165"/>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="178"/>
         <source>Copy</source>
         <translation>Copier</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/AdminCodeSheet.qml" line="178"/>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="192"/>
+        <source>A code arrived but could not be read on this phone.</source>
+        <translation>Un code est arrivé mais n&apos;a pas pu être lu sur ce téléphone.</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="201"/>
         <source>Type it in the Calaos web console. Never give it to anyone.</source>
         <translation>Saisissez-le dans la console web Calaos. Ne le donnez jamais à personne.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/AdminCodeSheet.qml" line="186"/>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="209"/>
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
@@ -1849,12 +1854,12 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>HardwareUtilsAndroid</name>
     <message>
-        <location filename="../android/HardwareUtils_Android.cpp" line="356"/>
+        <location filename="../android/HardwareUtils_Android.cpp" line="352"/>
         <source>Confirm</source>
         <translation>Valider</translation>
     </message>
     <message>
-        <location filename="../android/HardwareUtils_Android.cpp" line="358"/>
+        <location filename="../android/HardwareUtils_Android.cpp" line="354"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
@@ -1862,12 +1867,12 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>HardwareUtils_iOS</name>
     <message>
-        <location filename="../ios/HardwareUtils.mm" line="789"/>
+        <location filename="../ios/HardwareUtils.mm" line="843"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
     <message>
-        <location filename="../ios/HardwareUtils.mm" line="790"/>
+        <location filename="../ios/HardwareUtils.mm" line="844"/>
         <source>Confirm</source>
         <translation>Valider</translation>
     </message>

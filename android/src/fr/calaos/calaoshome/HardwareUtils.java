@@ -3,6 +3,9 @@ package fr.calaos.calaoshome;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ClipData;
+import android.content.ClipDescription;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -14,9 +17,11 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.PersistableBundle;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.WindowInsetsController;
+import android.view.WindowManager;
 import android.widget.EditText;
 import com.google.firebase.messaging.FirebaseMessaging;
 import org.qtproject.qt.android.bindings.QtActivity;
@@ -510,6 +515,8 @@ public class HardwareUtils extends QtActivity
         notifyAdminCode(codeId);
     }
 
+    // Not parked on failure: nothing would take it once Qt is up, and the
+    // app reads the whole stash anyway at its next start or foreground.
     private static void notifyAdminCode(String codeId)
     {
         try
@@ -519,8 +526,58 @@ public class HardwareUtils extends QtActivity
         catch (UnsatisfiedLinkError e)
         {
             Log.w(TAG, "emitAdminCodeNotified: native method not registered");
-            pendingAdminCodeId = codeId;
         }
+    }
+
+    // The admin code on the clipboard, flagged sensitive so the system
+    // clipboard preview (Android 13+) and keyboards do not show it. The app
+    // clears it after its lifetime (AdminCodeModel). Qt thread.
+    public static boolean copySecret(String text)
+    {
+        final HardwareUtils activity = _context;
+        if (!isUsable(activity))
+            return false;
+
+        try
+        {
+            ClipboardManager cm = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
+            if (cm == null)
+                return false;
+            ClipData clip = ClipData.newPlainText("Calaos admin code", text);
+            PersistableBundle extras = new PersistableBundle();
+            extras.putBoolean(Build.VERSION.SDK_INT >= 33 ? ClipDescription.EXTRA_IS_SENSITIVE
+                                                          : "android.content.extra.IS_SENSITIVE", true);
+            clip.getDescription().setExtras(extras);
+            cm.setPrimaryClip(clip);
+            return true;
+        }
+        catch (RuntimeException e)
+        {
+            Log.w(TAG, "copySecret failed: " + e.getClass().getSimpleName());
+            return false;
+        }
+    }
+
+    // FLAG_SECURE while an admin code is on screen: no screenshot, blank in
+    // Recents.
+    public static void setSecureScreen(final boolean on)
+    {
+        final HardwareUtils activity = _context;
+        if (!isUsable(activity))
+            return;
+
+        activity.runOnUiThread(new Runnable()
+        {
+            public void run()
+            {
+                if (!isUsable(activity))
+                    return;
+                if (on)
+                    activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+                else
+                    activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
+            }
+        });
     }
 
     // Admin code id the activity was started with, if any. Cleared on read.

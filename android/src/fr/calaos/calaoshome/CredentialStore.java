@@ -2,7 +2,9 @@ package fr.calaos.calaoshome;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
 import android.security.keystore.KeyGenParameterSpec;
+import android.security.keystore.KeyPermanentlyInvalidatedException;
 import android.security.keystore.KeyProperties;
 import android.util.Base64;
 import android.util.Log;
@@ -16,6 +18,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import javax.crypto.AEADBadTagException;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -175,8 +178,14 @@ public final class CredentialStore
     // ── Push key ─────────────────────────────────────────────────────────
 
     // 64 lowercase hex, created on the first call. Empty when the Keystore
-    // cannot keep one: register_push then sends no key and the box pushes
-    // the legacy text. Never logged.
+    // cannot give it now: register_push then sends no key and the app asks
+    // again later. Never logged.
+    //
+    // A new key replaces the stored one only when that one is really lost
+    // (no blob, alias gone, corrupt blob, bad tag, key invalidated): the box
+    // freezes the key of an approver phone, so overwriting it on a transient
+    // Keystore error (early boot, ProviderException) would lock the phone
+    // out for good.
     public static synchronized String pushKey(Context ctx)
     {
         try
@@ -185,11 +194,13 @@ public final class CredentialStore
             String stored = prefs.getString(PREF_PUSH_KEY, null);
             if (stored != null && !stored.isEmpty())
             {
-                String hex = decrypt(PUSH_KEY_ALIAS, stored);
-                if (isPushKeyHex(hex))
+                boolean[] lost = { false };
+                String hex = readPushKey(stored, lost);
+                if (hex != null)
                     return hex;
-                // Keystore key lost: a new push key, sent at the next login.
-                Log.w(TAG, "CredentialStore: push key unreadable, creating a new one");
+                if (!lost[0])
+                    return "";
+                Log.w(TAG, "CredentialStore: push key lost, creating a new one");
             }
 
             byte[] raw = new byte[PUSH_KEY_BYTES];
@@ -209,10 +220,68 @@ public final class CredentialStore
         }
     }
 
+    // Returns the hex, or null; lost[0] tells a key that is gone for good
+    // from a failure worth retrying.
+    private static String readPushKey(String stored, boolean[] lost)
+    {
+        byte[] in;
+        try
+        {
+            in = Base64.decode(stored, Base64.NO_WRAP);
+        }
+        catch (IllegalArgumentException e)
+        {
+            lost[0] = true;
+            return null;
+        }
+        if (in.length <= GCM_IV_BYTES)
+        {
+            lost[0] = true;
+            return null;
+        }
+
+        try
+        {
+            KeyStore ks = KeyStore.getInstance(KEYSTORE);
+            ks.load(null);
+            KeyStore.Entry entry = ks.containsAlias(PUSH_KEY_ALIAS) ? ks.getEntry(PUSH_KEY_ALIAS, null) : null;
+            if (!(entry instanceof KeyStore.SecretKeyEntry))
+            {
+                lost[0] = true;
+                return null;
+            }
+
+            Cipher cipher = Cipher.getInstance(TRANSFORMATION);
+            cipher.init(Cipher.DECRYPT_MODE, ((KeyStore.SecretKeyEntry) entry).getSecretKey(),
+                        new GCMParameterSpec(GCM_TAG_BITS, in, 0, GCM_IV_BYTES));
+            String hex = new String(cipher.doFinal(in, GCM_IV_BYTES, in.length - GCM_IV_BYTES),
+                                    StandardCharsets.UTF_8);
+            if (!isPushKeyHex(hex))
+            {
+                lost[0] = true;
+                return null;
+            }
+            return hex;
+        }
+        catch (AEADBadTagException | KeyPermanentlyInvalidatedException e)
+        {
+            lost[0] = true;
+            return null;
+        }
+        catch (GeneralSecurityException | IOException | RuntimeException e)
+        {
+            Log.w(TAG, "CredentialStore: push key not readable now: " + e.getClass().getSimpleName());
+            return null;
+        }
+    }
+
     // Debug builds only (FakePushReceiver): replays the golden vectors of the
-    // contract on a device. Takes effect at the next app start.
+    // contract on a device. Takes effect at the next app start. Refused in a
+    // non-debuggable app even if something calls it.
     public static synchronized boolean setPushKeyForTesting(Context ctx, String hex)
     {
+        if ((ctx.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) == 0)
+            return false;
         if (!isPushKeyHex(hex))
             return false;
         String enc = encrypt(PUSH_KEY_ALIAS, hex);
@@ -417,7 +486,11 @@ public final class CredentialStore
     // flag and the Keystore key.
     public static void clear(Context ctx)
     {
-        prefs(ctx).edit().clear().commit();
+        // Under the stash lock: a code stashed meanwhile must not survive.
+        synchronized (STASH_LOCK)
+        {
+            prefs(ctx).edit().clear().commit();
+        }
         try
         {
             KeyStore ks = KeyStore.getInstance(KEYSTORE);

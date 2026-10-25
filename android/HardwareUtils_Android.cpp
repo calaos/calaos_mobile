@@ -160,11 +160,7 @@ void HardwareUtilsAndroid::platformInit(QQmlApplicationEngine *e)
     setupNetworkMonitoring();
 
     //Created on the first run; read before the first login sends it.
-    const QByteArray pushKey = QByteArray::fromHex(credentialStoreString("pushKey").toLatin1());
-    if (pushKey.size() == 32)
-        setPushKey(pushKey);
-    else
-        qWarning() << "Android: no push key, admin codes will come as legacy text";
+    loadPushKey();
 
     //QJniEnvironment resolves the class through Qt's class loader, which
     //a plain FindClass from a native thread does not.
@@ -514,6 +510,34 @@ void HardwareUtilsAndroid::resetAuthKeychain()
                                        "(Landroid/content/Context;)V", ctx.object());
     clearJavaException("CredentialStore.clear");
     forgetSettingsCredentials();
+}
+
+void HardwareUtilsAndroid::loadPushKey()
+{
+    const QByteArray key = QByteArray::fromHex(credentialStoreString("pushKey").toLatin1());
+    if (key.size() == 32)
+        setPushKey(key);
+    else
+        qWarning() << "Android: push key not available now, asked again later";
+}
+
+HardwareUtils::SecretCopy HardwareUtilsAndroid::copySecret(const QString &text, int seconds)
+{
+    Q_UNUSED(seconds) //cleared by AdminCodeModel
+    QJniObject jtext = QJniObject::fromString(text);
+    const jboolean ok = QJniObject::callStaticMethod<jboolean>(kHardwareUtilsClass, "copySecret",
+                                                               "(Ljava/lang/String;)Z",
+                                                               jtext.object<jstring>());
+    if (clearJavaException("HardwareUtils.copySecret") || !ok)
+        return SecretCopy::NotHandled;
+    return SecretCopy::Copied;
+}
+
+void HardwareUtilsAndroid::setSecureScreen(bool on)
+{
+    QJniObject::callStaticMethod<void>(kHardwareUtilsClass, "setSecureScreen", "(Z)V",
+                                       static_cast<jboolean>(on));
+    clearJavaException("HardwareUtils.setSecureScreen");
 }
 
 QList<QJsonObject> HardwareUtilsAndroid::adminCodeStash()

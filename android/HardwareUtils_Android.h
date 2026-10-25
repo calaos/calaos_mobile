@@ -51,6 +51,10 @@ public:
 
     //Admin code stash written by CalaosMessagingService (CredentialStore);
     //removing an entry also cancels its notification.
+    virtual void loadPushKey();
+    //Sensitive ClipData; FLAG_SECURE while a code is shown.
+    virtual SecretCopy copySecret(const QString &text, int seconds);
+    virtual void setSecureScreen(bool on);
     virtual QList<QJsonObject> adminCodeStash();
     virtual void removeAdminCodes(const QStringList &codeIds);
 

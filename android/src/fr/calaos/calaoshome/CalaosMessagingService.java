@@ -71,6 +71,8 @@ public class CalaosMessagingService extends FirebaseMessagingService
 
     // Intent extra and payload key of an admin code: 16 lowercase hex.
     public static final String EXTRA_ADMIN_CODE_ID = "admin_code_id";
+    // Admin code notifications: tag prefix + code id, id 0 (no hash clash).
+    private static final String ADMIN_CODE_TAG = "admin_code:";
     private static final Pattern ADMIN_CODE_ID = Pattern.compile("^[0-9a-f]{16}$");
 
     // Payload keys.
@@ -244,7 +246,7 @@ public class CalaosMessagingService extends FirebaseMessagingService
                                                          SystemClock.elapsedRealtime());
         Log.i(TAG, "FCM admin code received" + (stashed ? "" : ", not stashed"));
 
-        showNotification(ctx, notificationId(payload), buildNotification(ctx, payload).build());
+        showNotification(ctx, ADMIN_CODE_TAG + payload.adminCodeId, 0, buildNotification(ctx, payload).build());
         HardwareUtils.deliverAdminCode(payload.adminCodeId);
     }
 
@@ -255,7 +257,7 @@ public class CalaosMessagingService extends FirebaseMessagingService
         java.util.List<String> ids = CredentialStore.removeAdminCodes(ctx, idsJson);
         NotificationManagerCompat nm = NotificationManagerCompat.from(ctx);
         for (String id: ids)
-            nm.cancel(id.hashCode());
+            nm.cancel(ADMIN_CODE_TAG + id, 0);
     }
 
     // ── Notification helpers (shared with the activity and AND-7) ────────
@@ -279,13 +281,6 @@ public class CalaosMessagingService extends FirebaseMessagingService
     // One notification per Calaos event, so a later update (picture, AND-7)
     // replaces the text-only one instead of stacking a second entry. Pushes
     // without an event uuid get a time-based id and never collide.
-    public static int notificationId(PushPayload payload)
-    {
-        if (payload.adminCodeId != null)
-            return payload.adminCodeId.hashCode();
-        return notificationId(payload.eventUuid);
-    }
-
     public static int notificationId(String eventUuid)
     {
         if (eventUuid != null && !eventUuid.isEmpty())
@@ -318,6 +313,11 @@ public class CalaosMessagingService extends FirebaseMessagingService
 
     public static void showNotification(Context ctx, int id, Notification notification)
     {
+        showNotification(ctx, null, id, notification);
+    }
+
+    public static void showNotification(Context ctx, String tag, int id, Notification notification)
+    {
         NotificationManagerCompat nm = NotificationManagerCompat.from(ctx);
         if (!nm.areNotificationsEnabled())
         {
@@ -329,7 +329,7 @@ public class CalaosMessagingService extends FirebaseMessagingService
 
         try
         {
-            nm.notify(id, notification);
+            nm.notify(tag, id, notification);
         }
         catch (SecurityException e)
         {

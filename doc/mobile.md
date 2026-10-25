@@ -246,7 +246,8 @@ the phone: those stay in the webapp.
 
 **What is shared with the kiosk, and what is not.** Shared sources (both
 builds): `UpdateBackend` (interface), `UpdateModel` (the three models),
-`UpdateGrouping`, `CalaosOsProtocol` (`<Status>`/`<Job>` parsing, `isIdleProgress`).
+`UpdateGrouping` (including `splitPackages()`, the calaos/groups split both
+orchestrators use), `CalaosOsProtocol` (`<Status>`/`<Job>` parsing, `isIdleProgress`).
 `CalaosOsAPI` implements `UpdateBackend` but stays desktop-only, and so does
 `UpdateManager`: the kiosk flow was not moved onto the interface because it
 depends on what only the daemon offers (installed package list, legacy
@@ -257,7 +258,7 @@ kiosk behaviour for no mobile gain. `AdminUpdates` is therefore a second
 orchestrator over the shared models: its phase logic follows the webapp's
 UpdatesPanel, and its model feeding mirrors `UpdateManager`. Twin code to
 change together: `AdminUpdates::applyAvailable()` ↔
-`UpdateManager::applyAvailable()` (calaos packages vs groups),
+`UpdateManager::applyAvailable()` (model feeding around the shared split),
 `AdminUpdates::applyProgress()` ↔ the package part of
 `UpdateManager::applyStatusSnapshot()`, and the terminal/idle frame handling
 (`AdminUpdates::held()`/`onProgressEvent()` ↔ `applyStatusSnapshot()`).

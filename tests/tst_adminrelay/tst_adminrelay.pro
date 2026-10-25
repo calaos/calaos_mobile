@@ -6,8 +6,10 @@ include(../common.pri)
 # Box updates from the phone (CM1): AdminRelay (admin_unlock / admin
 # correlation, timeouts, gates, session lifecycle) against a fake transport
 # and against a real CalaosConnection talking to a fake calaos_server
-# websocket on 127.0.0.1; AdminRelayBackend + AdminUpdates mapping the
-# relayed <Status>/<Job> onto the shared update models.
+# websocket on 127.0.0.1 (wss with a pinned self-signed certificate made
+# by the openssl CLI, as in tst_tlspinning, and plain ws);
+# AdminRelayBackend + AdminUpdates mapping the relayed <Status>/<Job> onto
+# the shared update models.
 #
 # CALAOS_MOBILE (no CALAOS_DESKTOP): HardwareUtils::Instance() returns the
 # plain base class, as in tst_pushnotif.
@@ -17,6 +19,7 @@ DEFINES += CALAOS_MOBILE
 QT += widgets
 
 HEADERS += \
+    $$SRC_DIR/AdminTransport.h \
     $$SRC_DIR/AdminRelay.h \
     $$SRC_DIR/AdminRelayBackend.h \
     $$SRC_DIR/AdminUpdates.h \

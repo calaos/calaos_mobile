@@ -23,6 +23,9 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QPointer>
+#include <QProcess>
+#include <QSslKey>
+#include <QTemporaryDir>
 #include <QWebSocket>
 #include <QWebSocketServer>
 
@@ -30,6 +33,7 @@
 #include "AdminRelayBackend.h"
 #include "AdminUpdates.h"
 #include "CalaosConnection.h"
+#include "TlsPinning.h"
 
 static const QString TestUser = QStringLiteral("user");
 static const QString TestPass = QStringLiteral("pass");
@@ -58,6 +62,8 @@ class FakeTransport: public AdminTransport
 public:
     bool up = true;
     bool trustPending = false;
+    bool secure = true;
+    bool httpFallback = false;
     QList<Frame> frames;
 
     bool sendAdminMessage(const QString &msg, const QJsonObject &data, const QString &msgId) override
@@ -69,6 +75,8 @@ public:
     }
 
     bool hasPendingTlsTrust() const override { return trustPending; }
+    bool isSecure() const override { return up && secure; }
+    bool isHttpFallback() const override { return httpFallback; }
 
     //The last frame sent for that admin action (or message).
     int last(const QString &actionOrMsg) const
@@ -157,9 +165,9 @@ public:
 
     bool start(quint16 port = 0)
     {
-        if (!server.listen(QHostAddress::LocalHost, port))
+        if (!server->listen(QHostAddress::LocalHost, port))
             return false;
-        m_port = server.serverPort();
+        m_port = server->serverPort();
         return true;
     }
 
@@ -169,10 +177,14 @@ public:
         clients.clear();
         for (QWebSocket *c: socks)
             c->abort();
-        server.close();
+        server->close();
     }
 
-    QString url() const { return QStringLiteral("ws://127.0.0.1:%1/api").arg(m_port); }
+    quint16 port() const { return m_port; }
+    QString url() const
+    {
+        return QStringLiteral("%1://127.0.0.1:%2/api").arg(m_secure ? "wss" : "ws").arg(m_port);
+    }
 
     void pushEvent(const QJsonObject &data)
     {
@@ -181,11 +193,18 @@ public:
                                                                          { "data", data }}).toJson(QJsonDocument::Compact)));
     }
 
-    FakeAdminWs()
+    //tls: serve wss with that certificate, plain ws otherwise
+    explicit FakeAdminWs(const QSslConfiguration *tls = nullptr):
+        m_secure(tls != nullptr)
     {
-        connect(&server, &QWebSocketServer::newConnection, this, [this]()
+        server = new QWebSocketServer(QStringLiteral("fake calaos_server"),
+                                      tls ? QWebSocketServer::SecureMode : QWebSocketServer::NonSecureMode,
+                                      this);
+        if (tls)
+            server->setSslConfiguration(*tls);
+        connect(server, &QWebSocketServer::newConnection, this, [this]()
         {
-            QWebSocket *c = server.nextPendingConnection();
+            QWebSocket *c = server->nextPendingConnection();
             clients << c;
             connect(c, &QWebSocket::disconnected, this, [this, c]()
             {
@@ -253,20 +272,61 @@ private:
         reply(d.contains("admin_session") ? ok(QJsonObject()) : err("bad_session"));
     }
 
-    QWebSocketServer server{ QStringLiteral("fake calaos_server"), QWebSocketServer::NonSecureMode };
+    QWebSocketServer *server = nullptr;
     QList<QWebSocket *> clients;
     quint16 m_port = 0;
+    bool m_secure = false;
 };
 
 class TstAdminRelay: public QObject
 {
     Q_OBJECT
 
+    QTemporaryDir dir;
+    QSslConfiguration tls;
+    bool tlsReady = false;
+
+    //Self-signed certificate for the wss fake server, as tst_tlspinning does.
+    bool makeServerConfig()
+    {
+        const QString key = dir.filePath(QStringLiteral("key.pem"));
+        const QString crt = dir.filePath(QStringLiteral("crt.pem"));
+        QProcess openssl;
+        openssl.start(QStringLiteral("openssl"),
+                      { "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "1",
+                        "-subj", "/CN=calaos.local", "-keyout", key, "-out", crt });
+        if (!openssl.waitForFinished(30000) || openssl.exitStatus() != QProcess::NormalExit ||
+            openssl.exitCode() != 0)
+            return false;
+        QFile kf(key), cf(crt);
+        if (!kf.open(QIODevice::ReadOnly) || !cf.open(QIODevice::ReadOnly))
+            return false;
+        const QSslKey sslKey(kf.readAll(), QSsl::Rsa, QSsl::Pem);
+        const QList<QSslCertificate> certs = QSslCertificate::fromData(cf.readAll(), QSsl::Pem);
+        if (sslKey.isNull() || certs.isEmpty())
+            return false;
+        tls = QSslConfiguration::defaultConfiguration();
+        tls.setLocalCertificate(certs.first());
+        tls.setPrivateKey(sslKey);
+        tls.setPeerVerifyMode(QSslSocket::VerifyNone);
+        return true;
+    }
+
+    //An admin answer on the current socket: unlock may go out.
+    void probeRelay(FakeTransport &t, AdminRelay &relay)
+    {
+        relay.request("update_status", QJsonObject(), {});
+        relay.handleReply("admin", t.frames.last().msgId,
+                          ok(QJsonObject{{ "progress", QJsonObject() }, { "job", QJsonValue::Null }}));
+    }
+
     //Unlocked relay over t, the session in hand.
     void unlockRelay(FakeTransport &t, AdminRelay &relay)
     {
+        probeRelay(t, relay);
+        const int before = t.frames.size();
         relay.unlock(AdminPass);
-        QCOMPARE(t.frames.size(), 1);
+        QCOMPARE(t.frames.size(), before + 1);
         relay.handleReply("admin_unlock", t.frames.last().msgId, unlockOk());
         QVERIFY(relay.isUnlocked());
     }
@@ -275,6 +335,12 @@ private slots:
     void initTestCase()
     {
         previousHandler = qInstallMessageHandler(captureHandler);
+        QVERIFY(dir.isValid());
+        if (QSslSocket::availableBackends().contains(QStringLiteral("openssl")))
+            QSslSocket::setActiveBackend(QStringLiteral("openssl"));
+        tlsReady = QSslSocket::supportsSsl() && makeServerConfig();
+        if (!tlsReady && qEnvironmentVariableIsSet("CI"))
+            qFatal("No TLS backend or no openssl CLI to make a test certificate");
     }
 
     void cleanupTestCase()
@@ -308,9 +374,16 @@ private slots:
     void householdStatusCarriesNoSession();
     void notSentWithoutWebsocket();
     void progressEventForwarded();
+    void gateIdleAfterTransportLost();
+    void unlockOverPlainWsSendsNothing();
+    void unlockBeforeProbeOnNewSocketSendsNothing();
+    void malformedSessionRefused();
+    void timeoutWhileLockedIsUnreachable();
+    void sessionLossFailsSessionRequests();
 
     void realConnectionUnlockAndStatus();
     void realConnectionServerDropKillsSession();
+    void realConnectionNoPasswordOverPlainWs();
     void realConnectionOldServer();
     void realConnectionHttpsRequired();
 
@@ -324,6 +397,10 @@ private slots:
     void rebootDuringUpgradeRefused();
     void blockedGateRetries();
     void failedJobReason();
+    void checkAnswerAfterSessionLossDropped();
+    void sessionLossReducesToHouseholdView();
+    void httpFallbackGate();
+    void rateLimitedOnActionCountsDown();
 };
 
 void TstAdminRelay::unlockSuccessStoresSession()
@@ -331,6 +408,8 @@ void TstAdminRelay::unlockSuccessStoresSession()
     FakeTransport t;
     AdminRelay relay(&t);
     QCOMPARE(relay.gate(), AdminRelay::GateIdle);
+    probeRelay(t, relay);
+    t.frames.clear();
 
     AdminRelay::Outcome got;
     relay.unlock(AdminPass, [&got](const AdminRelay::Outcome &o) { got = o; });
@@ -406,10 +485,17 @@ void TstAdminRelay::silentServerIsOldServer()
     relay.setTimeouts(100, 300);
     AdminRelay::Outcome got;
     bool called = false;
-    relay.unlock(AdminPass, [&](const AdminRelay::Outcome &o) { got = o; called = true; });
+    relay.request("update_status", QJsonObject(), [&](const AdminRelay::Outcome &o) { got = o; called = true; });
     QTRY_VERIFY(called);
     QCOMPARE(got.error.code, AdminRelay::ErrTimeout);
     QCOMPARE(relay.gate(), AdminRelay::GateOldServer);
+    //and the password is not even asked for: nothing answered on this socket
+    const int sent = t.frames.size();
+    called = false;
+    relay.unlock(AdminPass, [&](const AdminRelay::Outcome &o) { got = o; called = true; });
+    QTRY_VERIFY(called);
+    QCOMPARE(got.error.code, AdminRelay::ErrNotReady);
+    QCOMPARE(t.frames.size(), sent);
 }
 
 void TstAdminRelay::timeoutAfterAnAnswerIsNotOldServer()
@@ -562,6 +648,7 @@ void TstAdminRelay::sessionExpires()
 {
     FakeTransport t;
     AdminRelay relay(&t);
+    probeRelay(t, relay);
     relay.unlock(AdminPass);
     relay.handleReply("admin_unlock", t.frames.last().msgId, unlockOk("2"));
     QVERIFY(relay.isUnlocked());
@@ -578,6 +665,7 @@ void TstAdminRelay::expiresInCapped()
 {
     FakeTransport t;
     AdminRelay relay(&t);
+    probeRelay(t, relay);
     relay.unlock(AdminPass);
     relay.handleReply("admin_unlock", t.frames.last().msgId, unlockOk("100000"));
     QVERIFY(relay.expiresIn() <= AdminRelay::MaxSessionSeconds);
@@ -614,8 +702,16 @@ void TstAdminRelay::notSentWithoutWebsocket()
     AdminRelay relay(&t);
     QString code;
     relay.request("update_status", QJsonObject(), [&](const AdminRelay::Outcome &o) { code = o.error.code; });
-    QTRY_COMPARE(code, AdminRelay::ErrWebsocketRequired);
+    QTRY_COMPARE(code, AdminRelay::ErrDisconnected);
     QCOMPARE(relay.gate(), AdminRelay::GateIdle);
+
+    //logged in over the HTTP fallback: a screen of its own, not "checking"
+    t.httpFallback = true;
+    code.clear();
+    relay.request("update_status", QJsonObject(), [&](const AdminRelay::Outcome &o) { code = o.error.code; });
+    QTRY_COMPARE(code, AdminRelay::ErrWebsocketRequired);
+    QCOMPARE(relay.gate(), AdminRelay::GateWebsocketRequired);
+    QVERIFY(t.frames.isEmpty());
 }
 
 void TstAdminRelay::progressEventForwarded()
@@ -635,15 +731,29 @@ void TstAdminRelay::progressEventForwarded()
 
 void TstAdminRelay::realConnectionUnlockAndStatus()
 {
-    FakeAdminWs ws;
+    if (!tlsReady)
+        QSKIP("No TLS backend or no openssl CLI to make a test certificate");
+
+    FakeAdminWs ws(&tls);
     QVERIFY(ws.start());
     CalaosConnection con;
+    TlsPinStore pins(dir.filePath(QStringLiteral("pins_unlock.ini")));
+    pins.setPin(TlsPinning::hostKey(QStringLiteral("127.0.0.1"), ws.port()),
+                TlsPinning::spkiSha256(tls.localCertificate()));
+    con.setPinStore(&pins);
     AdminRelay relay(&con);
     relay.bindConnection(&con);
 
     QSignalSpy up(&relay, &AdminRelay::transportUp);
     con.login(TestUser, TestPass, ws.url());
     QTRY_VERIFY(up.count() >= 1);
+    QVERIFY(con.isSecure());
+
+    //no password before the box has answered on this socket
+    QString code;
+    relay.unlock(AdminPass, [&](const AdminRelay::Outcome &o) { code = o.error.code; });
+    QTRY_COMPARE(code, AdminRelay::ErrNotReady);
+    QVERIFY(ws.adminFrames.isEmpty());
 
     //household view first: no session on the wire
     bool statusDone = false;
@@ -658,7 +768,7 @@ void TstAdminRelay::realConnectionUnlockAndStatus()
     QVERIFY(!ws.adminFrames.last()["data"].toObject().contains("admin_session"));
     QVERIFY(ws.adminFrames.last().contains("msg_id"));
 
-    QString code;
+    code.clear();
     relay.unlock("wrong password", [&](const AdminRelay::Outcome &o) { code = o.error.code; });
     QTRY_COMPARE(code, QStringLiteral("bad_password"));
     QVERIFY(!relay.isUnlocked());
@@ -684,33 +794,79 @@ void TstAdminRelay::realConnectionUnlockAndStatus()
             QVERIFY(!QJsonDocument(f).toJson().contains(AdminPass.toUtf8()));
     }
 
+    QSignalSpy progressSpy(&relay, &AdminRelay::upgradeProgress);
+    ws.pushEvent(QJsonObject{{ "type", "upgrade_progress" },
+                             { "data", QJsonObject{{ "status", "upgrading" }, { "total_percent", 10 }} }});
+    QTRY_COMPARE(progressSpy.count(), 1);
+
     con.logout();
     QVERIFY(!relay.isUnlocked());
+    QCOMPARE(relay.gate(), AdminRelay::GateIdle);
 }
 
 void TstAdminRelay::realConnectionServerDropKillsSession()
 {
-    FakeAdminWs ws;
+    if (!tlsReady)
+        QSKIP("No TLS backend or no openssl CLI to make a test certificate");
+
+    FakeAdminWs ws(&tls);
     QVERIFY(ws.start());
     CalaosConnection con;
+    TlsPinStore pins(dir.filePath(QStringLiteral("pins_drop.ini")));
+    pins.setPin(TlsPinning::hostKey(QStringLiteral("127.0.0.1"), ws.port()),
+                TlsPinning::spkiSha256(tls.localCertificate()));
+    con.setPinStore(&pins);
     AdminRelay relay(&con);
     relay.bindConnection(&con);
     QSignalSpy up(&relay, &AdminRelay::transportUp);
     con.login(TestUser, TestPass, ws.url());
     QTRY_VERIFY(up.count() >= 1);
 
+    bool probed = false;
+    relay.request("update_status", QJsonObject(), [&](const AdminRelay::Outcome &) { probed = true; });
+    QTRY_VERIFY(probed);
     bool unlocked = false;
     relay.unlock(AdminPass, [&](const AdminRelay::Outcome &o) { unlocked = o.ok; });
     QTRY_VERIFY(unlocked);
 
-    QSignalSpy progressSpy(&relay, &AdminRelay::upgradeProgress);
-    ws.pushEvent(QJsonObject{{ "type", "upgrade_progress" },
-                             { "data", QJsonObject{{ "status", "upgrading" }, { "total_percent", 10 }} }});
-    QTRY_COMPARE(progressSpy.count(), 1);
-
     ws.stop();
     QTRY_VERIFY(!relay.isUnlocked());
+    QCOMPARE(relay.gate(), AdminRelay::GateIdle);
     con.logout();
+}
+
+//B1: a box reached over plain ws (http://...:5454) never gets the password,
+//and nothing seen on the previous box's socket lets it through.
+void TstAdminRelay::realConnectionNoPasswordOverPlainWs()
+{
+    FakeAdminWs ws; //ws://
+    QVERIFY(ws.start());
+    CalaosConnection con;
+    AdminRelay relay(&con);
+    relay.bindConnection(&con);
+
+    QSignalSpy up(&relay, &AdminRelay::transportUp);
+    con.login(TestUser, TestPass, ws.url());
+    QTRY_VERIFY(up.count() >= 1);
+    QCOMPARE(relay.gate(), AdminRelay::GateIdle);
+    QVERIFY(!con.isSecure());
+
+    //even if a household answer arrived on this socket, the password stays home
+    ws.mode = FakeAdminWs::Normal;
+    bool probed = false;
+    relay.request("update_status", QJsonObject(), [&](const AdminRelay::Outcome &) { probed = true; });
+    QTRY_VERIFY(probed);
+    const int frames = ws.adminFrames.size();
+    QString code;
+    relay.unlock(AdminPass, [&](const AdminRelay::Outcome &o) { code = o.error.code; });
+    QTRY_COMPARE(code, QStringLiteral("https_required"));
+    QCOMPARE(relay.gate(), AdminRelay::GateHttpsRequired);
+    QTest::qWait(100);
+    QCOMPARE(ws.adminFrames.size(), frames);
+    for (const QJsonObject &f: std::as_const(ws.adminFrames))
+        QVERIFY(f["msg"] != "admin_unlock");
+    con.logout();
+    QCOMPARE(relay.gate(), AdminRelay::GateIdle);
 }
 
 void TstAdminRelay::realConnectionOldServer()
@@ -727,7 +883,7 @@ void TstAdminRelay::realConnectionOldServer()
     QTRY_VERIFY(up.count() >= 1);
 
     QString code;
-    relay.unlock(AdminPass, [&](const AdminRelay::Outcome &o) { code = o.error.code; });
+    relay.request("update_status", QJsonObject(), [&](const AdminRelay::Outcome &o) { code = o.error.code; });
     QTRY_COMPARE(code, AdminRelay::ErrTimeout);
     QCOMPARE(relay.gate(), AdminRelay::GateOldServer);
     con.logout();
@@ -905,10 +1061,11 @@ void TstAdminRelay::upgradeAllFollowsJobToReboot()
     QVERIFY(!screen.get_externalRun());
     QCOMPARE(screen.get_totalPercent(), 0);
 
+    const int statusBefore = t.count("update_status");
     relay.handleEvent(QJsonObject{{ "type", "upgrade_progress" }, { "data", progress("upgrading", 50, 1, 1) }});
     QCOMPARE(screen.get_totalPercent(), 50);
     //events carry no names: a new package index is read with the session
-    QCOMPARE(t.count("update_status"), 2);
+    QCOMPARE(t.count("update_status"), statusBefore + 1);
     relay.handleReply("admin", t.frames[t.last("update_status")].msgId,
                       ok(QJsonObject{{ "progress", progress("upgrading", 50, 1, 1, { "calaos-server" }) },
                                      { "job", job("j4", "running") }}));
@@ -976,6 +1133,7 @@ void TstAdminRelay::rateLimitedCountdown()
     AdminRelay relay(&t);
     AdminRelayBackend backend(&relay);
     AdminUpdates screen(&backend, &relay);
+    probeRelay(t, relay);
 
     screen.unlock("wrong");
     relay.handleReply("admin_unlock", t.frames.last().msgId,
@@ -1048,6 +1206,168 @@ void TstAdminRelay::failedJobReason()
                       ok(QJsonObject{{ "progress", QJsonObject{{ "status", "idle" }} }, { "job", failed }}));
     QCOMPARE(screen.get_phase(), QStringLiteral("failed"));
     QVERIFY(screen.get_failureText().contains("interrupted"));
+}
+
+void TstAdminRelay::gateIdleAfterTransportLost()
+{
+    FakeTransport t;
+    AdminRelay relay(&t);
+    probeRelay(t, relay);
+    QCOMPARE(relay.gate(), AdminRelay::GateLocked);
+    relay.handleTransportLost();
+    QCOMPARE(relay.gate(), AdminRelay::GateIdle);
+
+    relay.request("update_status", QJsonObject(), {});
+    relay.handleReply("admin", t.frames.last().msgId, err("https_required"));
+    QCOMPARE(relay.gate(), AdminRelay::GateHttpsRequired);
+    relay.handleTransportLost();
+    QCOMPARE(relay.gate(), AdminRelay::GateIdle);
+}
+
+void TstAdminRelay::unlockOverPlainWsSendsNothing()
+{
+    FakeTransport t;
+    t.secure = false;
+    AdminRelay relay(&t);
+    probeRelay(t, relay);
+    const int sent = t.frames.size();
+    QString code;
+    relay.unlock(AdminPass, [&](const AdminRelay::Outcome &o) { code = o.error.code; });
+    QTRY_COMPARE(code, QStringLiteral("https_required"));
+    QCOMPARE(t.frames.size(), sent);
+    QCOMPARE(relay.gate(), AdminRelay::GateHttpsRequired);
+}
+
+void TstAdminRelay::unlockBeforeProbeOnNewSocketSendsNothing()
+{
+    FakeTransport t;
+    AdminRelay relay(&t);
+    probeRelay(t, relay);
+    //logout, then another login: the locked screen of the old socket is gone
+    relay.handleTransportLost();
+    relay.handleTransportUp();
+    const int sent = t.frames.size();
+    QString code;
+    relay.unlock(AdminPass, [&](const AdminRelay::Outcome &o) { code = o.error.code; });
+    QTRY_COMPARE(code, AdminRelay::ErrNotReady);
+    QCOMPARE(t.frames.size(), sent);
+    QCOMPARE(relay.gate(), AdminRelay::GateIdle);
+}
+
+void TstAdminRelay::malformedSessionRefused()
+{
+    FakeTransport t;
+    AdminRelay relay(&t);
+    probeRelay(t, relay);
+    QString code;
+    relay.unlock(AdminPass, [&](const AdminRelay::Outcome &o) { code = o.error.code; });
+    relay.handleReply("admin_unlock", t.frames.last().msgId,
+                      QJsonObject{{ "success", "true" }, { "admin_session", "not-hex" }, { "expires_in", "900" }});
+    QCOMPARE(code, AdminRelay::ErrUnknown);
+    QVERIFY(!relay.isUnlocked());
+}
+
+void TstAdminRelay::timeoutWhileLockedIsUnreachable()
+{
+    FakeTransport t;
+    AdminRelay relay(&t);
+    relay.setTimeouts(100, 300);
+    probeRelay(t, relay);
+    QCOMPARE(relay.gate(), AdminRelay::GateLocked);
+    bool called = false;
+    relay.request("update_status", QJsonObject(), [&](const AdminRelay::Outcome &) { called = true; });
+    QTRY_VERIFY(called);
+    QCOMPARE(relay.gate(), AdminRelay::GateUnreachable);
+}
+
+void TstAdminRelay::sessionLossFailsSessionRequests()
+{
+    FakeTransport t;
+    AdminRelay relay(&t);
+    unlockRelay(t, relay);
+    QString withSession, household;
+    relay.request("update_check", QJsonObject(), [&](const AdminRelay::Outcome &o) { withSession = o.error.code; });
+    const QString checkId = t.frames.last().msgId;
+    relay.lock();
+    QCOMPARE(withSession, AdminRelay::ErrSessionLost);
+    //a request made without the session is left alone
+    relay.request("update_status", QJsonObject(), [&](const AdminRelay::Outcome &o) { household = o.ok ? "ok" : o.error.code; });
+    relay.handleReply("admin", checkId, ok(QJsonObject{{ "calaos-server", QJsonObject() }}));
+    QCOMPARE(withSession, AdminRelay::ErrSessionLost);
+    relay.handleReply("admin", t.frames.last().msgId, ok(QJsonObject()));
+    QCOMPARE(household, QStringLiteral("ok"));
+}
+
+void TstAdminRelay::checkAnswerAfterSessionLossDropped()
+{
+    FakeTransport t;
+    AdminRelay relay(&t);
+    AdminRelayBackend backend(&relay);
+    AdminUpdates screen(&backend, &relay);
+    unlockRelay(t, relay);
+    screen.checkUpdates();
+    const QString checkId = t.frames.last().msgId;
+    relay.handleEvent(QJsonObject{{ "type", "admin_set" }});
+    QCOMPARE(screen.get_busy(), QString());
+    relay.handleReply("admin", checkId,
+                      ok(QJsonObject{{ "calaos-server", QJsonObject{{ "version", "2" }, { "current_version", "1" }} }}));
+    QCOMPARE(screen.packages()->rowCount(), 0);
+    QCOMPARE(screen.get_updatesCount(), 0);
+    QCOMPARE(screen.get_errorText(), QString());
+    QCOMPARE(screen.get_info(), QStringLiteral("session_invalidated"));
+}
+
+void TstAdminRelay::sessionLossReducesToHouseholdView()
+{
+    FakeTransport t;
+    AdminRelay relay(&t);
+    AdminRelayBackend backend(&relay);
+    AdminUpdates screen(&backend, &relay);
+    screen.setPollInterval(60000);
+    unlockRelay(t, relay);
+    QJsonObject failed = job("j8", "error");
+    failed["error"] = "dpkg returned an error code";
+    failed["package"] = "calaos-server";
+    relay.handleReply("admin", t.frames[t.last("update_status")].msgId,
+                      ok(QJsonObject{{ "progress", QJsonObject{{ "status", "error" }, { "error", "E: dpkg" },
+                                                               { "current_pkg", "calaos-server" }} },
+                                     { "job", failed }}));
+    QCOMPARE(screen.get_phase(), QStringLiteral("failed"));
+    QVERIFY(screen.get_failureText().contains("dpkg returned"));
+
+    relay.lock();
+    QCOMPARE(screen.get_phase(), QStringLiteral("failed"));
+    QVERIFY(!screen.get_failureText().contains("dpkg"));
+    QCOMPARE(screen.get_currentPackage(), QString());
+}
+
+void TstAdminRelay::httpFallbackGate()
+{
+    FakeTransport t;
+    t.up = false; //CalaosConnection sends nothing admin over HTTP
+    t.httpFallback = true;
+    AdminRelay relay(&t);
+    AdminRelayBackend backend(&relay);
+    AdminUpdates screen(&backend, &relay);
+    screen.setRetryDelays(50, 100);
+    screen.activate();
+    QTRY_COMPARE(screen.get_gate(), AdminRelay::GateWebsocketRequired);
+    QCOMPARE(screen.get_errorText(), QString());
+    QTest::qWait(200);
+    QVERIFY(t.frames.isEmpty()); //no retry loop either
+}
+
+void TstAdminRelay::rateLimitedOnActionCountsDown()
+{
+    FakeTransport t;
+    AdminRelay relay(&t);
+    AdminRelayBackend backend(&relay);
+    AdminUpdates screen(&backend, &relay);
+    unlockRelay(t, relay);
+    screen.checkUpdates();
+    relay.handleReply("admin", t.frames.last().msgId, err("rate_limited", QJsonObject{{ "retry_after", "7" }}));
+    QCOMPARE(screen.get_retryAfter(), 7);
+    QVERIFY(screen.get_errorText().contains("7"));
 }
 
 QTEST_MAIN(TstAdminRelay)

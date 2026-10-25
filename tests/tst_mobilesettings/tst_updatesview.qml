@@ -80,6 +80,7 @@ TestCase {
         boxUpdates.phase = "unknown"
         boxUpdates.busy = ""
         boxUpdates.retryAfter = 0
+        boxUpdates.totalPercent = 0
         boxUpdates.activations = 0
         boxUpdates.deactivations = 0
         boxUpdates.reboots = 0
@@ -202,5 +203,45 @@ TestCase {
         compare(findChild(page, "updatesHeadline").text, "Updating… 42 %")
         //the unlock form stays offered
         verify(findChild(page, "updatesUnlockCard").visible)
+    }
+
+    function test_httpFallbackOffersToLogInAgain() {
+        boxUpdates.gate = "websocket_required"
+        var page = openPage()
+        compare(findChild(page, "updatesGateTitle").text, "Updates need a WebSocket connection to the box")
+        mouseClick(findChild(page, "updatesLoginAgain"))
+        compare(calaosApp.logouts, 1)
+    }
+
+    function test_noRebootWhileUpgrading() {
+        boxUpdates.gate = "unlocked"
+        boxUpdates.phase = "upgrading"
+        var page = openPage()
+        verify(findChild(page, "updatesReboot").disabled)
+        mouseClick(findChild(page, "updatesReboot"))
+        verify(!findChild(page, "rebootSheet").opened)
+    }
+
+    function test_passwordClearedWhenTheGateMoves() {
+        var page = openPage()
+        var field = findChild(page, "adminPasswordField")
+        field.text = "half typed"
+        boxUpdates.gate = "idle" //socket lost, another box
+        compare(field.text, "")
+    }
+
+    function test_restartCallToActionAfterAnUpdate() {
+        boxUpdates.gate = "unlocked"
+        boxUpdates.phase = "doneReboot"
+        var page = openPage()
+        var cta = findChild(page, "updatesRebootNow")
+        verify(cta.visible)
+        mouseClick(cta)
+        var sheet = findChild(page, "rebootSheet")
+        tryCompare(sheet, "opened", true)
+        //the session ends: the question goes with it
+        boxUpdates.gate = "locked"
+        tryCompare(sheet, "opened", false)
+        compare(boxUpdates.reboots, 0)
     }
 }

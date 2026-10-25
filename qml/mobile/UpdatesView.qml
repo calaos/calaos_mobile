@@ -14,7 +14,16 @@ Item {
     readonly property bool blocked: gate === "unavailable" || gate === "too_old" ||
                                     gate === "unreachable"
     readonly property bool gateScreen: gate === "https_required" || gate === "admin_not_set" ||
-                                       gate === "old_server" || blocked
+                                       gate === "old_server" || gate === "websocket_required" || blocked
+
+    //A password typed for one screen never waits on another one, and a
+    //reboot question never outlives the session that asked it.
+    onGateChanged: {
+        if (gate !== "locked")
+            clearPassword()
+        if (gate !== "unlocked")
+            rebootSheet.close()
+    }
 
     function clearPassword() {
         // qmllint disable missing-property
@@ -149,9 +158,10 @@ Item {
 
                 Title {
                     objectName: "updatesGateTitle"
-                    color: page.gate === "old_server" || page.gate === "https_required" ?
-                               Theme.amberColor : Theme.whiteColor
+                    color: page.gate === "old_server" || page.gate === "https_required" ||
+                           page.gate === "websocket_required" ? Theme.amberColor : Theme.whiteColor
                     text: page.gate === "https_required" ? qsTr("Updates need an https connection to the box") :
+                          page.gate === "websocket_required" ? qsTr("Updates need a WebSocket connection to the box") :
                           page.gate === "admin_not_set" ? qsTr("Set the admin password from the web app first") :
                           page.gate === "unavailable" ? qsTr("Administration unavailable") :
                           page.gate === "too_old" ? (boxUpdates.rebootHint ? qsTr("Restart the box")
@@ -163,6 +173,9 @@ Item {
                     text: page.gate === "https_required" ?
                               qsTr("Administration only works over a secure connection. Log in again with "
                                    + "the box address alone or one that starts with https://, not http://…:5454.") :
+                          page.gate === "websocket_required" ?
+                              qsTr("The app is connected to the box through its HTTP fallback, which cannot "
+                                   + "carry administration. Log in again to retry the WebSocket connection.") :
                           page.gate === "admin_not_set" ?
                               qsTr("No admin password is set on this box yet. Open the Calaos web app on a "
                                    + "computer, choose the admin password in its Administration page, then "
@@ -187,6 +200,12 @@ Item {
                     objectName: "updatesChangeHost"
                     visible: page.gate === "https_required"
                     text: qsTr("Change the box address")
+                    onButtonClicked: calaosApp.userLogout()
+                }
+                Button {
+                    objectName: "updatesLoginAgain"
+                    visible: page.gate === "websocket_required"
+                    text: qsTr("Log in again")
                     onButtonClicked: calaosApp.userLogout()
                 }
                 Button {
@@ -353,6 +372,13 @@ Item {
                     visible: page.gate === "unlocked" && page.phase !== "upgrading"
 
                     Button {
+                        objectName: "updatesRebootNow"
+                        visible: page.phase === "doneReboot"
+                        disabled: boxUpdates.busy !== ""
+                        text: qsTr("Restart the box")
+                        onButtonClicked: rebootSheet.open()
+                    }
+                    Button {
                         objectName: "updatesUpgradeAll"
                         visible: page.phase === "available"
                         disabled: boxUpdates.busy !== ""
@@ -379,7 +405,7 @@ Item {
                 Hint { text: qsTr("Takes about a minute. Your lights and shutters keep their state.") }
                 Button {
                     objectName: "updatesReboot"
-                    disabled: boxUpdates.busy !== ""
+                    disabled: boxUpdates.busy !== "" || page.phase === "upgrading"
                     text: qsTr("Reboot")
                     onButtonClicked: rebootSheet.open()
                 }

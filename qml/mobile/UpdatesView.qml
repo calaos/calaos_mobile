@@ -439,7 +439,11 @@ Item {
                     Layout.preferredHeight: Units.dp(48)
                     placeholderText: qsTr("Admin password")
                     echoMode: TextInput.Password
-                    inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase
+                    //Password echo adds ImhSensitiveData (never stored by the
+                    //keyboard) on its own; the content type lets the password
+                    //manager offer the box's admin password.
+                    inputMethodHints: Qt.ImhHiddenText | Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase
+                    inputContentType: "password"
                     enabled: boxUpdates.busy === ""
                     EnterKey.type: Qt.EnterKeyGo
                     onAccepted: page.submitPassword()

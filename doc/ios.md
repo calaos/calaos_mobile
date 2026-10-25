@@ -201,6 +201,18 @@ comment at the top of `ios/HardwareUtils.mm`.
   `nm -u CalaosHome.app/CalaosHome | grep -E '^_(f|l)?stat(at)?$|statv?fs|getattrlist|mach_absolute_time|CFPreferences|NSUserDefaults'`
   and `strings -a CalaosHome.app/CalaosHome | grep -xE 'systemUptime|activeInputModes'`.
 - Native alerts go through [ios/AlertPrompt.m](../ios/AlertPrompt.m).
+- Password AutoFill (iCloud Keychain, 1Password): Qt 6.12's text responder
+  (`QIOSTextInputResponder`, `qiostextresponder.mm`) sets `secureTextEntry`
+  from `ImhHiddenText` but has no `textContentType` (and ignores
+  `ImhSensitiveData`), so UIKit never learns a field holds a password.
+  `hookTextContentType()` in [ios/HardwareUtils.mm](../ios/HardwareUtils.mm)
+  adds that getter at runtime, only when the class lacks it (a Qt that
+  implements it wins). It returns the type named by the focused field's
+  `inputContentType` property (`CalaosTextField.qml`: `username`, `password`,
+  `newPassword`, `oneTimeCode`), or `password` for any secure field without
+  one. Used by the login fields and the admin password of the updates page.
+  Suggestions tied to a website need the app's Associated Domains, which it
+  does not have: the user picks the entry from the Passwords key.
 - 3D Touch / Quick Actions: the app uses scenes (Qt does), so UIKit hands them to the
   window scene delegate: `windowScene:performActionForShortcutItem:completionHandler:`
   (app running) or the connection options of `scene:willConnectToSession:options:`

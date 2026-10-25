@@ -117,7 +117,7 @@ TestCase {
         verify(field)
         verify(field.visible)
         compare(field.echoMode, TextInput.Password)
-        verify(field.inputMethodHints & Qt.ImhSensitiveData)
+        verify(field.inputMethodHints & Qt.ImhHiddenText)
         verify(field.inputMethodHints & Qt.ImhNoPredictiveText)
         verify(field.inputMethodHints & Qt.ImhNoAutoUppercase)
         compare(field.text, "")
@@ -256,5 +256,16 @@ TestCase {
         tryCompare(sheet, "opened", false)
         verify(findChild(sheet.contentItem, "rebootConfirm").disabled)
         compare(boxUpdates.reboots, 0)
+    }
+
+    //iOS AutoFill: the hook in ios/HardwareUtils.mm reads inputContentType
+    //on the focus object, which must be the field itself.
+    function test_passwordFieldAnnouncesItsContentType() {
+        var page = openPage()
+        var field = findChild(page, "adminPasswordField")
+        compare(field.inputContentType, "password")
+        field.forceActiveFocus()
+        tryCompare(field, "activeFocus", true)
+        verify(field.Window.activeFocusItem === field)
     }
 }

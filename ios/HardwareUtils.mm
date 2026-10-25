@@ -9,6 +9,7 @@
 #import "SimpleKeychain/A0SimpleKeychain.h"
 #import "SimpleKeychain/A0SimpleKeychain+KeyPair.h"
 #import "../src/Common.h"
+#include <QGuiApplication>
 
 /*
  Application delegate integration (IOS-2).
@@ -83,6 +84,46 @@ IMP installHook(Class cls, SEL sel, Protocol *proto, id block)
     if (!class_addMethod(cls, sel, imp, method_getTypeEncoding(m)))
         method_setImplementation(m, imp);
     return previous;
+}
+
+//Qt's text responder (QIOSTextInputResponder) has no textContentType, so
+//UIKit never offers password AutoFill on a Qt text field. Added at runtime,
+//only when missing (a Qt that implements it wins). The value comes from the
+//focused field's inputContentType property (CalaosTextField.qml); a secure
+//field without one is a password.
+void hookTextContentType()
+{
+    static bool installed = false;
+    if (installed)
+        return;
+    installed = true;
+
+    Class cls = NSClassFromString(@"QIOSTextInputResponder");
+    SEL sel = @selector(textContentType);
+    if (!cls || class_getInstanceMethod(cls, sel))
+    {
+        qInfo() << "Text content type: Qt responder" << (cls ? "already has it" : "not found");
+        return;
+    }
+
+    id block = ^UITextContentType (id self)
+    {
+        QObject *focus = QGuiApplication::focusObject();
+        const QString type = focus ? focus->property("inputContentType").toString() : QString();
+        if (type == QLatin1String("username"))
+            return UITextContentTypeUsername;
+        if (type == QLatin1String("password"))
+            return UITextContentTypePassword;
+        if (type == QLatin1String("newPassword"))
+            return UITextContentTypeNewPassword;
+        if (type == QLatin1String("oneTimeCode"))
+            return UITextContentTypeOneTimeCode;
+        if ([self respondsToSelector:@selector(isSecureTextEntry)] &&
+            [(id<UITextInputTraits>)self isSecureTextEntry])
+            return UITextContentTypePassword;
+        return nil;
+    };
+    class_addMethod(cls, sel, imp_implementationWithBlock(block), "@@:");
 }
 
 IMP qtDidRegisterForRemote = nullptr;
@@ -470,6 +511,7 @@ void HardwareUtils_iOS::platformInit(QQmlApplicationEngine *e)
     //set in time for a tap that launched the app.
     hookApplicationDelegate();
     hookSceneDelegate();
+    hookTextContentType();
 
     UIApplication *app = [UIApplication sharedApplication];
     UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];

@@ -105,6 +105,7 @@ Item {
 
             CalaosTextField {
                 id: userField
+                inputContentType: "username"
                 width: Units.dp(200)
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Username")
@@ -113,6 +114,7 @@ Item {
 
             CalaosTextField {
                 id: passField
+                inputContentType: "password"
                 width: Units.dp(200)
                 echoMode: TextInput.Password
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText

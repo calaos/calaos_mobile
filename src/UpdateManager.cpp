@@ -173,6 +173,7 @@ void UpdateManager::doCheck(bool automatic)
     });
 }
 
+//Twin of AdminUpdates::applyAvailable() (mobile): keep the grouping the same.
 void UpdateManager::applyAvailable(const QJsonObject &pkgs)
 {
     m_available = pkgs;

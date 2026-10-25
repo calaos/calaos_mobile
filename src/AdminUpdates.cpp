@@ -225,8 +225,12 @@ void AdminUpdates::checkUpdates()
         update_busy(QString());
         if (r.ok)
         {
-            applyAvailable(r.data.toObject());
-            recompute();
+            //the session may have ended during the check (125 s)
+            if (m_relay->isUnlocked())
+            {
+                applyAvailable(r.data.toObject());
+                recompute();
+            }
             return;
         }
         showError(r);
@@ -315,12 +319,15 @@ bool AdminUpdates::isGateCode(const QString &code)
         QStringLiteral("https_required"), QStringLiteral("admin_not_set"),
         QStringLiteral("admin_unavailable"), QStringLiteral("daemon_too_old"),
         QStringLiteral("daemon_unreachable"), QStringLiteral("bad_session"),
+        AdminRelay::ErrWebsocketRequired, AdminRelay::ErrSessionLost,
     };
     return codes.contains(code);
 }
 
 void AdminUpdates::showError(const CalaosOsReply &r)
 {
+    if (r.code == QLatin1String("rate_limited"))
+        startCountdown(r.retryAfter > 0 ? r.retryAfter : 60);
     showError(r.code, r.error);
 }
 
@@ -358,8 +365,8 @@ QString AdminUpdates::errorTextFor(const QString &code, const QString &msg, int 
         return tr("The box did not answer. Try again in a moment.");
     if (code == AdminRelay::ErrDisconnected)
         return tr("Connection lost before the box answered. Try again once it is back.");
-    if (code == AdminRelay::ErrWebsocketRequired)
-        return tr("Not connected to the box right now. Try again in a moment.");
+    if (code == AdminRelay::ErrNotReady)
+        return tr("The box has not answered yet. Try again in a moment.");
     if (code == AdminRelay::ErrTlsPending)
         return tr("Answer the certificate question first.");
     return tr("Unexpected answer from the box.") + detail;
@@ -474,6 +481,7 @@ void AdminUpdates::applyStatus(const UpdateStatus &status)
     recompute();
 }
 
+//Twin of the package part of UpdateManager::applyStatusSnapshot() (kiosk).
 void AdminUpdates::applyProgress(const QJsonObject &progress)
 {
     const QJsonArray packages = progress.value(QStringLiteral("packages")).toArray();
@@ -532,6 +540,7 @@ void AdminUpdates::onProgressEvent(const QJsonObject &status)
     recompute();
 }
 
+//Twin of UpdateManager::applyAvailable() (kiosk): keep the grouping the same.
 void AdminUpdates::applyAvailable(const QJsonObject &pkgs)
 {
     m_available = pkgs;
@@ -626,5 +635,24 @@ void AdminUpdates::forgetBoxData()
     m_groups->setGroups({});
     m_progressRows->clear();
     update_boxName(QString());
+
+    //down to the household view, as update_status answers without a session
+    m_progress.remove(QStringLiteral("current_pkg"));
+    m_progress.remove(QStringLiteral("message"));
+    QJsonArray packages;
+    for (const QJsonValue &v: m_progress.value(QStringLiteral("packages")).toArray())
+    {
+        const QJsonObject p = v.toObject();
+        packages.append(QJsonObject{{ QStringLiteral("state"), p.value(QStringLiteral("state")) },
+                                    { QStringLiteral("percent"), p.value(QStringLiteral("percent")) }});
+    }
+    if (m_progress.contains(QStringLiteral("packages")))
+        m_progress[QStringLiteral("packages")] = packages;
+    if (!m_progress.value(QStringLiteral("error")).toString().isEmpty())
+        m_progress[QStringLiteral("error")] = QStringLiteral("upgrade failed");
+    m_job.package.clear();
+    if (!m_job.error.isEmpty() && m_job.error != QLatin1String("interrupted"))
+        m_job.error = QStringLiteral("upgrade failed");
+
     recompute();
 }

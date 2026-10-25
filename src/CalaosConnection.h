@@ -10,7 +10,7 @@
 #include "IOConnection.h"
 #include "JsonKeys.h"
 #include "TlsPinning.h"
-#include "AdminRelay.h"
+#include "AdminTransport.h"
 
 //Reconnection state machine and exponential backoff (T14).
 //
@@ -510,6 +510,12 @@ public:
     {
         return sendWebsocket(msg, data, msgId);
     }
+    bool isSecure() const override
+    {
+        return wsocket && constate == ConStateWebsocket &&
+               wsocket->requestUrl().scheme() == QLatin1String("wss");
+    }
+    bool isHttpFallback() const override { return constate == ConStateHttp; }
     //A certificate refused in this run is refused silently afterwards (the
     //launch login, iOS become-active), so the prompt cannot come back in a
     //loop. An explicit login from the login screen asks again.

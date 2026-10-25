@@ -8,21 +8,10 @@
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QString>
+#include "AdminTransport.h"
 
 class QTimer;
 class CalaosConnection;
-
-//What AdminRelay needs from the household connection (CalaosConnection),
-//behind an interface so the relay can be driven without a socket.
-class AdminTransport
-{
-public:
-    virtual ~AdminTransport() = default;
-    //One frame on the logged-in WebSocket; false when none is up (nothing sent).
-    virtual bool sendAdminMessage(const QString &msg, const QJsonObject &data, const QString &msgId) = 0;
-    //A certificate question is waiting for the user.
-    virtual bool hasPendingTlsTrust() const = 0;
-};
 
 /*
  * Client side of calaos_server's admin messages (calaos_base
@@ -53,6 +42,8 @@ public:
     static inline const QString GateTooOld = QStringLiteral("too_old");
     static inline const QString GateUnreachable = QStringLiteral("unreachable");
     static inline const QString GateOldServer = QStringLiteral("old_server");
+    //logged in over the HTTP fallback: no admin messages there
+    static inline const QString GateWebsocketRequired = QStringLiteral("websocket_required");
 
     //Codes produced by the client itself, beside the server's vocabulary.
     static inline const QString ErrTimeout = QStringLiteral("timeout");
@@ -60,6 +51,10 @@ public:
     static inline const QString ErrWebsocketRequired = QStringLiteral("websocket_required");
     static inline const QString ErrTlsPending = QStringLiteral("tls_pending");
     static inline const QString ErrUnknown = QStringLiteral("unknown");
+    //unlock refused: no admin answer yet on this socket
+    static inline const QString ErrNotReady = QStringLiteral("not_ready");
+    //the session ended while a request made with it was out
+    static inline const QString ErrSessionLost = QStringLiteral("session_lost");
 
     static constexpr int ReplyTimeoutMs = 5000;
     static constexpr int UpdateCheckTimeoutMs = 125000;
@@ -89,7 +84,9 @@ public:
     //and the certificate answers.
     void bindConnection(CalaosConnection *con);
 
-    //admin_unlock. Refused (nothing sent) while a certificate question waits.
+    //admin_unlock. Refused (nothing sent) while a certificate question waits,
+    //over the HTTP fallback, before an admin answer on the current socket,
+    //and on a socket that is not wss (https_required).
     void unlock(const QString &password, Callback callback = Callback());
     //admin {action, params}, with the session when one is held (update_status
     //then gets the full view, the household view otherwise).
@@ -140,11 +137,12 @@ private:
         QString msg;
         QString action;
         Callback callback;
+        bool withSession = false;
         QTimer *timer = nullptr;
     };
 
     QString send(const QString &msg, const QString &action, const QJsonObject &data,
-                 int timeoutMs, Callback callback);
+                 int timeoutMs, bool withSession, Callback callback);
     void finish(const QString &msgId, const Outcome &outcome);
     void failLater(const QString &code, Callback callback);
     void applyOutcome(const QString &msg, const QString &action, Outcome &outcome);
@@ -162,6 +160,8 @@ private:
     QHash<QString, Pending> m_pending;
     quint64 m_nextId = 0;
     bool m_spoken = false;
+    //an admin answer came on the current socket: unlock may go out
+    bool m_probeAnswered = false;
     bool m_upgrading = false;
     int m_replyTimeoutMs = ReplyTimeoutMs;
     int m_updateCheckTimeoutMs = UpdateCheckTimeoutMs;

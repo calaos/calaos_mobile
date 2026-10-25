@@ -1,6 +1,7 @@
 #include "AdminRelay.h"
 #include "CalaosConnection.h"
 #include <QDateTime>
+#include <QRegularExpression>
 #include <QGuiApplication>
 #include <QTimer>
 #include <QDebug>
@@ -77,9 +78,27 @@ void AdminRelay::unlock(const QString &password, Callback callback)
         failLater(ErrTlsPending, callback);
         return;
     }
+    if (m_transport->isHttpFallback())
+    {
+        failLater(ErrWebsocketRequired, callback);
+        return;
+    }
+    //a screen left over from another socket (logout, another box) must not
+    //collect a password for this one
+    if (!m_probeAnswered)
+    {
+        failLater(ErrNotReady, callback);
+        return;
+    }
+    //never in clear text, whatever the server would answer afterwards
+    if (!m_transport->isSecure())
+    {
+        failLater(QStringLiteral("https_required"), callback);
+        return;
+    }
 
     send(MsgUnlock, QString(), QJsonObject{{ QStringLiteral("admin_pass"), password }},
-         m_replyTimeoutMs, callback);
+         m_replyTimeoutMs, false, callback);
 }
 
 void AdminRelay::request(const QString &action, const QJsonObject &params, Callback callback)
@@ -102,18 +121,18 @@ void AdminRelay::request(const QString &action, const QJsonObject &params, Callb
 
     send(MsgAdmin, action, data,
          action == QLatin1String("update_check") ? m_updateCheckTimeoutMs : m_replyTimeoutMs,
-         callback);
+         !m_session.isEmpty(), callback);
 }
 
 QString AdminRelay::send(const QString &msg, const QString &action, const QJsonObject &data,
-                         int timeoutMs, Callback callback)
+                         int timeoutMs, bool withSession, Callback callback)
 {
     m_nextId++;
     const QString msgId = QStringLiteral("admin-%1").arg(m_nextId);
 
     if (!m_transport->sendAdminMessage(msg, data, msgId))
     {
-        failLater(ErrWebsocketRequired, callback);
+        failLater(m_transport->isHttpFallback() ? ErrWebsocketRequired : ErrDisconnected, callback);
         return QString();
     }
 
@@ -121,6 +140,7 @@ QString AdminRelay::send(const QString &msg, const QString &action, const QJsonO
     p.msg = msg;
     p.action = action;
     p.callback = callback;
+    p.withSession = withSession;
     p.timer = new QTimer(this);
     p.timer->setSingleShot(true);
     connect(p.timer, &QTimer::timeout, this, [this, msgId]()
@@ -150,6 +170,8 @@ void AdminRelay::failLater(const QString &code, Callback callback)
 void AdminRelay::handleReply(const QString &msg, const QString &msgId, const QJsonObject &data)
 {
     m_spoken = true;
+    if (msg == MsgAdmin)
+        m_probeAnswered = true;
     if (!m_pending.contains(msgId))
         return; //late answer to a request that timed out, or not ours
 
@@ -161,7 +183,8 @@ void AdminRelay::handleReply(const QString &msg, const QString &msgId, const QJs
         if (msg == MsgUnlock)
         {
             const QString token = data.value(QStringLiteral("admin_session")).toString();
-            if (token.isEmpty())
+            static const QRegularExpression sessionRe(QStringLiteral("^[0-9a-f]{64}$"));
+            if (!sessionRe.match(token).hasMatch())
             {
                 o.ok = false;
                 o.error.code = ErrUnknown;
@@ -252,10 +275,15 @@ void AdminRelay::applyOutcome(const QString &msg, const QString &action, Outcome
         //later on, or while dpkg keeps the box busy, is a stall
         if (!m_spoken && !m_upgrading)
             setGate(GateOldServer);
-        else if (m_gate != GateUnlocked && m_gate != GateLocked)
+        else if (m_gate != GateUnlocked)
             setGate(GateUnreachable);
     }
-    else if (code == ErrDisconnected || code == ErrWebsocketRequired || code == ErrTlsPending)
+    else if (code == ErrWebsocketRequired)
+    {
+        setGate(GateWebsocketRequired);
+    }
+    else if (code == ErrDisconnected || code == ErrTlsPending || code == ErrNotReady ||
+             code == ErrSessionLost)
     {
         if (m_gate == GateProbing)
             setGate(GateIdle);
@@ -294,9 +322,10 @@ void AdminRelay::handleTransportLost()
     const QHash<QString, Pending> pending = m_pending;
     m_pending.clear();
     m_spoken = false;
+    m_probeAnswered = false;
     forgetSession();
-    if (m_gate == GateProbing)
-        setGate(GateIdle);
+    //nothing seen on the old socket says anything about the next one
+    setGate(GateIdle);
 
     for (auto it = pending.begin(); it != pending.end(); ++it)
     {
@@ -361,7 +390,32 @@ void AdminRelay::forgetSession()
     m_session.clear();
     m_wallExpiry = 0;
     m_deadline = QDeadlineTimer();
+
+    //answers to requests made with the session would bring its data back
+    QList<Callback> lost;
+    for (auto it = m_pending.begin(); it != m_pending.end();)
+    {
+        if (!it->withSession)
+        {
+            ++it;
+            continue;
+        }
+        if (it->timer)
+        {
+            it->timer->stop();
+            it->timer->deleteLater();
+        }
+        if (it->callback)
+            lost << it->callback;
+        it = m_pending.erase(it);
+    }
+
     if (m_gate == GateUnlocked)
         setGate(GateLocked);
     emit sessionChanged();
+
+    Outcome o;
+    o.error.code = ErrSessionLost;
+    for (const Callback &cb: std::as_const(lost))
+        cb(o);
 }

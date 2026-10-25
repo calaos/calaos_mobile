@@ -12,12 +12,15 @@ static const QStringList &credentialKeys()
     //"u" and "p" are not JSON keys but the short query parameters of the
     //legacy v1 camera url, so they stay literals here (see JsonKeys.h).
     //JsonKeys::Token is the push token sent by register_push: a per-device
-    //credential as well (FIX-3).
+    //credential as well (FIX-3). The admin keys belong to the admin relay.
     static const QStringList keys = { JsonKeys::CnUser,
                                       JsonKeys::CnPass,
                                       JsonKeys::Token,
                                       QStringLiteral("u"),
-                                      QStringLiteral("p") };
+                                      QStringLiteral("p"),
+                                      QStringLiteral("admin_pass"),
+                                      QStringLiteral("admin_session"),
+                                      QStringLiteral("new_pass") };
     return keys;
 }
 

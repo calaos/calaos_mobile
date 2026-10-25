@@ -23,7 +23,8 @@ CalaosOsReply AdminRelayBackend::toReply(const AdminRelay::Outcome &outcome)
     //an answer from calaos_server, whatever it says, is not a transport error
     const bool answered = outcome.ok ||
                           (code != AdminRelay::ErrTimeout && code != AdminRelay::ErrDisconnected &&
-                           code != AdminRelay::ErrWebsocketRequired && code != AdminRelay::ErrTlsPending);
+                           code != AdminRelay::ErrWebsocketRequired && code != AdminRelay::ErrTlsPending &&
+                           code != AdminRelay::ErrNotReady && code != AdminRelay::ErrSessionLost);
     r.httpStatus = answered ? 200 : 0;
     r.requestStarted = code != AdminRelay::ErrWebsocketRequired && code != AdminRelay::ErrTlsPending;
     if (!outcome.ok)

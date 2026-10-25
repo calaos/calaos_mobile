@@ -244,4 +244,17 @@ TestCase {
         tryCompare(sheet, "opened", false)
         compare(boxUpdates.reboots, 0)
     }
+
+    function test_rebootQuestionClosesWhenAnUpgradeStarts() {
+        boxUpdates.gate = "unlocked"
+        boxUpdates.phase = "upToDate"
+        var page = openPage()
+        mouseClick(findChild(page, "updatesReboot"))
+        var sheet = findChild(page, "rebootSheet")
+        tryCompare(sheet, "opened", true)
+        boxUpdates.phase = "upgrading"
+        tryCompare(sheet, "opened", false)
+        verify(findChild(sheet.contentItem, "rebootConfirm").disabled)
+        compare(boxUpdates.reboots, 0)
+    }
 }

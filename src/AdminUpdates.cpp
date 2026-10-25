@@ -253,9 +253,13 @@ void AdminUpdates::upgradeAll()
         if (!r.ok)
         {
             showError(r);
-            //upgrade_in_progress: show that run; a reply lost to a drop:
-            //the reconnect reads update_status
-            if (r.upgradeInProgress)
+            //upgrade_in_progress: show that run. No answer at all: the run
+            //may have started, update_status tells (the reconnect reads it
+            //again if the socket is gone)
+            const bool unanswered = r.code == AdminRelay::ErrTimeout ||
+                                    r.code == AdminRelay::ErrDisconnected ||
+                                    r.code == AdminRelay::ErrSessionLost;
+            if (r.upgradeInProgress || unanswered)
                 refreshStatus();
             return;
         }

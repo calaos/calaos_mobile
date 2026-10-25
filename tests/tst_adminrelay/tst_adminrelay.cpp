@@ -401,6 +401,7 @@ private slots:
     void sessionLossReducesToHouseholdView();
     void httpFallbackGate();
     void rateLimitedOnActionCountsDown();
+    void unansweredUpgradeReadsStatus();
 };
 
 void TstAdminRelay::unlockSuccessStoresSession()
@@ -1368,6 +1369,31 @@ void TstAdminRelay::rateLimitedOnActionCountsDown()
     relay.handleReply("admin", t.frames.last().msgId, err("rate_limited", QJsonObject{{ "retry_after", "7" }}));
     QCOMPARE(screen.get_retryAfter(), 7);
     QVERIFY(screen.get_errorText().contains("7"));
+}
+
+void TstAdminRelay::unansweredUpgradeReadsStatus()
+{
+    FakeTransport t;
+    AdminRelay relay(&t);
+    relay.setTimeouts(100, 300);
+    AdminRelayBackend backend(&relay);
+    AdminUpdates screen(&backend, &relay);
+    screen.setPollInterval(60000);
+    unlockRelay(t, relay);
+    relay.handleReply("admin", t.frames[t.last("update_status")].msgId,
+                      ok(QJsonObject{{ "progress", progress("idle", 0, 0, 0) }, { "job", QJsonValue::Null }}));
+    screen.checkUpdates();
+    relay.handleReply("admin", t.frames.last().msgId,
+                      ok(QJsonObject{{ "calaos-server", QJsonObject{{ "version", "2" }, { "current_version", "1" }} }}));
+
+    //the reply never comes: the run may have started, update_status tells
+    const int before = t.count("update_status");
+    screen.upgradeAll();
+    QTRY_COMPARE(t.count("update_status"), before + 1);
+    relay.handleReply("admin", t.frames[t.last("update_status")].msgId,
+                      ok(QJsonObject{{ "progress", progress("upgrading", 10, 1, 1, { "calaos-server" }) },
+                                     { "job", job("j9", "running") }}));
+    QCOMPARE(screen.get_phase(), QStringLiteral("upgrading"));
 }
 
 QTEST_MAIN(TstAdminRelay)

@@ -24,6 +24,11 @@ Item {
         if (gate !== "unlocked")
             rebootSheet.close()
     }
+    //a run started meanwhile (kiosk, webapp): the box refuses the reboot anyway
+    onPhaseChanged: {
+        if (phase === "upgrading")
+            rebootSheet.close()
+    }
 
     function clearPassword() {
         // qmllint disable missing-property
@@ -491,6 +496,7 @@ Item {
                 }
                 Button {
                     objectName: "rebootConfirm"
+                    disabled: page.phase === "upgrading" || boxUpdates.busy !== ""
                     text: qsTr("Restart")
                     onButtonClicked: {
                         rebootSheet.close()

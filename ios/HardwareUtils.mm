@@ -9,7 +9,6 @@
 #import "SimpleKeychain/A0SimpleKeychain.h"
 #import "SimpleKeychain/A0SimpleKeychain+KeyPair.h"
 #import "../src/Common.h"
-#include <QGuiApplication>
 
 /*
  Application delegate integration (IOS-2).
@@ -84,46 +83,6 @@ IMP installHook(Class cls, SEL sel, Protocol *proto, id block)
     if (!class_addMethod(cls, sel, imp, method_getTypeEncoding(m)))
         method_setImplementation(m, imp);
     return previous;
-}
-
-//Qt's text responder (QIOSTextInputResponder) has no textContentType, so
-//UIKit never offers password AutoFill on a Qt text field. Added at runtime,
-//only when missing (a Qt that implements it wins). The value comes from the
-//focused field's inputContentType property (CalaosTextField.qml); a secure
-//field without one is a password.
-void hookTextContentType()
-{
-    static bool installed = false;
-    if (installed)
-        return;
-    installed = true;
-
-    Class cls = NSClassFromString(@"QIOSTextInputResponder");
-    SEL sel = @selector(textContentType);
-    if (!cls || class_getInstanceMethod(cls, sel))
-    {
-        qInfo() << "Text content type: Qt responder" << (cls ? "already has it" : "not found");
-        return;
-    }
-
-    id block = ^UITextContentType (id self)
-    {
-        QObject *focus = QGuiApplication::focusObject();
-        const QString type = focus ? focus->property("inputContentType").toString() : QString();
-        if (type == QLatin1String("username"))
-            return UITextContentTypeUsername;
-        if (type == QLatin1String("password"))
-            return UITextContentTypePassword;
-        if (type == QLatin1String("newPassword"))
-            return UITextContentTypeNewPassword;
-        if (type == QLatin1String("oneTimeCode"))
-            return UITextContentTypeOneTimeCode;
-        if ([self respondsToSelector:@selector(isSecureTextEntry)] &&
-            [(id<UITextInputTraits>)self isSecureTextEntry])
-            return UITextContentTypePassword;
-        return nil;
-    };
-    class_addMethod(cls, sel, imp_implementationWithBlock(block), "@@:");
 }
 
 IMP qtDidRegisterForRemote = nullptr;
@@ -371,6 +330,7 @@ HardwareUtils_iOS *hwobj;
 -(id)initWithHwObject:(HardwareUtils_iOS *)obj;
 -(void)showAlertTitle:(NSString *)title message:(NSString *)message button:(NSString *)button;
 -(void)showInputDialogTitle:(NSString *)title message:(NSString *)message cancel:(NSString *)cancel confirm:(NSString *)confirm;
+-(BOOL)showPasswordEntry:(NSString *)purpose options:(NSDictionary *)options;
 
 @end
 
@@ -454,6 +414,72 @@ HardwareUtils_iOS *hwobj;
     [[self rootViewController] presentViewController:alert animated:YES completion:nil];
 }
 
+//Real UITextFields: the only fields iOS offers password AutoFill on. Qt's
+//responder has no textContentType and is never secureTextEntry (Qt strips
+//ImhHiddenText from Password echo and draws the bullets itself).
+-(BOOL)showPasswordEntry:(NSString *)purpose options:(NSDictionary *)options
+{
+    UIViewController *root = [self rootViewController];
+    if (!root)
+        return NO;
+    //an already presented controller (another alert) cannot present
+    while (root.presentedViewController)
+        root = root.presentedViewController;
+
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:options[@"title"]
+                                                                   message:options[@"message"]
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    [alert addTextFieldWithConfigurationHandler:^(UITextField *field) {
+        field.placeholder = options[@"userLabel"];
+        field.text = options[@"user"];
+        field.textContentType = UITextContentTypeUsername;
+        field.autocorrectionType = UITextAutocorrectionTypeNo;
+        field.spellCheckingType = UITextSpellCheckingTypeNo;
+        field.autocapitalizationType = UITextAutocapitalizationTypeNone;
+    }];
+    [alert addTextFieldWithConfigurationHandler:^(UITextField *field) {
+        field.placeholder = options[@"passwordLabel"];
+        field.secureTextEntry = YES;
+        field.textContentType = UITextContentTypePassword;
+        field.autocorrectionType = UITextAutocorrectionTypeNo;
+        field.spellCheckingType = UITextSpellCheckingTypeNo;
+        field.autocapitalizationType = UITextAutocapitalizationTypeNone;
+    }];
+
+    HardwareUtils_iOS *hw = hwobj;
+    NSString *tag = [[purpose copy] autorelease];
+    //__block under manual reference counting: not retained by the blocks,
+    //the alert retains its actions, which must not retain it back
+    __block UIAlertController *weakAlert = alert;
+    void (^wipe)(void) = ^{
+        for (UITextField *f in weakAlert.textFields)
+            f.text = @"";
+    };
+    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:options[@"cancel"]
+                                                          style:UIAlertActionStyleCancel
+                                                        handler:^(UIAlertAction *) {
+        wipe();
+        hw->emitNativePasswordCanceled(QString::fromNSString(tag));
+    }];
+    UIAlertAction *confirmAction = [UIAlertAction actionWithTitle:options[@"confirm"]
+                                                           style:UIAlertActionStyleDefault
+                                                         handler:^(UIAlertAction *) {
+        NSArray<UITextField *> *fields = weakAlert.textFields;
+        const QString user = QString::fromNSString(fields.firstObject.text ?: @"");
+        const QString pass = QString::fromNSString(fields.lastObject.text ?: @"");
+        wipe();
+        hw->emitNativePassword(QString::fromNSString(tag), user, pass);
+    }];
+    [alert addAction:cancelAction];
+    [alert addAction:confirmAction];
+    alert.preferredAction = confirmAction;
+    [root presentViewController:alert animated:YES completion:^{
+        //the user name is known: straight to the password
+        [weakAlert.textFields.lastObject becomeFirstResponder];
+    }];
+    return YES;
+}
+
 @end
 
 static HWClass *hwclass;
@@ -511,7 +537,6 @@ void HardwareUtils_iOS::platformInit(QQmlApplicationEngine *e)
     //set in time for a tap that launched the app.
     hookApplicationDelegate();
     hookSceneDelegate();
-    hookTextContentType();
 
     UIApplication *app = [UIApplication sharedApplication];
     UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
@@ -645,6 +670,14 @@ void HardwareUtils_iOS::inputTextDialog(const QString &title, const QString &mes
                          message:message.toNSString()
                           cancel:cancel.toNSString()
                          confirm:valid.toNSString()];
+}
+
+bool HardwareUtils_iOS::showNativePasswordEntry(const QString &purpose, const QVariantMap &options)
+{
+    NSMutableDictionary *opts = [NSMutableDictionary dictionary];
+    for (const char *key: { "title", "message", "user", "userLabel", "passwordLabel", "confirm", "cancel" })
+        opts[@(key)] = options.value(QLatin1String(key)).toString().toNSString();
+    return [hwclass showPasswordEntry:purpose.toNSString() options:opts];
 }
 
 void HardwareUtils_iOS::handlePerformActionForShortcutItem(void *shortcut)

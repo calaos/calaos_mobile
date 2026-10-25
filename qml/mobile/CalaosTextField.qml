@@ -17,10 +17,6 @@ Controls.TextField {
     passwordCharacter: "\u2022"
 
     property bool showClearButton: true
-    //What the field holds, for the platform password AutoFill: "username",
-    //"password", "newPassword", "oneTimeCode" or "" (iOS only, read by the
-    //hook in ios/HardwareUtils.mm: Qt does not pass a text content type).
-    property string inputContentType: ""
     signal clearButtonClicked()
 
     background: Item {

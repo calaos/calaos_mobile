@@ -293,10 +293,19 @@ TestCase {
         compare(boxUpdates.unlocked[0], "admin pass")
     }
 
-    function test_nativeAnswerIgnoredOnceTheGateMoved() {
+    function test_nativeAnswerDuringReconnectHandedOver() {
         hardwareUtils.nativeOn = true
         openPage()
-        boxUpdates.gate = "idle" //socket lost while the dialog was open
+        boxUpdates.gate = "idle" //socket reopened after the password manager
+        hardwareUtils.nativePasswordEntered("admin_unlock", "admin", "held")
+        //boxUpdates holds it until the box answers on the new socket
+        compare(boxUpdates.unlocked.length, 1)
+    }
+
+    function test_nativeAnswerIgnoredOnAnotherScreen() {
+        hardwareUtils.nativeOn = true
+        openPage()
+        boxUpdates.gate = "https_required"
         hardwareUtils.nativePasswordEntered("admin_unlock", "admin", "late")
         compare(boxUpdates.unlocked.length, 0)
     }

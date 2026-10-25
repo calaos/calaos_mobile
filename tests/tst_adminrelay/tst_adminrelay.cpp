@@ -35,6 +35,7 @@
 #include "CalaosConnection.h"
 #include "TlsPinning.h"
 #include "HardwareUtils.h"
+#include "ResumePolicy.h"
 
 static const QString TestUser = QStringLiteral("user");
 static const QString TestPass = QStringLiteral("pass");
@@ -78,6 +79,8 @@ public:
     bool hasPendingTlsTrust() const override { return trustPending; }
     bool isSecure() const override { return up && secure; }
     bool isHttpFallback() const override { return httpFallback; }
+    QString host = QStringLiteral("box-a.example");
+    QString hostKey() const override { return host; }
 
     //The last frame sent for that admin action (or message).
     int last(const QString &actionOrMsg) const
@@ -424,6 +427,12 @@ private slots:
     void oldSocketErrorClearedOnReconnect();
     void replyForAnotherMessageIgnored();
     void nativePasswordAnsweredOnce();
+    void answerDuringReconnectUnlocksAfterProbe();
+    void heldAnswerWipedOnTimeout();
+    void heldAnswerDroppedForAnotherBox();
+    void heldAnswerBlockedByTlsQuestion();
+    void heldAnswerWipedWhenLeaving();
+    void resumePolicyKeepsThePage();
 };
 
 void TstAdminRelay::unlockSuccessStoresSession()
@@ -1512,6 +1521,139 @@ void TstAdminRelay::nativePasswordAnsweredOnce()
     QVERIFY(!hw.requestNativePassword("login", {}));
     hw.show = true;
     QVERIFY(hw.requestNativePassword("login", {}));
+}
+
+//The password manager sent the app to the background: the socket is being
+//reopened when the admin password comes back.
+static void reconnecting(FakeTransport &t, AdminRelay &relay)
+{
+    relay.handleTransportLost();
+    relay.handleTransportUp(); //AdminUpdates probes: update_status out
+    Q_UNUSED(t)
+}
+
+void TstAdminRelay::answerDuringReconnectUnlocksAfterProbe()
+{
+    FakeTransport t;
+    AdminRelay relay(&t);
+    AdminRelayBackend backend(&relay);
+    AdminUpdates screen(&backend, &relay);
+    screen.activate();
+    relay.handleReply("admin", t.frames.last().msgId, ok(QJsonObject{{ "progress", QJsonObject() }}));
+    QCOMPARE(screen.get_gate(), AdminRelay::GateLocked);
+
+    reconnecting(t, relay);
+    QCOMPARE(screen.get_gate(), AdminRelay::GateProbing);
+    screen.unlock(AdminPass);
+    QCOMPARE(t.count("update_status"), 2);
+    for (const Frame &f: std::as_const(t.frames))
+        QVERIFY(f.msg != "admin_unlock");
+
+    //the box answers on the new socket: exactly one unlock goes out
+    relay.handleReply("admin", t.frames[t.last("update_status")].msgId, ok(QJsonObject{{ "progress", QJsonObject() }}));
+    QTRY_VERIFY(t.last("admin_unlock") >= 0);
+    QCOMPARE(t.frames[t.last("admin_unlock")].data["admin_pass"].toString(), AdminPass);
+    relay.handleReply("admin_unlock", t.frames[t.last("admin_unlock")].msgId, unlockOk());
+    QVERIFY(screen.get_isUnlocked());
+    QTest::qWait(50);
+    int unlocks = 0;
+    for (const Frame &f: std::as_const(t.frames))
+        unlocks += f.msg == "admin_unlock" ? 1 : 0;
+    QCOMPARE(unlocks, 1);
+}
+
+void TstAdminRelay::heldAnswerWipedOnTimeout()
+{
+    FakeTransport t;
+    AdminRelay relay(&t);
+    AdminRelayBackend backend(&relay);
+    AdminUpdates screen(&backend, &relay);
+    screen.setHeldUnlockTimeout(100);
+    screen.activate();
+    screen.unlock(AdminPass); //probing: held
+    QTest::qWait(200);
+    relay.handleReply("admin", t.frames.last().msgId, ok(QJsonObject{{ "progress", QJsonObject() }}));
+    QTest::qWait(50);
+    QCOMPARE(t.last("admin_unlock"), -1);
+}
+
+void TstAdminRelay::heldAnswerDroppedForAnotherBox()
+{
+    FakeTransport t;
+    AdminRelay relay(&t);
+    AdminRelayBackend backend(&relay);
+    AdminUpdates screen(&backend, &relay);
+    screen.activate();
+    screen.unlock(AdminPass);
+    t.host = QStringLiteral("box-b.example");
+    relay.handleReply("admin", t.frames.last().msgId, ok(QJsonObject{{ "progress", QJsonObject() }}));
+    QTest::qWait(50);
+    QCOMPARE(t.last("admin_unlock"), -1);
+}
+
+void TstAdminRelay::heldAnswerBlockedByTlsQuestion()
+{
+    FakeTransport t;
+    AdminRelay relay(&t);
+    AdminRelayBackend backend(&relay);
+    AdminUpdates screen(&backend, &relay);
+    screen.activate();
+    screen.unlock(AdminPass);
+    relay.handleReply("admin", t.frames.last().msgId, ok(QJsonObject{{ "progress", QJsonObject() }}));
+    t.trustPending = true; //a key change asked before the held password leaves
+    QTest::qWait(50);
+    QCOMPARE(t.last("admin_unlock"), -1);
+    QCOMPARE(screen.get_isUnlocked(), false);
+}
+
+void TstAdminRelay::heldAnswerWipedWhenLeaving()
+{
+    FakeTransport t;
+    AdminRelay relay(&t);
+    AdminRelayBackend backend(&relay);
+    AdminUpdates screen(&backend, &relay);
+    screen.activate();
+    screen.unlock(AdminPass);
+    screen.deactivate();
+    relay.handleReply("admin", t.frames.last().msgId, ok(QJsonObject{{ "progress", QJsonObject() }}));
+    QTest::qWait(50);
+    QCOMPARE(t.last("admin_unlock"), -1);
+}
+
+void TstAdminRelay::resumePolicyKeepsThePage()
+{
+    ResumePolicy p;
+    //the password manager: page kept, reconnected in place
+    p.resigned(true, false);
+    QVERIFY(p.keepPage());
+    QVERIFY(p.becameActive());
+    QCOMPARE(p.phase(), ResumePolicy::Resuming);
+    p.sessionFailed();
+    QVERIFY(!p.keepPage()); //failed in place: the login screen as usual
+
+    p.resigned(true, false);
+    QVERIFY(p.becameActive());
+    p.loggedIn();
+    QVERIFY(!p.keepPage());
+
+    //the drop itself while in the background does not give the page up
+    p.resigned(true, false);
+    p.sessionFailed();
+    QVERIFY(p.keepPage());
+    p.reset();
+    QVERIFY(!p.keepPage());
+
+    //the native login entry: no automatic login on return
+    p.resigned(false, true);
+    QVERIFY(!p.becameActive());
+    QVERIFY(!p.keepPage());
+    QVERIFY(p.becameActive());
+
+    //nothing to keep: the usual path
+    p.resigned(false, false);
+    QVERIFY(!p.keepPage());
+    QVERIFY(p.becameActive());
+    QVERIFY(!p.keepPage());
 }
 
 QTEST_MAIN(TstAdminRelay)

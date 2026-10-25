@@ -33,6 +33,9 @@
 #include "UsbDisk.h"
 #include "ControlPanelModel.h"
 #include "UpdateManager.h"
+#include "AdminRelay.h"
+#include "AdminRelayBackend.h"
+#include "AdminUpdates.h"
 #include "BookmarkModel.h"
 
 #ifdef HAVE_WEBENGINE
@@ -164,6 +167,10 @@ private:
     OSInstaller *osInstaller = nullptr;
     ControlPanelModel *controlPanelModel = nullptr;
     UpdateManager *updateManager = nullptr;
+    //mobile: box updates through calaos_server's admin relay
+    AdminRelay *adminRelay = nullptr;
+    AdminRelayBackend *adminBackend = nullptr;
+    AdminUpdates *boxUpdates = nullptr;
     BookmarkModel *bookmarkModel = nullptr;
 
 #ifdef HAVE_WEBENGINE

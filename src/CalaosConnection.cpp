@@ -233,6 +233,7 @@ void CalaosConnection::answerTlsTrust(bool accept)
         pins()->setPin(key, spki);
     }
     tlsRefused.remove(key + QLatin1Char('|') + spki);
+    emit tlsTrustAccepted(key);
 
     //An explicit answer: start over now, like a tap on Login. Refused while
     //an attempt is in flight or a session is up, which then simply goes on.
@@ -1646,6 +1647,17 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
         //that request only (EVLOG-1), a page and a single event can no
         //longer be taken for one another, nor a late answer for a newer one.
         finishEventLogRequest(jroot[JsonKeys::MsgId].toString(), true, jdata.toVariantMap());
+    }
+    else if (jroot[JsonKeys::Msg] == "admin_unlock" ||
+             jroot[JsonKeys::Msg] == "admin_set" ||
+             jroot[JsonKeys::Msg] == "admin")
+    {
+        emit adminReplyReceived(jroot[JsonKeys::Msg].toString(),
+                                jroot[JsonKeys::MsgId].toString(), jdata);
+    }
+    else if (jroot[JsonKeys::Msg] == "admin_event")
+    {
+        emit adminEventReceived(jdata);
     }
     else if (jroot[JsonKeys::Msg] == "settings")
     {

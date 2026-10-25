@@ -5,35 +5,9 @@
 #include "NetworkRequest.h"
 #include "AsyncJobs.h"
 #include "CalaosOsProtocol.h"
+#include "UpdateBackend.h"
 
-//Outcome of one call to the calaos-container daemon, whichever surface answered.
-struct CalaosOsReply
-{
-    bool ok = false;
-    //0 on transport errors (connection severed/refused, no HTTP reply), which
-    //are not server rejections: the daemon may be restarting
-    int httpStatus = 0;
-    CalaosOsProtocol::ApiVersion api = CalaosOsProtocol::ApiVersion::Unknown; //surface that answered
-    QString error; //displayable message on failure
-    //v2: the envelope data; legacy update/*: the whole document; legacy system/*: "output"
-    QJsonValue data;
-    bool upgradeInProgress = false;
-    bool packageNotFound = false;
-    //with httpStatus 0: why no HTTP answer came
-    QNetworkReply::NetworkError networkError = QNetworkReply::NoError;
-    bool requestStarted = true;
-
-    //the request provably never reached the daemon (nothing can have started)
-    bool neverReachedDaemon() const
-    {
-        return httpStatus == 0 &&
-               (!requestStarted ||
-                networkError == QNetworkReply::ConnectionRefusedError ||
-                networkError == QNetworkReply::HostNotFoundError);
-    }
-};
-
-class CalaosOsAPI: public QObject
+class CalaosOsAPI: public QObject, public UpdateBackend
 {
     Q_OBJECT
 public:
@@ -47,7 +21,7 @@ public:
     virtual ~CalaosOsAPI();
 
     //reply.upgradeInProgress: refused because an upgrade runs (409)
-    void rebootMachine(std::function<void(const CalaosOsReply &reply)> callback);
+    void rebootMachine(std::function<void(const CalaosOsReply &reply)> callback) override;
     void restartApp(std::function<void(bool success)> callback);
     void getFsStatus(std::function<void(bool success, const QJsonValue &res)> callback);
 
@@ -59,23 +33,23 @@ public:
         std::function<void(QString out)> callbackStdout);
 
     void getNetworkInterfaces(std::function<void(bool success, const QJsonValue &res)> callback);
-    void getSystemInfo(std::function<void(bool success, const QJsonValue &res)> callback);
+    void getSystemInfo(std::function<void(bool success, const QJsonValue &res)> callback) override;
 
     void configureNetwork(const QJsonObject &networkConfig, std::function<void(bool success)> callback);
 
     //check for available updates (GET update/check). Blocking server-side, can take tens of seconds.
     //reply.data is the object keyed by package name.
-    void checkUpdates(std::function<void(const CalaosOsReply &reply)> callback);
+    void checkUpdates(std::function<void(const CalaosOsReply &reply)> callback) override;
     //get updates already found by a previous check, without triggering a new one (GET update/available). Instant.
-    void getAvailableUpdates(std::function<void(bool ok, const QJsonObject &pkgs, const QString &err)> callback);
+    void getAvailableUpdates(std::function<void(bool ok, const QJsonObject &pkgs, const QString &err)> callback) override;
     //get currently installed packages (GET update/installed). May 404 on older daemons, hence the httpStatus.
     void getInstalledPackages(std::function<void(bool ok, int httpStatus, const QJsonObject &pkgs)> callback);
     //upgrade a package / all packages: 202 + job in reply.data on /api/v2, synchronous on legacy,
     //where a transport error is not a failure (a self-upgrading daemon severs the POST)
-    void upgradePackage(const QString &package, std::function<void(const CalaosOsReply &reply)> callback);
-    void upgradeAll(std::function<void(const CalaosOsReply &reply)> callback);
+    void upgradePackage(const QString &package, std::function<void(const CalaosOsReply &reply)> callback) override;
+    void upgradeAll(std::function<void(const CalaosOsReply &reply)> callback) override;
     //progress of an ongoing (or last) upgrade, plus the job on /api/v2 (GET update/status)
-    void getUpdateStatus(std::function<void(bool ok, const CalaosOsProtocol::UpdateStatus &status)> callback);
+    void getUpdateStatus(std::function<void(bool ok, const CalaosOsProtocol::UpdateStatus &status)> callback) override;
 
     //WebSocket handshake of the daemon event stream, for the detected API version
     QNetworkRequest eventsRequest();

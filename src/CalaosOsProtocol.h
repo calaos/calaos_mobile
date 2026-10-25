@@ -53,6 +53,8 @@ struct Job
     bool valid = false;
     QString id;
     QDateTime startedAt;
+    QDateTime finishedAt; //invalid while running
+    QString package;      //update_upgrade only, empty for upgrade-all
     QString status; //"running", "done" or "error"
     QString error;
     bool rebootRequired = false;

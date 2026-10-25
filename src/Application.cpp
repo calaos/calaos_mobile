@@ -370,6 +370,16 @@ void Application::createQmlApp()
     }
 #endif
 
+#ifndef CALAOS_DESKTOP
+    //The kiosk talks to the daemon directly (UpdateManager); the phone goes
+    //through calaos_server with the admin password.
+    adminRelay = new AdminRelay(calaosConnect, this);
+    adminRelay->bindConnection(calaosConnect);
+    adminBackend = new AdminRelayBackend(adminRelay, this);
+    boxUpdates = new AdminUpdates(adminBackend, adminRelay, this);
+    engine.rootContext()->setContextProperty("boxUpdates", boxUpdates);
+#endif
+
     m_netAddresses = new QQmlObjectListModel<NetworkInfo>(this);
 
 #ifdef CALAOS_DESKTOP

@@ -40,6 +40,9 @@ static NSString *const kTlsPinsKey = @"calaos.tls_pins";
 //file per code; the app checks, decrypts and shows them. No cryptography in
 //the extension. Same directory name in HardwareUtils.mm.
 static NSString *const kAdminCodeDir = @"admin_codes";
+//Stash bounds, same as the app and Android's CredentialStore.
+static const long long kAdminCodeMaxAgeMs = 10 * 60 * 1000;
+static const NSUInteger kAdminCodeMaxFiles = 16;
 
 //One DER TLV header at pos, same walk as TlsPinning::subjectPublicKeyInfo():
 //at most 3 length bytes, bounds written so that nothing can overflow.
@@ -396,7 +399,8 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response newRequest:(NSURLReques
         id v = userInfo[key];
         entry[fields[key]] = ([v isKindOfClass:[NSString class]] && [(NSString *)v length] <= 64) ? v : @"";
     }
-    entry[@"received_at"] = @((long long)([[NSDate date] timeIntervalSince1970] * 1000.0));
+    const long long now = (long long)([[NSDate date] timeIntervalSince1970] * 1000.0);
+    entry[@"received_at"] = @(now);
     entry[@"received_mono"] = @((long long)(clock_gettime_nsec_np(CLOCK_MONOTONIC) / 1000000));
     if (identifier != nil)
         entry[@"notif_id"] = identifier;
@@ -409,11 +413,39 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response newRequest:(NSURLReques
     NSURL *file = [dir URLByAppendingPathComponent:[codeId stringByAppendingString:@".json"]];
     if ([fm fileExistsAtPath:file.path])
         return;
+    [self pruneAdminCodeDir:dir now:now];
 
     NSData *json = [NSJSONSerialization dataWithJSONObject:entry options:0 error:nil];
     if (json == nil || ![fm createDirectoryAtURL:dir withIntermediateDirectories:YES attributes:nil error:nil] ||
         ![json writeToURL:file atomically:YES])
         NSLog(@"PushNotif: admin code not stashed");
+}
+
+//Entries more than 10 minutes away from now (a code lives 60 s) go, then the
+//oldest beyond 15, so the stash stays small even if the app never runs.
+- (void)pruneAdminCodeDir:(NSURL *)dir now:(long long)now {
+    NSFileManager *fm = [NSFileManager defaultManager];
+    NSArray<NSURL *> *files = [fm contentsOfDirectoryAtURL:dir includingPropertiesForKeys:nil options:0 error:nil];
+    NSMutableArray *kept = [NSMutableArray array];
+    for (NSURL *f in files) {
+        if (![f.pathExtension isEqualToString:@"json"])
+            continue;
+        NSData *data = [NSData dataWithContentsOfURL:f];
+        id obj = data ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
+        id at = [obj isKindOfClass:[NSDictionary class]] ? obj[@"received_at"] : nil;
+        long long t = [at isKindOfClass:[NSNumber class]] ? [at longLongValue] : 0;
+        if (t <= 0 || llabs(now - t) > kAdminCodeMaxAgeMs)
+            [fm removeItemAtURL:f error:nil];
+        else
+            [kept addObject:@[ @(t), f ]];
+    }
+    [kept sortUsingComparator:^NSComparisonResult(NSArray *a, NSArray *b) {
+        return [a[0] compare:b[0]];
+    }];
+    while (kept.count >= kAdminCodeMaxFiles) {
+        [fm removeItemAtURL:kept[0][1] error:nil];
+        [kept removeObjectAtIndex:0];
+    }
 }
 
 - (BOOL)isAdminCodeId:(NSString *)s {

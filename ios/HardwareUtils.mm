@@ -10,6 +10,7 @@
 #import "SimpleKeychain/A0SimpleKeychain+KeyPair.h"
 #import "../src/Common.h"
 #import "../src/AdminCode.h"
+#include <algorithm>
 #include <QDir>
 #include <QFile>
 #include <QJsonDocument>
@@ -57,9 +58,15 @@ static NSString *const kBadgeLockFile = @"calaos.badge_count.lock";
 //Admin code stash directory in the App Group container, same name in the
 //extension.
 static NSString *const kAdminCodeDir = @"admin_codes";
-//Keychain item of the push key (32 raw bytes), same keychain service and
-//access group as the credentials: the extension can read it (it never does).
+//Keychain item of the push key (32 raw bytes). Own service, so it is never
+//mixed with the credentials; same access group, which the extension shares
+//(it never reads the key, the app alone decrypts).
+static NSString *const kPushKeyService = @"CalaosMobile.push";
 static NSString *const kPushKeyItem = @"calaos-push-key";
+static NSString *const kKeychainGroup = @"9WYC46992U.fr.calaos.CalaosMobile";
+//Stash bounds, same as Android's CredentialStore and the extension.
+static const qint64 kAdminCodeMaxAgeMs = 10 * 60 * 1000;
+static const int kAdminCodeMaxFiles = 16;
 
 namespace {
 
@@ -395,11 +402,10 @@ HardwareUtils_iOS *hwobj;
                 [codes addObject:n];
         if (codes.count == 0)
             return;
-        [codes retain];
+        //The block copy retains codes until it has run.
         dispatch_async(dispatch_get_main_queue(), ^{
             for (UNNotification *n in codes)
                 hw->captureAdminCode(n);
-            [codes release];
         });
     }];
 }
@@ -458,9 +464,6 @@ HardwareUtils_iOS *hwobj;
 static HWClass *hwclass;
 static Reachability *reach;
 static A0SimpleKeychain *keychain;
-//Same service and group, but the item stays on this device (no iCloud
-//keychain, no backup restore elsewhere): the key belongs to this push token.
-static A0SimpleKeychain *pushKeychain;
 //UNUserNotificationCenter.delegate does not retain it.
 static CalaosNotificationDelegate *notificationDelegate;
 
@@ -471,8 +474,6 @@ HardwareUtils_iOS::HardwareUtils_iOS(QObject *parent):
 
     // This is the item wrapper used to access password information stored in the KeyChain
     keychain = [A0SimpleKeychain keychainWithService:@"CalaosMobile" accessGroup:@"9WYC46992U.fr.calaos.CalaosMobile"];
-    pushKeychain = [[A0SimpleKeychain alloc] initWithService:@"CalaosMobile" accessGroup:@"9WYC46992U.fr.calaos.CalaosMobile"];
-    pushKeychain.defaultAccessiblity = A0SimpleKeychainItemAccessibleAfterFirstUnlockThisDeviceOnly;
 
     // Allocate a reachability object
     reach = [Reachability reachabilityForInternetConnection];
@@ -502,7 +503,6 @@ HardwareUtils_iOS::~HardwareUtils_iOS()
     [reach release];
     [hwclass release];
     [keychain release];
-    [pushKeychain release];
 }
 
 void HardwareUtils_iOS::platformInit(QQmlApplicationEngine *e)
@@ -543,23 +543,55 @@ void HardwareUtils_iOS::platformInit(QQmlApplicationEngine *e)
     //every launch, the token comes back through the hooked delegate.
     [app registerForRemoteNotifications];
 
-    //Before the first login sends it. Created once, from the system CSPRNG.
-    NSData *key = [pushKeychain dataForKey:kPushKeyItem];
-    if (key.length != AdminCode::KeySize)
+    //Before the first login sends it.
+    loadPushKey();
+}
+
+void HardwareUtils_iOS::loadPushKey()
+{
+    NSDictionary *query = @{ (id)kSecClass: (id)kSecClassGenericPassword,
+                             (id)kSecAttrService: kPushKeyService,
+                             (id)kSecAttrAccount: kPushKeyItem,
+                             (id)kSecAttrAccessGroup: kKeychainGroup,
+                             (id)kSecReturnData: @YES,
+                             (id)kSecMatchLimit: (id)kSecMatchLimitOne };
+    CFTypeRef found = NULL;
+    const OSStatus status = SecItemCopyMatching((CFDictionaryRef)query, &found);
+    NSData *key = [(NSData *)found autorelease];
+
+    if (status == errSecSuccess && key.length == AdminCode::KeySize)
     {
-        uint8_t bytes[AdminCode::KeySize];
-        if (SecRandomCopyBytes(kSecRandomDefault, sizeof(bytes), bytes) == errSecSuccess)
-        {
-            NSData *fresh = [NSData dataWithBytes:bytes length:sizeof(bytes)];
-            key = [pushKeychain setData:fresh forKey:kPushKeyItem] ? fresh : nil;
-            qDebug() << (key ? "Push key created" : "Push key not stored in the keychain");
-        }
-        memset(bytes, 0, sizeof(bytes));
-    }
-    if (key.length == AdminCode::KeySize)
         setPushKey(QByteArray(static_cast<const char *>(key.bytes), int(key.length)));
-    else
-        qWarning() << "No push key: admin codes will come as legacy text";
+        return;
+    }
+    //Locked before the first unlock, or any other error: never replace a key
+    //that may exist (an approver's is frozen on its box). Asked again later.
+    if (status != errSecItemNotFound)
+    {
+        qWarning() << "Push key not readable now (keychain status" << int(status) << "), asked again later";
+        return;
+    }
+
+    uint8_t bytes[AdminCode::KeySize];
+    if (SecRandomCopyBytes(kSecRandomDefault, sizeof(bytes), bytes) != errSecSuccess)
+        return;
+    NSData *fresh = [NSData dataWithBytes:bytes length:sizeof(bytes)];
+    memset(bytes, 0, sizeof(bytes));
+    //This device only: the key belongs to this push token, it does not
+    //travel with backups or the iCloud keychain.
+    NSDictionary *item = @{ (id)kSecClass: (id)kSecClassGenericPassword,
+                            (id)kSecAttrService: kPushKeyService,
+                            (id)kSecAttrAccount: kPushKeyItem,
+                            (id)kSecAttrAccessGroup: kKeychainGroup,
+                            (id)kSecAttrAccessible: (id)kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
+                            (id)kSecValueData: fresh };
+    if (SecItemAdd((CFDictionaryRef)item, NULL) != errSecSuccess)
+    {
+        qWarning() << "Push key not stored in the keychain";
+        return;
+    }
+    qDebug() << "Push key created";
+    setPushKey(QByteArray(static_cast<const char *>(fresh.bytes), int(fresh.length)));
 }
 
 namespace {
@@ -586,6 +618,26 @@ QJsonObject readAdminCodeFile(const QString &path)
     if (!f.open(QIODevice::ReadOnly))
         return QJsonObject();
     return QJsonDocument::fromJson(f.read(4096)).object();
+}
+
+//Keeps the stash small whatever happens: entries more than 10 minutes away
+//from now (a code lives 60 s) go, then the oldest beyond 15, before a write.
+void pruneAdminCodeDir(const QString &dir, qint64 now)
+{
+    QList<QPair<qint64, QString>> kept;
+    const QStringList files = QDir(dir).entryList({ QStringLiteral("*.json") }, QDir::Files);
+    for (const QString &name: files)
+    {
+        const QString path = dir + QLatin1Char('/') + name;
+        const qint64 at = qint64(readAdminCodeFile(path).value(QStringLiteral("received_at")).toDouble());
+        if (at <= 0 || qAbs(now - at) > kAdminCodeMaxAgeMs)
+            QFile::remove(path);
+        else
+            kept.append({ at, path });
+    }
+    std::sort(kept.begin(), kept.end());
+    for (int i = 0; i < kept.size() - (kAdminCodeMaxFiles - 1); i++)
+        QFile::remove(kept.at(i).second);
 }
 
 } // namespace
@@ -621,6 +673,7 @@ void HardwareUtils_iOS::stashAdminCode(const QJsonObject &entry)
     //First reception wins: the extension's stamp is the earliest.
     if (QFile::exists(path) || !QDir().mkpath(dir))
         return;
+    pruneAdminCodeDir(dir, AdminCode::wallNowMs());
     QSaveFile f(path);
     if (f.open(QIODevice::WriteOnly))
     {
@@ -676,15 +729,16 @@ void HardwareUtils_iOS::captureAdminCode(void *n)
     handleAdminCodeNotified(codeId);
 }
 
-bool HardwareUtils_iOS::copySecret(const QString &text, int seconds)
+HardwareUtils::SecretCopy HardwareUtils_iOS::copySecret(const QString &text, int seconds)
 {
     //The item expires by itself, even if the app is killed; nothing is read
-    //back (no paste prompt).
+    //back (no paste prompt). Not local only, on purpose: Universal Clipboard
+    //lets the user paste it into the web console open on a Mac.
     NSDictionary *item = @{ @"public.utf8-plain-text": text.toNSString() };
     [[UIPasteboard generalPasteboard] setItems:@[ item ]
                                        options:@{ UIPasteboardOptionExpirationDate:
                                                       [NSDate dateWithTimeIntervalSinceNow:seconds] }];
-    return true;
+    return SecretCopy::CopiedWithExpiry;
 }
 
 void HardwareUtils_iOS::showAlertMessage(QString title, QString message, QString buttontext)

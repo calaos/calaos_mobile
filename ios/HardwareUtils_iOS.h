@@ -58,7 +58,10 @@ public:
     //Also withdraws the delivered notifications of these codes.
     virtual void removeAdminCodes(const QStringList &codeIds);
     //UIPasteboard item that expires by itself.
-    virtual bool copySecret(const QString &text, int seconds);
+    virtual SecretCopy copySecret(const QString &text, int seconds);
+    //Keychain item (own service, this device only); created only when the
+    //keychain says it does not exist.
+    virtual void loadPushKey();
 
     //Stashes (unless already there) and reports the admin code carried by a
     //notification the app sees: presented, tapped, or still delivered.

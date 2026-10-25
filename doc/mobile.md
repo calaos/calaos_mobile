@@ -108,6 +108,16 @@ specifically used on mobile:
   `CalaosConnection::pause()` and resets the start-option flag. This is not a
   logout: the policy remembers whether a session was wanted, and refuses every
   automatic reconnection (network back, retry timer) while in the background.
+- Exception, [`ResumePolicy`](../src/ResumePolicy.h): resign-active is also
+  sent when the password manager (1Password, iCloud Keychain) takes over to
+  fill the native password entry, and an app switch from the box updates
+  page is the same case. When the native admin password entry is open or the
+  updates page is shown, the session still drops but
+  `Application::keepPageOnResume` tells `main.qml` to keep the page stack
+  (no pop to the login screen, no push of the home page); the automatic login
+  on return reconnects in place, and a failure of that login goes to the
+  login screen as usual. With the native login entry open, no automatic login
+  runs on return: the user logs in himself with the filled fields.
 - `applicationBecomeActive` (iOS only) — `unpause()`, then re-issues `login()`
   from the saved keychain credentials, **unless the user logged out**
   (`sessionClosedByUser()`): an explicit logout survives the app going to the
@@ -252,7 +262,12 @@ the phone: those stay in the webapp.
   a password field marked for the password manager (`UITextContentTypePassword`,
   `View.AUTOFILL_HINT_PASSWORD`), answers once, wipes its fields, stores and
   logs nothing; the QML field stays where no native entry exists (desktop
-  test build).
+  test build). An admin password that comes back while the socket is being
+  reopened (after the password manager) is held by `AdminUpdates` in memory
+  for 30 s at most and sent once the box has answered on the new socket, to
+  the same host only; leaving the page, a timeout or any other gate drops it,
+  and `AdminRelay` still refuses it without `wss`, before a probe answer or
+  while a certificate question is pending.
 
 **What is shared with the kiosk, and what is not.** Shared sources (both
 builds): `UpdateBackend` (interface), `UpdateModel` (the three models),

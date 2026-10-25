@@ -305,6 +305,33 @@ messages. The whole contract is held in `PushFormat` in
   shows the legacy one, text only, and the data keys reach the activity
   intent on tap).
 
+### 6.2b Encrypted admin code (P3)
+
+A token registered with a `push_key` (32 bytes, `CredentialStore.pushKey()`,
+see 6.4) receives its admin codes as a **data-only** message whatever its
+`push_format`: `data = { title, body, message, admin_code_id,
+admin_code_action, admin_code_expires, admin_code_nonce, admin_code_ct,
+admin_code_tag }`, where `body`/`message` is a generic notice, never the code.
+`CalaosMessagingService.handleMessage()` (no cryptography):
+
+1. `CredentialStore.stashAdminCode()` stores the six strings as received with
+   `received_at` (`System.currentTimeMillis()`) and `received_mono`
+   (`SystemClock.elapsedRealtime()`), keyed by `admin_code_id` (validated: 16
+   lowercase hex), in `calaos_credentials` (`admin_codes`, JSON; entries older
+   than 10 minutes and beyond 16 are pruned on write);
+2. posts the notice on `calaos_events`, id `admin_code_id.hashCode()`, tap
+   intent extra `admin_code_id` (validated again by the activity, replayed
+   intents ignored);
+3. if Qt runs, `HardwareUtilsNatives.emitAdminCodeNotified()`; a tap on a cold
+   start is parked and taken by `platformInit()` (`takePendingAdminCodeId()`).
+
+The app reads the stash through JNI (`CredentialStore.adminCodes()`), checks
+and decrypts in C++ ([src/AdminCode.h](../src/AdminCode.h), see
+[mobile.md](mobile.md) section 9.1) and removes consumed, expired or rejected
+entries with `CalaosMessagingService.consumeAdminCodes()`, which also cancels
+their notification. A swiped notification loses nothing. A phone without a key
+(or a box without phase 3) keeps getting the legacy text push.
+
 ### 6.3 Camera picture (AND-7)
 
 `handleMessage()` posts the text notification at once (id derived from
@@ -401,6 +428,13 @@ stored on the Java side, in the `calaos_credentials` SharedPreferences:
   drops the pair held in the store (`clearCredentials()`, host kept), then
   falls back to QSettings, so the next `loadAuthKeychain()` migrates the
   **new** pair instead of handing out a stale one;
+- the **push key** is kept apart, in `calaos_push.xml` (excluded from backup
+  like the token), encrypted with its own Keystore alias
+  `calaos_push_key_v1`: created from `SecureRandom` on the first
+  `pushKey()` call, read at every start by `platformInit()`, **not** wiped by
+  "Reset all data" (the box freezes the key of an approver phone); a key that
+  cannot be decrypted any more is replaced by a new one; the admin code
+  stash (`admin_codes`, see 6.2b) is wiped with the credentials;
 - **migration**: on the first `loadAuthKeychain()` after the update, a pair
   found in QSettings (`calaos/cn_user`, `calaos/cn_pass` in
   `files/settings/Calaos/CalaosHome.conf`) is moved to the store and the
@@ -430,6 +464,12 @@ shell has it, other apps do not), refuses to run in a non-debuggable process
 and does not exist in release builds. `--ez fail_encrypt true` (alone) makes
 `CredentialStore.save()` fail until `--ez fail_encrypt false` or a process
 restart, to exercise the QSettings fallback.
+
+Admin code: `--es push_key <64 hex>` replaces the push key (restart the app so
+it reads it), and the `admin_code_*` extras are forwarded like the other data
+keys, so a golden vector of calaos_base `docs/08_http_api.md` can be replayed
+on a device without a box (see the comment in `FakePushReceiver.java`; vector
+1 shows `482913`, whatever its `expires`, for 60 s after the broadcast).
 
 ### 6.6 Manual checklist on a phone (once calaos_server sends data-only messages)
 
@@ -563,11 +603,13 @@ are static methods of `HardwareUtils`:
 | `inputtextDialog(title, msg, ...)` | `HardwareUtilsAndroid::inputTextDialog` |
 | `getStoredPushToken()`, `requestPushToken()` | push token at startup (6.1) |
 | `takePendingEventUuid()` | event of the notification that started the app (6.1, tap hand-off) |
+| `takePendingAdminCodeId()` | admin code notification that started the app (6.2b) |
+| `CredentialStore.pushKey()`, `CredentialStore.adminCodes()`, `CalaosMessagingService.consumeAdminCodes()` | push key at startup, admin code stash (6.2b) |
 | `setNativesReady()` | Qt is up: Java may call back |
 
 Java → C++ callbacks are the `native` methods of `HardwareUtilsNatives`
 (`emitDialogTextValid`, `emitDialogCancel`, `emitDeviceToken`,
-`emitNotificationOpened`), registered by `HardwareUtilsAndroid::platformInit()`
+`emitNotificationOpened`, `emitAdminCodeNotified`), registered by `HardwareUtilsAndroid::platformInit()`
 with `QJniEnvironment::registerNativeMethods`. They only exist once Qt runs:
 code that can run in a process started for a push (`CalaosMessagingService`,
 `PushPictureWorker`) must not call them unguarded (6.1, 6.4). Keystore-backed

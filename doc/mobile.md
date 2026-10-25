@@ -194,7 +194,8 @@ Both platforms wire push delivery into a single QML signal: the
 platform-specific:
 
 - **iOS**: APNs + a Notification Service Extension (`PushNotif.appex`) that
-  decrypts payloads using a shared keychain item. See [ios.md](ios.md).
+  adds the badge and the camera picture (credentials from the shared
+  keychain) and stashes admin codes (section 9.1). See [ios.md](ios.md).
 - **Android**: Firebase Cloud Messaging via the Firebase Java SDK
   (`CalaosMessagingService`), data-only messages requested with
   `push_format: "data"` in `register_push` (`PushFormat` in
@@ -243,6 +244,58 @@ Shared rules (in [src/HardwareUtils.cpp](../src/HardwareUtils.cpp) and
   for another home) at the next manual login (FIX-7). A lost connection, the
   login cancel button (plain `logout()`) and the iOS resign-active pause keep
   them for the next login, as above.
+
+### 9.1 Encrypted admin code
+
+The admin 2FA code is no longer in the notification text: the box seals it
+with this phone's **push key** and the app decrypts and shows it
+(contract: calaos_base `docs/08_http_api.md`, "Code push chiffré";
+code: [src/AdminCode.h](../src/AdminCode.h),
+[qml/mobile/AdminCodeSheet.qml](../qml/mobile/AdminCodeSheet.qml)).
+
+- **Push key**: 32 bytes from the platform CSPRNG, created at the first start,
+  kept in the platform key store (iOS keychain item `calaos-push-key`,
+  this-device-only, same service and access group as the credentials;
+  Android `CredentialStore.pushKey()`, Keystore-encrypted in `calaos_push.xml`),
+  never in `QSettings`, never logged. Reported with
+  `HardwareUtils::setPushKey()`; `register_push` carries it as `push_key`
+  (64 lowercase hex, WebSocket `data` and HTTP root alike) and is sent again
+  when it changes (`PushRegistration` keys on token, name and key). Redacted
+  from the HTTP debug dump. "Reset all data" keeps it: the box freezes the
+  key of an approver phone. No key (desktop, key store failure) → no
+  `push_key`, the box keeps pushing the legacy text, which still shows as
+  before.
+- **Reception**, no cryptography: the payload (`admin_code_id`, `_action`,
+  `_expires`, `_nonce`, `_ct`, `_tag`) is stashed as received with the
+  reception time by the phone's wall clock (`received_at`, ms) and boot clock
+  (`received_mono`: Android `elapsedRealtime()`, Darwin `CLOCK_MONOTONIC`;
+  both count during sleep and are shared by all processes). Android: the
+  messaging service, in `CredentialStore` (`admin_codes`). iOS: the
+  notification extension, one file `admin_codes/<code_id>.json` in the App
+  Group container; the app stashes it itself (date of the notification,
+  wall clock only) when it sees one the extension did not (presented,
+  tapped, or still in the notification center at foreground). The
+  notification only shows the generic notice; a swiped one loses nothing.
+- **Display**: `AdminCodeModel` reads the stash once the UI is up, on every
+  `HardwareUtils::adminCodeNotified()` (push arrived while running, or tapped)
+  and on every return to the foreground. Not tied to the login: the phone
+  never needs the box to read a code. Per entry: shapes checked first
+  (action in the table, strict `expires`, lowercase hex lengths), then the
+  tag recomputed from the strings as received and compared in constant time,
+  then `code = ct XOR ks[0..6)`. A rejected entry is dropped silently (one
+  warning without values). The sheet lists the codes newest first with the
+  purpose, the 6 digits, a 1 s countdown and a draining bar, and Copy
+  (iOS: pasteboard item expiring after 60 s; elsewhere `QClipboard`, cleared
+  after 60 s if it still holds the code). A code is shown 60 s from its
+  reception on the phone, never from `expires` (box clock; authenticated,
+  not compared): the longer of the wall and boot clock ages counts, a boot
+  clock below the stamp (reboot) or a wall clock set back drops it. At expiry
+  the digits become "Expired". Expired and rejected entries leave the stash
+  right away, shown ones when the sheet is closed (their notification is
+  withdrawn too). Never logged: key, nonce, ct, tag, code.
+- iOS foreground: a push with an admin code shows no banner
+  (`foregroundPushPresentation()`), the sheet opens instead.
+- Desktop/kiosk: no key, no `push_key`, the model is not created.
 
 ## 10. Internationalisation
 

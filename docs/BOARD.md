@@ -166,7 +166,7 @@ Exécution parallèle : chaque ticket lancé en parallèle travaille dans son pr
 
 ## P-ADMIN — Administration de la box
 
-Tickets calaos_mobile du plan admin de calaos_base (`docs/admin/PLAN.md`, phase 2 : console web et téléphone approbateur).
+Tickets calaos_mobile du plan admin de calaos_base (`docs/admin/PLAN.md`, phase 2 : console web et téléphone approbateur ; phase 3 : code push chiffré).
 
 | ID | Titre | Taille | Bloqué par | Groupe | Statut |
 |---|---|---|---|---|---|
@@ -174,6 +174,7 @@ Tickets calaos_mobile du plan admin de calaos_base (`docs/admin/PLAN.md`, phase 
 | [AP2b](tasks/AP2b-reglage-nom-appareil.md) | Réglage « Nom de cet appareil », renvoyé par `register_push` dès sa modification | S | AP2 | G-CONN + G-QML-MOBILE + G-QML-DESKTOP | En revue |
 | [CM2](tasks/CM2-tls-tofu-pinning.md) | TLS TOFU : épinglage de la clé du certificat par hôte, re-confirmation au changement de clé | L | — | G-CONN + G-APP + G-ANDROID + G-IOS | En revue |
 | [CM2b](tasks/CM2b-mode-ca-par-hote.md) | Mode d'épinglage par hôte : accepter un certificat CA à la place d'un pin arrête l'épinglage | S | CM2 | G-CONN + G-APP | En revue |
+| [P3-CODE-M](tasks/P3-CODE-M-code-admin-chiffre.md) | Code admin chiffré : clé push dans `register_push`, l'app déchiffre et affiche le code, la notification ne le contient plus | L | AP2b | G-CONN + G-APP + G-QML-MOBILE + G-ANDROID + G-IOS | En revue |
 
 ## Diagramme de parallélisation
 

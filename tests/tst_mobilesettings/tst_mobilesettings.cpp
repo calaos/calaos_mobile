@@ -2,6 +2,7 @@
 #include <QQmlEngine>
 #include <QQmlContext>
 #include <QQmlPropertyMap>
+#include "Common.h"
 
 namespace {
 
@@ -29,6 +30,7 @@ public slots:
     {
         engine->addImportPath(QStringLiteral(CALAOS_QML_DIR));
         engine->addImportPath(QStringLiteral(CALAOS_STUB_QML_DIR));
+        Common::registerQml();
 
         auto *fonts = new QQmlPropertyMap(engine);
         for (const char *key: { "fontFamily", "fontFamilyThin", "fontFamilyLight" })

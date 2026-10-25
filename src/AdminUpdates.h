@@ -84,6 +84,11 @@ public:
     Q_INVOKABLE void dismissInfo();
 
     bool isUpgrading() const;
+    //The screen is shown (between activate() and deactivate()).
+    bool isActive() const { return m_active; }
+    //How long a password typed during a reconnection waits for the box.
+    static constexpr int HeldUnlockMs = 30000;
+    void setHeldUnlockTimeout(int ms);
 
     //What the user reads for an admin error code (webapp wording).
     static QString errorTextFor(const QString &code, const QString &msg, int retryAfter);
@@ -110,6 +115,9 @@ private:
     void showError(const CalaosOsReply &reply);
     void showError(const QString &code, const QString &msg);
     void startCountdown(int seconds);
+    void holdUnlock(const QString &password);
+    void dropHeldUnlock();
+    void sendHeldUnlock();
     //An error that moved the gate is shown by the gate screen, not inline.
     static bool isGateCode(const QString &code);
 
@@ -135,6 +143,12 @@ private:
     QTimer *m_retryTimer = nullptr;
     QTimer *m_rebootHintTimer = nullptr;
     QTimer *m_countdownTimer = nullptr;
+    //A password that arrived while the socket was being reopened (the
+    //password manager sent the app to the background): memory only, for
+    //HeldUnlockMs at most, for the box it was typed for.
+    QString m_heldPassword;
+    QString m_heldHost;
+    QTimer *m_heldTimer = nullptr;
     qint64 m_unavailableSince = 0;
     int m_retryAttempt = 0;
     int m_fastRetryMs = 5000;

@@ -67,6 +67,7 @@ HEADERS += \
     $$PWD/src/UpdateBackend.h \
     $$PWD/src/UpdateModel.h \
     $$PWD/src/UpdateGrouping.h \
+    $$PWD/src/ResumePolicy.h \
     $$PWD/src/AdminTransport.h \
     $$PWD/src/AdminRelay.h \
     $$PWD/src/AdminRelayBackend.h \

@@ -61,7 +61,9 @@ Item {
         function onNativePasswordEntered(purpose, user, password) {
             if (purpose !== "admin_unlock" || password === "")
                 return
-            if (page.gate === "locked" && boxUpdates.busy === "" && boxUpdates.retryAfter <= 0)
+            //While the socket is reopened (the password manager sent the app
+            //to the background) boxUpdates holds it until the box answers.
+            if (page.gate === "locked" || page.gate === "idle" || page.gate === "probing")
                 boxUpdates.unlock(password)
         }
     }

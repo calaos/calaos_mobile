@@ -100,7 +100,17 @@ void Application::createQmlApp()
     //the background must not reconnect.
     connect(HardwareUtils::Instance(), &HardwareUtils::applicationWillResignActive, this, [=]()
     {
-        qDebug() << "Application is in background, drop the session";
+        //The password manager filling the native entry resigns the app too:
+        //the page waiting for that password must still be there afterwards.
+        const QString entry = HardwareUtils::Instance()->pendingNativePasswordPurpose();
+        const bool updatesShown = boxUpdates && boxUpdates->isActive();
+        resumePolicy.resigned(m_applicationStatus == Common::LoggedIn &&
+                                  (entry == QLatin1String("admin_unlock") || updatesShown),
+                              entry == QLatin1String("login"));
+        syncKeepPage();
+
+        qDebug() << "Application is in background, drop the session"
+                 << (resumePolicy.keepPage() ? "(page kept)" : "");
         startedWithOptHandled = false;
         stopPushNotifRouting();
         calaosConnect->pause();
@@ -116,7 +126,18 @@ void Application::createQmlApp()
             //logs in again.
             if (calaosConnect->sessionClosedByUser())
             {
+                resumePolicy.reset();
+                syncKeepPage();
                 qDebug() << "Application is in foreground, logged out by the user: no login";
+                return;
+            }
+
+            //The native login entry is still open: the user logs in himself.
+            const bool autoLogin = resumePolicy.becameActive();
+            syncKeepPage();
+            if (!autoLogin)
+            {
+                qDebug() << "Application is in foreground, login entry open: no automatic login";
                 return;
             }
 
@@ -171,6 +192,7 @@ void Application::createQmlApp()
 
     update_appVersion(PKG_VERSION_STR);
     update_waitingForNetwork(false);
+    update_keepPageOnResume(false);
 
     update_hasInstall(QFile::exists("/.calaos-live") ||
                       QFile::exists("/run/calaos/calaos-live") ||
@@ -242,6 +264,10 @@ void Application::createQmlApp()
             this, &Application::connectionStateChanged);
     connect(calaosConnect, &CalaosConnection::disconnected, this, [=]()
     {
+        //Emitted before connectionStateChanged(): a failed reconnection in
+        //place must give the page up before the status changes.
+        resumePolicy.sessionFailed();
+        syncKeepPage();
         update_applicationStatus(Common::NotConnected);
         update_settingsLocked(false);
 
@@ -563,6 +589,9 @@ void Application::connectionStateChanged(int state)
     case ReconnectPolicy::Reconnecting:
     case ReconnectPolicy::Disconnected:
     default:
+        //The reconnection in place failed: the normal way, to the login screen.
+        resumePolicy.sessionFailed();
+        syncKeepPage();
         //A connection lost on its own (server down, ping timeout) goes
         //through here, not through logout(): without this a notification
         //tapped while reconnecting was "opened" on a dead session (FIX-3).
@@ -590,6 +619,8 @@ void Application::stopPushNotifRouting()
 
 void Application::logout()
 {
+    resumePolicy.reset();
+    syncKeepPage();
     stopPushNotifRouting();
     calaosConnect->logout();
     //The history belongs to the session just closed: the next login may be
@@ -650,6 +681,9 @@ void Application::homeLoaded(const QVariantMap &homeData)
     cameraModel->load(homeData);
     eventLogModel->refresh();
     update_applicationStatus(Common::LoggedIn);
+    //After the status: main.qml read it to leave the page stack alone.
+    resumePolicy.loggedIn();
+    syncKeepPage();
 
     favModel->load(favoritesList);
 
@@ -719,6 +753,8 @@ void Application::loginFailed()
     //T14: the guard comes FIRST. It used to sit after the eight clear() calls,
     //so a stray loginFailed() received while we were already disconnected
     //emptied every model all over again.
+    resumePolicy.reset();
+    syncKeepPage();
     if (m_applicationStatus == Common::NotConnected)
         return;
 

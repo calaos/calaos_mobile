@@ -58,6 +58,7 @@ set(CALAOS_HEADERS
     src/UpdateBackend.h
     src/UpdateModel.h
     src/UpdateGrouping.h
+    src/ResumePolicy.h
     src/AdminTransport.h
     src/AdminRelay.h
     src/AdminRelayBackend.h

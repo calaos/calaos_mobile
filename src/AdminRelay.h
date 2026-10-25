@@ -97,6 +97,7 @@ public:
     //Seconds left, 0 without a session.
     int expiresIn() const;
     QString session() const { return m_session; }
+    QString hostKey() const { return m_transport->hostKey(); }
     //An admin reply came on this socket: silence afterwards is a stall.
     bool hasSpoken() const { return m_spoken; }
 

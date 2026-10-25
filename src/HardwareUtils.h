@@ -100,6 +100,8 @@ public:
     //Nothing is stored or logged on the way.
     Q_INVOKABLE virtual bool hasNativePasswordEntry() const { return false; }
     Q_INVOKABLE bool requestNativePassword(const QString &purpose, const QVariantMap &options);
+    //The purpose of the native entry on screen, empty when none.
+    QString pendingNativePasswordPurpose() const { return pendingPasswordPurpose; }
 
     //This is set by platform code if app was started with options
     //It is used by iOS when started with a QuickAction

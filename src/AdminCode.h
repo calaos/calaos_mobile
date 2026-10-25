@@ -92,6 +92,9 @@ class AdminCodeModel: public QObject
     Q_OBJECT
     //[{codeId, action, code, expired, remaining (s), fraction (0..1)}]
     Q_PROPERTY(QVariantList codes READ codes NOTIFY codesChanged)
+    //A code arrived but could not be read on this phone (wrong key, forged,
+    //malformed): the approver has to recover the key.
+    Q_PROPERTY(bool unreadable READ unreadable NOTIFY codesChanged)
     Q_PROPERTY(int lifetime READ lifetime CONSTANT)
 
 public:
@@ -104,6 +107,7 @@ public:
     void setClocks(Clock wall, Clock mono);
 
     QVariantList codes() const;
+    bool unreadable() const { return m_unreadable; }
     int lifetime() const { return int(AdminCode::LifetimeMs / 1000); }
 
     //The UI is up: from now on a code found opens the sheet.
@@ -115,6 +119,8 @@ public:
     Q_INVOKABLE void close();
     //Re-evaluates the countdowns now (also run by the timer).
     Q_INVOKABLE void tick();
+    //The sheet is on screen: keep it out of screenshots.
+    Q_INVOKABLE void setSheetVisible(bool visible);
 
     //Clears the clipboard if it still holds the copied code and its time is
     //up (also run on the timer and on return to the foreground).
@@ -140,6 +146,7 @@ private:
     Clock m_wall;
     Clock m_mono;
     bool m_ready = false;
+    bool m_unreadable = false;
     QList<Shown> m_shown;
     QTimer m_tick;
 

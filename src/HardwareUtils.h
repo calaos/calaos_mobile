@@ -167,6 +167,11 @@ public:
     QByteArray pushKey() const { return m_pushKey; }
     //Platform code reports the key here; pushKeyChanged() on a change only.
     void setPushKey(const QByteArray &key);
+    //Reads the key from the platform store (created there the first time it
+    //is really absent) and reports it. Called again while the key is empty:
+    //the store can be briefly unavailable (iOS before the first unlock,
+    //Keystore error), which must never replace an existing key.
+    virtual void loadPushKey() {}
 
     //Admin code payloads stashed at reception by the platform (Android
     //messaging service, iOS notification extension or app delegate), exactly
@@ -179,10 +184,19 @@ public:
     //where the platform can.
     virtual void removeAdminCodes(const QStringList &codeIds);
 
-    //Puts a secret on the clipboard for at most seconds, where the platform
-    //can expire it itself (iOS). Returns false when it cannot: the caller
-    //then uses QClipboard and clears it.
-    virtual bool copySecret(const QString &text, int seconds) { Q_UNUSED(text); Q_UNUSED(seconds); return false; }
+    enum class SecretCopy
+    {
+        NotHandled,       //caller puts it on QClipboard and clears it later
+        Copied,           //caller clears it later (QClipboard reads it back)
+        CopiedWithExpiry, //the platform drops it after the given time itself
+    };
+    //Puts a secret on the clipboard, marked sensitive where the platform
+    //can (no preview), for at most seconds.
+    virtual SecretCopy copySecret(const QString &text, int seconds) { Q_UNUSED(text); Q_UNUSED(seconds); return SecretCopy::NotHandled; }
+
+    //Keeps a secret on screen out of screenshots and the app switcher where
+    //the platform can (Android FLAG_SECURE).
+    virtual void setSecureScreen(bool on) { Q_UNUSED(on); }
 
     //An admin code push arrived or was tapped (codeId may be empty: "look at
     //the stash"). Kept until the code sheet is up (takePendingAdminCode()),

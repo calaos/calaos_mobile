@@ -89,6 +89,22 @@ QString flipBit(const QString &hex, int index)
     return QString::fromLatin1(b.toHex());
 }
 
+//A platform whose key store answers only once it is ready (iOS before the
+//first unlock, a Keystore error).
+class LateKeyHw: public HardwareUtils
+{
+public:
+    LateKeyHw(): HardwareUtils(nullptr) {}
+    void loadPushKey() override
+    {
+        loads++;
+        if (storeReady)
+            setPushKey(keyOf(0));
+    }
+    bool storeReady = false;
+    int loads = 0;
+};
+
 } //namespace
 
 class TstAdminCode: public QObject
@@ -125,7 +141,8 @@ private slots:
     void modelCountdownThenExpired();
     void modelCloseConsumes();
     void modelRefreshOnNotification();
-    void modelWithoutKeyShowsNothing();
+    void modelWithoutKeyKeepsTheStash();
+    void modelLoadsTheKeyWhenTheStoreIsBack();
     void copyClearsTheClipboardAfterItsTime();
     void copyLeavesSomethingElseAlone();
 
@@ -431,9 +448,14 @@ void TstAdminCode::modelShowsNewestFirst()
     //Forged on purpose (same tag under another id): never shown.
     stash(third);
     QSignalSpy show(&m, &AdminCodeModel::showRequested);
+    QVERIFY(!m.unreadable());
     m.refresh();
     QCOMPARE(m.codes().size(), 2);
-    QCOMPARE(show.count(), 0);
+    //Told, without any value: the sheet says a code could not be read.
+    QCOMPARE(show.count(), 1);
+    QVERIFY(m.unreadable());
+    m.close();
+    QVERIFY(!m.unreadable());
 }
 
 void TstAdminCode::modelDropsExpiredAndForged()
@@ -454,7 +476,8 @@ void TstAdminCode::modelDropsExpiredAndForged()
     m.setReady();
 
     QCOMPARE(m.codes().size(), 0);
-    QCOMPARE(show.count(), 0);
+    QCOMPARE(show.count(), 1);
+    QVERIFY(m.unreadable());
     QCOMPARE(stashedIds(), QStringList());
 }
 
@@ -535,15 +558,51 @@ void TstAdminCode::modelRefreshOnNotification()
     m.close();
 }
 
-void TstAdminCode::modelWithoutKeyShowsNothing()
+void TstAdminCode::modelWithoutKeyKeepsTheStash()
 {
+    //Key not available yet: nothing is decrypted, nothing is thrown away.
     hw()->setPushKey(QByteArray());
     stash(entryOf(0, wall, mono));
     AdminCodeModel m(hw());
     m.setClocks([this] { return wall; }, [this] { return mono; });
+    QSignalSpy show(&m, &AdminCodeModel::showRequested);
     m.setReady();
     QCOMPARE(m.codes().size(), 0);
-    QCOMPARE(stashedIds(), QStringList());
+    QCOMPARE(show.count(), 0);
+    QVERIFY(!m.unreadable());
+    QCOMPARE(stashedIds(), QStringList { QStringLiteral("0123456789abcdef") });
+
+    //The key is back: the next notification shows the code.
+    hw()->setPushKey(keyOf(0));
+    hw()->handleAdminCodeNotified(QString());
+    QCOMPARE(show.count(), 1);
+    QCOMPARE(m.codes().at(0).toMap().value("code").toString(), QStringLiteral("482913"));
+    m.close();
+}
+
+void TstAdminCode::modelLoadsTheKeyWhenTheStoreIsBack()
+{
+    LateKeyHw late;
+    late.stashAdminCode(entryOf(1, wall, mono).toJson());
+    AdminCodeModel m(&late);
+    m.setClocks([this] { return wall; }, [this] { return mono; });
+    m.setReady();
+    QCOMPARE(late.loads, 1);
+    QCOMPARE(m.codes().size(), 0);
+    QCOMPARE(late.adminCodeStash().size(), 1);
+
+    //Store unlocked; on the next read (foreground, notification) the key is
+    //loaded again and the code shown.
+    late.storeReady = true;
+    late.handleAdminCodeNotified(QString());
+    QCOMPARE(late.loads, 2);
+    QCOMPARE(m.codes().size(), 1);
+    QCOMPARE(m.codes().at(0).toMap().value("code").toString(), QStringLiteral("007351"));
+
+    //Loaded once and for all.
+    m.refresh();
+    QCOMPARE(late.loads, 2);
+    m.close();
 }
 
 void TstAdminCode::copyClearsTheClipboardAfterItsTime()

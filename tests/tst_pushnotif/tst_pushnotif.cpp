@@ -104,7 +104,8 @@ public:
 
     QString baseUrl() const
     {
-        return QStringLiteral("http://127.0.0.1:%1/api.php").arg(serverPort());
+        return QStringLiteral("%1://127.0.0.1:%2/api.php")
+            .arg(useTls ? QStringLiteral("https") : QStringLiteral("http")).arg(serverPort());
     }
 
 protected:
@@ -232,9 +233,12 @@ class FakeWsServer: public QWebSocketServer
     Q_OBJECT
 
 public:
-    FakeWsServer():
-        QWebSocketServer(QStringLiteral("fake calaos_server"), QWebSocketServer::NonSecureMode)
+    explicit FakeWsServer(const QSslConfiguration *tls = nullptr):
+        QWebSocketServer(QStringLiteral("fake calaos_server"),
+                         tls ? QWebSocketServer::SecureMode : QWebSocketServer::NonSecureMode)
     {
+        if (tls)
+            setSslConfiguration(*tls);
         connect(this, &QWebSocketServer::newConnection, this, [this]()
         {
             while (QWebSocket *ws = nextPendingConnection())
@@ -254,7 +258,9 @@ public:
 
     QString url() const
     {
-        return QStringLiteral("ws://127.0.0.1:%1/api").arg(serverPort());
+        return QStringLiteral("%1://127.0.0.1:%2/api")
+            .arg(secureMode() == QWebSocketServer::SecureMode ? QStringLiteral("wss") : QStringLiteral("ws"))
+            .arg(serverPort());
     }
 
 private:
@@ -423,6 +429,7 @@ private slots:
     void wsRotationWhileConnectedRegistersAgain();
     void wsRenameWhileConnectedRegistersAgain();
     void wsSendsThePushKeyAndItsChanges();
+    void plainTransportsNeverSendThePushKey();
 
     //No token in clear in the logs, whatever ran above.
     void cleanupTestCase();
@@ -443,6 +450,9 @@ private:
     static void clearStore();
 
     void startConnection(const QString &host);
+    //Over TLS, the self-signed test certificate pinned as if confirmed.
+    void startTlsConnection(const QString &url, quint16 port);
+    std::unique_ptr<TlsPinStore> pinStore;
 
     FakeHttpServer *http = nullptr;
     FakeWsServer *ws = nullptr;
@@ -519,6 +529,7 @@ void TstPushNotif::cleanup()
         delete connection;
         connection = nullptr;
     }
+    pinStore.reset();
     delete http;
     http = nullptr;
     delete ws;
@@ -585,6 +596,16 @@ void TstPushNotif::startConnection(const QString &host)
 {
     connection = new CalaosConnection();
     connection->login(TestUser, TestPass, host);
+}
+
+void TstPushNotif::startTlsConnection(const QString &url, quint16 port)
+{
+    pinStore.reset(new TlsPinStore(certDir.filePath(QStringLiteral("pins-key.ini"))));
+    pinStore->setPin(TlsPinning::hostKey(QStringLiteral("127.0.0.1"), port),
+                     TlsPinning::spkiSha256(tlsConfig.localCertificate()));
+    connection = new CalaosConnection();
+    connection->setPinStore(pinStore.get());
+    connection->login(TestUser, TestPass, url);
 }
 
 // ---------------------------------------------------------------- PushRegistration
@@ -1439,14 +1460,16 @@ void TstPushNotif::httpOverrideClearedAfterLogoutSendsNothing()
 
 void TstPushNotif::httpSendsThePushKeyAndItsChanges()
 {
+    if (!tlsReady)
+        QSKIP("No TLS backend or no openssl CLI to make a test certificate");
     const QString t = freshToken();
     hw()->setDeviceToken(t);
     const QByteArray k1 = testKey('\x01'), k2 = testKey('\xfe');
     hw()->setPushKey(k1);
 
-    http = new FakeHttpServer();
+    http = new FakeHttpServer(&tlsConfig);
     QVERIFY(http->listen(QHostAddress::LocalHost, 0));
-    startConnection(http->baseUrl());
+    startTlsConnection(http->baseUrl(), http->serverPort());
     QTRY_COMPARE(http->registrations.size(), 1);
     verifyAuthenticated(http->registrations.at(0));
     //At the root, next to the token and the credentials.
@@ -1540,14 +1563,16 @@ void TstPushNotif::wsRenameWhileConnectedRegistersAgain()
 
 void TstPushNotif::wsSendsThePushKeyAndItsChanges()
 {
+    if (!tlsReady)
+        QSKIP("No TLS backend or no openssl CLI to make a test certificate");
     const QString t = freshToken();
     hw()->setDeviceToken(t);
     const QByteArray k1 = testKey('\x5a');
     hw()->setPushKey(k1);
 
-    ws = new FakeWsServer();
+    ws = new FakeWsServer(&tlsConfig);
     QVERIFY(ws->listen(QHostAddress::LocalHost, 0));
-    startConnection(ws->url());
+    startTlsConnection(ws->url(), ws->serverPort());
     QTRY_COMPARE(ws->registrations.size(), 1);
     QCOMPARE(ws->registrations.at(0).value(QStringLiteral("push_key")).toString(),
              QStringLiteral("5a").repeated(32));
@@ -1566,6 +1591,31 @@ void TstPushNotif::wsSendsThePushKeyAndItsChanges()
     pump(200);
     QCOMPARE(ws->registrations.size(), 3);
     QCOMPARE(ws->received.count(QStringLiteral("login")), 1);
+}
+
+//http:// and ws://: the key would cross the network in clear, so it is left
+//out (the box keeps the key it knows, or pushes the legacy text).
+void TstPushNotif::plainTransportsNeverSendThePushKey()
+{
+    hw()->setDeviceToken(freshToken());
+    hw()->setPushKey(testKey('\x33'));
+
+    http = new FakeHttpServer();
+    QVERIFY(http->listen(QHostAddress::LocalHost, 0));
+    startConnection(http->baseUrl());
+    QTRY_COMPARE(http->registrations.size(), 1);
+    QVERIFY(!http->registrations.at(0).contains(QStringLiteral("push_key")));
+    //A key change is no reason to send anything either.
+    hw()->setPushKey(testKey('\x34'));
+    pump(200);
+    QCOMPARE(http->registrations.size(), 1);
+    cleanup();
+
+    ws = new FakeWsServer();
+    QVERIFY(ws->listen(QHostAddress::LocalHost, 0));
+    startConnection(ws->url());
+    QTRY_COMPARE(ws->registrations.size(), 1);
+    QVERIFY(!ws->registrations.at(0).contains(QStringLiteral("push_key")));
 }
 
 // ---------------------------------------------------------------- push format

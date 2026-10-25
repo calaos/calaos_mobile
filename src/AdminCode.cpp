@@ -303,8 +303,17 @@ void AdminCodeModel::refresh()
     if (!m_ready)
         return;
 
-    const qint64 wall = m_wall(), mono = m_mono();
+    //No key yet (store unavailable): the stash waits untouched for it.
+    if (m_hw->pushKey().isEmpty())
+        m_hw->loadPushKey();
     const QByteArray key = m_hw->pushKey();
+    if (key.isEmpty())
+    {
+        tick();
+        return;
+    }
+
+    const qint64 wall = m_wall(), mono = m_mono();
     QStringList dropped;
     int rejected = 0;
     bool added = false;
@@ -342,7 +351,10 @@ void AdminCodeModel::refresh()
     }
 
     if (rejected > 0)
+    {
         qWarning() << "Admin code:" << rejected << "payload(s) rejected (malformed or bad tag)";
+        m_unreadable = true;
+    }
     if (!dropped.isEmpty())
         m_hw->removeAdminCodes(dropped);
 
@@ -358,8 +370,13 @@ void AdminCodeModel::refresh()
 
     tick();
 
-    if (added)
+    if (added || rejected > 0)
         emit showRequested();
+}
+
+void AdminCodeModel::setSheetVisible(bool visible)
+{
+    m_hw->setSecureScreen(visible);
 }
 
 void AdminCodeModel::tick()
@@ -408,13 +425,16 @@ void AdminCodeModel::copy(const QString &codeId)
             continue;
 
         const int seconds = int(LifetimeMs / 1000);
-        if (m_hw->copySecret(s.code, seconds))
+        const HardwareUtils::SecretCopy done = m_hw->copySecret(s.code, seconds);
+        if (done == HardwareUtils::SecretCopy::CopiedWithExpiry)
             return;
-
-        QClipboard *clipboard = QGuiApplication::clipboard();
-        if (!clipboard)
-            return;
-        clipboard->setText(s.code);
+        if (done == HardwareUtils::SecretCopy::NotHandled)
+        {
+            QClipboard *clipboard = QGuiApplication::clipboard();
+            if (!clipboard)
+                return;
+            clipboard->setText(s.code);
+        }
         m_clipText = s.code;
         m_clipDeadline = m_mono() + LifetimeMs;
         m_clipTimer.start(int(LifetimeMs));
@@ -459,6 +479,7 @@ void AdminCodeModel::close()
         wipe(s.code);
     }
     m_shown.clear();
+    m_unreadable = false;
     m_tick.stop();
     if (!ids.isEmpty())
         m_hw->removeAdminCodes(ids);

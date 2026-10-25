@@ -224,10 +224,45 @@ the phone: those stay in the webapp.
   works without a session (household view: progress figures, no package
   names). Package names and versions are only shown once unlocked, and are
   cleared when the session ends.
+- Gate names against the webapp store (`stores/admin.ts`): `locked`,
+  `unlocked`, `https_required`, `unavailable`, `unreachable`, `old_server`
+  are the same; `admin_not_set` covers the webapp's `bootstrap` and
+  `household` (no bootstrap from the phone); `too_old` is its `activating`;
+  `idle`/`probing` are its `idle`/`probing`; `websocket_required` is
+  mobile-only (logged in over the HTTP fallback, which has no `admin`
+  message).
+- The password never leaves on a socket that has not proved itself:
+  `admin_unlock` is refused without sending while a certificate question is
+  pending, over the HTTP fallback, before an admin answer on the current
+  socket, and on a non-`wss` socket (`https_required`, the box reached as
+  `http://…:5454`). Every socket loss resets the gate to `idle`: a screen
+  from box A never collects a password for box B. Requests made with the
+  session fail (`session_lost`) when it ends, so their answers cannot bring
+  package data back.
 - The password field is `TextInput.Password` with
   `Qt.ImhSensitiveData | Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase`,
-  never bound to a setting, cleared on submit, when leaving the page and when
-  the app leaves the foreground.
+  never bound to a setting, cleared on submit, when leaving the page, when the
+  gate leaves `locked` and when the app leaves the foreground.
+
+**What is shared with the kiosk, and what is not.** Shared sources (both
+builds): `UpdateBackend` (interface), `UpdateModel` (the three models),
+`UpdateGrouping`, `CalaosOsProtocol` (`<Status>`/`<Job>` parsing, `isIdleProgress`).
+`CalaosOsAPI` implements `UpdateBackend` but stays desktop-only, and so does
+`UpdateManager`: the kiosk flow was not moved onto the interface because it
+depends on what only the daemon offers (installed package list, legacy
+synchronous routes, the daemon's own `/events` socket with its `upgrade_job`
+events, detection of a self-upgrading daemon, multi-POST group queues,
+automatic checks with the update dialog). Moving it would have risked the
+kiosk behaviour for no mobile gain. `AdminUpdates` is therefore a second
+orchestrator over the shared models: its phase logic follows the webapp's
+UpdatesPanel, and its model feeding mirrors `UpdateManager`. Twin code to
+change together: `AdminUpdates::applyAvailable()` ↔
+`UpdateManager::applyAvailable()` (calaos packages vs groups),
+`AdminUpdates::applyProgress()` ↔ the package part of
+`UpdateManager::applyStatusSnapshot()`, and the terminal/idle frame handling
+(`AdminUpdates::held()`/`onProgressEvent()` ↔ `applyStatusSnapshot()`).
+`AdminRelay`, `AdminRelayBackend` and `AdminUpdates` are compiled into the
+kiosk too (shared sources) but never instantiated there.
 
 ## 9. Push notifications
 

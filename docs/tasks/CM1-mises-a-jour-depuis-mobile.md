@@ -33,10 +33,18 @@ La webapp (WA1) vérifie et installe les mises à jour et redémarre la box avec
 - Libellés : `https_required` → « Les mises à jour demandent une connexion https à la box », avec le raccourci « Changer l'adresse de la box » (retour à l'écran de connexion) ; `admin_not_set` → « Définissez d'abord le mot de passe admin depuis la webapp » ; `admin_unavailable` / `daemon_*` / serveur ancien → textes de la webapp ; `bad_session` → nouvelle demande du mot de passe, sans message.
 - QML : Réglages → « Mises à jour de la box » ; carte de déverrouillage puis carte des mises à jour (titre, liste des paquets calaos et des groupes, « Tout mettre à jour », barre de progression, « Vérifier les mises à jour ») et carte « Redémarrer la box » avec confirmation.
 
+### Ce qui est partagé avec le kiosque
+
+- Partagé (sources communes) : `UpdateBackend` (interface), `UpdateModel` (les trois modèles), `UpdateGrouping`, `CalaosOsProtocol`. `CalaosOsAPI` implémente `UpdateBackend` mais reste propre au kiosque.
+- `UpdateManager` n'a pas été porté sur l'interface (écart assumé au design) : il dépend de ce que seul le daemon offre (liste des paquets installés, routes legacy synchrones, flux `/events` du daemon avec `upgrade_job`, détection d'un daemon qui se met à jour lui-même, files de POST par groupe, vérifications automatiques avec le dialogue). Le porter aurait mis en jeu le comportement du kiosque sans rien apporter au mobile.
+- `AdminUpdates` est donc un second orchestrateur sur les modèles partagés : ses phases suivent l'`UpdatesPanel` de la webapp, l'alimentation des modèles reprend celle d'`UpdateManager`. Code jumeau à modifier ensemble : `AdminUpdates::applyAvailable()` ↔ `UpdateManager::applyAvailable()`, `AdminUpdates::applyProgress()` ↔ la partie paquets d'`UpdateManager::applyStatusSnapshot()`, traitement des trames terminales/idle (`held()`/`onProgressEvent()` ↔ `applyStatusSnapshot()`).
+- Correspondance des portes avec la webapp : `admin_not_set` = `bootstrap`/`household`, `too_old` = `activating`, `websocket_required` propre au mobile (repli HTTP), les autres ont le même nom.
+
 ## Sécurité
 
 - SR-21 : champ du mot de passe admin en `TextInput.Password`, `inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase`, jamais lié à un réglage ; vidé à l'envoi, en quittant la page et quand l'application passe en arrière-plan. Ni le mot de passe ni la session dans les journaux.
 - SR-22 : nouvelle clé de certificat acceptée → session abandonnée, mot de passe redemandé ; aucun message admin pendant une question de certificat.
+- Le mot de passe ne part jamais en clair ni vers une autre box : `admin_unlock` refusé sans envoi sur un socket non `wss` (porte `https_required`), sur le repli HTTP, et tant qu'aucune réponse admin n'est arrivée sur le socket courant ; toute perte du socket remet la porte à `idle`. Les requêtes faites avec la session échouent (`session_lost`) quand elle se termine.
 - SR-23 : `update_status` sans session = vue foyer filtrée ; les noms de paquets ne s'affichent qu'une fois déverrouillé et sont effacés à la perte de la session. Le kiosque garde `CalaosOsAPI` en direct sur le daemon.
 
 ## Hors périmètre

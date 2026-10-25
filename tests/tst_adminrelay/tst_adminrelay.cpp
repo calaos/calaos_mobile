@@ -34,6 +34,7 @@
 #include "AdminUpdates.h"
 #include "CalaosConnection.h"
 #include "TlsPinning.h"
+#include "HardwareUtils.h"
 
 static const QString TestUser = QStringLiteral("user");
 static const QString TestPass = QStringLiteral("pass");
@@ -278,6 +279,23 @@ private:
     bool m_secure = false;
 };
 
+//A platform with a native credential entry, without the dialog.
+class NativeEntryHw: public HardwareUtils
+{
+public:
+    NativeEntryHw(): HardwareUtils(nullptr) {}
+    bool hasNativePasswordEntry() const override { return true; }
+    bool show = true;
+    int shown = 0;
+
+protected:
+    bool showNativePasswordEntry(const QString &, const QVariantMap &) override
+    {
+        shown++;
+        return show;
+    }
+};
+
 class TstAdminRelay: public QObject
 {
     Q_OBJECT
@@ -405,6 +423,7 @@ private slots:
     void rebootGuardedDuringUpgrade();
     void oldSocketErrorClearedOnReconnect();
     void replyForAnotherMessageIgnored();
+    void nativePasswordAnsweredOnce();
 };
 
 void TstAdminRelay::unlockSuccessStoresSession()
@@ -1462,6 +1481,37 @@ void TstAdminRelay::replyForAnotherMessageIgnored()
     relay.handleReply("admin_unlock", id, unlockOk());
     QVERIFY(called);
     QVERIFY(relay.isUnlocked());
+}
+
+void TstAdminRelay::nativePasswordAnsweredOnce()
+{
+    NativeEntryHw hw;
+    QSignalSpy entered(&hw, &HardwareUtils::nativePasswordEntered);
+    QSignalSpy canceled(&hw, &HardwareUtils::nativePasswordCanceled);
+
+    QVERIFY(hw.requestNativePassword("admin_unlock", {}));
+    //one dialog at a time
+    QVERIFY(!hw.requestNativePassword("login", {}));
+    QCOMPARE(hw.shown, 1);
+
+    hw.emitNativePassword("login", "u", "p"); //not the pending request
+    QCOMPARE(entered.count(), 0);
+    hw.emitNativePassword("admin_unlock", "admin", "secret");
+    hw.emitNativePassword("admin_unlock", "admin", "again");
+    hw.emitNativePasswordCanceled("admin_unlock");
+    QCOMPARE(entered.count(), 1);
+    QCOMPARE(entered.at(0).at(2).toString(), QStringLiteral("secret"));
+    QCOMPARE(canceled.count(), 0);
+
+    QVERIFY(hw.requestNativePassword("login", {}));
+    hw.emitNativePasswordCanceled("login");
+    QCOMPARE(canceled.count(), 1);
+
+    //a dialog that could not be shown leaves nothing pending
+    hw.show = false;
+    QVERIFY(!hw.requestNativePassword("login", {}));
+    hw.show = true;
+    QVERIFY(hw.requestNativePassword("login", {}));
 }
 
 QTEST_MAIN(TstAdminRelay)

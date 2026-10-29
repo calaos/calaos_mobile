@@ -32,6 +32,7 @@
 #include <QHostAddress>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLoggingCategory>
 #include <QSslConfiguration>
 #include <QSslKey>
 #include <QSslSocket>
@@ -434,6 +435,8 @@ private:
 
 void TstPushNotif::initTestCase()
 {
+    //The redaction check reads the qDebug "SEND:" line; some hosts mute debug by default.
+    QLoggingCategory::setFilterRules(QStringLiteral("*.debug=true"));
     s_previousHandler = qInstallMessageHandler(captureMessages);
 
     //The device name override lives in QSettings: a store of our own.

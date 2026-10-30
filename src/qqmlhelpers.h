@@ -7,7 +7,7 @@
     protected: \
         Q_PROPERTY (type name READ get_##name WRITE set_##name NOTIFY name##Changed) \
     private: \
-        type m_##name; \
+        type m_##name {}; \
     public: \
         type get_##name () const { \
             return m_##name ; \
@@ -50,7 +50,7 @@
     protected: \
         Q_PROPERTY (type name READ get_##name CONSTANT) \
     private: \
-        type m_##name; \
+        type m_##name {}; \
     public: \
         type get_##name () const { \
             return m_##name ; \

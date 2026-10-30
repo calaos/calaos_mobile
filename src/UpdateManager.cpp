@@ -173,21 +173,14 @@ void UpdateManager::doCheck(bool automatic)
     });
 }
 
+//Twin of AdminUpdates::applyAvailable() (mobile): keep the grouping the same.
 void UpdateManager::applyAvailable(const QJsonObject &pkgs)
 {
     m_available = pkgs;
 
     QJsonObject calaosSubset;
     QMap<QString, QStringList> groups;
-
-    for (auto it = pkgs.begin(); it != pkgs.end(); ++it)
-    {
-        const QString group = UpdateGrouping::groupForPackage(it.key());
-        if (group.isEmpty())
-            calaosSubset[it.key()] = it.value();
-        else
-            groups[group].append(it.key());
-    }
+    UpdateGrouping::splitPackages(pkgs, calaosSubset, groups);
 
     m_calaosModel->mergeAvailable(calaosSubset);
     m_groupsModel->setGroups(groups);
@@ -620,6 +613,8 @@ void UpdateManager::followForeignJob(const QString &id, const QString &message)
     handleJobAction(m_jobs.follow(id));
 }
 
+//Twins in AdminUpdates (mobile): applyProgress() for the package part,
+//held() and onProgressEvent() for the terminal and trailing idle frames.
 void UpdateManager::applyStatusSnapshot(const QJsonObject &st)
 {
     const QString status = st["status"].toString();

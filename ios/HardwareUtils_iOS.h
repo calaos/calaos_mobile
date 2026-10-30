@@ -69,12 +69,17 @@ public:
 
     virtual void inputTextDialog(const QString &title, const QString &message);
 
+    bool hasNativePasswordEntry() const override { return true; }
+
     virtual QString getStartOption(const QString &key);
     virtual void setQuickLinks(QVariantList quicklinks);
 
     void handlePerformActionForShortcutItem(void *shortcut);
     void handleRegisterNotif(void *data);
     void handleRegisterNotifFail(void *err);
+
+protected:
+    bool showNativePasswordEntry(const QString &purpose, const QVariantMap &options) override;
 };
 
 #endif // HARDWAREUTILS_IOS_H

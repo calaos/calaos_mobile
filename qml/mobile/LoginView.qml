@@ -17,6 +17,32 @@ Item {
     visible: opacity > 0?true:false
     Behavior on opacity { PropertyAnimation { } }
 
+    readonly property bool nativeEntry: hardwareUtils.hasNativePasswordEntry()
+
+    function askNativePassword() {
+        hideKeyboard()
+        hardwareUtils.requestNativePassword("login", {
+            title: qsTr("Sign in"),
+            message: "",
+            user: userField.text,
+            userLabel: qsTr("Username"),
+            passwordLabel: qsTr("Password"),
+            confirm: qsTr("OK"),
+            cancel: qsTr("Cancel")
+        })
+    }
+
+    Connections {
+        target: hardwareUtils
+        function onNativePasswordEntered(purpose, user, password) {
+            if (purpose !== "login")
+                return
+            if (user !== "")
+                userField.text = user
+            passField.text = password
+        }
+    }
+
     function hideKeyboard() {
         userField.focus = false
         passField.focus = false
@@ -118,6 +144,14 @@ Item {
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Password")
                 enabled: !loginButton.loadingEnabled
+
+                //Where the platform has a native credential entry, a tap
+                //opens it instead: only real platform fields get AutoFill.
+                MouseArea {
+                    anchors.fill: parent
+                    enabled: loginRoot.nativeEntry && parent.enabled
+                    onClicked: loginRoot.askNativePassword()
+                }
             }
 
             CalaosTextField {

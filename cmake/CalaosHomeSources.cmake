@@ -25,6 +25,11 @@ set(CALAOS_SOURCES
     src/ModelImageProvider.cpp
     src/TlsPinning.cpp
     src/AdminCode.cpp
+    src/CalaosOsProtocol.cpp
+    src/UpdateModel.cpp
+    src/AdminRelay.cpp
+    src/AdminRelayBackend.cpp
+    src/AdminUpdates.cpp
 )
 
 set(CALAOS_HEADERS
@@ -51,4 +56,13 @@ set(CALAOS_HEADERS
     src/ModelImageProvider.h
     src/TlsPinning.h
     src/AdminCode.h
+    src/CalaosOsProtocol.h
+    src/UpdateBackend.h
+    src/UpdateModel.h
+    src/UpdateGrouping.h
+    src/ResumePolicy.h
+    src/AdminTransport.h
+    src/AdminRelay.h
+    src/AdminRelayBackend.h
+    src/AdminUpdates.h
 )

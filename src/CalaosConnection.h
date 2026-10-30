@@ -10,6 +10,7 @@
 #include "IOConnection.h"
 #include "JsonKeys.h"
 #include "TlsPinning.h"
+#include "AdminTransport.h"
 
 //Reconnection state machine and exponential backoff (T14).
 //
@@ -411,8 +412,9 @@ inline QJsonObject registration(const QString &token, const QString &hardware,
 }
 
 //QObject first, as Q_OBJECT requires; IOConnection is the read-only view the
-//IO models are given, see src/IOConnection.h.
-class CalaosConnection : public QObject, public IOConnection
+//IO models are given, see src/IOConnection.h. AdminTransport is what
+//AdminRelay sends its frames through.
+class CalaosConnection : public QObject, public IOConnection, public AdminTransport
 {
     Q_OBJECT
 public:
@@ -515,7 +517,21 @@ public:
     //(or, for a CA-valid certificate, drops the pin of the host) and logs in
     //again, refusing keeps the session down.
     void answerTlsTrust(bool accept);
-    bool hasPendingTlsTrust() const { return !pendingTrust.isEmpty(); }
+    bool hasPendingTlsTrust() const override { return !pendingTrust.isEmpty(); }
+
+    //AdminTransport: admin messages only exist on the WebSocket (calaos_server
+    //answers "unknown action" to "admin" over HTTP).
+    bool sendAdminMessage(const QString &msg, const QJsonObject &data, const QString &msgId) override
+    {
+        return sendWebsocket(msg, data, msgId);
+    }
+    bool isSecure() const override
+    {
+        return wsocket && constate == ConStateWebsocket &&
+               wsocket->requestUrl().scheme() == QLatin1String("wss");
+    }
+    bool isHttpFallback() const override { return constate == ConStateHttp; }
+    QString hostKey() const override { return lasthost; }
     //A certificate refused in this run is refused silently afterwards (the
     //launch login, iOS become-active), so the prompt cannot come back in a
     //loop. An explicit login from the login screen asks again.
@@ -760,6 +776,15 @@ signals:
     void tlsTrustCanceled();
     //The user refused the certificate of host.
     void tlsTrustRejected(const QString &host);
+    //The user trusted a new or changed certificate of host: anything
+    //unlocked over the previous key must be asked for again.
+    void tlsTrustAccepted(const QString &host);
+
+    //Answers to admin_unlock / admin_set / admin, with the msg_id they echo,
+    //and the unsolicited admin_event pushes. Never logged: they carry the
+    //admin session.
+    void adminReplyReceived(const QString &msg, const QString &msgId, const QJsonObject &data);
+    void adminEventReceived(const QJsonObject &data);
     //A certificate no pin can make acceptable (revoked, forged signature).
     //weakKey: RSA under 2048 bits, the box needs a new certificate.
     void tlsCertificateRefused(const QString &host, const QString &reason, bool weakKey);

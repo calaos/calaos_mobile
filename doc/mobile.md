@@ -108,6 +108,16 @@ specifically used on mobile:
   `CalaosConnection::pause()` and resets the start-option flag. This is not a
   logout: the policy remembers whether a session was wanted, and refuses every
   automatic reconnection (network back, retry timer) while in the background.
+- Exception, [`ResumePolicy`](../src/ResumePolicy.h): resign-active is also
+  sent when the password manager (1Password, iCloud Keychain) takes over to
+  fill the native password entry, and an app switch from the box updates
+  page is the same case. When the native admin password entry is open or the
+  updates page is shown, the session still drops but
+  `Application::keepPageOnResume` tells `main.qml` to keep the page stack
+  (no pop to the login screen, no push of the home page); the automatic login
+  on return reconnects in place, and a failure of that login goes to the
+  login screen as usual. With the native login entry open, no automatic login
+  runs on return: the user logs in himself with the filled fields.
 - `applicationBecomeActive` (iOS only) — `unpause()`, then re-issues `login()`
   from the saved keychain credentials, **unless the user logged out**
   (`sessionClosedByUser()`): an explicit logout survives the app going to the
@@ -145,6 +155,7 @@ Views in [qml/mobile/](../qml/mobile):
 - `MusicListView.qml`, `IconMusic.qml`, `IconMusicPlayer.qml` — audio.
 - `EventLogView.qml`, `PushEventView.qml` — event log + push notification deep
   link viewer.
+- `UpdatesView.qml` — box updates with the admin password (section 8.1).
 - `SettingsView.qml`, `ColorPickerRGBView.qml`, `ColorPickerView.qml`,
   `CalaosTextField.qml`, `ButtonLogin.qml`, `ButtonFooter.qml`,
   `StyleButtonDefault.qml` — settings & utilities.
@@ -185,6 +196,99 @@ QuickFlux dispatches.
   push picture worker can use them without Qt running. Credentials saved in
   `QSettings` by earlier versions are migrated at the first start and the
   clear-text copy removed. See [android.md](android.md) section 6.4.
+
+### 8.1 Box updates (admin password)
+
+Settings → « Box updates » opens [UpdatesView.qml](../qml/mobile/UpdatesView.qml):
+check and install the box updates and reboot it, with the **admin** password
+(distinct from `cn_user`/`cn_pass`), through calaos_server's admin relay on the
+household WebSocket (contract: calaos_base `docs/08_http_api.md`,
+« Administration »). No bootstrap, password change, approver or console from
+the phone: those stay in the webapp.
+
+- [`AdminRelay`](../src/AdminRelay.h): `admin_unlock {admin_pass}` and
+  `admin {action, admin_session, params}`, correlated by `msg_id`, 5 s timeout
+  (125 s for `update_check`); replies routed by `CalaosConnection`
+  (`adminReplyReceived`, `adminEventReceived`), frames sent through its
+  `AdminTransport` interface (WebSocket only). Gates, named after the webapp
+  store: `idle`, `probing`, `locked`, `unlocked`, `https_required`,
+  `admin_not_set`, `unavailable` (`admin_unavailable`), `too_old`
+  (`daemon_too_old`), `unreachable` (`daemon_unreachable`, or an unexpected
+  error on the probe), `old_server` (no answer at all on this socket).
+- Admin session: memory only, never persisted or logged; 15 min absolute at
+  most (`expires_in`, monotonic and wall clock, checked again when the app
+  comes back to the foreground); dropped with the socket (logout, lost link,
+  iOS background), on `bad_session`, on `admin_event admin_set/admin_reset`, and
+  when the user trusts a new certificate key (`tlsTrustAccepted`). No admin
+  frame goes out while a certificate question is pending.
+- [`UpdateBackend`](../src/UpdateBackend.h) is the transport interface of the
+  update calls: `CalaosOsAPI` implements it on the kiosk (daemon direct),
+  [`AdminRelayBackend`](../src/AdminRelayBackend.h) on mobile (admin actions,
+  `admin_event upgrade_progress`). [`AdminUpdates`](../src/AdminUpdates.h)
+  (context property `boxUpdates`) is the screen's flow, mirroring the webapp's
+  UpdatesPanel (phases `unknown`, `upToDate`, `available`, `upgrading`, `done`,
+  `doneReboot`, `failed`), and feeds the shared update models
+  (`UpdatePackagesModel`, `UpdateGroupsModel`, `UpdateProgressModel`,
+  `CalaosOsProtocol` parsing).
+- `update_status` is the probe and the source of truth after a reconnect; it
+  works without a session (household view: progress figures, no package
+  names). Package names and versions are only shown once unlocked, and are
+  cleared when the session ends.
+- Gate names against the webapp store (`stores/admin.ts`): `locked`,
+  `unlocked`, `https_required`, `unavailable`, `unreachable`, `old_server`
+  are the same; `admin_not_set` covers the webapp's `bootstrap` and
+  `household` (no bootstrap from the phone); `too_old` is its `activating`;
+  `idle`/`probing` are its `idle`/`probing`; `websocket_required` is
+  mobile-only (logged in over the HTTP fallback, which has no `admin`
+  message).
+- The password never leaves on a socket that has not proved itself:
+  `admin_unlock` is refused without sending while a certificate question is
+  pending, over the HTTP fallback, before an admin answer on the current
+  socket, and on a non-`wss` socket (`https_required`, the box reached as
+  `http://…:5454`). Every socket loss resets the gate to `idle`: a screen
+  from box A never collects a password for box B. Requests made with the
+  session fail (`session_lost`) when it ends, so their answers cannot bring
+  package data back.
+- The password field is `TextInput.Password` with
+  `Qt.ImhSensitiveData | Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase`,
+  never bound to a setting, cleared on submit, when leaving the page, when the
+  gate leaves `locked` and when the app leaves the foreground. On iOS and Android the password is typed in a
+  native dialog instead (`HardwareUtils::requestNativePassword()`, purpose
+  `admin_unlock`; the login screen uses it for its password, purpose
+  `login`): Qt's text fields get no password AutoFill on either platform
+  (iOS: see [ios.md](ios.md) section 5; Android: Qt 6.12 routes every field
+  through one proxy `QtEditText` without autofill hints or view structure).
+  The dialog has a username field (`admin`, or the typed household user) and
+  a password field marked for the password manager (`UITextContentTypePassword`,
+  `View.AUTOFILL_HINT_PASSWORD`), answers once, wipes its fields, stores and
+  logs nothing; the QML field stays where no native entry exists (desktop
+  test build). An admin password that comes back while the socket is being
+  reopened (after the password manager) is held by `AdminUpdates` in memory
+  for 30 s at most and sent once the box has answered on the new socket, to
+  the same host only; leaving the page, a timeout or any other gate drops it,
+  and `AdminRelay` still refuses it without `wss`, before a probe answer or
+  while a certificate question is pending.
+
+**What is shared with the kiosk, and what is not.** Shared sources (both
+builds): `UpdateBackend` (interface), `UpdateModel` (the three models),
+`UpdateGrouping` (including `splitPackages()`, the calaos/groups split both
+orchestrators use), `CalaosOsProtocol` (`<Status>`/`<Job>` parsing, `isIdleProgress`).
+`CalaosOsAPI` implements `UpdateBackend` but stays desktop-only, and so does
+`UpdateManager`: the kiosk flow was not moved onto the interface because it
+depends on what only the daemon offers (installed package list, legacy
+synchronous routes, the daemon's own `/events` socket with its `upgrade_job`
+events, detection of a self-upgrading daemon, multi-POST group queues,
+automatic checks with the update dialog). Moving it would have risked the
+kiosk behaviour for no mobile gain. `AdminUpdates` is therefore a second
+orchestrator over the shared models: its phase logic follows the webapp's
+UpdatesPanel, and its model feeding mirrors `UpdateManager`. Twin code to
+change together: `AdminUpdates::applyAvailable()` ↔
+`UpdateManager::applyAvailable()` (model feeding around the shared split),
+`AdminUpdates::applyProgress()` ↔ the package part of
+`UpdateManager::applyStatusSnapshot()`, and the terminal/idle frame handling
+(`AdminUpdates::held()`/`onProgressEvent()` ↔ `applyStatusSnapshot()`).
+`AdminRelay`, `AdminRelayBackend` and `AdminUpdates` are compiled into the
+kiosk too (shared sources) but never instantiated there.
 
 ## 9. Push notifications
 
@@ -342,8 +446,10 @@ startup (`Application::setupLanguage()`).
    pulling `widgets` only in the desktop fallback.
 3. Mobile **does not** ship the desktop-only widgets, OS install wizard,
    `CalaosOsAPI`, `ScreenManager`, `WeatherInfo`, `ControlPanelModel`,
-   `UsbDisk`, `CalaosWidgetModel`, `UserInfoModel`. Code referencing them must
-   live behind `#ifdef CALAOS_DESKTOP`.
+   `UsbDisk`, `CalaosWidgetModel`, `UserInfoModel`, `UpdateManager`. Code
+   referencing them must live behind `#ifdef CALAOS_DESKTOP`. The update
+   models, `CalaosOsProtocol` and `UpdateBackend` are shared: mobile updates go
+   through `AdminRelay` (section 8.1).
 4. The mobile login screen is the entry; the app expects to be backgrounded
    often — keep critical state in models that survive logout/reload.
 5. The QuickFlux dispatcher is the canonical way to cross UI boundaries from

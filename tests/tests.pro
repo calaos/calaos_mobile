@@ -15,6 +15,7 @@ TEMPLATE = subdirs
 
 SUBDIRS += \
     tst_admincode \
+    tst_adminrelay \
     tst_calaoseventdecoder \
     tst_calaososprotocol \
     tst_camerapolling \

@@ -131,11 +131,13 @@ embedded via `QMAKE_BUNDLE_DATA += splash`.
 | Request authorization, register with APNs | [ios/HardwareUtils.mm](../ios/HardwareUtils.mm) — `HardwareUtils_iOS::platformInit()` (called from `main()` once `QGuiApplication` exists, still inside the launch sequence) |
 | Receive APNs token | `application:didRegisterForRemoteNotificationsWithDeviceToken:` installed at runtime on Qt's application delegate (`hookApplicationDelegate()`) → `HardwareUtils_iOS::handleRegisterNotif()` → `HardwareUtils::setDeviceToken()` |
 | Token registered with `calaos_server` | `CalaosConnection` sends `register_push` at login, and again on `HardwareUtils::deviceTokenChanged()` while logged in (token arriving after the login) |
-| Encrypted payload received in background | `PushNotif.appex` (`ios/PushNotif/NotificationService.m`) — decrypts using keys stored in the shared keychain (`A0SimpleKeychain+KeyPair`) and rewrites the `UNNotificationContent` before display |
+| Push received in background | `PushNotif.appex` (`ios/PushNotif/NotificationService.m`) — badge, camera picture (credentials from the shared keychain), and the admin code stash below; it never decrypts anything |
+| Push key | `HardwareUtils_iOS::loadPushKey()` (from `platformInit()`, again while empty): keychain item `calaos-push-key`, service `CalaosMobile.push` (kept apart from the credentials), group `9WYC46992U.fr.calaos.CalaosMobile`, 32 bytes from `SecRandomCopyBytes`, `AfterFirstUnlockThisDeviceOnly`. Created only when `SecItemCopyMatching` answers `errSecItemNotFound`; any other status (locked before the first unlock…) leaves the key empty until the next try. → `HardwareUtils::setPushKey()` → `push_key` in `register_push` (TLS connections only) |
+| Encrypted admin code arrives (payload `admin_code_*` in `data`, generic `message` as alert, `mutable-content`) | The extension writes the six strings as received plus `received_at` (wall clock, ms) and `received_mono` (`CLOCK_MONOTONIC`, ms) and `notif_id` to `admin_codes/<code_id>.json` in the App Group container (atomic write, never overwritten), then delivers the alert unchanged. Before writing, it drops stash files more than 10 minutes away from now and keeps at most 16 (the app applies the same rule to its own writes). In the foreground `willPresentNotification:` hands it to the app (no banner, the code sheet opens); a tap goes through `didReceiveNotificationResponse:`; on `UIApplicationDidBecomeActiveNotification` the app also looks at the delivered notifications. Each time `captureAdminCode()` stashes it if the extension did not (stamped with the notification's delivery date, wall clock only) and calls `HardwareUtils::handleAdminCodeNotified()`. Consumed or expired codes: file removed and delivered notification withdrawn (`removeAdminCodes()`). Decryption and display: `src/AdminCode.h`, see [mobile.md](mobile.md) section 9.1 |
 | User taps notification while logged in | `userNotificationCenter:didReceiveNotificationResponse:` (app-owned `CalaosNotificationDelegate`) → `HardwareUtils::handleNotificationOpened(uuid)` → `pushNotifReceived(uuid)` → `Application::pushNotificationReceived(uuid)` → QuickFlux dispatch |
 | User taps notification while not logged in (closed, background, reconnecting) | Same entry point; the uuid is kept and `Application::homeLoaded()` opens it once at the next login (`HardwareUtils::takePendingNotif()`, `DeferredNotifGate`: a session that drops before the event is shown hands it back to the next login) |
 | Push **arrives** (no tap), app in the foreground or woken in the background | `application:didReceiveRemoteNotification:fetchCompletionHandler:` (runtime hook on Qt's application delegate) → `HardwareUtils::handleNotificationOpened(uuid)`: the event is opened as if tapped, right away when logged in, otherwise at the next login. Long-standing product behaviour, deliberately unchanged by FIX-3 |
-| Push **arrives** with the app in the foreground | `userNotificationCenter:willPresentNotification:` (`CalaosNotificationDelegate`): an event push is also handed to the app (`pushNotifReceived(uuid)`, the event viewer opens when logged in). The system presentation comes from `foregroundPushPresentation()` in `src/HardwareUtils.h`: banner + list + sound, except an event push while logged in (list + sound, the viewer is already on screen). Never the badge option. A push without `event_uuid` (admin code) is only visible through this banner |
+| Push **arrives** with the app in the foreground | `userNotificationCenter:willPresentNotification:` (`CalaosNotificationDelegate`): an event push is also handed to the app (`pushNotifReceived(uuid)`, the event viewer opens when logged in). The system presentation comes from `foregroundPushPresentation()` in `src/HardwareUtils.h`: banner + list + sound, except an event push while logged in (list + sound, the viewer is already on screen) and an encrypted admin code (list + sound, the code sheet opens). Never the badge option. A legacy admin code text push (no `event_uuid`, no `admin_code_id`) is only visible through this banner |
 | Push **displayed** with the app in the background or killed (icon badge, IOS-3) | `PushNotif.appex` increments `calaos.badge_count` in the App Group suite and sets `bestAttemptContent.badge` to it, first thing, so every path (picture or not, logged out, `serviceExtensionTimeWillExpire`) carries the badge. Needs `mutable-content: 1` in the payload (`calaos_server` sets it on every iOS push); without it the extension does not run and there is no badge |
 | Badge cleared | `resetBadge()` in `ios/HardwareUtils.mm` sets the counter and the badge to 0 at launch (`platformInit()`), on `UIApplicationDidBecomeActiveNotification`, and when a push is presented in the foreground (`willPresentNotification:`, presented without the badge option). `resetAuthKeychain()` ("reset all data") removes the key |
 
@@ -228,8 +230,21 @@ comment at the top of `ios/HardwareUtils.mm`.
 
 - Library: vendored [`A0SimpleKeychain`](https://github.com/auth0/SimpleKeychain) under
   [ios/SimpleKeychain/](../ios/SimpleKeychain).
-- Used by both the main app (credentials) and the push extension (decryption keys),
-  hence the shared `fr.calaos.CalaosMobile` keychain group.
+- Used by both the main app (credentials, push key) and the push extension
+  (credentials for the camera picture), hence the shared
+  `9WYC46992U.fr.calaos.CalaosMobile` keychain group. The push key item
+  (`calaos-push-key`, service `CalaosMobile.push`) is this-device-only and
+  survives "Reset all data" (an approver phone's key is frozen on its box).
+  It shares the access group so the extension could read it, but the
+  extension never does: only the app decrypts.
+
+Copy of an admin code: a `UIPasteboard` item with an expiration date (60 s),
+nothing read back (no paste prompt). It is deliberately **not** local-only:
+Universal Clipboard lets the user paste the code into the web console that is
+often open on a Mac, at the cost of the code reaching the user's other Apple
+devices for that minute. The digits are hidden while the app is not active,
+best effort against the app switcher snapshot (Qt may not redraw before iOS
+takes it).
 - Old [ios/KeychainItemWrapper.m](../ios/KeychainItemWrapper.m) is kept for legacy
   reasons; new code should use `A0SimpleKeychain`.
 

@@ -42,6 +42,7 @@
 #ifdef HAVE_WEBENGINE
 class QQuickWebEngineProfile;
 #endif
+class AdminCodeModel;
 
 class Application : public QAPP
 {
@@ -168,6 +169,8 @@ private:
     CameraModel *cameraModel;
     LangModel *langModel;
     EventLogModel *eventLogModel;
+    //Mobile only: the admin codes pushed to this phone (AdminCodeSheet.qml).
+    AdminCodeModel *adminCodeModel = nullptr;
     UsbDiskModel *usbDiskModel = nullptr;
     OSInstaller *osInstaller = nullptr;
     ControlPanelModel *controlPanelModel = nullptr;

@@ -20,13 +20,31 @@ import fr.calaos.calaoshome.CredentialStore;
 // notification block), which is the shape calaos_server sends to tokens
 // registered with push_format "data". With --ez fail_encrypt true|false
 // (and no data keys) it only toggles CredentialStore.failEncryptForTesting,
-// to exercise the QSettings fallback of a failing Keystore. The receiver
+// to exercise the QSettings fallback of a failing Keystore.
+//
+// Encrypted admin code (src/AdminCode.h): --es push_key <64 hex> replaces the
+// push key (restart the app so it reads it), then the admin_code_* extras are
+// forwarded like the other data keys, e.g. vector 1 of calaos_base
+// docs/08_http_api.md (key 000102...1e1f):
+//
+//   adb shell 'am broadcast -n fr.calaos.calaoshome/.debug.FakePushReceiver \
+//       --es title Calaos --es body "Calaos admin code to open the web console." \
+//       --es admin_code_id 0123456789abcdef --es admin_code_action console_open \
+//       --es admin_code_expires 2026-10-25T09:13:03Z \
+//       --es admin_code_nonce f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff \
+//       --es admin_code_ct 8532d9ecac0a --es admin_code_tag 9e72bd26d3926652bc157819dd26d995'
+//
+// The receiver
 // requires the DUMP permission (adb shell has it), is not compiled into
 // release builds, and refuses to run in a non-debuggable process anyway.
 public class FakePushReceiver extends BroadcastReceiver
 {
     private static final String TAG = "CalaosHome";
-    private static final String[] DATA_KEYS = { "title", "body", "message", "event_uuid" };
+    private static final String[] DATA_KEYS = {
+        "title", "body", "message", "event_uuid",
+        "admin_code_id", "admin_code_action", "admin_code_expires",
+        "admin_code_nonce", "admin_code_ct", "admin_code_tag",
+    };
 
     @Override
     public void onReceive(Context context, Intent intent)
@@ -39,6 +57,14 @@ public class FakePushReceiver extends BroadcastReceiver
             CredentialStore.failEncryptForTesting = intent.getBooleanExtra("fail_encrypt", false);
             Log.i(TAG, "FakePushReceiver: failEncryptForTesting = " + CredentialStore.failEncryptForTesting);
             if (intent.getStringExtra("event_uuid") == null && intent.getStringExtra("body") == null)
+                return;
+        }
+
+        if (intent.hasExtra("push_key"))
+        {
+            boolean ok = CredentialStore.setPushKeyForTesting(context, intent.getStringExtra("push_key"));
+            Log.i(TAG, "FakePushReceiver: push key " + (ok ? "replaced, restart the app" : "refused"));
+            if (intent.getStringExtra("admin_code_id") == null && intent.getStringExtra("body") == null)
                 return;
         }
 

@@ -31,6 +31,7 @@ SOURCES += src/main.cpp \
     $$PWD/src/BookmarkModel.cpp \
     $$PWD/src/ModelImageProvider.cpp \
     $$PWD/src/TlsPinning.cpp \
+    $$PWD/src/AdminCode.cpp \
     $$PWD/src/CalaosOsProtocol.cpp \
     $$PWD/src/UpdateModel.cpp \
     $$PWD/src/AdminRelay.cpp \
@@ -63,6 +64,7 @@ HEADERS += \
     $$PWD/src/BookmarkModel.h \
     $$PWD/src/ModelImageProvider.h \
     $$PWD/src/TlsPinning.h \
+    $$PWD/src/AdminCode.h \
     $$PWD/src/CalaosOsProtocol.h \
     $$PWD/src/UpdateBackend.h \
     $$PWD/src/UpdateModel.h \

@@ -34,6 +34,7 @@
 #include <QHostAddress>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLoggingCategory>
 #include <QSslConfiguration>
 #include <QSslKey>
 #include <QSslSocket>
@@ -466,6 +467,9 @@ private:
 void TstPushNotif::initTestCase()
 {
     s_previousHandler = qInstallMessageHandler(captureMessages);
+    //The log checks below need the qDebug dumps; a Qt that ships with debug output
+    //off by default (Fedora 44, Qt 6.11) would make them vacuous or fail.
+    QLoggingCategory::setFilterRules(QStringLiteral("default.debug=true"));
 
     //The device name override lives in QSettings: a store of our own.
     QCoreApplication::setOrganizationName(QStringLiteral("CalaosTests"));

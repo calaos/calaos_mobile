@@ -86,18 +86,14 @@ void CalaosOsAPI::rebootMachine(std::function<void (const CalaosOsReply &)> call
     call(r, callback);
 }
 
-void CalaosOsAPI::restartApp(std::function<void (bool)> callback)
+void CalaosOsAPI::restartApp(std::function<void (const CalaosOsReply &)> callback)
 {
     Route r;
     r.method = NetworkRequest::HttpPost;
     r.v2Path = QStringLiteral("/system/restart");
     r.legacyPath = QStringLiteral("/api/system/restart");
     r.legacyShape = LegacyBody::Output;
-    call(r, [callback](const CalaosOsReply &reply)
-    {
-        if (callback)
-            callback(reply.ok);
-    });
+    call(r, callback);
 }
 
 void CalaosOsAPI::getFsStatus(std::function<void (bool, const QJsonValue &)> callback)

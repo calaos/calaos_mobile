@@ -167,6 +167,14 @@
         <translation type="unfinished">Neustart</translation>
     </message>
     <message>
+        <source>The application could not be restarted.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restart</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../src/Application.cpp" line="910"/>
         <source>An update is being installed. Reboot once it has finished.</source>
         <translation type="unfinished"></translation>

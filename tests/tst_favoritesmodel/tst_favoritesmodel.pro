@@ -3,6 +3,10 @@ TARGET = tst_favoritesmodel
 
 include(../common.pri)
 
+# The vptr check wants the typeinfo of the class behind a pointer, which this
+# test deliberately does not link.
+QMAKE_CXXFLAGS += -fno-sanitize=vptr
+
 # FavoritesModel.cpp rebuilds its rows from IOCache::Instance() and
 # IOBase::cloneIO(), both defined in src/RoomModel.cpp, so a real IOBase is
 # needed. HomeModel.cpp is needed for RoomItem, used by HomeFavModel::load()

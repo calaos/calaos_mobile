@@ -29,7 +29,7 @@
     protected: \
         Q_PROPERTY (type name READ get_##name NOTIFY name##Changed) \
     private: \
-        type m_##name; \
+        type m_##name {}; \
     public: \
         type get_##name () const { \
             return m_##name ; \

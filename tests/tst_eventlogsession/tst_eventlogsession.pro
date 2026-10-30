@@ -3,6 +3,10 @@ TARGET = tst_eventlogsession
 
 include(../common.pri)
 
+# The vptr check wants the typeinfo of the class behind a pointer, which this
+# test deliberately does not link.
+QMAKE_CXXFLAGS += -fno-sanitize=vptr
+
 # Event log over a real session (EVLOG-1): a real CalaosConnection and a real
 # EventLogModel, wired like Application (homeLoaded -> refresh()), against a
 # fake calaos_server websocket and a fake api.php in process. Every way a

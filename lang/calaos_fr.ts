@@ -167,14 +167,6 @@
         <translation type="unfinished">Redémarrer</translation>
     </message>
     <message>
-        <source>The application could not be restarted.</source>
-        <translation type="unfinished">Le redémarrage de l'application a échoué.</translation>
-    </message>
-    <message>
-        <source>Restart</source>
-        <translation type="unfinished">Redémarrer</translation>
-    </message>
-    <message>
         <location filename="../src/Application.cpp" line="910"/>
         <source>An update is being installed. Reboot once it has finished.</source>
         <translation type="unfinished"></translation>
@@ -2864,6 +2856,18 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <location filename="../src/UpdateManager.cpp" line="904"/>
         <source>Upgrade failed: %1</source>
         <translation>Échec de la mise à jour : %1</translation>
+    </message>
+    <message>
+        <source>An update is being installed. Restart once it has finished.</source>
+        <translation>Une mise à jour est en cours d&apos;installation. Redémarrez une fois terminée.</translation>
+    </message>
+    <message>
+        <source>The application could not be restarted.</source>
+        <translation>Le redémarrage de l&apos;application a échoué.</translation>
+    </message>
+    <message>
+        <source>Restart</source>
+        <translation>Redémarrer</translation>
     </message>
 </context>
 <context>

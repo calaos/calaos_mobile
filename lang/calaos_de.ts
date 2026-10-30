@@ -167,14 +167,6 @@
         <translation type="unfinished">Neustart</translation>
     </message>
     <message>
-        <source>The application could not be restarted.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Restart</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../src/Application.cpp" line="910"/>
         <source>An update is being installed. Reboot once it has finished.</source>
         <translation type="unfinished"></translation>
@@ -2840,6 +2832,18 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <location filename="../src/UpdateManager.cpp" line="904"/>
         <source>Upgrade failed: %1</source>
         <translation>Update fehlgeschlagen: %1</translation>
+    </message>
+    <message>
+        <source>An update is being installed. Restart once it has finished.</source>
+        <translation>Ein Update wird installiert. Starten Sie nach Abschluss neu.</translation>
+    </message>
+    <message>
+        <source>The application could not be restarted.</source>
+        <translation>Die Anwendung konnte nicht neu gestartet werden.</translation>
+    </message>
+    <message>
+        <source>Restart</source>
+        <translation>Neustart</translation>
     </message>
 </context>
 <context>

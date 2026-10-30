@@ -557,7 +557,7 @@ private:
         else if (req.method == "POST" && p == QStringLiteral("/system/restart"))
         {
             if (restartRefused)
-                err(s, 409, "restart_refused", "restart not allowed now");
+                busyError(s);
             else
             {
                 restarts++;
@@ -611,6 +611,16 @@ private:
             else
             {
                 reboots++;
+                json(s, 200, QJsonObject{{ "error", false }, { "msg", "ok" }});
+            }
+        }
+        else if (req.method == "POST" && p == QStringLiteral("/api/system/restart"))
+        {
+            if (restartRefused)
+                json(s, 409, inProgress);
+            else
+            {
+                restarts++;
                 json(s, 200, QJsonObject{{ "error", false }, { "msg", "ok" }});
             }
         }
@@ -673,6 +683,7 @@ private slots:
     void checkDuringUpgradeKeepsDaemonAvailable();
     void rebootDuringUpgradeIsRefused_data();
     void rebootDuringUpgradeIsRefused();
+    void restartRefusedIsReported_data();
     void restartRefusedIsReported();
 
 private:
@@ -1219,33 +1230,37 @@ void TstUpdateClient::rebootDuringUpgradeIsRefused()
     QCOMPARE(daemon.reboots, 1);
 }
 
+void TstUpdateClient::restartRefusedIsReported_data()
+{
+    QTest::addColumn<bool>("hasV2");
+    QTest::newRow("v2") << true;
+    QTest::newRow("legacy") << false;
+}
+
 void TstUpdateClient::restartRefusedIsReported()
 {
+    QFETCH(bool, hasV2);
+
     FakeDaemon daemon;
     daemon.token = makeToken('f');
+    daemon.hasV2 = hasV2;
     writeToken(daemon.token);
     QVERIFY(daemon.start());
-
-    CalaosOsAPI api;
-    api.setBaseAddr(daemon.baseAddr());
-    api.setTokenFile(m_tokenPath);
+    startClient(daemon);
 
     daemon.restartRefused = true;
-    bool done = false;
-    CalaosOsReply reply;
-    api.restartApp([&](const CalaosOsReply &r) { reply = r; done = true; });
-    QTRY_VERIFY(done);
-    QVERIFY(!reply.ok);
-    QCOMPARE(reply.httpStatus, 409);
-    QVERIFY(!reply.error.isEmpty());
+    m_mgr->restartApp();
+    QTRY_COMPARE(dispatchedOf("showNotificationMsg").size(), 1);
     QCOMPARE(daemon.restarts, 0);
+    const QVariantMap m = dispatchedOf("showNotificationMsg").first().message;
+    QCOMPARE(m.value("title").toString(), QStringLiteral("Restart"));
+    QVERIFY(m.value("message").toString().contains(QStringLiteral("update is being installed")));
 
     daemon.restartRefused = false;
-    done = false;
-    api.restartApp([&](const CalaosOsReply &r) { reply = r; done = true; });
-    QTRY_VERIFY(done);
-    QVERIFY(reply.ok);
-    QCOMPARE(daemon.restarts, 1);
+    m_mgr->restartApp();
+    QTRY_COMPARE(daemon.restarts, 1);
+    QTest::qWait(200);
+    QCOMPARE(dispatchedOf("showNotificationMsg").size(), 1);
 }
 
 static QJsonObject kernelPackages()

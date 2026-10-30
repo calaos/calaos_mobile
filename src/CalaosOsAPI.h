@@ -22,7 +22,7 @@ public:
 
     //reply.upgradeInProgress: refused because an upgrade runs (409)
     void rebootMachine(std::function<void(const CalaosOsReply &reply)> callback) override;
-    //reply.httpStatus 409: the daemon refused (service or restart guard)
+    //reply.upgradeInProgress: refused because an upgrade runs (409)
     void restartApp(std::function<void(const CalaosOsReply &reply)> callback);
     void getFsStatus(std::function<void(bool success, const QJsonValue &res)> callback);
 

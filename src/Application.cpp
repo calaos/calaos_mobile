@@ -954,21 +954,7 @@ void Application::restartApp()
 {
     qInfo() << "Restart of calaos_home requested";
 #ifdef CALAOS_DESKTOP
-    CalaosOsAPI::Instance()->restartApp([this](const CalaosOsReply &reply)
-    {
-        if (reply.ok)
-            return;
-
-        //no local fallback: the daemon owns the restart guards
-        QString msg = tr("The application could not be restarted.");
-        if (!reply.error.isEmpty())
-            msg += QStringLiteral(" ") + reply.error;
-        QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(&engine);
-        QVariantMap m = {{ "title", tr("Restart") },
-                         { "message", msg },
-                         { "button", tr("Close") }};
-        appDispatcher->dispatch("showNotificationMsg", m);
-    });
+    updateManager->restartApp();
 #endif
 }
 

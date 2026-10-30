@@ -77,6 +77,7 @@
 #include <QJsonObject>
 #include <QTcpServer>
 #include <QTcpSocket>
+#include <QTemporaryDir>
 
 #include "CalaosConnection.h"
 #include "HardwareUtils.h"
@@ -300,6 +301,7 @@ private:
     //has done it by then.
     static void settle() { QTest::qWait(ReconnectPolicy::BaseDelayMs + 500); }
 
+    QTemporaryDir *settingsDir = nullptr;
     FakeApiServer *server = nullptr;
     CalaosConnection *connection = nullptr;
 };
@@ -310,11 +312,19 @@ void TstSessionLifecycle::initTestCase()
     //our own, emptied before every case.
     QCoreApplication::setOrganizationName(QStringLiteral("CalaosTests"));
     QCoreApplication::setApplicationName(QStringLiteral("tst_sessionlifecycle"));
+
+    //Per-run settings directory: never touch (or clear) the user's real store.
+    settingsDir = new QTemporaryDir();
+    QVERIFY(settingsDir->isValid());
+    QSettings::setPath(QSettings::NativeFormat, QSettings::UserScope, settingsDir->path());
+    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, settingsDir->path());
 }
 
 void TstSessionLifecycle::cleanupTestCase()
 {
     clearStore();
+    delete settingsDir;
+    settingsDir = nullptr;
 }
 
 void TstSessionLifecycle::init()

@@ -14,7 +14,6 @@ Item {
     property var codeModel: typeof adminCodeModel !== "undefined" ? adminCodeModel : null
     readonly property var codes: codeModel ? codeModel.codes : []
     readonly property int lifetime: codeModel ? codeModel.lifetime : 60
-    readonly property bool unreadable: codeModel ? codeModel.unreadable === true : false
     //Not drawn while the app is not in front: best effort against the iOS
     //app switcher snapshot (Android uses FLAG_SECURE).
     readonly property bool concealed: Qt.application.state !== Qt.ApplicationActive
@@ -180,16 +179,6 @@ Item {
                             }
                         }
                     }
-                }
-
-                Text {
-                    objectName: "adminCodeUnreadable"
-                    Layout.fillWidth: true
-                    visible: host.unreadable
-                    wrapMode: Text.Wrap
-                    color: Theme.amberColor
-                    font { family: host.fontFamily; pixelSize: Units.dp(14) }
-                    text: qsTr("A code arrived but could not be read on this phone.")
                 }
 
                 Text {

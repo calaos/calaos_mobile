@@ -368,8 +368,8 @@ code: [src/AdminCode.h](../src/AdminCode.h),
   admin code notification (an approver's key is frozen on its box, replacing
   it would lock the phone out). Reported with `HardwareUtils::setPushKey()`;
   `register_push` carries it as `push_key` (64 lowercase hex, WebSocket
-  `data` and HTTP root alike) **over TLS only** (`wss://`, `https://`; never
-  on a plain `ws://`/`http://` connection) and is sent again when it changes
+  `data` and HTTP root alike) with every registration, plain `ws://`/`http://`
+  included, and is sent again when it changes
   (`PushRegistration` keys on token, name and key). Redacted from the HTTP
   debug dump. "Reset all data" keeps it: the box freezes the
   key of an approver phone. No key (desktop, key store failure) → no
@@ -393,9 +393,8 @@ code: [src/AdminCode.h](../src/AdminCode.h),
   never needs the box to read a code. Per entry: shapes checked first
   (action in the table, strict `expires`, lowercase hex lengths), then the
   tag recomputed from the strings as received and compared in constant time,
-  then `code = ct XOR ks[0..6)`. A rejected entry is dropped (one warning
-  without values) and the sheet says "A code arrived but could not be read on
-  this phone", so an approver knows its key must be recovered. Without a key
+  then `code = ct XOR ks[0..6)`. A rejected entry is dropped silently: one
+  warning without values, the sheet does not open. Without a key
   yet, nothing is decrypted and the stash is left untouched. The sheet lists the codes newest first with the
   purpose, the 6 digits, a 1 s countdown and a draining bar, and Copy
   (iOS: pasteboard item expiring after 60 s; Android: `ClipData` flagged

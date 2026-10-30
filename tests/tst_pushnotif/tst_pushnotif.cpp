@@ -430,7 +430,7 @@ private slots:
     void wsRotationWhileConnectedRegistersAgain();
     void wsRenameWhileConnectedRegistersAgain();
     void wsSendsThePushKeyAndItsChanges();
-    void plainTransportsNeverSendThePushKey();
+    void plainTransportsSendThePushKey();
 
     //No token in clear in the logs, whatever ran above.
     void cleanupTestCase();
@@ -1597,9 +1597,8 @@ void TstPushNotif::wsSendsThePushKeyAndItsChanges()
     QCOMPARE(ws->received.count(QStringLiteral("login")), 1);
 }
 
-//http:// and ws://: the key would cross the network in clear, so it is left
-//out (the box keeps the key it knows, or pushes the legacy text).
-void TstPushNotif::plainTransportsNeverSendThePushKey()
+//The contract sends the key with every registration, on http:// and ws:// too.
+void TstPushNotif::plainTransportsSendThePushKey()
 {
     hw()->setDeviceToken(freshToken());
     hw()->setPushKey(testKey('\x33'));
@@ -1608,18 +1607,20 @@ void TstPushNotif::plainTransportsNeverSendThePushKey()
     QVERIFY(http->listen(QHostAddress::LocalHost, 0));
     startConnection(http->baseUrl());
     QTRY_COMPARE(http->registrations.size(), 1);
-    QVERIFY(!http->registrations.at(0).contains(QStringLiteral("push_key")));
-    //A key change is no reason to send anything either.
+    QCOMPARE(http->registrations.at(0).value(QStringLiteral("push_key")).toString(),
+             QStringLiteral("33").repeated(32));
     hw()->setPushKey(testKey('\x34'));
-    pump(200);
-    QCOMPARE(http->registrations.size(), 1);
+    QTRY_COMPARE(http->registrations.size(), 2);
+    QCOMPARE(http->registrations.at(1).value(QStringLiteral("push_key")).toString(),
+             QStringLiteral("34").repeated(32));
     cleanup();
 
     ws = new FakeWsServer();
     QVERIFY(ws->listen(QHostAddress::LocalHost, 0));
     startConnection(ws->url());
     QTRY_COMPARE(ws->registrations.size(), 1);
-    QVERIFY(!ws->registrations.at(0).contains(QStringLiteral("push_key")));
+    QCOMPARE(ws->registrations.at(0).value(QStringLiteral("push_key")).toString(),
+             QStringLiteral("34").repeated(32));
 }
 
 // ---------------------------------------------------------------- push format

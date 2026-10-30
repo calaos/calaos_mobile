@@ -351,10 +351,7 @@ void AdminCodeModel::refresh()
     }
 
     if (rejected > 0)
-    {
         qWarning() << "Admin code:" << rejected << "payload(s) rejected (malformed or bad tag)";
-        m_unreadable = true;
-    }
     if (!dropped.isEmpty())
         m_hw->removeAdminCodes(dropped);
 
@@ -370,7 +367,7 @@ void AdminCodeModel::refresh()
 
     tick();
 
-    if (added || rejected > 0)
+    if (added)
         emit showRequested();
 }
 
@@ -479,7 +476,6 @@ void AdminCodeModel::close()
         wipe(s.code);
     }
     m_shown.clear();
-    m_unreadable = false;
     m_tick.stop();
     if (!ids.isEmpty())
         m_hw->removeAdminCodes(ids);

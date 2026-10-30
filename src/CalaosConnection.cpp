@@ -854,11 +854,7 @@ void CalaosConnection::registerPushToken()
 
     const QString token = HardwareUtils::Instance()->getDeviceToken();
     const QString name = HardwareUtils::Instance()->effectiveDeviceName();
-    //Over TLS only: the key must never cross the network in clear.
-    const QString endpoint = isWebsocket() ? wshost : httphost;
-    const QString scheme = QUrl(endpoint).scheme().toLower();
-    const bool tls = scheme == QLatin1String("wss") || scheme == QLatin1String("https");
-    const QByteArray pushKey = tls ? HardwareUtils::Instance()->pushKey() : QByteArray();
+    const QByteArray pushKey = HardwareUtils::Instance()->pushKey();
     if (!pushRegistration.shouldRegister(token, name, pushKey))
         return;
 

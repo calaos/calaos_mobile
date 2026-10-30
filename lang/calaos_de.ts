@@ -59,11 +59,6 @@
         <translation>Kopieren</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/AdminCodeSheet.qml" line="192"/>
-        <source>A code arrived but could not be read on this phone.</source>
-        <translation>Ein Code ist eingetroffen, konnte auf diesem Telefon aber nicht gelesen werden.</translation>
-    </message>
-    <message>
         <location filename="../qml/mobile/AdminCodeSheet.qml" line="201"/>
         <source>Type it in the Calaos web console. Never give it to anyone.</source>
         <translation>Geben Sie ihn in der Calaos-Webkonsole ein. Geben Sie ihn niemals weiter.</translation>

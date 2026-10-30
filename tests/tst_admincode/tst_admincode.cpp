@@ -448,14 +448,13 @@ void TstAdminCode::modelShowsNewestFirst()
     //Forged on purpose (same tag under another id): never shown.
     stash(third);
     QSignalSpy show(&m, &AdminCodeModel::showRequested);
-    QVERIFY(!m.unreadable());
+    //Exact text: the log carries a count, no value of the payload.
+    QTest::ignoreMessage(QtWarningMsg, "Admin code: 1 payload(s) rejected (malformed or bad tag)");
     m.refresh();
     QCOMPARE(m.codes().size(), 2);
-    //Told, without any value: the sheet says a code could not be read.
-    QCOMPARE(show.count(), 1);
-    QVERIFY(m.unreadable());
+    QCOMPARE(show.count(), 0);
+    QVERIFY(!stashedIds().contains(third.codeId));
     m.close();
-    QVERIFY(!m.unreadable());
 }
 
 void TstAdminCode::modelDropsExpiredAndForged()
@@ -473,11 +472,11 @@ void TstAdminCode::modelDropsExpiredAndForged()
     AdminCodeModel m(hw());
     m.setClocks([this] { return wall; }, [this] { return mono; });
     QSignalSpy show(&m, &AdminCodeModel::showRequested);
+    QTest::ignoreMessage(QtWarningMsg, "Admin code: 2 payload(s) rejected (malformed or bad tag)");
     m.setReady();
 
     QCOMPARE(m.codes().size(), 0);
-    QCOMPARE(show.count(), 1);
-    QVERIFY(m.unreadable());
+    QCOMPARE(show.count(), 0);
     QCOMPARE(stashedIds(), QStringList());
 }
 
@@ -569,7 +568,6 @@ void TstAdminCode::modelWithoutKeyKeepsTheStash()
     m.setReady();
     QCOMPARE(m.codes().size(), 0);
     QCOMPARE(show.count(), 0);
-    QVERIFY(!m.unreadable());
     QCOMPARE(stashedIds(), QStringList { QStringLiteral("0123456789abcdef") });
 
     //The key is back: the next notification shows the code.

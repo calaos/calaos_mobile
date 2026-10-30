@@ -2833,6 +2833,18 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <source>Upgrade failed: %1</source>
         <translation>Update fehlgeschlagen: %1</translation>
     </message>
+    <message>
+        <source>An update is being installed. Restart once it has finished.</source>
+        <translation>Ein Update wird installiert. Starten Sie nach Abschluss neu.</translation>
+    </message>
+    <message>
+        <source>The application could not be restarted.</source>
+        <translation>Die Anwendung konnte nicht neu gestartet werden.</translation>
+    </message>
+    <message>
+        <source>Restart</source>
+        <translation>Neustart</translation>
+    </message>
 </context>
 <context>
     <name>UpdateProgressPanel</name>

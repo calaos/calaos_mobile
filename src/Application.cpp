@@ -954,7 +954,7 @@ void Application::restartApp()
 {
     qInfo() << "Restart of calaos_home requested";
 #ifdef CALAOS_DESKTOP
-    CalaosOsAPI::Instance()->restartApp({});
+    updateManager->restartApp();
 #endif
 }
 

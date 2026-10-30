@@ -33,6 +33,10 @@
 #include "UsbDisk.h"
 #include "ControlPanelModel.h"
 #include "UpdateManager.h"
+#include "AdminRelay.h"
+#include "AdminRelayBackend.h"
+#include "AdminUpdates.h"
+#include "ResumePolicy.h"
 #include "BookmarkModel.h"
 
 #ifdef HAVE_WEBENGINE
@@ -73,6 +77,10 @@ public:
 
     //Pinned server certificates, for the settings: {host, fingerprint}.
     QML_READONLY_PROPERTY(QVariantList, tlsPinList)
+    //iOS: the page stack survives the current background cycle, see
+    //ResumePolicy. main.qml neither pops to the login screen nor pushes the
+    //home page while it is set.
+    QML_READONLY_PROPERTY(bool, keepPageOnResume)
 
 public:
     Application(int &argc, char **argv);
@@ -164,6 +172,14 @@ private:
     OSInstaller *osInstaller = nullptr;
     ControlPanelModel *controlPanelModel = nullptr;
     UpdateManager *updateManager = nullptr;
+    //mobile: box updates through calaos_server's admin relay
+    AdminRelay *adminRelay = nullptr;
+    AdminRelayBackend *adminBackend = nullptr;
+    AdminUpdates *boxUpdates = nullptr;
+
+    ResumePolicy resumePolicy;
+    //Mirrors resumePolicy into keepPageOnResume, before any status change.
+    void syncKeepPage() { update_keepPageOnResume(resumePolicy.keepPage()); }
     BookmarkModel *bookmarkModel = nullptr;
 
 #ifdef HAVE_WEBENGINE

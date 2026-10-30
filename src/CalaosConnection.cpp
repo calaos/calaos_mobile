@@ -12,12 +12,15 @@ static const QStringList &credentialKeys()
     //"u" and "p" are not JSON keys but the short query parameters of the
     //legacy v1 camera url, so they stay literals here (see JsonKeys.h).
     //JsonKeys::Token is the push token sent by register_push: a per-device
-    //credential as well (FIX-3).
+    //credential as well (FIX-3). The admin keys belong to the admin relay.
     static const QStringList keys = { JsonKeys::CnUser,
                                       JsonKeys::CnPass,
                                       JsonKeys::Token,
                                       QStringLiteral("u"),
-                                      QStringLiteral("p") };
+                                      QStringLiteral("p"),
+                                      QStringLiteral("admin_pass"),
+                                      QStringLiteral("admin_session"),
+                                      QStringLiteral("new_pass") };
     return keys;
 }
 
@@ -233,6 +236,7 @@ void CalaosConnection::answerTlsTrust(bool accept)
         pins()->setPin(key, spki);
     }
     tlsRefused.remove(key + QLatin1Char('|') + spki);
+    emit tlsTrustAccepted(key);
 
     //An explicit answer: start over now, like a tap on Login. Refused while
     //an attempt is in flight or a session is up, which then simply goes on.
@@ -1646,6 +1650,17 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
         //that request only (EVLOG-1), a page and a single event can no
         //longer be taken for one another, nor a late answer for a newer one.
         finishEventLogRequest(jroot[JsonKeys::MsgId].toString(), true, jdata.toVariantMap());
+    }
+    else if (jroot[JsonKeys::Msg] == "admin_unlock" ||
+             jroot[JsonKeys::Msg] == "admin_set" ||
+             jroot[JsonKeys::Msg] == "admin")
+    {
+        emit adminReplyReceived(jroot[JsonKeys::Msg].toString(),
+                                jroot[JsonKeys::MsgId].toString(), jdata);
+    }
+    else if (jroot[JsonKeys::Msg] == "admin_event")
+    {
+        emit adminEventReceived(jdata);
     }
     else if (jroot[JsonKeys::Msg] == "settings")
     {

@@ -201,6 +201,21 @@ comment at the top of `ios/HardwareUtils.mm`.
   `nm -u CalaosHome.app/CalaosHome | grep -E '^_(f|l)?stat(at)?$|statv?fs|getattrlist|mach_absolute_time|CFPreferences|NSUserDefaults'`
   and `strings -a CalaosHome.app/CalaosHome | grep -xE 'systemUptime|activeInputModes'`.
 - Native alerts go through [ios/AlertPrompt.m](../ios/AlertPrompt.m).
+- Password AutoFill (iCloud Keychain, 1Password) only works on real UIKit text
+  fields. Qt 6.12's text responder (`QIOSTextInputResponder`) has no
+  `textContentType`, and is never `secureTextEntry` for a QML password field:
+  `QQuickTextInputPrivate::effectiveInputMethodHints()` removes `ImhHiddenText`
+  for `Password` echo (Qt draws the bullets itself), and the responder maps
+  only `ImhHiddenText` to `secureTextEntry`. A runtime `textContentType` on
+  the responder was tried and did not bring AutoFill (UIKit also reads the
+  traits only when the responder becomes first responder). So the admin
+  password (updates page) and the login password are typed in a native
+  `UIAlertController` with two `UITextField`s (username prefilled,
+  `UITextContentTypeUsername`; password `secureTextEntry`,
+  `UITextContentTypePassword`, no autocorrection) through
+  `HardwareUtils::requestNativePassword()`: one answer, fields wiped, nothing
+  stored or logged. Without Associated Domains, iOS offers the saved entries
+  from the Passwords key rather than a suggestion for the box's site.
 - 3D Touch / Quick Actions: the app uses scenes (Qt does), so UIKit hands them to the
   window scene delegate: `windowScene:performActionForShortcutItem:completionHandler:`
   (app running) or the connection options of `scene:willConnectToSession:options:`

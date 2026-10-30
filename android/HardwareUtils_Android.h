@@ -30,6 +30,8 @@ public:
 
     virtual void inputTextDialog(const QString &title, const QString &message);
 
+    bool hasNativePasswordEntry() const override;
+
     virtual QString getDeviceName();
 
     //Credentials and server host live on the Java side (CredentialStore:
@@ -47,7 +49,13 @@ public:
     //CredentialStore's copy of the TLS pins, for PushPictureWorker.
     virtual void setTlsPins(const QVariantMap &pins);
 
+protected:
+    bool showNativePasswordEntry(const QString &purpose, const QVariantMap &options) override;
+
 private:
+    //JNI callbacks registered: the native dialogs can answer
+    bool nativesRegistered = false;
+
     //Qt's Android backend (ConnectivityManager default-network callback) feeds
     //QNetworkInformation; its changes become networkStatusChanged(), like
     //Reachability does on iOS.

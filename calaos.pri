@@ -30,7 +30,12 @@ SOURCES += src/main.cpp \
     $$PWD/src/EventLogModel.cpp \
     $$PWD/src/BookmarkModel.cpp \
     $$PWD/src/ModelImageProvider.cpp \
-    $$PWD/src/TlsPinning.cpp
+    $$PWD/src/TlsPinning.cpp \
+    $$PWD/src/CalaosOsProtocol.cpp \
+    $$PWD/src/UpdateModel.cpp \
+    $$PWD/src/AdminRelay.cpp \
+    $$PWD/src/AdminRelayBackend.cpp \
+    $$PWD/src/AdminUpdates.cpp
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH = qml
@@ -57,7 +62,16 @@ HEADERS += \
     $$PWD/src/EventLogModel.h \
     $$PWD/src/BookmarkModel.h \
     $$PWD/src/ModelImageProvider.h \
-    $$PWD/src/TlsPinning.h
+    $$PWD/src/TlsPinning.h \
+    $$PWD/src/CalaosOsProtocol.h \
+    $$PWD/src/UpdateBackend.h \
+    $$PWD/src/UpdateModel.h \
+    $$PWD/src/UpdateGrouping.h \
+    $$PWD/src/ResumePolicy.h \
+    $$PWD/src/AdminTransport.h \
+    $$PWD/src/AdminRelay.h \
+    $$PWD/src/AdminRelayBackend.h \
+    $$PWD/src/AdminUpdates.h
 
 win32 {
 LIBS += -liphlpapi

@@ -98,6 +98,34 @@ void jniEmitDialogCancel(JNIEnv *, jclass)
     }, Qt::QueuedConnection);
 }
 
+void jniEmitPasswordEntered(JNIEnv *, jclass, jstring purpose, jstring user, jstring password)
+{
+    HardwareUtilsAndroid *hw = s_instance.data();
+    if (!hw)
+        return;
+
+    const QString p = QJniObject(purpose).toString();
+    const QString u = QJniObject(user).toString();
+    const QString pw = QJniObject(password).toString();
+    QMetaObject::invokeMethod(hw, [hw, p, u, pw]()
+    {
+        hw->emitNativePassword(p, u, pw);
+    }, Qt::QueuedConnection);
+}
+
+void jniEmitPasswordCanceled(JNIEnv *, jclass, jstring purpose)
+{
+    HardwareUtilsAndroid *hw = s_instance.data();
+    if (!hw)
+        return;
+
+    const QString p = QJniObject(purpose).toString();
+    QMetaObject::invokeMethod(hw, [hw, p]()
+    {
+        hw->emitNativePasswordCanceled(p);
+    }, Qt::QueuedConnection);
+}
+
 void jniEmitDeviceToken(JNIEnv *, jclass, jstring token)
 {
     HardwareUtilsAndroid *hw = s_instance.data();
@@ -152,6 +180,8 @@ void HardwareUtilsAndroid::platformInit(QQmlApplicationEngine *e)
         { "emitDialogCancel", "()V", reinterpret_cast<void *>(jniEmitDialogCancel) },
         { "emitDeviceToken", "(Ljava/lang/String;)V", reinterpret_cast<void *>(jniEmitDeviceToken) },
         { "emitNotificationOpened", "(Ljava/lang/String;)V", reinterpret_cast<void *>(jniEmitNotificationOpened) },
+        { "emitPasswordEntered", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V", reinterpret_cast<void *>(jniEmitPasswordEntered) },
+        { "emitPasswordCanceled", "(Ljava/lang/String;)V", reinterpret_cast<void *>(jniEmitPasswordCanceled) },
     });
     clearJavaException("registerNativeMethods");
     if (!ok)
@@ -159,6 +189,8 @@ void HardwareUtilsAndroid::platformInit(QQmlApplicationEngine *e)
         qWarning() << "Android: failed to register native methods on" << kNativesClass;
         return;
     }
+
+    nativesRegistered = true;
 
     //From now on Java forwards token refreshes and notification taps.
     QJniObject::callStaticMethod<void>(kHardwareUtilsClass, "setNativesReady", "()V");
@@ -345,6 +377,34 @@ void HardwareUtilsAndroid::inputTextDialog(const QString &title, const QString &
             emitDialogCancel();
         }, Qt::QueuedConnection);
     }
+}
+
+bool HardwareUtilsAndroid::hasNativePasswordEntry() const
+{
+    //the natives the dialog answers through
+    return nativesRegistered;
+}
+
+bool HardwareUtilsAndroid::showNativePasswordEntry(const QString &purpose, const QVariantMap &options)
+{
+    auto str = [&options](const char *key)
+    {
+        return QJniObject::fromString(options.value(QLatin1String(key)).toString());
+    };
+    QJniObject jPurpose = QJniObject::fromString(purpose);
+    QJniObject jTitle = str("title"), jMessage = str("message"), jUser = str("user"),
+               jUserLabel = str("userLabel"), jPassLabel = str("passwordLabel"),
+               jConfirm = str("confirm"), jCancel = str("cancel");
+
+    const jboolean shown = QJniObject::callStaticMethod<jboolean>(kHardwareUtilsClass,
+        "passwordDialog",
+        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;"
+        "Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z",
+        jPurpose.object<jstring>(), jTitle.object<jstring>(), jMessage.object<jstring>(),
+        jUser.object<jstring>(), jUserLabel.object<jstring>(), jPassLabel.object<jstring>(),
+        jConfirm.object<jstring>(), jCancel.object<jstring>());
+    const bool failed = clearJavaException("HardwareUtils.passwordDialog");
+    return shown && !failed;
 }
 
 //Returns false when Java could not store the pair (Keystore failure).

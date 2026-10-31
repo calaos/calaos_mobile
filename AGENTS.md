@@ -114,6 +114,11 @@ docs/               Refactoring board (BOARD.md) and tickets (tasks/), in French
   rules in [`CalaosOsProtocol`](src/CalaosOsProtocol.h). The update flow is
   [`UpdateManager`](src/UpdateManager.h) (also uses the `/api/v2/events`
   WebSocket, `/api/events` on an old daemon).
+- **Box date and time (kiosk)**: `/api/v2/system/time` only, a daemon without it
+  gets a request to update the box, not a legacy fallback. Rules without Qt
+  Quick in [`BoxTime`](src/BoxTime.h), state and writes in
+  [`BoxTimeManager`](src/BoxTimeManager.h) (context property `boxTime`), page in
+  `qml/desktop/ConfigTimeView.qml`. Nothing of it exists on mobile.
 - **Box updates from mobile**: no daemon access, the phone goes through
   calaos_server's admin relay with the admin password
   ([`AdminRelay`](src/AdminRelay.h) on the household WebSocket,

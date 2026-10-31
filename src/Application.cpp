@@ -22,6 +22,7 @@
 #include "ScreenManager.h"
 #include "UserInfoModel.h"
 #include "CalaosOsAPI.h"
+#include "BoxTimeManager.h"
 #ifdef HAVE_WEBENGINE
 #include <QQuickWebEngineProfile>
 #endif
@@ -422,6 +423,10 @@ void Application::createQmlApp()
     engine.rootContext()->setContextProperty("updateCalaosModel", updateManager->calaosModel());
     engine.rootContext()->setContextProperty("updateGroupsModel", updateManager->groupsModel());
     engine.rootContext()->setContextProperty("updateProgressModel", updateManager->progressModel());
+
+    boxTime = new BoxTimeManager(CalaosOsAPI::Instance(), this);
+    boxTime->setLanguage(HardwareUtils::Instance()->getConfigOption("lang"));
+    engine.rootContext()->setContextProperty("boxTime", boxTime);
 
     //network info timer
     updateNetworkInfo();
@@ -1031,6 +1036,10 @@ void Application::setLanguage(QString code)
 {
     HardwareUtils::Instance()->setConfigOption("lang", code);
     setupLanguage();
+#ifdef CALAOS_DESKTOP
+    if (boxTime)
+        boxTime->setLanguage(code);
+#endif
 }
 
 void Application::pushNotificationReceived(const QString &uuid)

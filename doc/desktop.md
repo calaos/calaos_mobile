@@ -78,7 +78,8 @@ These are added by [desktop.pro](../desktop.pro) on top of the shared list in
 | File | Role |
 |---|---|
 | [src/HardwareUtils_desktop.cpp](../src/HardwareUtils_desktop.cpp) | Desktop platform impl (settings via `QSettings`, no keychain, no push notif). |
-| [src/CalaosOsAPI.cpp](../src/CalaosOsAPI.cpp) | REST client for Calaos OS local daemon: `getFsStatus`, `rebootMachine`, `restartApp`, `rollbackSnapshot`, `listInstallDevices`, `startInstallation`, `getNetworkInterfaces`, `getSystemInfo`, `configureNetwork`. Singleton. |
+| [src/CalaosOsAPI.cpp](../src/CalaosOsAPI.cpp) | REST client for Calaos OS local daemon: `getFsStatus`, `rebootMachine`, `restartApp`, `rollbackSnapshot`, `listInstallDevices`, `startInstallation`, `getNetworkInterfaces`, `getSystemInfo`, `configureNetwork`, `getBoxTime`, `setBoxTime`, `getTimezones`, `restartService`. Singleton. |
+| [src/BoxTimeManager.cpp](../src/BoxTimeManager.cpp), [src/BoxTime.cpp](../src/BoxTime.cpp) | Date and time of the box for `ConfigTimeView.qml` (`boxTime`): reads and writes through `CalaosOsAPI` on `/api/v2/system/time` only, restart after a time zone change. |
 | [src/CalaosWidget.cpp](../src/CalaosWidget.cpp), [src/CalaosWidgetModel.cpp](../src/CalaosWidgetModel.cpp) | Desktop widget system — load/save widget instances and positions to disk. |
 | [src/ControlPanelModel.cpp](../src/ControlPanelModel.cpp) | Model backing the configuration / control panel screens. |
 | [src/OSInstaller.cpp](../src/OSInstaller.cpp) | Wizard for installing Calaos OS onto a USB / disk target (only enabled when running from a live medium). |
@@ -127,8 +128,8 @@ Key views in [qml/desktop/](../qml/desktop):
   `MediaWebView.qml`, `WebBrowserMenu*.qml` — media and embedded browser.
 - `CameraListView.qml`, `CameraSingleView.qml`, `CameraCommandItem.qml`.
 - `ConfigView.qml` + `ConfigNetworkView.qml`, `ConfigScreenView.qml`,
-  `ConfigL18nView.qml`, `ConfigUserInfoView.qml`, `ConfigUpdateView.qml`,
-  `ConfigInstallView.qml` — system / OS configuration tabs.
+  `ConfigL18nView.qml`, `ConfigTimeView.qml`, `ConfigUserInfoView.qml`,
+  `ConfigUpdateView.qml`, `ConfigInstallView.qml` — system / OS configuration tabs.
 - Dialogs: `Dialog*.qml` (keyboard, RGB color picker, reboot, recovery boot,
   add-widget, sensor details, bookmarks, network interface).
 - `ScreenSuspend.qml`, `IconScreensaver.qml`, `IconLockScreen.qml` — DPMS / idle UI.

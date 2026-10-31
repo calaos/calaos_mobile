@@ -36,6 +36,8 @@ PKGCONFIG += x11 xext
 QML_IMPORT_PATH = $$PWD/qml
 
 SOURCES += src/HardwareUtils_desktop.cpp \
+    src/BoxTime.cpp \
+    src/BoxTimeManager.cpp \
     src/CalaosOsAPI.cpp \
     src/CalaosWidget.cpp \
     src/CalaosWidgetModel.cpp \
@@ -51,6 +53,8 @@ SOURCES += src/HardwareUtils_desktop.cpp \
     src/NetworkRequest.cpp
 
 HEADERS += src/HardwareUtils_desktop.h \
+    src/BoxTime.h \
+    src/BoxTimeManager.h \
     src/CalaosOsAPI.h \
     src/CalaosWidget.h \
     src/CalaosWidgetModel.h \

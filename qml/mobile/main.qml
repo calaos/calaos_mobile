@@ -552,4 +552,8 @@ Window {
     //Unknown or changed server certificate: asked while logging in, over the
     //login page.
     TlsTrustSheet { id: tlsTrustSheet }
+
+    //Admin code pushed to this phone, decrypted by the app: over any page,
+    //logged in or not.
+    AdminCodeSheet { id: adminCodeSheet }
 }

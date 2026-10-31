@@ -11,6 +11,10 @@ protected:
 
     QString ioStartShortcut;
 
+    //Admin codes consumed by this process: never captured again from a
+    //notification still on screen.
+    QSet<QString> consumedAdminCodes;
+
 public:
     virtual ~HardwareUtils_iOS();
 
@@ -45,6 +49,23 @@ public:
 
     //Copied to the App Group defaults for the notification service extension.
     virtual void setTlsPins(const QVariantMap &pins);
+
+    //Admin code stash: one JSON file per code in the App Group container
+    //(admin_codes/<code_id>.json), written by the notification extension or,
+    //when it did not run, by the app from the notification it sees.
+    virtual QList<QJsonObject> adminCodeStash();
+    virtual void stashAdminCode(const QJsonObject &entry);
+    //Also withdraws the delivered notifications of these codes.
+    virtual void removeAdminCodes(const QStringList &codeIds);
+    //UIPasteboard item that expires by itself.
+    virtual SecretCopy copySecret(const QString &text, int seconds);
+    //Keychain item (own service, this device only); created only when the
+    //keychain says it does not exist.
+    virtual void loadPushKey();
+
+    //Stashes (unless already there) and reports the admin code carried by a
+    //notification the app sees: presented, tapped, or still delivered.
+    void captureAdminCode(void *notification);
 
     virtual void inputTextDialog(const QString &title, const QString &message);
 

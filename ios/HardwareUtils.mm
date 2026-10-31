@@ -9,6 +9,13 @@
 #import "SimpleKeychain/A0SimpleKeychain.h"
 #import "SimpleKeychain/A0SimpleKeychain+KeyPair.h"
 #import "../src/Common.h"
+#import "../src/AdminCode.h"
+#include <algorithm>
+#include <QDir>
+#include <QFile>
+#include <QJsonDocument>
+#include <QRegularExpression>
+#include <QSaveFile>
 
 /*
  Application delegate integration (IOS-2).
@@ -48,6 +55,18 @@ static NSString *const kTlsPinsKey = @"calaos.tls_pins";
 static NSString *const kBadgeCountKey = @"calaos.badge_count";
 //flock() file in the App Group container, same name as in the extension.
 static NSString *const kBadgeLockFile = @"calaos.badge_count.lock";
+//Admin code stash directory in the App Group container, same name in the
+//extension.
+static NSString *const kAdminCodeDir = @"admin_codes";
+//Keychain item of the push key (32 raw bytes). Own service, so it is never
+//mixed with the credentials; same access group, which the extension shares
+//(it never reads the key, the app alone decrypts).
+static NSString *const kPushKeyService = @"CalaosMobile.push";
+static NSString *const kPushKeyItem = @"calaos-push-key";
+static NSString *const kKeychainGroup = @"9WYC46992U.fr.calaos.CalaosMobile";
+//Stash bounds, same as Android's CredentialStore and the extension.
+static const qint64 kAdminCodeMaxAgeMs = 10 * 60 * 1000;
+static const int kAdminCodeMaxFiles = 16;
 
 namespace {
 
@@ -287,12 +306,17 @@ void resetBadge()
     if (uuid != nil)
         iosUtils()->emitPushNotifReceived(QString::fromNSString(uuid));
 
+    //The extension stashed it already; the app shows it in its code sheet.
+    const bool adminCode = notification.request.content.userInfo[@"admin_code_id"] != nil;
+    if (adminCode)
+        iosUtils()->captureAdminCode(notification);
+
     //The extension already counted it, but the user sees it in the app: no
     //badge (the content's badge is not applied without the Badge option).
     resetBadge();
 
     const ForegroundPushPresentation p =
-        foregroundPushPresentation(uuid != nil, HardwareUtils::Instance()->isCalaosConnected());
+        foregroundPushPresentation(uuid != nil, HardwareUtils::Instance()->isCalaosConnected(), adminCode);
     UNNotificationPresentationOptions options = UNNotificationPresentationOptionNone;
     if (p.banner)
         options |= UNNotificationPresentationOptionBanner;
@@ -307,6 +331,9 @@ void resetBadge()
 - (void)userNotificationCenter:(UNUserNotificationCenter *)center didReceiveNotificationResponse:(UNNotificationResponse *)response withCompletionHandler:(void (^)(void))completionHandler
 {
     Q_UNUSED(center);
+
+    if (response.notification.request.content.userInfo[@"admin_code_id"] != nil)
+        iosUtils()->captureAdminCode(response.notification);
 
     NSString *uuid = response.notification.request.content.userInfo[@"event_uuid"];
     if (uuid != nil)
@@ -363,6 +390,25 @@ HardwareUtils_iOS *hwobj;
     Q_UNUSED(notif)
     resetBadge();
     hwobj->emitApplicationActiveChanged(true);
+
+    //Admin codes the extension could not stash (it did not run): still in
+    //the notification center.
+    HardwareUtils_iOS *hw = hwobj;
+    [[UNUserNotificationCenter currentNotificationCenter]
+        getDeliveredNotificationsWithCompletionHandler:^(NSArray<UNNotification *> *notifications)
+    {
+        NSMutableArray *codes = [NSMutableArray array];
+        for (UNNotification *n in notifications)
+            if (n.request.content.userInfo[@"admin_code_id"] != nil)
+                [codes addObject:n];
+        if (codes.count == 0)
+            return;
+        //The block copy retains codes until it has run.
+        dispatch_async(dispatch_get_main_queue(), ^{
+            for (UNNotification *n in codes)
+                hw->captureAdminCode(n);
+        });
+    }];
 }
 
 -(UIViewController *)rootViewController
@@ -563,6 +609,203 @@ void HardwareUtils_iOS::platformInit(QQmlApplicationEngine *e)
     //The APNs token does not depend on the user's authorization: register on
     //every launch, the token comes back through the hooked delegate.
     [app registerForRemoteNotifications];
+
+    //Before the first login sends it.
+    loadPushKey();
+}
+
+void HardwareUtils_iOS::loadPushKey()
+{
+    NSDictionary *query = @{ (id)kSecClass: (id)kSecClassGenericPassword,
+                             (id)kSecAttrService: kPushKeyService,
+                             (id)kSecAttrAccount: kPushKeyItem,
+                             (id)kSecAttrAccessGroup: kKeychainGroup,
+                             (id)kSecReturnData: @YES,
+                             (id)kSecMatchLimit: (id)kSecMatchLimitOne };
+    CFTypeRef found = NULL;
+    const OSStatus status = SecItemCopyMatching((CFDictionaryRef)query, &found);
+    NSData *key = [(NSData *)found autorelease];
+
+    if (status == errSecSuccess && key.length == AdminCode::KeySize)
+    {
+        setPushKey(QByteArray(static_cast<const char *>(key.bytes), int(key.length)));
+        return;
+    }
+    //Locked before the first unlock, or any other error: never replace a key
+    //that may exist (an approver's is frozen on its box). Asked again later.
+    if (status != errSecItemNotFound)
+    {
+        qWarning() << "Push key not readable now (keychain status" << int(status) << "), asked again later";
+        return;
+    }
+
+    uint8_t bytes[AdminCode::KeySize];
+    if (SecRandomCopyBytes(kSecRandomDefault, sizeof(bytes), bytes) != errSecSuccess)
+        return;
+    NSData *fresh = [NSData dataWithBytes:bytes length:sizeof(bytes)];
+    memset(bytes, 0, sizeof(bytes));
+    //This device only: the key belongs to this push token, it does not
+    //travel with backups or the iCloud keychain.
+    NSDictionary *item = @{ (id)kSecClass: (id)kSecClassGenericPassword,
+                            (id)kSecAttrService: kPushKeyService,
+                            (id)kSecAttrAccount: kPushKeyItem,
+                            (id)kSecAttrAccessGroup: kKeychainGroup,
+                            (id)kSecAttrAccessible: (id)kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
+                            (id)kSecValueData: fresh };
+    if (SecItemAdd((CFDictionaryRef)item, NULL) != errSecSuccess)
+    {
+        qWarning() << "Push key not stored in the keychain";
+        return;
+    }
+    qDebug() << "Push key created";
+    setPushKey(QByteArray(static_cast<const char *>(fresh.bytes), int(fresh.length)));
+}
+
+namespace {
+
+QString adminCodeDir()
+{
+    NSURL *container = [[NSFileManager defaultManager]
+        containerURLForSecurityApplicationGroupIdentifier:kAppGroup];
+    if (container == nil)
+        return QString();
+    return QString::fromNSString([container URLByAppendingPathComponent:kAdminCodeDir].path);
+}
+
+//The id names a file: nothing but 16 lowercase hex.
+bool isAdminCodeId(const QString &id)
+{
+    static const QRegularExpression re(QRegularExpression::anchoredPattern(QStringLiteral("[0-9a-f]{16}")));
+    return re.match(id).hasMatch();
+}
+
+QJsonObject readAdminCodeFile(const QString &path)
+{
+    QFile f(path);
+    if (!f.open(QIODevice::ReadOnly))
+        return QJsonObject();
+    return QJsonDocument::fromJson(f.read(4096)).object();
+}
+
+//Keeps the stash small whatever happens: entries more than 10 minutes away
+//from now (a code lives 60 s) go, then the oldest beyond 15, before a write.
+void pruneAdminCodeDir(const QString &dir, qint64 now)
+{
+    QList<QPair<qint64, QString>> kept;
+    const QStringList files = QDir(dir).entryList({ QStringLiteral("*.json") }, QDir::Files);
+    for (const QString &name: files)
+    {
+        const QString path = dir + QLatin1Char('/') + name;
+        const qint64 at = qint64(readAdminCodeFile(path).value(QStringLiteral("received_at")).toDouble());
+        if (at <= 0 || qAbs(now - at) > kAdminCodeMaxAgeMs)
+            QFile::remove(path);
+        else
+            kept.append({ at, path });
+    }
+    std::sort(kept.begin(), kept.end());
+    for (int i = 0; i < kept.size() - (kAdminCodeMaxFiles - 1); i++)
+        QFile::remove(kept.at(i).second);
+}
+
+} // namespace
+
+QList<QJsonObject> HardwareUtils_iOS::adminCodeStash()
+{
+    QList<QJsonObject> entries;
+    const QString dir = adminCodeDir();
+    if (dir.isEmpty())
+        return entries;
+    const QStringList files = QDir(dir).entryList({ QStringLiteral("*.json") }, QDir::Files);
+    for (const QString &name: files)
+    {
+        const QJsonObject o = readAdminCodeFile(dir + QLatin1Char('/') + name);
+        const QString id = o.value(QStringLiteral("code_id")).toString();
+        //A file whose name is not its id is junk: removed by id below.
+        if (name == id + QStringLiteral(".json"))
+            entries << o;
+        else
+            QFile::remove(dir + QLatin1Char('/') + name);
+    }
+    return entries;
+}
+
+void HardwareUtils_iOS::stashAdminCode(const QJsonObject &entry)
+{
+    const QString id = entry.value(QStringLiteral("code_id")).toString();
+    const QString dir = adminCodeDir();
+    if (!isAdminCodeId(id) || dir.isEmpty() || consumedAdminCodes.contains(id))
+        return;
+
+    const QString path = dir + QLatin1Char('/') + id + QStringLiteral(".json");
+    //First reception wins: the extension's stamp is the earliest.
+    if (QFile::exists(path) || !QDir().mkpath(dir))
+        return;
+    pruneAdminCodeDir(dir, AdminCode::wallNowMs());
+    QSaveFile f(path);
+    if (f.open(QIODevice::WriteOnly))
+    {
+        f.write(QJsonDocument(entry).toJson(QJsonDocument::Compact));
+        f.commit();
+    }
+}
+
+void HardwareUtils_iOS::removeAdminCodes(const QStringList &codeIds)
+{
+    const QString dir = adminCodeDir();
+    NSMutableArray *notifIds = [NSMutableArray array];
+    for (const QString &id: codeIds)
+    {
+        if (!isAdminCodeId(id))
+            continue;
+        consumedAdminCodes.insert(id);
+        if (dir.isEmpty())
+            continue;
+        const QString path = dir + QLatin1Char('/') + id + QStringLiteral(".json");
+        const QString notifId = readAdminCodeFile(path).value(QStringLiteral("notif_id")).toString();
+        if (!notifId.isEmpty())
+            [notifIds addObject:notifId.toNSString()];
+        QFile::remove(path);
+    }
+    //Read or expired: nothing left to open from the notification center.
+    if (notifIds.count > 0)
+        [[UNUserNotificationCenter currentNotificationCenter] removeDeliveredNotificationsWithIdentifiers:notifIds];
+}
+
+void HardwareUtils_iOS::captureAdminCode(void *n)
+{
+    UNNotification *notification = reinterpret_cast<UNNotification *>(n);
+    NSDictionary *userInfo = notification.request.content.userInfo;
+
+    QJsonObject data;
+    for (NSString *key in @[ @"admin_code_id", @"admin_code_action", @"admin_code_expires",
+                             @"admin_code_nonce", @"admin_code_ct", @"admin_code_tag" ])
+    {
+        id v = userInfo[key];
+        if ([v isKindOfClass:[NSString class]] && [(NSString *)v length] <= 64)
+            data[QString::fromNSString(key)] = QString::fromNSString((NSString *)v);
+    }
+    const QString codeId = data.value(QStringLiteral("admin_code_id")).toString();
+    if (!isAdminCodeId(codeId))
+        return;
+
+    //Received when the system delivered it, by the phone's clock (the boot
+    //clock of that moment is unknown here: wall clock only).
+    const qint64 deliveredAt = qint64(notification.date.timeIntervalSince1970 * 1000.0);
+    stashAdminCode(AdminCode::entryFromPush(data, deliveredAt > 0 ? deliveredAt : AdminCode::wallNowMs(), -1,
+                                            QString::fromNSString(notification.request.identifier)));
+    handleAdminCodeNotified(codeId);
+}
+
+HardwareUtils::SecretCopy HardwareUtils_iOS::copySecret(const QString &text, int seconds)
+{
+    //The item expires by itself, even if the app is killed; nothing is read
+    //back (no paste prompt). Not local only, on purpose: Universal Clipboard
+    //lets the user paste it into the web console open on a Mac.
+    NSDictionary *item = @{ @"public.utf8-plain-text": text.toNSString() };
+    [[UIPasteboard generalPasteboard] setItems:@[ item ]
+                                       options:@{ UIPasteboardOptionExpirationDate:
+                                                      [NSDate dateWithTimeIntervalSinceNow:seconds] }];
+    return SecretCopy::CopiedWithExpiry;
 }
 
 void HardwareUtils_iOS::showAlertMessage(QString title, QString message, QString buttontext)

@@ -16,7 +16,9 @@
  *     fallback (sendHttp()): "token" is now a redacted key.
  *
  * register_push also carries the device name the admin chooses the approver
- * phone by, over both transports. The user can override it in the settings
+ * phone by, over both transports, and the push key admin codes are sealed
+ * with (64 lowercase hex, sent again when it changes, redacted in the debug
+ * dump, absent without a key: the legacy text push). The user can override it in the settings
  * (every iPhone reports "iPhone" since iOS 16): the override is sanitized,
  * and a rename while connected is sent right away, once.
  *
@@ -47,12 +49,23 @@
 
 static const QString TestUser = QStringLiteral("user");
 static const QString TestPass = QStringLiteral("s3cret-pass");
+//Push keys used by the run, recorded to scan the logs.
+static QList<QByteArray> s_usedKeys;
+
+static QByteArray testKey(char fill)
+{
+    const QByteArray k(32, fill);
+    s_usedKeys << k;
+    return k;
+}
 
 //Every log line of the process, to check that no push token leaks in clear.
 static QStringList s_logLines;
 static QtMessageHandler s_previousHandler = nullptr;
 //register_push accepted by an HTTP fake during the run (any test).
 static int s_httpRegistrations = 0;
+//Those carrying a push key.
+static int s_httpKeyedRegistrations = 0;
 
 static void captureMessages(QtMsgType type, const QMessageLogContext &ctx, const QString &msg)
 {
@@ -92,7 +105,8 @@ public:
 
     QString baseUrl() const
     {
-        return QStringLiteral("http://127.0.0.1:%1/api.php").arg(serverPort());
+        return QStringLiteral("%1://127.0.0.1:%2/api.php")
+            .arg(useTls ? QStringLiteral("https") : QStringLiteral("http")).arg(serverPort());
     }
 
 protected:
@@ -175,6 +189,8 @@ private:
         {
             registrations << j;
             s_httpRegistrations++;
+            if (j.contains(QStringLiteral("push_key")))
+                s_httpKeyedRegistrations++;
             reply(sock, 200, "application/json", "{\"success\":\"true\"}");
             return;
         }
@@ -218,9 +234,12 @@ class FakeWsServer: public QWebSocketServer
     Q_OBJECT
 
 public:
-    FakeWsServer():
-        QWebSocketServer(QStringLiteral("fake calaos_server"), QWebSocketServer::NonSecureMode)
+    explicit FakeWsServer(const QSslConfiguration *tls = nullptr):
+        QWebSocketServer(QStringLiteral("fake calaos_server"),
+                         tls ? QWebSocketServer::SecureMode : QWebSocketServer::NonSecureMode)
     {
+        if (tls)
+            setSslConfiguration(*tls);
         connect(this, &QWebSocketServer::newConnection, this, [this]()
         {
             while (QWebSocket *ws = nextPendingConnection())
@@ -240,7 +259,9 @@ public:
 
     QString url() const
     {
-        return QStringLiteral("ws://127.0.0.1:%1/api").arg(serverPort());
+        return QStringLiteral("%1://127.0.0.1:%2/api")
+            .arg(secureMode() == QWebSocketServer::SecureMode ? QStringLiteral("wss") : QStringLiteral("ws"))
+            .arg(serverPort());
     }
 
 private:
@@ -337,6 +358,7 @@ private slots:
     void registrationNewSessionRegistersAgain();
     void registrationIgnoresEmptyToken();
     void registrationRenameRegistersAgain();
+    void registrationKeyChangeRegistersAgain();
 
     //HardwareUtils: deferred notification tap.
     void tapWhileDisconnectedIsDeferred();
@@ -347,6 +369,7 @@ private slots:
     void restoredTapLosesToANewerOne();
 
     //Foreground presentation (iOS willPresentNotification:).
+    void pushKeyChangeIsSignalledOnce();
     void foregroundPushIsPresented_data();
     void foregroundPushIsPresented();
 
@@ -385,6 +408,8 @@ private slots:
     void payloadHasNoFormatForOtherHardware();
     void payloadCarriesTheDeviceName();
     void payloadWithoutDeviceNameOmitsTheField();
+    void payloadCarriesThePushKey();
+    void payloadWithoutUsableKeyOmitsTheField();
 
     //CalaosConnection over HTTP (the transport whose debug log leaked).
     void httpRegistersAtLogin();
@@ -398,11 +423,14 @@ private slots:
     void httpRenameWithoutTokenWaitsForTheToken();
     void httpRenameDuringLoginIsSentOnce();
     void httpOverrideClearedAfterLogoutSendsNothing();
+    void httpSendsThePushKeyAndItsChanges();
 
     //CalaosConnection over websocket.
     void wsRegistersAfterTheLoginIsAccepted();
     void wsRotationWhileConnectedRegistersAgain();
     void wsRenameWhileConnectedRegistersAgain();
+    void wsSendsThePushKeyAndItsChanges();
+    void plainTransportsSendThePushKey();
 
     //No token in clear in the logs, whatever ran above.
     void cleanupTestCase();
@@ -423,6 +451,9 @@ private:
     static void clearStore();
 
     void startConnection(const QString &host);
+    //Over TLS, the self-signed test certificate pinned as if confirmed.
+    void startTlsConnection(const QString &url, quint16 port);
+    std::unique_ptr<TlsPinStore> pinStore;
 
     FakeHttpServer *http = nullptr;
     FakeWsServer *ws = nullptr;
@@ -435,9 +466,10 @@ private:
 
 void TstPushNotif::initTestCase()
 {
-    //The redaction check reads the qDebug "SEND:" line; some hosts mute debug by default.
-    QLoggingCategory::setFilterRules(QStringLiteral("*.debug=true"));
     s_previousHandler = qInstallMessageHandler(captureMessages);
+    //The log checks below need the qDebug dumps; a Qt that ships with debug output
+    //off by default (Fedora 44, Qt 6.11) would make them vacuous or fail.
+    QLoggingCategory::setFilterRules(QStringLiteral("default.debug=true"));
 
     //The device name override lives in QSettings: a store of our own.
     QCoreApplication::setOrganizationName(QStringLiteral("CalaosTests"));
@@ -488,6 +520,8 @@ void TstPushNotif::init()
     hw()->takePendingNotif();
     hw()->clearDeviceToken();
     hw()->setDeviceNameOverride(QString());
+    //No key: the legacy registration, unless a case sets one.
+    hw()->setPushKey(QByteArray());
 }
 
 void TstPushNotif::cleanup()
@@ -499,6 +533,7 @@ void TstPushNotif::cleanup()
         delete connection;
         connection = nullptr;
     }
+    pinStore.reset();
     delete http;
     http = nullptr;
     delete ws;
@@ -534,6 +569,8 @@ void TstPushNotif::verifyAuthenticated(const QJsonObject &registration)
     QCOMPARE(registration.value(QStringLiteral("cn_pass")).toString(), TestPass);
     //Not an Android build: no push_format (see payloadAsksDataFormatForAndroid).
     QVERIFY(!registration.contains(QStringLiteral("push_format")));
+    if (hw()->pushKey().isEmpty())
+        QVERIFY(!registration.contains(QStringLiteral("push_key")));
     //At the root next to the credentials, where api.php reads every argument.
     verifyDeviceName(registration);
 }
@@ -563,6 +600,16 @@ void TstPushNotif::startConnection(const QString &host)
 {
     connection = new CalaosConnection();
     connection->login(TestUser, TestPass, host);
+}
+
+void TstPushNotif::startTlsConnection(const QString &url, quint16 port)
+{
+    pinStore.reset(new TlsPinStore(certDir.filePath(QStringLiteral("pins-key.ini"))));
+    pinStore->setPin(TlsPinning::hostKey(QStringLiteral("127.0.0.1"), port),
+                     TlsPinning::spkiSha256(tlsConfig.localCertificate()));
+    connection = new CalaosConnection();
+    connection->setPinStore(pinStore.get());
+    connection->login(TestUser, TestPass, url);
 }
 
 // ---------------------------------------------------------------- PushRegistration
@@ -630,6 +677,24 @@ void TstPushNotif::registrationRenameRegistersAgain()
     QVERIFY(!r.shouldRegister(QStringLiteral("tok"), QStringLiteral("B")));
     //A name without a token has nothing to register.
     QVERIFY(!r.shouldRegister(QString(), QStringLiteral("C")));
+}
+
+void TstPushNotif::registrationKeyChangeRegistersAgain()
+{
+    PushRegistration r;
+    r.sessionStarted();
+    const QByteArray a(32, 'a'), b(32, 'b');
+    QVERIFY(r.shouldRegister(QStringLiteral("tok"), QStringLiteral("A")));
+    //The key arrives after the token (first run): sent again.
+    QVERIFY(r.shouldRegister(QStringLiteral("tok"), QStringLiteral("A"), a));
+    QVERIFY(!r.shouldRegister(QStringLiteral("tok"), QStringLiteral("A"), a));
+    QVERIFY(r.shouldRegister(QStringLiteral("tok"), QStringLiteral("A"), b));
+    QVERIFY(!r.shouldRegister(QStringLiteral("tok"), QStringLiteral("A"), b));
+    //A new session sends everything again.
+    r.sessionEnded();
+    QVERIFY(!r.shouldRegister(QStringLiteral("tok"), QStringLiteral("A"), b));
+    r.sessionStarted();
+    QVERIFY(r.shouldRegister(QStringLiteral("tok"), QStringLiteral("A"), b));
 }
 
 // ---------------------------------------------------------------- deferred tap
@@ -704,28 +769,46 @@ void TstPushNotif::restoredTapLosesToANewerOne()
     QCOMPARE(hw()->takePendingNotif(), QStringLiteral("uuid-newer"));
 }
 
+void TstPushNotif::pushKeyChangeIsSignalledOnce()
+{
+    QSignalSpy changed(hw(), &HardwareUtils::pushKeyChanged);
+    const QByteArray k = testKey('k');
+    hw()->setPushKey(k);
+    QCOMPARE(changed.count(), 1);
+    QCOMPARE(hw()->pushKey(), k);
+    hw()->setPushKey(k);
+    QCOMPARE(changed.count(), 1);
+    hw()->setPushKey(QByteArray());
+    QCOMPARE(changed.count(), 2);
+}
+
 void TstPushNotif::foregroundPushIsPresented_data()
 {
     QTest::addColumn<bool>("hasEventUuid");
     QTest::addColumn<bool>("connected");
+    QTest::addColumn<bool>("hasAdminCode");
     QTest::addColumn<bool>("banner");
 
-    //The admin code has no event uuid: it was dropped in the foreground.
-    QTest::newRow("admin code, logged in") << false << true << true;
-    QTest::newRow("admin code, logged out") << false << false << true;
+    //The legacy admin code text has neither: it would be lost in the foreground.
+    QTest::newRow("legacy admin code, logged in") << false << true << false << true;
+    QTest::newRow("legacy admin code, logged out") << false << false << false << true;
+    //The encrypted one opens the code sheet, with or without the box.
+    QTest::newRow("encrypted admin code, logged in") << false << true << true << false;
+    QTest::newRow("encrypted admin code, logged out") << false << false << true << false;
     //The event viewer opens in the app: no banner on top of it.
-    QTest::newRow("event, logged in") << true << true << false;
+    QTest::newRow("event, logged in") << true << true << false << false;
     //Nothing in the app shows it until the next login.
-    QTest::newRow("event, logged out") << true << false << true;
+    QTest::newRow("event, logged out") << true << false << false << true;
 }
 
 void TstPushNotif::foregroundPushIsPresented()
 {
     QFETCH(bool, hasEventUuid);
     QFETCH(bool, connected);
+    QFETCH(bool, hasAdminCode);
     QFETCH(bool, banner);
 
-    const ForegroundPushPresentation p = foregroundPushPresentation(hasEventUuid, connected);
+    const ForegroundPushPresentation p = foregroundPushPresentation(hasEventUuid, connected, hasAdminCode);
     QCOMPARE(p.banner, banner);
     QVERIFY(p.list);
     QVERIFY(p.sound);
@@ -1379,6 +1462,38 @@ void TstPushNotif::httpOverrideClearedAfterLogoutSendsNothing()
     QCOMPARE(http->rejected, QStringList());
 }
 
+void TstPushNotif::httpSendsThePushKeyAndItsChanges()
+{
+    if (!tlsReady)
+        QSKIP("No TLS backend or no openssl CLI to make a test certificate");
+    const QString t = freshToken();
+    hw()->setDeviceToken(t);
+    const QByteArray k1 = testKey('\x01'), k2 = testKey('\xfe');
+    hw()->setPushKey(k1);
+
+    http = new FakeHttpServer(&tlsConfig);
+    QVERIFY(http->listen(QHostAddress::LocalHost, 0));
+    startTlsConnection(http->baseUrl(), http->serverPort());
+    QTRY_COMPARE(http->registrations.size(), 1);
+    verifyAuthenticated(http->registrations.at(0));
+    //At the root, next to the token and the credentials.
+    QCOMPARE(http->registrations.at(0).value(QStringLiteral("push_key")).toString(),
+             QString::fromLatin1(k1.toHex()));
+
+    //A new key (store recreated) is sent now, once.
+    hw()->setPushKey(k2);
+    QTRY_COMPARE(http->registrations.size(), 2);
+    QCOMPARE(http->registrations.at(1).value(QStringLiteral("push_key")).toString(),
+             QStringLiteral("fe").repeated(32));
+    QCOMPARE(http->registrations.at(1).value(QStringLiteral("token")).toString(), t);
+    QCOMPARE(http->registrations.at(1).value(QStringLiteral("cn_pass")).toString(), TestPass);
+    hw()->setPushKey(k2);
+    pump(200);
+    QCOMPARE(http->registrations.size(), 2);
+    QCOMPARE(http->logins, 1);
+    QCOMPARE(http->rejected, QStringList());
+}
+
 // ---------------------------------------------------------------- websocket transport
 
 void TstPushNotif::wsRegistersAfterTheLoginIsAccepted()
@@ -1450,6 +1565,64 @@ void TstPushNotif::wsRenameWhileConnectedRegistersAgain()
     QCOMPARE(ws->received.count(QStringLiteral("login")), 1);
 }
 
+void TstPushNotif::wsSendsThePushKeyAndItsChanges()
+{
+    if (!tlsReady)
+        QSKIP("No TLS backend or no openssl CLI to make a test certificate");
+    const QString t = freshToken();
+    hw()->setDeviceToken(t);
+    const QByteArray k1 = testKey('\x5a');
+    hw()->setPushKey(k1);
+
+    ws = new FakeWsServer(&tlsConfig);
+    QVERIFY(ws->listen(QHostAddress::LocalHost, 0));
+    startTlsConnection(ws->url(), ws->serverPort());
+    QTRY_COMPARE(ws->registrations.size(), 1);
+    QCOMPARE(ws->registrations.at(0).value(QStringLiteral("push_key")).toString(),
+             QStringLiteral("5a").repeated(32));
+    QCOMPARE(ws->registrations.at(0).value(QStringLiteral("token")).toString(), t);
+
+    const QByteArray k2 = testKey('\x07');
+    hw()->setPushKey(k2);
+    QTRY_COMPARE(ws->registrations.size(), 2);
+    QCOMPARE(ws->registrations.at(1).value(QStringLiteral("push_key")).toString(),
+             QStringLiteral("07").repeated(32));
+
+    //Key lost (store failure): the next send has none, the server keeps its own.
+    hw()->setPushKey(QByteArray());
+    QTRY_COMPARE(ws->registrations.size(), 3);
+    QVERIFY(!ws->registrations.at(2).contains(QStringLiteral("push_key")));
+    pump(200);
+    QCOMPARE(ws->registrations.size(), 3);
+    QCOMPARE(ws->received.count(QStringLiteral("login")), 1);
+}
+
+//The contract sends the key with every registration, on http:// and ws:// too.
+void TstPushNotif::plainTransportsSendThePushKey()
+{
+    hw()->setDeviceToken(freshToken());
+    hw()->setPushKey(testKey('\x33'));
+
+    http = new FakeHttpServer();
+    QVERIFY(http->listen(QHostAddress::LocalHost, 0));
+    startConnection(http->baseUrl());
+    QTRY_COMPARE(http->registrations.size(), 1);
+    QCOMPARE(http->registrations.at(0).value(QStringLiteral("push_key")).toString(),
+             QStringLiteral("33").repeated(32));
+    hw()->setPushKey(testKey('\x34'));
+    QTRY_COMPARE(http->registrations.size(), 2);
+    QCOMPARE(http->registrations.at(1).value(QStringLiteral("push_key")).toString(),
+             QStringLiteral("34").repeated(32));
+    cleanup();
+
+    ws = new FakeWsServer();
+    QVERIFY(ws->listen(QHostAddress::LocalHost, 0));
+    startConnection(ws->url());
+    QTRY_COMPARE(ws->registrations.size(), 1);
+    QCOMPARE(ws->registrations.at(0).value(QStringLiteral("push_key")).toString(),
+             QStringLiteral("34").repeated(32));
+}
+
 // ---------------------------------------------------------------- push format
 
 //The Android build of registerPushToken() (hardware "android") asks
@@ -1506,6 +1679,38 @@ void TstPushNotif::payloadWithoutDeviceNameOmitsTheField()
     }
 }
 
+//64 lowercase hex digits, on every hardware.
+void TstPushNotif::payloadCarriesThePushKey()
+{
+    QByteArray key;
+    for (int i = 0; i < 32; i++)
+        key.append(char(0xa0 + (i % 16)));
+    const QString hex = QStringLiteral("a0a1a2a3a4a5a6a7a8a9aaabacadaeaf").repeated(2);
+
+    const QJsonObject a = PushFormat::registration(QStringLiteral("tok"), QStringLiteral("android"),
+                                                   QStringLiteral("Pixel"), key);
+    QCOMPARE(a.value(QStringLiteral("push_key")).toString(), hex);
+    QCOMPARE(a.value(QStringLiteral("push_format")).toString(), QStringLiteral("data"));
+    QCOMPARE(a.size(), 5);
+
+    const QJsonObject i = PushFormat::registration(QStringLiteral("tok"), QStringLiteral("ios"),
+                                                   QString(), key);
+    QCOMPARE(i.value(QStringLiteral("push_key")).toString(), hex);
+    QCOMPARE(i.size(), 3);
+}
+
+//No key, or not 32 bytes: the field is left out (legacy registration).
+void TstPushNotif::payloadWithoutUsableKeyOmitsTheField()
+{
+    for (const QByteArray &key: { QByteArray(), QByteArray(31, 'x'), QByteArray(33, 'x') })
+    {
+        const QJsonObject o = PushFormat::registration(QStringLiteral("tok"), QStringLiteral("ios"),
+                                                       QString(), key);
+        QVERIFY(!o.contains(QStringLiteral("push_key")));
+        QCOMPARE(o.size(), 2);
+    }
+}
+
 // ---------------------------------------------------------------- logs
 
 void TstPushNotif::cleanupTestCase()
@@ -1520,13 +1725,23 @@ void TstPushNotif::cleanupTestCase()
             QVERIFY2(!line.contains(t), qPrintable(QStringLiteral("token in clear in a log line of %1 chars")
                                                    .arg(line.size())));
         QVERIFY2(!line.contains(TestPass), "password in clear in a log line");
+        for (const QByteArray &k: std::as_const(s_usedKeys))
+            QVERIFY2(!line.contains(QString::fromLatin1(k.toHex())), "push key in clear in a log line");
     }
 
 #ifdef QT_DEBUG
     //When the HTTP fallback really sent register_push, its debug dump is
-    //there, redacted.
+    //there, redacted (the push key too, when one was sent).
     if (s_httpRegistrations > 0)
     {
+        bool sawRedactedKey = false;
+        for (const QString &line: std::as_const(s_logLines))
+        {
+            if (line.startsWith(QLatin1String("SEND:")) &&
+                line.contains(QLatin1String("\"push_key\": \"***\"")))
+                sawRedactedKey = true;
+        }
+        QCOMPARE(sawRedactedKey, s_httpKeyedRegistrations > 0);
         bool sawRedactedRegister = false;
         for (const QString &line: std::as_const(s_logLines))
         {

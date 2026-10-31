@@ -2,6 +2,74 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="fr_FR">
 <context>
+    <name>AdminCodeSheet</name>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="29"/>
+        <source>To open the web console</source>
+        <translation>Pour ouvrir la console web</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="30"/>
+        <source>To change the admin password</source>
+        <translation>Pour changer le mot de passe admin</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="31"/>
+        <source>To add an approver phone</source>
+        <translation>Pour ajouter un téléphone approbateur</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="32"/>
+        <source>To remove an approver phone</source>
+        <translation>Pour retirer un téléphone approbateur</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="33"/>
+        <source>To enroll this phone as the admin approver</source>
+        <translation>Pour enregistrer ce téléphone comme approbateur admin</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="34"/>
+        <source>To change the network configuration</source>
+        <translation>Pour modifier la configuration réseau</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="50"/>
+        <source>Admin code</source>
+        <translation>Code admin</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="137"/>
+        <source>Expired</source>
+        <translation>Expiré</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="169"/>
+        <source>Ask the web console for a new code.</source>
+        <translation>Demandez un nouveau code dans la console web.</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="170"/>
+        <source>Valid for %1 s</source>
+        <translation>Valable %1 s</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="178"/>
+        <source>Copy</source>
+        <translation>Copier</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="201"/>
+        <source>Type it in the Calaos web console. Never give it to anyone.</source>
+        <translation>Saisissez-le dans la console web Calaos. Ne le donnez jamais à personne.</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="209"/>
+        <source>Close</source>
+        <translation>Fermer</translation>
+    </message>
+</context>
+<context>
     <name>AdminUpdates</name>
     <message>
         <location filename="../src/AdminUpdates.cpp" line="358"/>
@@ -87,7 +155,7 @@
 <context>
     <name>Application</name>
     <message>
-        <location filename="../src/Application.cpp" line="259"/>
+        <location filename="../src/Application.cpp" line="260"/>
         <source>Network error</source>
         <translation>Erreur réseau</translation>
     </message>
@@ -96,78 +164,78 @@
         <translation type="vanished">La connection avec calaos_server a été perdu. Elle va être retentée lorsque calaos_server sera de nouveau disponible.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="260"/>
+        <location filename="../src/Application.cpp" line="261"/>
         <source>The connection to calaos_server was lost. It will reconnect automatically when calaos_server is available again.</source>
         <translation>La connexion avec calaos_server a été perdue. Elle sera rétablie automatiquement dès que calaos_server sera de nouveau disponible.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="263"/>
-        <location filename="../src/Application.cpp" line="282"/>
-        <location filename="../src/Application.cpp" line="295"/>
-        <location filename="../src/Application.cpp" line="307"/>
-        <location filename="../src/Application.cpp" line="319"/>
-        <location filename="../src/Application.cpp" line="746"/>
-        <location filename="../src/Application.cpp" line="911"/>
+        <location filename="../src/Application.cpp" line="264"/>
+        <location filename="../src/Application.cpp" line="283"/>
+        <location filename="../src/Application.cpp" line="296"/>
+        <location filename="../src/Application.cpp" line="308"/>
+        <location filename="../src/Application.cpp" line="320"/>
+        <location filename="../src/Application.cpp" line="755"/>
+        <location filename="../src/Application.cpp" line="920"/>
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="273"/>
+        <location filename="../src/Application.cpp" line="274"/>
         <source>Not connected</source>
         <translation>Non connecté</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="275"/>
+        <location filename="../src/Application.cpp" line="276"/>
         <source>The certificate of %1 was not trusted, the connection was cancelled.</source>
         <translation>Le certificat de %1 n&apos;a pas été accepté, la connexion a été annulée.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="278"/>
+        <location filename="../src/Application.cpp" line="279"/>
         <source>The certificate of %1 was not trusted, the connection was cancelled. Tap Login to check it again.</source>
         <translation>Le certificat de %1 n&apos;a pas été accepté, la connexion a été annulée. Touchez Connexion pour le vérifier à nouveau.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="295"/>
+        <location filename="../src/Application.cpp" line="296"/>
         <source>Certificate refused</source>
         <translation>Certificat refusé</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="293"/>
+        <location filename="../src/Application.cpp" line="294"/>
         <source>The certificate of %1 is not valid (%2). The connection was cancelled.</source>
         <translation>Le certificat de %1 n&apos;est pas valide (%2). La connexion a été annulée.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="290"/>
+        <location filename="../src/Application.cpp" line="291"/>
         <source>The certificate of %1 uses a key that is too weak (%2). The connection was cancelled. Regenerate the certificate of the Calaos box (/mnt/calaos/haproxy/server.pem).</source>
         <translation>Le certificat de %1 utilise une clé trop faible (%2). La connexion a été annulée. Régénérez le certificat de la box Calaos (/mnt/calaos/haproxy/server.pem).</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="305"/>
+        <location filename="../src/Application.cpp" line="306"/>
         <source>Credentials change failed</source>
         <translation>Échec de la modification des identifiants</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="306"/>
+        <location filename="../src/Application.cpp" line="307"/>
         <source>Credentials were not changed. Please try again.</source>
         <translation>Les identifiants n&apos;ont pas été modifiés. Veuillez réessayer.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="317"/>
+        <location filename="../src/Application.cpp" line="318"/>
         <source>Credentials changed</source>
         <translation>Identifiants modifiés</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="318"/>
+        <location filename="../src/Application.cpp" line="319"/>
         <source>Credentials were successfully changed.</source>
         <translation>Les identifiants ont été modifiés avec succès.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="909"/>
+        <location filename="../src/Application.cpp" line="918"/>
         <source>Reboot</source>
         <translation type="unfinished">Redémarrer</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="910"/>
+        <location filename="../src/Application.cpp" line="919"/>
         <source>An update is being installed. Reboot once it has finished.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -176,12 +244,12 @@
         <translation type="vanished">Aucune connexion réseau trouvée, cette application nécessite une connexion réseau pour fonctionner.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="744"/>
+        <location filename="../src/Application.cpp" line="753"/>
         <source>Login failed</source>
         <translation>Échec de l&apos;authentification</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="745"/>
+        <location filename="../src/Application.cpp" line="754"/>
         <source>Connection failed, please check your credentials.</source>
         <translation>Échec de la connexion, veuillez vérifier vos identifiants.</translation>
     </message>
@@ -1864,12 +1932,12 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>HardwareUtilsAndroid</name>
     <message>
-        <location filename="../android/HardwareUtils_Android.cpp" line="325"/>
+        <location filename="../android/HardwareUtils_Android.cpp" line="352"/>
         <source>Confirm</source>
         <translation>Valider</translation>
     </message>
     <message>
-        <location filename="../android/HardwareUtils_Android.cpp" line="327"/>
+        <location filename="../android/HardwareUtils_Android.cpp" line="354"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
@@ -1877,12 +1945,12 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>HardwareUtils_iOS</name>
     <message>
-        <location filename="../ios/HardwareUtils.mm" line="591"/>
+        <location filename="../ios/HardwareUtils.mm" line="843"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
     <message>
-        <location filename="../ios/HardwareUtils.mm" line="592"/>
+        <location filename="../ios/HardwareUtils.mm" line="844"/>
         <source>Confirm</source>
         <translation>Valider</translation>
     </message>

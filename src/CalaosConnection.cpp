@@ -12,10 +12,12 @@ static const QStringList &credentialKeys()
     //"u" and "p" are not JSON keys but the short query parameters of the
     //legacy v1 camera url, so they stay literals here (see JsonKeys.h).
     //JsonKeys::Token is the push token sent by register_push: a per-device
-    //credential as well (FIX-3). The admin keys belong to the admin relay.
+    //credential as well (FIX-3), and JsonKeys::PushKey the key admin codes
+    //are sealed with. The admin keys belong to the admin relay.
     static const QStringList keys = { JsonKeys::CnUser,
                                       JsonKeys::CnPass,
                                       JsonKeys::Token,
+                                      JsonKeys::PushKey,
                                       QStringLiteral("u"),
                                       QStringLiteral("p"),
                                       QStringLiteral("admin_pass"),
@@ -70,6 +72,8 @@ CalaosConnection::CalaosConnection(QObject *parent) :
             this, &CalaosConnection::registerPushToken);
     //Same for a rename in the settings: the admin sees the new name now.
     connect(HardwareUtils::Instance(), &HardwareUtils::deviceNameChanged,
+            this, &CalaosConnection::registerPushToken);
+    connect(HardwareUtils::Instance(), &HardwareUtils::pushKeyChanged,
             this, &CalaosConnection::registerPushToken);
 }
 
@@ -850,7 +854,8 @@ void CalaosConnection::registerPushToken()
 
     const QString token = HardwareUtils::Instance()->getDeviceToken();
     const QString name = HardwareUtils::Instance()->effectiveDeviceName();
-    if (!pushRegistration.shouldRegister(token, name))
+    const QByteArray pushKey = HardwareUtils::Instance()->pushKey();
+    if (!pushRegistration.shouldRegister(token, name, pushKey))
         return;
 
 #if defined(Q_OS_ANDROID)
@@ -862,11 +867,12 @@ void CalaosConnection::registerPushToken()
 #endif
 
     qDebug() << "Registering push token" << HardwareUtils::describeToken(token)
-             << "for" << (hw.isEmpty() ? QStringLiteral("<unknown>") : hw);
+             << "for" << (hw.isEmpty() ? QStringLiteral("<unknown>") : hw)
+             << (pushKey.isEmpty() ? "without push key" : "with push key");
 
     //Send the push device token to register the mobile device to calaos_server
     //for push notif (Android also asks for data-only messages, see PushFormat).
-    QJsonObject o = PushFormat::registration(token, hw, name);
+    QJsonObject o = PushFormat::registration(token, hw, name, pushKey);
 
     if (isWebsocket())
     {

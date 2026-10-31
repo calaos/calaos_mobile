@@ -70,6 +70,8 @@ inline constexpr QLatin1StringView Hardware{"hardware"};
 inline constexpr QLatin1StringView PushFormat{"push_format"};
 //Human-readable name of the phone, shown to the admin choosing an approver.
 inline constexpr QLatin1StringView DeviceName{"device_name"};
+//Key the admin code pushes to this device are sealed with (see AdminCode.h).
+inline constexpr QLatin1StringView PushKey{"push_key"};
 
 //--- Answer envelope and long polling ---------------------------------------
 inline constexpr QLatin1StringView Success{"success"};

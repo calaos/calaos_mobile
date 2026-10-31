@@ -170,6 +170,50 @@ void HardwareUtils::forgetPendingUserActions()
     startedWithOpt = false;
 }
 
+void HardwareUtils::setPushKey(const QByteArray &key)
+{
+    if (key == m_pushKey)
+        return;
+
+    //Never logged, not even in part.
+    qDebug() << (key.isEmpty() ? "Push key cleared" : "Push key set");
+    m_pushKey = key;
+    emit pushKeyChanged();
+}
+
+QList<QJsonObject> HardwareUtils::adminCodeStash()
+{
+    return m_adminCodeStash.values();
+}
+
+void HardwareUtils::stashAdminCode(const QJsonObject &entry)
+{
+    const QString id = entry.value(QStringLiteral("code_id")).toString();
+    if (id.isEmpty() || m_adminCodeStash.contains(id))
+        return;
+    m_adminCodeStash.insert(id, entry);
+}
+
+void HardwareUtils::removeAdminCodes(const QStringList &codeIds)
+{
+    for (const QString &id: codeIds)
+        m_adminCodeStash.remove(id);
+}
+
+void HardwareUtils::handleAdminCodeNotified(const QString &codeId)
+{
+    //Not null even when empty: "something arrived, read the stash".
+    pendingAdminCodeId = codeId.isNull() ? QStringLiteral("") : codeId;
+    emit adminCodeNotified(codeId);
+}
+
+QString HardwareUtils::takePendingAdminCode()
+{
+    QString id;
+    id.swap(pendingAdminCodeId);
+    return id;
+}
+
 void HardwareUtils::setDeviceToken(const QString &token)
 {
     if (token.isEmpty() || token == deviceToken)

@@ -14,6 +14,7 @@
 TEMPLATE = subdirs
 
 SUBDIRS += \
+    tst_admincode \
     tst_adminrelay \
     tst_boxtime \
     tst_boxtimepage \

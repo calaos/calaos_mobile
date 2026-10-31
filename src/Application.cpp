@@ -8,6 +8,7 @@
 #include "ControlPanelModel.h"
 #include "LaunchLogin.h"
 #include "TlsPinning.h"
+#include "AdminCode.h"
 #include <QQmlNetworkAccessManagerFactory>
 
 #include "version.h"
@@ -371,6 +372,11 @@ void Application::createQmlApp()
     bookmarkModel = new BookmarkModel(this);
     engine.rootContext()->setContextProperty("bookmarkModel", bookmarkModel);
 
+#if defined(CALAOS_MOBILE)
+    adminCodeModel = new AdminCodeModel(HardwareUtils::Instance(), this);
+    engine.rootContext()->setContextProperty("adminCodeModel", adminCodeModel);
+#endif
+
     //T31: asking the user to type a value is a platform concern, not a model
     //one. IOBase no longer opens a dialog itself; qml/mobile/main.qml drives
     //the native input dialog from here.
@@ -473,6 +479,9 @@ void Application::createQmlApp()
     //Safe areas (notch, Dynamic Island, home indicator, Android system bars)
     //are handled in QML, with the SafeArea attached property.
     engine.load(QUrl(QStringLiteral("qrc:///qml/mobile/main.qml")));
+    //Not deferred to the login: the phone reads its codes without the box.
+    //Queued so the sheet's connections exist.
+    QTimer::singleShot(0, adminCodeModel, &AdminCodeModel::setReady);
 
 #elif defined(CALAOS_DESKTOP)
     engine.load(QUrl(QStringLiteral("qrc:///qml/desktop/main.qml")));
@@ -675,6 +684,16 @@ void Application::resetAllData()
     HardwareUtils::Instance()->forgetPendingUserActions();
     //After logout(): the old box is not sent the default name on the way out.
     HardwareUtils::Instance()->setDeviceNameOverride(QString());
+
+    //Codes pushed by the old home go too; the push key stays (an approver
+    //phone's key is frozen on its box).
+    if (adminCodeModel)
+        adminCodeModel->close();
+    QStringList stashed;
+    for (const QJsonObject &o: HardwareUtils::Instance()->adminCodeStash())
+        stashed << AdminCode::Entry::fromJson(o).codeId;
+    if (!stashed.isEmpty())
+        HardwareUtils::Instance()->removeAdminCodes(stashed);
 }
 
 void Application::homeLoaded(const QVariantMap &homeData)

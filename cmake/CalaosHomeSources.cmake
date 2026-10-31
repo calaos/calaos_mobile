@@ -24,6 +24,7 @@ set(CALAOS_SOURCES
     src/BookmarkModel.cpp
     src/ModelImageProvider.cpp
     src/TlsPinning.cpp
+    src/AdminCode.cpp
     src/CalaosOsProtocol.cpp
     src/UpdateModel.cpp
     src/AdminRelay.cpp
@@ -54,6 +55,7 @@ set(CALAOS_HEADERS
     src/BookmarkModel.h
     src/ModelImageProvider.h
     src/TlsPinning.h
+    src/AdminCode.h
     src/CalaosOsProtocol.h
     src/UpdateBackend.h
     src/UpdateModel.h

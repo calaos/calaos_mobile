@@ -2,6 +2,74 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="de_DE">
 <context>
+    <name>AdminCodeSheet</name>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="29"/>
+        <source>To open the web console</source>
+        <translation>Zum Öffnen der Webkonsole</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="30"/>
+        <source>To change the admin password</source>
+        <translation>Zum Ändern des Admin-Passworts</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="31"/>
+        <source>To add an approver phone</source>
+        <translation>Zum Hinzufügen eines Bestätigungstelefons</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="32"/>
+        <source>To remove an approver phone</source>
+        <translation>Zum Entfernen eines Bestätigungstelefons</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="33"/>
+        <source>To enroll this phone as the admin approver</source>
+        <translation>Zum Registrieren dieses Telefons als Admin-Bestätiger</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="34"/>
+        <source>To change the network configuration</source>
+        <translation>Zum Ändern der Netzwerkkonfiguration</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="50"/>
+        <source>Admin code</source>
+        <translation>Admin-Code</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="137"/>
+        <source>Expired</source>
+        <translation>Abgelaufen</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="169"/>
+        <source>Ask the web console for a new code.</source>
+        <translation>Fordern Sie in der Webkonsole einen neuen Code an.</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="170"/>
+        <source>Valid for %1 s</source>
+        <translation>Gültig für %1 s</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="178"/>
+        <source>Copy</source>
+        <translation>Kopieren</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="201"/>
+        <source>Type it in the Calaos web console. Never give it to anyone.</source>
+        <translation>Geben Sie ihn in der Calaos-Webkonsole ein. Geben Sie ihn niemals weiter.</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/AdminCodeSheet.qml" line="209"/>
+        <source>Close</source>
+        <translation>Schließen</translation>
+    </message>
+</context>
+<context>
     <name>AdminUpdates</name>
     <message>
         <location filename="../src/AdminUpdates.cpp" line="405"/>

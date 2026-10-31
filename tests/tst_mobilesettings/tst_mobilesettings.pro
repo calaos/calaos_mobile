@@ -3,10 +3,10 @@ TARGET = tst_mobilesettings
 
 include(../common.pri)
 
-# Qt Quick Test of the mobile settings page (qml/mobile/SettingsView.qml)
-# and of the box updates page (qml/mobile/UpdatesView.qml)
-# with stand-ins for the context properties they read; the QuickFlux stub is
-# the one of tst_climatewidget.
+# Qt Quick Test of the mobile settings page (qml/mobile/SettingsView.qml),
+# of the box updates page (qml/mobile/UpdatesView.qml) and of the admin code
+# sheet (qml/mobile/AdminCodeSheet.qml) with stand-ins for the context
+# properties they read; the QuickFlux stub is the one of tst_climatewidget.
 QT += quick qmltest
 CONFIG += qmltestcase
 
@@ -29,4 +29,5 @@ SOURCES += \
 
 OTHER_FILES += \
     tst_settingsdevicename.qml \
+    tst_admincodesheet.qml \
     tst_updatesview.qml

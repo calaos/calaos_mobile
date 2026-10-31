@@ -9,6 +9,7 @@ Item {
 
     signal favoriteAddClicked()
     signal favoriteEditClicked()
+    signal boxUpdatesClicked()
 
     //Only what the user typed is saved: an untouched field would otherwise
     //freeze the platform name as an override when the phone is renamed in
@@ -95,6 +96,23 @@ Item {
                     width: Units.dp(200)
                     height: parent.height
                     onButtonClicked: AppActions.openEventLog()
+                    anchors.horizontalCenter: parent.horizontalCenter
+                }
+            }
+
+            ListGroupHeader { width: listFlick.width; title: qsTr("Box:") }
+            Item {
+                width: listFlick.width;
+                height: Units.dp(40)
+                CalaosItemBase {
+                    objectName: "boxUpdatesButton"
+                    text: qsTr("Box updates")
+                    width: Units.dp(200)
+                    height: parent.height
+                    onButtonClicked: {
+                        settingsPage.commitDeviceName()
+                        settingsPage.boxUpdatesClicked()
+                    }
                     anchors.horizontalCenter: parent.horizontalCenter
                 }
             }

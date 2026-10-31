@@ -3,6 +3,7 @@
 #include <QJniEnvironment>
 #include <QCoreApplication>
 #include <QDebug>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QPointer>
@@ -16,6 +17,7 @@ namespace
 constexpr char kHardwareUtilsClass[] = "fr/calaos/calaoshome/HardwareUtils";
 constexpr char kNativesClass[] = "fr/calaos/calaoshome/HardwareUtilsNatives";
 constexpr char kCredentialStoreClass[] = "fr/calaos/calaoshome/CredentialStore";
+constexpr char kMessagingClass[] = "fr/calaos/calaoshome/CalaosMessagingService";
 
 //QSettings keys of the clear-text credentials written by the base class
 //(and by this app before AND-7): read once for the migration, then removed.
@@ -98,6 +100,34 @@ void jniEmitDialogCancel(JNIEnv *, jclass)
     }, Qt::QueuedConnection);
 }
 
+void jniEmitPasswordEntered(JNIEnv *, jclass, jstring purpose, jstring user, jstring password)
+{
+    HardwareUtilsAndroid *hw = s_instance.data();
+    if (!hw)
+        return;
+
+    const QString p = QJniObject(purpose).toString();
+    const QString u = QJniObject(user).toString();
+    const QString pw = QJniObject(password).toString();
+    QMetaObject::invokeMethod(hw, [hw, p, u, pw]()
+    {
+        hw->emitNativePassword(p, u, pw);
+    }, Qt::QueuedConnection);
+}
+
+void jniEmitPasswordCanceled(JNIEnv *, jclass, jstring purpose)
+{
+    HardwareUtilsAndroid *hw = s_instance.data();
+    if (!hw)
+        return;
+
+    const QString p = QJniObject(purpose).toString();
+    QMetaObject::invokeMethod(hw, [hw, p]()
+    {
+        hw->emitNativePasswordCanceled(p);
+    }, Qt::QueuedConnection);
+}
+
 void jniEmitDeviceToken(JNIEnv *, jclass, jstring token)
 {
     HardwareUtilsAndroid *hw = s_instance.data();
@@ -124,6 +154,19 @@ void jniEmitNotificationOpened(JNIEnv *, jclass, jstring uuid)
     }, Qt::QueuedConnection);
 }
 
+void jniEmitAdminCodeNotified(JNIEnv *, jclass, jstring codeId)
+{
+    HardwareUtilsAndroid *hw = s_instance.data();
+    if (!hw)
+        return;
+
+    const QString s = QJniObject(codeId).toString();
+    QMetaObject::invokeMethod(hw, [hw, s]()
+    {
+        hw->handleAdminCodeNotified(s);
+    }, Qt::QueuedConnection);
+}
+
 } // namespace
 
 HardwareUtilsAndroid::HardwareUtilsAndroid(QObject *parent):
@@ -144,6 +187,9 @@ void HardwareUtilsAndroid::platformInit(QQmlApplicationEngine *e)
     //disable network monitoring.
     setupNetworkMonitoring();
 
+    //Created on the first run; read before the first login sends it.
+    loadPushKey();
+
     //QJniEnvironment resolves the class through Qt's class loader, which
     //a plain FindClass from a native thread does not.
     QJniEnvironment env;
@@ -152,6 +198,9 @@ void HardwareUtilsAndroid::platformInit(QQmlApplicationEngine *e)
         { "emitDialogCancel", "()V", reinterpret_cast<void *>(jniEmitDialogCancel) },
         { "emitDeviceToken", "(Ljava/lang/String;)V", reinterpret_cast<void *>(jniEmitDeviceToken) },
         { "emitNotificationOpened", "(Ljava/lang/String;)V", reinterpret_cast<void *>(jniEmitNotificationOpened) },
+        { "emitAdminCodeNotified", "(Ljava/lang/String;)V", reinterpret_cast<void *>(jniEmitAdminCodeNotified) },
+        { "emitPasswordEntered", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V", reinterpret_cast<void *>(jniEmitPasswordEntered) },
+        { "emitPasswordCanceled", "(Ljava/lang/String;)V", reinterpret_cast<void *>(jniEmitPasswordCanceled) },
     });
     clearJavaException("registerNativeMethods");
     if (!ok)
@@ -159,6 +208,8 @@ void HardwareUtilsAndroid::platformInit(QQmlApplicationEngine *e)
         qWarning() << "Android: failed to register native methods on" << kNativesClass;
         return;
     }
+
+    nativesRegistered = true;
 
     //From now on Java forwards token refreshes and notification taps.
     QJniObject::callStaticMethod<void>(kHardwareUtilsClass, "setNativesReady", "()V");
@@ -176,6 +227,14 @@ void HardwareUtilsAndroid::platformInit(QQmlApplicationEngine *e)
     //emitDeviceToken() (first run, or rotated token).
     QJniObject::callStaticMethod<void>(kHardwareUtilsClass, "requestPushToken", "()V");
     clearJavaException("HardwareUtils.requestPushToken");
+
+    //Cold start from an admin code notification: read once the UI is up.
+    QJniObject jcode = QJniObject::callStaticObjectMethod(kHardwareUtilsClass,
+                                                          "takePendingAdminCodeId",
+                                                          "()Ljava/lang/String;");
+    if (!clearJavaException("HardwareUtils.takePendingAdminCodeId") && jcode.isValid() &&
+        !jcode.toString().isEmpty())
+        handleAdminCodeNotified(jcode.toString());
 
     //Cold start from a notification tap: the activity parked the uuid.
     QJniObject juuid = QJniObject::callStaticObjectMethod(kHardwareUtilsClass,
@@ -347,6 +406,34 @@ void HardwareUtilsAndroid::inputTextDialog(const QString &title, const QString &
     }
 }
 
+bool HardwareUtilsAndroid::hasNativePasswordEntry() const
+{
+    //the natives the dialog answers through
+    return nativesRegistered;
+}
+
+bool HardwareUtilsAndroid::showNativePasswordEntry(const QString &purpose, const QVariantMap &options)
+{
+    auto str = [&options](const char *key)
+    {
+        return QJniObject::fromString(options.value(QLatin1String(key)).toString());
+    };
+    QJniObject jPurpose = QJniObject::fromString(purpose);
+    QJniObject jTitle = str("title"), jMessage = str("message"), jUser = str("user"),
+               jUserLabel = str("userLabel"), jPassLabel = str("passwordLabel"),
+               jConfirm = str("confirm"), jCancel = str("cancel");
+
+    const jboolean shown = QJniObject::callStaticMethod<jboolean>(kHardwareUtilsClass,
+        "passwordDialog",
+        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;"
+        "Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z",
+        jPurpose.object<jstring>(), jTitle.object<jstring>(), jMessage.object<jstring>(),
+        jUser.object<jstring>(), jUserLabel.object<jstring>(), jPassLabel.object<jstring>(),
+        jConfirm.object<jstring>(), jCancel.object<jstring>());
+    const bool failed = clearJavaException("HardwareUtils.passwordDialog");
+    return shown && !failed;
+}
+
 //Returns false when Java could not store the pair (Keystore failure).
 static bool storeCredentials(const QString &user, const QString &pass)
 {
@@ -483,6 +570,57 @@ void HardwareUtilsAndroid::resetAuthKeychain()
                                        "(Landroid/content/Context;)V", ctx.object());
     clearJavaException("CredentialStore.clear");
     forgetSettingsCredentials();
+}
+
+void HardwareUtilsAndroid::loadPushKey()
+{
+    const QByteArray key = QByteArray::fromHex(credentialStoreString("pushKey").toLatin1());
+    if (key.size() == 32)
+        setPushKey(key);
+    else
+        qWarning() << "Android: push key not available now, asked again later";
+}
+
+HardwareUtils::SecretCopy HardwareUtilsAndroid::copySecret(const QString &text, int seconds)
+{
+    Q_UNUSED(seconds) //cleared by AdminCodeModel
+    QJniObject jtext = QJniObject::fromString(text);
+    const jboolean ok = QJniObject::callStaticMethod<jboolean>(kHardwareUtilsClass, "copySecret",
+                                                               "(Ljava/lang/String;)Z",
+                                                               jtext.object<jstring>());
+    if (clearJavaException("HardwareUtils.copySecret") || !ok)
+        return SecretCopy::NotHandled;
+    return SecretCopy::Copied;
+}
+
+void HardwareUtilsAndroid::setSecureScreen(bool on)
+{
+    QJniObject::callStaticMethod<void>(kHardwareUtilsClass, "setSecureScreen", "(Z)V",
+                                       static_cast<jboolean>(on));
+    clearJavaException("HardwareUtils.setSecureScreen");
+}
+
+QList<QJsonObject> HardwareUtilsAndroid::adminCodeStash()
+{
+    QList<QJsonObject> entries;
+    const QJsonArray arr = QJsonDocument::fromJson(credentialStoreString("adminCodes").toUtf8()).array();
+    for (const QJsonValue &v: arr)
+        if (v.isObject())
+            entries << v.toObject();
+    return entries;
+}
+
+void HardwareUtilsAndroid::removeAdminCodes(const QStringList &codeIds)
+{
+    if (codeIds.isEmpty())
+        return;
+    const QByteArray json = QJsonDocument(QJsonArray::fromStringList(codeIds)).toJson(QJsonDocument::Compact);
+    QJniObject ctx = androidContext();
+    QJniObject jids = QJniObject::fromString(QString::fromUtf8(json));
+    QJniObject::callStaticMethod<void>(kMessagingClass, "consumeAdminCodes",
+                                       "(Landroid/content/Context;Ljava/lang/String;)V",
+                                       ctx.object(), jids.object<jstring>());
+    clearJavaException("CalaosMessagingService.consumeAdminCodes");
 }
 
 void HardwareUtilsAndroid::setConfigOption(QString key, QString value)

@@ -10,6 +10,7 @@
 #include "IOConnection.h"
 #include "JsonKeys.h"
 #include "TlsPinning.h"
+#include "AdminTransport.h"
 
 //Reconnection state machine and exponential backoff (T14).
 //
@@ -327,6 +328,7 @@ public:
         m_sessionUp = true;
         m_registered.clear();
         m_registeredName.clear();
+        m_registeredKey.clear();
     }
 
     //The transport is gone (logout, lost connection, new attempt).
@@ -335,19 +337,22 @@ public:
         m_sessionUp = false;
         m_registered.clear();
         m_registeredName.clear();
+        m_registeredKey.clear();
     }
 
-    //Called at the start of a session and on every token or device name
-    //change. Returns true when register_push must be sent for this token and
-    //name now; the pair is then considered registered for the rest of the
-    //session, so a rename is sent once and an unchanged one never.
-    bool shouldRegister(const QString &token, const QString &name = QString())
+    //Called at the start of a session and on every token, device name or
+    //push key change. Returns true when register_push must be sent for these
+    //values now; they are then considered registered for the rest of the
+    //session, so a change is sent once and an unchanged one never.
+    bool shouldRegister(const QString &token, const QString &name = QString(),
+                        const QByteArray &pushKey = QByteArray())
     {
         if (!m_sessionUp || token.isEmpty() ||
-            (token == m_registered && name == m_registeredName))
+            (token == m_registered && name == m_registeredName && pushKey == m_registeredKey))
             return false;
         m_registered = token;
         m_registeredName = name;
+        m_registeredKey = pushKey;
         return true;
     }
 
@@ -355,6 +360,7 @@ private:
     bool m_sessionUp = false;
     QString m_registered;
     QString m_registeredName;
+    QByteArray m_registeredKey;
 };
 
 //The "data" object of register_push (AND-7).
@@ -372,6 +378,11 @@ private:
 //registered tokens; an older calaos_server ignores it. Left out rather than
 //sent empty when the platform has no name.
 //
+//JsonKeys::PushKey: the 32-byte key calaos_server seals the admin codes of
+//this token with, as 64 lowercase hex digits. Left out when the platform has
+//none (desktop, a key store that failed): the server then keeps the key it
+//knows, or pushes the legacy text.
+//
 //Header-only so tests/tst_pushnotif checks the payload for each hardware
 //without a Q_OS_ANDROID build.
 namespace PushFormat
@@ -379,8 +390,11 @@ namespace PushFormat
 inline constexpr QLatin1StringView AndroidHardware{"android"};
 inline constexpr QLatin1StringView AndroidPushFormat{"data"};
 
+inline constexpr int PushKeySize = 32;
+
 inline QJsonObject registration(const QString &token, const QString &hardware,
-                                const QString &deviceName = QString())
+                                const QString &deviceName = QString(),
+                                const QByteArray &pushKey = QByteArray())
 {
     QJsonObject o = {
         { JsonKeys::Token, token },
@@ -391,13 +405,16 @@ inline QJsonObject registration(const QString &token, const QString &hardware,
     const QString name = deviceName.trimmed();
     if (!name.isEmpty())
         o[JsonKeys::DeviceName] = name;
+    if (pushKey.size() == PushKeySize)
+        o[JsonKeys::PushKey] = QString::fromLatin1(pushKey.toHex());
     return o;
 }
 }
 
 //QObject first, as Q_OBJECT requires; IOConnection is the read-only view the
-//IO models are given, see src/IOConnection.h.
-class CalaosConnection : public QObject, public IOConnection
+//IO models are given, see src/IOConnection.h. AdminTransport is what
+//AdminRelay sends its frames through.
+class CalaosConnection : public QObject, public IOConnection, public AdminTransport
 {
     Q_OBJECT
 public:
@@ -500,7 +517,21 @@ public:
     //(or, for a CA-valid certificate, drops the pin of the host) and logs in
     //again, refusing keeps the session down.
     void answerTlsTrust(bool accept);
-    bool hasPendingTlsTrust() const { return !pendingTrust.isEmpty(); }
+    bool hasPendingTlsTrust() const override { return !pendingTrust.isEmpty(); }
+
+    //AdminTransport: admin messages only exist on the WebSocket (calaos_server
+    //answers "unknown action" to "admin" over HTTP).
+    bool sendAdminMessage(const QString &msg, const QJsonObject &data, const QString &msgId) override
+    {
+        return sendWebsocket(msg, data, msgId);
+    }
+    bool isSecure() const override
+    {
+        return wsocket && constate == ConStateWebsocket &&
+               wsocket->requestUrl().scheme() == QLatin1String("wss");
+    }
+    bool isHttpFallback() const override { return constate == ConStateHttp; }
+    QString hostKey() const override { return lasthost; }
     //A certificate refused in this run is refused silently afterwards (the
     //launch login, iOS become-active), so the prompt cannot come back in a
     //loop. An explicit login from the login screen asks again.
@@ -745,6 +776,15 @@ signals:
     void tlsTrustCanceled();
     //The user refused the certificate of host.
     void tlsTrustRejected(const QString &host);
+    //The user trusted a new or changed certificate of host: anything
+    //unlocked over the previous key must be asked for again.
+    void tlsTrustAccepted(const QString &host);
+
+    //Answers to admin_unlock / admin_set / admin, with the msg_id they echo,
+    //and the unsolicited admin_event pushes. Never logged: they carry the
+    //admin session.
+    void adminReplyReceived(const QString &msg, const QString &msgId, const QJsonObject &data);
+    void adminEventReceived(const QJsonObject &data);
     //A certificate no pin can make acceptable (revoked, forged signature).
     //weakKey: RSA under 2048 bits, the box needs a new certificate.
     void tlsCertificateRefused(const QString &host, const QString &reason, bool weakKey);

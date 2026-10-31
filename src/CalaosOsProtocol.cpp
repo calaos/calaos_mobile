@@ -83,6 +83,8 @@ Job parseJob(const QJsonValue &v)
     const QJsonObject o = v.toObject();
     j.id = o.value(QStringLiteral("id")).toString();
     j.startedAt = QDateTime::fromString(o.value(QStringLiteral("started_at")).toString(), Qt::ISODate);
+    j.finishedAt = QDateTime::fromString(o.value(QStringLiteral("finished_at")).toString(), Qt::ISODate);
+    j.package = o.value(QStringLiteral("package")).toString();
     j.status = o.value(QStringLiteral("status")).toString();
     j.error = o.value(QStringLiteral("error")).toString();
     j.rebootRequired = o.value(QStringLiteral("reboot_required")).toBool();

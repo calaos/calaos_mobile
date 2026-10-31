@@ -68,6 +68,10 @@ Window {
     Connections {
         target: calaosApp
         function onApplicationStatusChanged(status) {
+            //iOS background cycle with a page to keep (native password entry,
+            //box updates): the session reconnects in place, see ResumePolicy.
+            if (calaosApp.keepPageOnResume)
+                return
             if (calaosApp.applicationStatus === Common.LoggedIn) {
                 menuBar.menuType = Common.MenuMain
                 stackView.push(favoriteView)
@@ -274,6 +278,17 @@ Window {
                 menuBar.menuType = Common.MenuBack
                 stackView.push(favEditView)
             }
+            onBoxUpdatesClicked: {
+                menuBar.menuType = Common.MenuBack
+                stackView.push(updatesView)
+            }
+        }
+    }
+
+    Component {
+        id: updatesView
+
+        UpdatesView {
         }
     }
 
@@ -537,4 +552,8 @@ Window {
     //Unknown or changed server certificate: asked while logging in, over the
     //login page.
     TlsTrustSheet { id: tlsTrustSheet }
+
+    //Admin code pushed to this phone, decrypted by the app: over any page,
+    //logged in or not.
+    AdminCodeSheet { id: adminCodeSheet }
 }

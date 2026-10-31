@@ -10,6 +10,7 @@
 #import <Security/Security.h>
 #import <fcntl.h>
 #import <sys/file.h>
+#import <time.h>
 #import <unistd.h>
 #import "ios/SimpleKeychain/A0SimpleKeychain.h"
 #import "ios/SimpleKeychain/A0SimpleKeychain+KeyPair.h"
@@ -35,6 +36,13 @@ static NSString *const kBadgeLockFile = @"calaos.badge_count.lock";
 //host:port -> SHA-256 hex of the SubjectPublicKeyInfo the user confirmed in
 //the app (src/TlsPinning.h), written by HardwareUtils_iOS::setTlsPins().
 static NSString *const kTlsPinsKey = @"calaos.tls_pins";
+//Encrypted admin codes (src/AdminCode.h), stashed here as received, one JSON
+//file per code; the app checks, decrypts and shows them. No cryptography in
+//the extension. Same directory name in HardwareUtils.mm.
+static NSString *const kAdminCodeDir = @"admin_codes";
+//Stash bounds, same as the app and Android's CredentialStore.
+static const long long kAdminCodeMaxAgeMs = 10 * 60 * 1000;
+static const NSUInteger kAdminCodeMaxFiles = 16;
 
 //One DER TLV header at pos, same walk as TlsPinning::subjectPublicKeyInfo():
 //at most 3 length bytes, bounds written so that nothing can overflow.
@@ -147,6 +155,13 @@ static NSString *tlsHostKey(NSString *host, NSInteger port)
         return;
     }
     
+    //The alert is already the generic notice from the server: shown as is.
+    if (userInfo[@"admin_code_id"] != nil) {
+        [self stashAdminCode:userInfo identifier:request.identifier];
+        [self contentComplete];
+        return;
+    }
+
     NSString *uuid = userInfo[@"event_uuid"];
     if (uuid == nil) {
         [self contentComplete];
@@ -362,6 +377,86 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response newRequest:(NSURLReques
         close(fd);
     }
     return count;
+}
+
+//The six admin_code_* strings as received, plus the reception time by the
+//wall clock and by CLOCK_MONOTONIC (counts during sleep, shared with the app,
+//AdminCode::monotonicNowMs()). Written atomically, never overwritten: the
+//first reception is the one that counts.
+- (void)stashAdminCode:(NSDictionary *)userInfo identifier:(NSString *)identifier {
+    id codeId = userInfo[@"admin_code_id"];
+    if (![codeId isKindOfClass:[NSString class]] || ![self isAdminCodeId:codeId]) {
+        NSLog(@"PushNotif: admin code with an invalid id, not stashed");
+        return;
+    }
+
+    NSMutableDictionary *entry = [NSMutableDictionary dictionary];
+    entry[@"code_id"] = codeId;
+    NSDictionary *fields = @{ @"admin_code_action": @"action", @"admin_code_expires": @"expires",
+                              @"admin_code_nonce": @"nonce", @"admin_code_ct": @"ct",
+                              @"admin_code_tag": @"tag" };
+    for (NSString *key in fields) {
+        id v = userInfo[key];
+        entry[fields[key]] = ([v isKindOfClass:[NSString class]] && [(NSString *)v length] <= 64) ? v : @"";
+    }
+    const long long now = (long long)([[NSDate date] timeIntervalSince1970] * 1000.0);
+    entry[@"received_at"] = @(now);
+    entry[@"received_mono"] = @((long long)(clock_gettime_nsec_np(CLOCK_MONOTONIC) / 1000000));
+    if (identifier != nil)
+        entry[@"notif_id"] = identifier;
+
+    NSFileManager *fm = [NSFileManager defaultManager];
+    NSURL *container = [fm containerURLForSecurityApplicationGroupIdentifier:kAppGroup];
+    if (container == nil)
+        return;
+    NSURL *dir = [container URLByAppendingPathComponent:kAdminCodeDir isDirectory:YES];
+    NSURL *file = [dir URLByAppendingPathComponent:[codeId stringByAppendingString:@".json"]];
+    if ([fm fileExistsAtPath:file.path])
+        return;
+    [self pruneAdminCodeDir:dir now:now];
+
+    NSData *json = [NSJSONSerialization dataWithJSONObject:entry options:0 error:nil];
+    if (json == nil || ![fm createDirectoryAtURL:dir withIntermediateDirectories:YES attributes:nil error:nil] ||
+        ![json writeToURL:file atomically:YES])
+        NSLog(@"PushNotif: admin code not stashed");
+}
+
+//Entries more than 10 minutes away from now (a code lives 60 s) go, then the
+//oldest beyond 15, so the stash stays small even if the app never runs.
+- (void)pruneAdminCodeDir:(NSURL *)dir now:(long long)now {
+    NSFileManager *fm = [NSFileManager defaultManager];
+    NSArray<NSURL *> *files = [fm contentsOfDirectoryAtURL:dir includingPropertiesForKeys:nil options:0 error:nil];
+    NSMutableArray *kept = [NSMutableArray array];
+    for (NSURL *f in files) {
+        if (![f.pathExtension isEqualToString:@"json"])
+            continue;
+        NSData *data = [NSData dataWithContentsOfURL:f];
+        id obj = data ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
+        id at = [obj isKindOfClass:[NSDictionary class]] ? obj[@"received_at"] : nil;
+        long long t = [at isKindOfClass:[NSNumber class]] ? [at longLongValue] : 0;
+        if (t <= 0 || llabs(now - t) > kAdminCodeMaxAgeMs)
+            [fm removeItemAtURL:f error:nil];
+        else
+            [kept addObject:@[ @(t), f ]];
+    }
+    [kept sortUsingComparator:^NSComparisonResult(NSArray *a, NSArray *b) {
+        return [a[0] compare:b[0]];
+    }];
+    while (kept.count >= kAdminCodeMaxFiles) {
+        [fm removeItemAtURL:kept[0][1] error:nil];
+        [kept removeObjectAtIndex:0];
+    }
+}
+
+- (BOOL)isAdminCodeId:(NSString *)s {
+    if (s.length != 16)
+        return NO;
+    for (NSUInteger i = 0; i < s.length; i++) {
+        unichar c = [s characterAtIndex:i];
+        if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')))
+            return NO;
+    }
+    return YES;
 }
 
 //Written by the app (HardwareUtils_iOS::setSessionActive()): false after an

@@ -28,9 +28,28 @@ protected:
     //state of calaos connection (logged in/out)
     bool calaosConnected = false;
 
+    //Shows the platform dialog of requestNativePassword(); false if it could
+    //not. The answer comes back through emitNativePassword*().
+    virtual bool showNativePasswordEntry(const QString &purpose, const QVariantMap &options)
+    {
+        Q_UNUSED(purpose) Q_UNUSED(options)
+        return false;
+    }
+
 private:
     //Event uuid of a notification tapped while not logged in
     QString pendingNotifUuid;
+    //The request whose dialog is on screen, empty when none.
+    QString pendingPasswordPurpose;
+
+    //Admin code notified before the code sheet could read the stash
+    QString pendingAdminCodeId;
+
+    //See pushKey()
+    QByteArray m_pushKey;
+
+    //Base stash (desktop, tests): in memory, keyed by code_id
+    QMap<QString, QJsonObject> m_adminCodeStash;
 
 public:
     static HardwareUtils *Instance(QObject *parent = NULL);
@@ -79,6 +98,19 @@ public:
     //to be typed, the platform decides how. The answer comes back through the
     //dialogTextValid()/dialogCanceled() signals below.
     Q_INVOKABLE virtual void inputTextDialog(const QString &title, const QString &message);
+
+    //Native credential entry: a platform dialog with a real username and
+    //password field, the only ones the password manager (iCloud Keychain,
+    //1Password, Android Autofill) can fill; Qt's own text fields cannot.
+    //options: title, message, user (prefilled), userLabel, passwordLabel,
+    //confirm, cancel. Exactly one nativePasswordEntered() or
+    //nativePasswordCanceled() per accepted request; false (nothing shown,
+    //nothing emitted) when the platform has none, or one is already open.
+    //Nothing is stored or logged on the way.
+    Q_INVOKABLE virtual bool hasNativePasswordEntry() const { return false; }
+    Q_INVOKABLE bool requestNativePassword(const QString &purpose, const QVariantMap &options);
+    //The purpose of the native entry on screen, empty when none.
+    QString pendingNativePasswordPurpose() const { return pendingPasswordPurpose; }
 
     //This is set by platform code if app was started with options
     //It is used by iOS when started with a QuickAction
@@ -150,6 +182,52 @@ public:
     //the first characters and the length, for diagnostics.
     static QString describeToken(const QString &token);
 
+    //Key calaos_server seals the admin codes pushed to this device with
+    //(register_push "push_key", see AdminCode.h): 32 bytes from the platform
+    //CSPRNG, created once and kept in the platform key store (Keychain,
+    //Keystore), never in QSettings. Empty when the platform has none (desktop)
+    //or its store failed: the server then pushes the legacy text.
+    QByteArray pushKey() const { return m_pushKey; }
+    //Platform code reports the key here; pushKeyChanged() on a change only.
+    void setPushKey(const QByteArray &key);
+    //Reads the key from the platform store (created there the first time it
+    //is really absent) and reports it. Called again while the key is empty:
+    //the store can be briefly unavailable (iOS before the first unlock,
+    //Keystore error), which must never replace an existing key.
+    virtual void loadPushKey() {}
+
+    //Admin code payloads stashed at reception by the platform (Android
+    //messaging service, iOS notification extension or app delegate), exactly
+    //as received plus the reception time; no cryptography there. One JSON
+    //object per code, see AdminCode::Entry. Base: in memory.
+    virtual QList<QJsonObject> adminCodeStash();
+    //Adds an entry unless one with the same code_id is stashed already.
+    virtual void stashAdminCode(const QJsonObject &entry);
+    //Consumed, expired or rejected codes. Also withdraws their notification
+    //where the platform can.
+    virtual void removeAdminCodes(const QStringList &codeIds);
+
+    enum class SecretCopy
+    {
+        NotHandled,       //caller puts it on QClipboard and clears it later
+        Copied,           //caller clears it later (QClipboard reads it back)
+        CopiedWithExpiry, //the platform drops it after the given time itself
+    };
+    //Puts a secret on the clipboard, marked sensitive where the platform
+    //can (no preview), for at most seconds.
+    virtual SecretCopy copySecret(const QString &text, int seconds) { Q_UNUSED(text); Q_UNUSED(seconds); return SecretCopy::NotHandled; }
+
+    //Keeps a secret on screen out of screenshots and the app switcher where
+    //the platform can (Android FLAG_SECURE).
+    virtual void setSecureScreen(bool on) { Q_UNUSED(on); }
+
+    //An admin code push arrived or was tapped (codeId may be empty: "look at
+    //the stash"). Kept until the code sheet is up (takePendingAdminCode()),
+    //and adminCodeNotified() is emitted.
+    void handleAdminCodeNotified(const QString &codeId);
+    QString takePendingAdminCode();
+    bool hasPendingAdminCode() const { return !pendingAdminCodeId.isNull(); }
+
     //let the HardwareUtils class know about the connection state
     void updateCalaosConnectState(bool connected) { calaosConnected = connected; }
     bool isCalaosConnected() { return calaosConnected; }
@@ -159,6 +237,10 @@ public:
     void emitApplicationActiveChanged(bool active);
     void emitDialogTextValid(const QString &s);
     void emitDialogCancel();
+    //Platform answers of requestNativePassword(): only the pending request's
+    //first answer goes through.
+    void emitNativePassword(const QString &purpose, const QString &user, const QString &password);
+    void emitNativePasswordCanceled(const QString &purpose);
     void emitCalaosServerDetected();
     void emitPushNotifReceived(const QString &uuid);
 
@@ -169,6 +251,9 @@ signals:
 
     void dialogCanceled();
     void dialogTextValid(const QString &text);
+
+    void nativePasswordEntered(const QString &purpose, const QString &user, const QString &password);
+    void nativePasswordCanceled(const QString &purpose);
 
     //emited when a calaos_server has been detected on the LAN
     void calaosServerDetected();
@@ -181,6 +266,12 @@ signals:
 
     //emited when effectiveDeviceName() changed (see setDeviceNameOverride())
     void deviceNameChanged();
+
+    //emited when pushKey() changed (see setPushKey())
+    void pushKeyChanged();
+
+    //see handleAdminCodeNotified()
+    void adminCodeNotified(const QString &codeId);
 };
 
 //When Application opens a deferred notification tap (FIX-3).
@@ -243,13 +334,16 @@ struct ForegroundPushPresentation
     bool sound = false;
 };
 
-//The app only shows an event push itself (event viewer) when logged in;
-//anything else, like the admin code, would be invisible without a banner.
+//The app only shows an event push itself (event viewer) when logged in; an
+//encrypted admin code opens the code sheet whatever the connection (the
+//phone never needs the box to read it). Anything else, like the legacy
+//admin code text, would be invisible without a banner.
 //The badge is never set here: the user is looking at the app.
-inline ForegroundPushPresentation foregroundPushPresentation(bool hasEventUuid, bool connected)
+inline ForegroundPushPresentation foregroundPushPresentation(bool hasEventUuid, bool connected,
+                                                             bool hasAdminCode = false)
 {
     ForegroundPushPresentation p;
-    p.banner = !(hasEventUuid && connected);
+    p.banner = !(hasEventUuid && connected) && !hasAdminCode;
     p.list = true;
     p.sound = true;
     return p;

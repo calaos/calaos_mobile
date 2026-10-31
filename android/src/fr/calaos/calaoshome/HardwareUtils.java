@@ -3,6 +3,9 @@ package fr.calaos.calaoshome;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ClipData;
+import android.content.ClipDescription;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -14,13 +17,19 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.PersistableBundle;
 import android.provider.Settings;
+import android.text.InputType;
 import android.util.Log;
+import android.view.View;
+import android.view.WindowManager;
 import android.view.WindowInsetsController;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import com.google.firebase.messaging.FirebaseMessaging;
 import org.qtproject.qt.android.bindings.QtActivity;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 // Native callbacks implemented in android/HardwareUtils_Android.cpp. They are
 // registered by HardwareUtilsAndroid::platformInit() through
@@ -31,6 +40,9 @@ class HardwareUtilsNatives
     public static native void emitDialogCancel();
     public static native void emitDeviceToken(String token);
     public static native void emitNotificationOpened(String eventUuid);
+    public static native void emitAdminCodeNotified(String codeId);
+    public static native void emitPasswordEntered(String purpose, String user, String password);
+    public static native void emitPasswordCanceled(String purpose);
 }
 
 public class HardwareUtils extends QtActivity
@@ -55,6 +67,9 @@ public class HardwareUtils extends QtActivity
     // Event uuid of the notification that started the activity, waiting for
     // Qt to come up and take it (takePendingEventUuid).
     private static volatile String pendingEventUuid;
+
+    // Same for an admin code notification tapped before Qt came up.
+    private static volatile String pendingAdminCodeId;
 
     private static final int REQUEST_POST_NOTIFICATIONS = 0x4A10;
 
@@ -132,6 +147,16 @@ public class HardwareUtils extends QtActivity
 
     private void rememberEventUuid(Intent intent)
     {
+        String codeId = adminCodeIdFromIntent(intent);
+        if (codeId != null)
+        {
+            if (nativesReady)
+                notifyAdminCode(codeId);
+            else
+                pendingAdminCodeId = codeId;
+            return;
+        }
+
         String uuid = eventUuidFromIntent(intent);
         if (uuid == null)
             return;
@@ -167,6 +192,26 @@ public class HardwareUtils extends QtActivity
             return null;
         }
         return CalaosMessagingService.sanitizeEventUuid(uuid);
+    }
+
+    // Same rules as eventUuidFromIntent(). The id only tells the app to read
+    // the stash: a forged one shows nothing.
+    static String adminCodeIdFromIntent(Intent intent)
+    {
+        if (intent == null)
+            return null;
+        if ((intent.getFlags() & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0)
+            return null;
+
+        try
+        {
+            return CalaosMessagingService.sanitizeAdminCodeId(
+                intent.getStringExtra(CalaosMessagingService.EXTRA_ADMIN_CODE_ID));
+        }
+        catch (RuntimeException e)
+        {
+            return null;
+        }
     }
 
     // Android 13+ only: below that, notifications need no runtime permission
@@ -369,6 +414,138 @@ public class HardwareUtils extends QtActivity
         return true;
     }
 
+    // Native credential entry (HardwareUtils::requestNativePassword): real
+    // EditTexts the Android Autofill framework can fill, which Qt's single
+    // proxy QtEditText cannot. Answers exactly once, then wipes the fields.
+    // Nothing is stored or logged.
+    public static boolean passwordDialog(final String purpose, final String title, final String message,
+                                         final String user, final String userLabel,
+                                         final String passwordLabel, final String confirmText,
+                                         final String cancelText)
+    {
+        final HardwareUtils activity = _context;
+        if (!isUsable(activity))
+        {
+            Log.w(TAG, "passwordDialog: no activity");
+            return false;
+        }
+
+        activity.runOnUiThread(new Runnable()
+        {
+            public void run()
+            {
+                if (!isUsable(activity))
+                {
+                    notifyPasswordCanceled(purpose);
+                    return;
+                }
+
+                final EditText userEdit = new EditText(activity);
+                userEdit.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+                userEdit.setHint(userLabel);
+                userEdit.setText(user);
+                userEdit.setAutofillHints(View.AUTOFILL_HINT_USERNAME);
+                userEdit.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_YES);
+
+                final EditText passEdit = new EditText(activity);
+                passEdit.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                passEdit.setHint(passwordLabel);
+                passEdit.setAutofillHints(View.AUTOFILL_HINT_PASSWORD);
+                passEdit.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_YES);
+
+                final int pad = Math.round(20 * activity.getResources().getDisplayMetrics().density);
+                LinearLayout layout = new LinearLayout(activity);
+                layout.setOrientation(LinearLayout.VERTICAL);
+                layout.setPadding(pad, 0, pad, 0);
+                layout.addView(userEdit);
+                layout.addView(passEdit);
+
+                final AtomicBoolean answered = new AtomicBoolean(false);
+                final Runnable wipe = new Runnable()
+                {
+                    public void run()
+                    {
+                        userEdit.setText("");
+                        passEdit.setText("");
+                    }
+                };
+
+                AlertDialog dialog = new AlertDialog.Builder(activity)
+                    .setTitle(title)
+                    .setMessage(message)
+                    .setView(layout)
+                    .setPositiveButton(confirmText, new DialogInterface.OnClickListener()
+                    {
+                        public void onClick(DialogInterface d, int which)
+                        {
+                            if (answered.getAndSet(true))
+                                return;
+                            final String u = userEdit.getText().toString();
+                            final String p = passEdit.getText().toString();
+                            wipe.run();
+                            notifyPasswordEntered(purpose, u, p);
+                            d.dismiss();
+                        }
+                    })
+                    .setNegativeButton(cancelText, new DialogInterface.OnClickListener()
+                    {
+                        public void onClick(DialogInterface d, int which)
+                        {
+                            if (answered.getAndSet(true))
+                                return;
+                            wipe.run();
+                            notifyPasswordCanceled(purpose);
+                            d.dismiss();
+                        }
+                    })
+                    // Back key or tap outside the dialog
+                    .setOnCancelListener(new DialogInterface.OnCancelListener()
+                    {
+                        public void onCancel(DialogInterface d)
+                        {
+                            if (answered.getAndSet(true))
+                                return;
+                            wipe.run();
+                            notifyPasswordCanceled(purpose);
+                        }
+                    })
+                    .create();
+                if (dialog.getWindow() != null)
+                    dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+                dialog.show();
+                // The user name is known: straight to the password
+                if (user != null && !user.isEmpty())
+                    passEdit.requestFocus();
+            }
+        });
+
+        return true;
+    }
+
+    private static void notifyPasswordEntered(String purpose, String user, String password)
+    {
+        try
+        {
+            HardwareUtilsNatives.emitPasswordEntered(purpose, user, password);
+        }
+        catch (UnsatisfiedLinkError e)
+        {
+            Log.e(TAG, "emitPasswordEntered: native method not registered", e);
+        }
+    }
+
+    private static void notifyPasswordCanceled(String purpose)
+    {
+        try
+        {
+            HardwareUtilsNatives.emitPasswordCanceled(purpose);
+        }
+        catch (UnsatisfiedLinkError e)
+        {
+            Log.e(TAG, "emitPasswordCanceled: native method not registered", e);
+        }
+    }
+
     private static void notifyDialogTextValid(String text)
     {
         try
@@ -465,6 +642,88 @@ public class HardwareUtils extends QtActivity
         {
             Log.w(TAG, "emitDeviceToken: native method not registered");
         }
+    }
+
+    // An admin code was stashed (CalaosMessagingService, FCM executor thread):
+    // the app reads it now if Qt runs, else at its next start or foreground.
+    static void deliverAdminCode(String codeId)
+    {
+        if (!nativesReady)
+            return;
+        notifyAdminCode(codeId);
+    }
+
+    // Not parked on failure: nothing would take it once Qt is up, and the
+    // app reads the whole stash anyway at its next start or foreground.
+    private static void notifyAdminCode(String codeId)
+    {
+        try
+        {
+            HardwareUtilsNatives.emitAdminCodeNotified(codeId);
+        }
+        catch (UnsatisfiedLinkError e)
+        {
+            Log.w(TAG, "emitAdminCodeNotified: native method not registered");
+        }
+    }
+
+    // The admin code on the clipboard, flagged sensitive so the system
+    // clipboard preview (Android 13+) and keyboards do not show it. The app
+    // clears it after its lifetime (AdminCodeModel). Qt thread.
+    public static boolean copySecret(String text)
+    {
+        final HardwareUtils activity = _context;
+        if (!isUsable(activity))
+            return false;
+
+        try
+        {
+            ClipboardManager cm = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
+            if (cm == null)
+                return false;
+            ClipData clip = ClipData.newPlainText("Calaos admin code", text);
+            PersistableBundle extras = new PersistableBundle();
+            extras.putBoolean(Build.VERSION.SDK_INT >= 33 ? ClipDescription.EXTRA_IS_SENSITIVE
+                                                          : "android.content.extra.IS_SENSITIVE", true);
+            clip.getDescription().setExtras(extras);
+            cm.setPrimaryClip(clip);
+            return true;
+        }
+        catch (RuntimeException e)
+        {
+            Log.w(TAG, "copySecret failed: " + e.getClass().getSimpleName());
+            return false;
+        }
+    }
+
+    // FLAG_SECURE while an admin code is on screen: no screenshot, blank in
+    // Recents.
+    public static void setSecureScreen(final boolean on)
+    {
+        final HardwareUtils activity = _context;
+        if (!isUsable(activity))
+            return;
+
+        activity.runOnUiThread(new Runnable()
+        {
+            public void run()
+            {
+                if (!isUsable(activity))
+                    return;
+                if (on)
+                    activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+                else
+                    activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
+            }
+        });
+    }
+
+    // Admin code id the activity was started with, if any. Cleared on read.
+    public static String takePendingAdminCodeId()
+    {
+        String id = pendingAdminCodeId;
+        pendingAdminCodeId = null;
+        return id == null ? "" : id;
     }
 
     // Event uuid the activity was started with, if any. Cleared on read.

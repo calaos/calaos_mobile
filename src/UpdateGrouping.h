@@ -4,6 +4,8 @@
 #include <QString>
 #include <QStringList>
 #include <QList>
+#include <QJsonObject>
+#include <QMap>
 
 /*
  * Grouping table for the software-update feature.
@@ -76,6 +78,22 @@ inline QString groupForPackage(const QString &name)
 
     //fallback: anything not matched by a specific rule goes to "system"
     return QStringLiteral("system");
+}
+
+//Splits an update list ({name: {...}}) into the calaos packages, shown one
+//by one, and the other packages bucketed by group. Used by UpdateManager
+//(kiosk) and AdminUpdates (mobile).
+inline void splitPackages(const QJsonObject &pkgs, QJsonObject &calaosSubset,
+                          QMap<QString, QStringList> &groups)
+{
+    for (auto it = pkgs.begin(); it != pkgs.end(); ++it)
+    {
+        const QString group = groupForPackage(it.key());
+        if (group.isEmpty())
+            calaosSubset[it.key()] = it.value();
+        else
+            groups[group].append(it.key());
+    }
 }
 
 } // namespace UpdateGrouping

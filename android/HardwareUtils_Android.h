@@ -6,7 +6,9 @@
 //Push: the FCM registration token (from Java: persisted value at startup, then
 //FirebaseMessaging.getToken() and every onNewToken()) goes through
 //HardwareUtils::setDeviceToken(), and notification taps through
-//HardwareUtils::handleNotificationOpened(): same policy as iOS.
+//HardwareUtils::handleNotificationOpened(): same policy as iOS. The push key
+//(CredentialStore.pushKey()) is read at startup; admin code arrivals and taps
+//go through HardwareUtils::handleAdminCodeNotified().
 class HardwareUtilsAndroid: public HardwareUtils
 {
 private:
@@ -30,6 +32,8 @@ public:
 
     virtual void inputTextDialog(const QString &title, const QString &message);
 
+    bool hasNativePasswordEntry() const override;
+
     virtual QString getDeviceName();
 
     //Credentials and server host live on the Java side (CredentialStore:
@@ -47,7 +51,22 @@ public:
     //CredentialStore's copy of the TLS pins, for PushPictureWorker.
     virtual void setTlsPins(const QVariantMap &pins);
 
+    //Admin code stash written by CalaosMessagingService (CredentialStore);
+    //removing an entry also cancels its notification.
+    virtual void loadPushKey();
+    //Sensitive ClipData; FLAG_SECURE while a code is shown.
+    virtual SecretCopy copySecret(const QString &text, int seconds);
+    virtual void setSecureScreen(bool on);
+    virtual QList<QJsonObject> adminCodeStash();
+    virtual void removeAdminCodes(const QStringList &codeIds);
+
+protected:
+    bool showNativePasswordEntry(const QString &purpose, const QVariantMap &options) override;
+
 private:
+    //JNI callbacks registered: the native dialogs can answer
+    bool nativesRegistered = false;
+
     //Qt's Android backend (ConnectivityManager default-network callback) feeds
     //QNetworkInformation; its changes become networkStatusChanged(), like
     //Reachability does on iOS.

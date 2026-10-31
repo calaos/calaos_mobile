@@ -114,6 +114,15 @@ docs/               Refactoring board (BOARD.md) and tickets (tasks/), in French
   rules in [`CalaosOsProtocol`](src/CalaosOsProtocol.h). The update flow is
   [`UpdateManager`](src/UpdateManager.h) (also uses the `/api/v2/events`
   WebSocket, `/api/events` on an old daemon).
+- **Box updates from mobile**: no daemon access, the phone goes through
+  calaos_server's admin relay with the admin password
+  ([`AdminRelay`](src/AdminRelay.h) on the household WebSocket,
+  [`AdminRelayBackend`](src/AdminRelayBackend.h),
+  [`AdminUpdates`](src/AdminUpdates.h), `qml/mobile/UpdatesView.qml`). The
+  update calls share one interface, [`UpdateBackend`](src/UpdateBackend.h),
+  implemented by `CalaosOsAPI` (kiosk) and `AdminRelayBackend` (mobile); the
+  update models and `CalaosOsProtocol` are shared sources. Details in
+  [doc/mobile.md](doc/mobile.md) section 8.1.
 - **Desktop settings**: `local_config.xml` (`<calaos:option name= value=>`), looked
   up in `~/.config/calaos`, `/etc/calaos`, `$PREFIX/etc/calaos`, overridable
   with `--config`/`--cache`; keys listed in [README.md](README.md). Mobile uses

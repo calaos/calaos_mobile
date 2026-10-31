@@ -32,6 +32,8 @@
         <file>qml/mobile/ClimateSheet.qml</file>
         <file>qml/mobile/SheetScroll.qml</file>
         <file>qml/mobile/TlsTrustSheet.qml</file>
+        <file>qml/mobile/AdminCodeSheet.qml</file>
+        <file>qml/mobile/UpdatesView.qml</file>
         <file>qml/quickflux/ActionTypes.qml</file>
         <file>qml/quickflux/AppActions.qml</file>
         <file>qml/quickflux/qmldir</file>

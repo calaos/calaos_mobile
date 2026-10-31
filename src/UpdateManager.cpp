@@ -926,6 +926,25 @@ void UpdateManager::startJobPolling()
         m_jobPollTimer->start();
 }
 
+void UpdateManager::restartApp()
+{
+    m_api->restartApp([this](const CalaosOsReply &reply)
+    {
+        if (reply.ok)
+            return;
+
+        //the raw daemon text is English and transport errors are Qt internals
+        qWarning() << "system/restart refused:" << reply.httpStatus << reply.error;
+        QString msg = reply.upgradeInProgress
+                ? tr("An update is being installed. Restart once it has finished.")
+                : tr("The application could not be restarted.");
+        QVariantMap m = {{ "title", tr("Restart") },
+                         { "message", msg },
+                         { "button", tr("Close") }};
+        QFAppDispatcher::instance(engine)->dispatch("showNotificationMsg", m);
+    });
+}
+
 void UpdateManager::clearError()
 {
     if (get_isUpgrading() || get_isChecking())

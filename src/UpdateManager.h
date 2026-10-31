@@ -64,6 +64,8 @@ public:
     Q_INVOKABLE void upgradeGroup(QString groupId);
     Q_INVOKABLE void upgradeAll();
     Q_INVOKABLE void clearError();
+    //kiosk restart of calaos_home; the daemon owns the guards, so a refusal is only reported
+    void restartApp();
 
     //safety-net read of update/status while a job runs (tests shorten it)
     void setJobPollInterval(int ms);

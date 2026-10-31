@@ -109,6 +109,8 @@ public:
     bool busy = false;
     QString busyJobId; //job_id of 409 answers, empty: none
     int reboots = 0;
+    int restarts = 0;
+    bool restartRefused = false;
     int legacyUpgrades = 0;
 
     //fault injection
@@ -552,6 +554,16 @@ private:
                 ok(s, 200, QJsonValue::Null);
             }
         }
+        else if (req.method == "POST" && p == QStringLiteral("/system/restart"))
+        {
+            if (restartRefused)
+                busyError(s);
+            else
+            {
+                restarts++;
+                ok(s, 200, QJsonValue::Null);
+            }
+        }
         else
             err(s, 404, "not_found", "not found");
     }
@@ -599,6 +611,16 @@ private:
             else
             {
                 reboots++;
+                json(s, 200, QJsonObject{{ "error", false }, { "msg", "ok" }});
+            }
+        }
+        else if (req.method == "POST" && p == QStringLiteral("/api/system/restart"))
+        {
+            if (restartRefused)
+                json(s, 409, inProgress);
+            else
+            {
+                restarts++;
                 json(s, 200, QJsonObject{{ "error", false }, { "msg", "ok" }});
             }
         }
@@ -661,6 +683,8 @@ private slots:
     void checkDuringUpgradeKeepsDaemonAvailable();
     void rebootDuringUpgradeIsRefused_data();
     void rebootDuringUpgradeIsRefused();
+    void restartRefusedIsReported_data();
+    void restartRefusedIsReported();
 
 private:
     void writeToken(const QString &value);
@@ -1204,6 +1228,39 @@ void TstUpdateClient::rebootDuringUpgradeIsRefused()
     QVERIFY(reply.ok);
     QVERIFY(!reply.upgradeInProgress);
     QCOMPARE(daemon.reboots, 1);
+}
+
+void TstUpdateClient::restartRefusedIsReported_data()
+{
+    QTest::addColumn<bool>("hasV2");
+    QTest::newRow("v2") << true;
+    QTest::newRow("legacy") << false;
+}
+
+void TstUpdateClient::restartRefusedIsReported()
+{
+    QFETCH(bool, hasV2);
+
+    FakeDaemon daemon;
+    daemon.token = makeToken('f');
+    daemon.hasV2 = hasV2;
+    writeToken(daemon.token);
+    QVERIFY(daemon.start());
+    startClient(daemon);
+
+    daemon.restartRefused = true;
+    m_mgr->restartApp();
+    QTRY_COMPARE(dispatchedOf("showNotificationMsg").size(), 1);
+    QCOMPARE(daemon.restarts, 0);
+    const QVariantMap m = dispatchedOf("showNotificationMsg").first().message;
+    QCOMPARE(m.value("title").toString(), QStringLiteral("Restart"));
+    QVERIFY(m.value("message").toString().contains(QStringLiteral("update is being installed")));
+
+    daemon.restartRefused = false;
+    m_mgr->restartApp();
+    QTRY_COMPARE(daemon.restarts, 1);
+    QTest::qWait(200);
+    QCOMPARE(dispatchedOf("showNotificationMsg").size(), 1);
 }
 
 static QJsonObject kernelPackages()

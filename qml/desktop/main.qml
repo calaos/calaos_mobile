@@ -95,6 +95,8 @@ Window {
             item = configScreen
         } else if (itemId === "config/l18n") {
             item = configL18nView
+        } else if (itemId === "config/time") {
+            item = configTimeView
         } else if (itemId === "config/info") {
             item = configUserInfoView
         } else if (itemId === "media/spotify") {
@@ -273,6 +275,11 @@ Window {
     Component {
         id: configL18nView
         ConfigL18nView {}
+    }
+
+    Component {
+        id: configTimeView
+        ConfigTimeView {}
     }
 
     Component {

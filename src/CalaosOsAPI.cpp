@@ -279,6 +279,38 @@ void CalaosOsAPI::configureNetwork(const QJsonObject &networkConfig, std::functi
     });
 }
 
+void CalaosOsAPI::getBoxTime(std::function<void (const CalaosOsReply &)> callback)
+{
+    Route r;
+    r.v2Path = QStringLiteral("/system/time");
+    call(r, callback);
+}
+
+void CalaosOsAPI::setBoxTime(const QJsonObject &change, std::function<void (const CalaosOsReply &)> callback)
+{
+    Route r;
+    r.method = NetworkRequest::HttpPost;
+    r.v2Path = QStringLiteral("/system/time");
+    r.v2Body = QJsonDocument(change).toJson(QJsonDocument::Compact);
+    call(r, callback);
+}
+
+void CalaosOsAPI::getTimezones(std::function<void (const CalaosOsReply &)> callback)
+{
+    Route r;
+    r.v2Path = QStringLiteral("/system/timezones");
+    call(r, callback);
+}
+
+void CalaosOsAPI::restartService(const QString &unit, std::function<void (const CalaosOsReply &)> callback)
+{
+    Route r;
+    r.method = NetworkRequest::HttpPost;
+    r.v2Path = QStringLiteral("/system/services/restart");
+    r.v2Body = QJsonDocument(QJsonObject{{ QStringLiteral("unit"), unit }}).toJson(QJsonDocument::Compact);
+    call(r, callback);
+}
+
 void CalaosOsAPI::checkUpdates(std::function<void (const CalaosOsReply &)> callback)
 {
     Route r;

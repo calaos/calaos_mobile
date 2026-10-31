@@ -43,6 +43,10 @@
 class QQuickWebEngineProfile;
 #endif
 
+#ifdef CALAOS_DESKTOP
+class BoxTimeManager;
+#endif
+
 class Application : public QAPP
 {
     Q_OBJECT
@@ -172,6 +176,9 @@ private:
     OSInstaller *osInstaller = nullptr;
     ControlPanelModel *controlPanelModel = nullptr;
     UpdateManager *updateManager = nullptr;
+#ifdef CALAOS_DESKTOP
+    BoxTimeManager *boxTime = nullptr;
+#endif
     //mobile: box updates through calaos_server's admin relay
     AdminRelay *adminRelay = nullptr;
     AdminRelayBackend *adminBackend = nullptr;

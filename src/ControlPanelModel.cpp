@@ -38,6 +38,13 @@ void ControlPanelModel::load()
     appendRow(it);
 
     it = new ControlPanelModelItem();
+    it->update_cpTitle(tr("Date and time"));
+    it->update_cpSubTitle(tr("Clock, time zone, automatic time"));
+    it->update_cpIcon("qrc:/img/icon_config_l18n.png");
+    it->update_cpClickId("config/time");
+    appendRow(it);
+
+    it = new ControlPanelModelItem();
     it->update_cpTitle(tr("Information"));
     it->update_cpSubTitle(tr("Personal settings"));
     it->update_cpIcon("qrc:/img/icon_config_info.png");

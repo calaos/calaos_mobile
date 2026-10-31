@@ -38,6 +38,15 @@ public:
 
     void configureNetwork(const QJsonObject &networkConfig, std::function<void(bool success)> callback);
 
+    //Box clock and time zone, /api/v2 only: a daemon without these routes answers 404
+    void getBoxTime(std::function<void(const CalaosOsReply &reply)> callback);
+    //change holds "timezone", "ntp", "time" (RFC 3339), at least one. On a 500,
+    //reply.data says what was done: "applied", and "failed" for the step that failed.
+    void setBoxTime(const QJsonObject &change, std::function<void(const CalaosOsReply &reply)> callback);
+    void getTimezones(std::function<void(const CalaosOsReply &reply)> callback);
+    //restart a system service of the box. The daemon answers first, then restarts it.
+    void restartService(const QString &unit, std::function<void(const CalaosOsReply &reply)> callback);
+
     //check for available updates (GET update/check). Blocking server-side, can take tens of seconds.
     //reply.data is the object keyed by package name.
     void checkUpdates(std::function<void(const CalaosOsReply &reply)> callback) override;

@@ -72,82 +72,82 @@
 <context>
     <name>AdminUpdates</name>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="358"/>
+        <location filename="../src/AdminUpdates.cpp" line="405"/>
         <source>Wrong admin password.</source>
         <translation>Mot de passe admin incorrect.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="360"/>
+        <location filename="../src/AdminUpdates.cpp" line="407"/>
         <source>Too many attempts. Try again in %1 s.</source>
         <translation>Trop d’essais. Réessayez dans %1 s.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="362"/>
+        <location filename="../src/AdminUpdates.cpp" line="409"/>
         <source>An update is already in progress.</source>
         <translation>Une mise à jour est déjà en cours.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="364"/>
+        <location filename="../src/AdminUpdates.cpp" line="411"/>
         <source>This action is not allowed.</source>
         <translation>Cette action n’est pas autorisée.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="366"/>
+        <location filename="../src/AdminUpdates.cpp" line="413"/>
         <source>The box refused the request.</source>
         <translation>La box a refusé la demande.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="368"/>
+        <location filename="../src/AdminUpdates.cpp" line="415"/>
         <source>This package has no update waiting.</source>
         <translation>Ce paquet n’a pas de mise à jour en attente.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="370"/>
+        <location filename="../src/AdminUpdates.cpp" line="417"/>
         <source>This package is held on the box and won&apos;t be updated.</source>
         <translation>Ce paquet est bloqué sur la box et ne sera pas mis à jour.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="372"/>
+        <location filename="../src/AdminUpdates.cpp" line="419"/>
         <source>Something went wrong on the box. Try again; the detail is in the box&apos;s logs.</source>
         <translation>Un problème est survenu sur la box. Réessayez ; le détail est dans ses journaux.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="374"/>
+        <location filename="../src/AdminUpdates.cpp" line="421"/>
         <source>The box did not answer. Try again in a moment.</source>
         <translation>La box n’a pas répondu. Réessayez dans un instant.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="376"/>
+        <location filename="../src/AdminUpdates.cpp" line="423"/>
         <source>Connection lost before the box answered. Try again once it is back.</source>
         <translation>Connexion perdue avant la réponse de la box. Réessayez quand elle est revenue.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="378"/>
+        <location filename="../src/AdminUpdates.cpp" line="425"/>
         <source>The box has not answered yet. Try again in a moment.</source>
         <translation>La box n’a pas encore répondu. Réessayez dans un instant.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="380"/>
+        <location filename="../src/AdminUpdates.cpp" line="427"/>
         <source>Answer the certificate question first.</source>
         <translation>Répondez d’abord à la question sur le certificat.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="381"/>
+        <location filename="../src/AdminUpdates.cpp" line="428"/>
         <source>Unexpected answer from the box.</source>
         <translation>Réponse inattendue de la box.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="627"/>
+        <location filename="../src/AdminUpdates.cpp" line="684"/>
         <source>The update was interrupted before the end. Try again.</source>
         <translation>La mise à jour a été interrompue avant la fin. Réessayez.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="629"/>
+        <location filename="../src/AdminUpdates.cpp" line="686"/>
         <source>Reason: %1</source>
         <translation>Raison : %1</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="631"/>
+        <location filename="../src/AdminUpdates.cpp" line="688"/>
         <source>Try again. If it fails again, the detail is in the box&apos;s logs.</source>
         <translation>Réessayez. Si cela échoue encore, le détail est dans les journaux de la box.</translation>
     </message>
@@ -155,7 +155,7 @@
 <context>
     <name>Application</name>
     <message>
-        <location filename="../src/Application.cpp" line="260"/>
+        <location filename="../src/Application.cpp" line="286"/>
         <source>Network error</source>
         <translation>Erreur réseau</translation>
     </message>
@@ -164,92 +164,92 @@
         <translation type="vanished">La connection avec calaos_server a été perdu. Elle va être retentée lorsque calaos_server sera de nouveau disponible.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="261"/>
+        <location filename="../src/Application.cpp" line="287"/>
         <source>The connection to calaos_server was lost. It will reconnect automatically when calaos_server is available again.</source>
         <translation>La connexion avec calaos_server a été perdue. Elle sera rétablie automatiquement dès que calaos_server sera de nouveau disponible.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="264"/>
-        <location filename="../src/Application.cpp" line="283"/>
-        <location filename="../src/Application.cpp" line="296"/>
-        <location filename="../src/Application.cpp" line="308"/>
-        <location filename="../src/Application.cpp" line="320"/>
-        <location filename="../src/Application.cpp" line="755"/>
-        <location filename="../src/Application.cpp" line="920"/>
+        <location filename="../src/Application.cpp" line="290"/>
+        <location filename="../src/Application.cpp" line="309"/>
+        <location filename="../src/Application.cpp" line="322"/>
+        <location filename="../src/Application.cpp" line="334"/>
+        <location filename="../src/Application.cpp" line="346"/>
+        <location filename="../src/Application.cpp" line="787"/>
+        <location filename="../src/Application.cpp" line="952"/>
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="274"/>
+        <location filename="../src/Application.cpp" line="300"/>
         <source>Not connected</source>
         <translation>Non connecté</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="276"/>
+        <location filename="../src/Application.cpp" line="302"/>
         <source>The certificate of %1 was not trusted, the connection was cancelled.</source>
         <translation>Le certificat de %1 n&apos;a pas été accepté, la connexion a été annulée.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="279"/>
+        <location filename="../src/Application.cpp" line="305"/>
         <source>The certificate of %1 was not trusted, the connection was cancelled. Tap Login to check it again.</source>
         <translation>Le certificat de %1 n&apos;a pas été accepté, la connexion a été annulée. Touchez Connexion pour le vérifier à nouveau.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="296"/>
+        <location filename="../src/Application.cpp" line="322"/>
         <source>Certificate refused</source>
         <translation>Certificat refusé</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="294"/>
+        <location filename="../src/Application.cpp" line="320"/>
         <source>The certificate of %1 is not valid (%2). The connection was cancelled.</source>
         <translation>Le certificat de %1 n&apos;est pas valide (%2). La connexion a été annulée.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="291"/>
+        <location filename="../src/Application.cpp" line="317"/>
         <source>The certificate of %1 uses a key that is too weak (%2). The connection was cancelled. Regenerate the certificate of the Calaos box (/mnt/calaos/haproxy/server.pem).</source>
         <translation>Le certificat de %1 utilise une clé trop faible (%2). La connexion a été annulée. Régénérez le certificat de la box Calaos (/mnt/calaos/haproxy/server.pem).</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="306"/>
+        <location filename="../src/Application.cpp" line="332"/>
         <source>Credentials change failed</source>
         <translation>Échec de la modification des identifiants</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="307"/>
+        <location filename="../src/Application.cpp" line="333"/>
         <source>Credentials were not changed. Please try again.</source>
         <translation>Les identifiants n&apos;ont pas été modifiés. Veuillez réessayer.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="318"/>
+        <location filename="../src/Application.cpp" line="344"/>
         <source>Credentials changed</source>
         <translation>Identifiants modifiés</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="319"/>
+        <location filename="../src/Application.cpp" line="345"/>
         <source>Credentials were successfully changed.</source>
         <translation>Les identifiants ont été modifiés avec succès.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="918"/>
+        <location filename="../src/Application.cpp" line="950"/>
         <source>Reboot</source>
-        <translation type="unfinished">Redémarrer</translation>
+        <translation>Redémarrer</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="919"/>
+        <location filename="../src/Application.cpp" line="951"/>
         <source>An update is being installed. Reboot once it has finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>Une mise à jour est en cours d&apos;installation. Redémarrez une fois terminée.</translation>
     </message>
     <message>
         <source>No network connection found, this application requires a network connection to work.</source>
         <translation type="vanished">Aucune connexion réseau trouvée, cette application nécessite une connexion réseau pour fonctionner.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="753"/>
+        <location filename="../src/Application.cpp" line="785"/>
         <source>Login failed</source>
         <translation>Échec de l&apos;authentification</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="754"/>
+        <location filename="../src/Application.cpp" line="786"/>
         <source>Connection failed, please check your credentials.</source>
         <translation>Échec de la connexion, veuillez vérifier vos identifiants.</translation>
     </message>
@@ -293,18 +293,167 @@
     </message>
 </context>
 <context>
+    <name>BoxTimeManager</name>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="113"/>
+        <location filename="../src/BoxTimeManager.cpp" line="391"/>
+        <source>The date and time of the box could not be read.</source>
+        <translation>La date et l&apos;heure de la box n&apos;ont pas pu être lues.</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="193"/>
+        <source>The list of time zones could not be read.</source>
+        <translation>La liste des fuseaux horaires n&apos;a pas pu être lue.</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="270"/>
+        <source>An update is being installed. Change the time once it has finished.</source>
+        <translation>Une mise à jour est en cours d&apos;installation. Changez l&apos;heure une fois terminée.</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="274"/>
+        <source>The box could not be reached. Nothing was changed.</source>
+        <translation>La box n&apos;a pas pu être jointe. Rien n&apos;a été changé.</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="277"/>
+        <source>The change may have been made, the box did not answer. Check the values above before applying it again.</source>
+        <translation>Le changement a peut-être été fait, la box n&apos;a pas répondu. Vérifiez les valeurs ci-dessus avant de l&apos;appliquer à nouveau.</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="291"/>
+        <source>The box could not apply this change.</source>
+        <translation>La box n&apos;a pas pu appliquer ce changement.</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="307"/>
+        <source>time zone</source>
+        <translation>fuseau horaire</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="309"/>
+        <source>automatic time</source>
+        <translation>heure automatique</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="310"/>
+        <source>time</source>
+        <translation>heure</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="322"/>
+        <source>The change was made, but the box could not read it back.</source>
+        <translation>Le changement a été fait, mais la box n&apos;a pas pu le relire.</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="324"/>
+        <source>Not changed: %1.</source>
+        <translation>Non changé : %1.</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="325"/>
+        <source>Changed: %1. Not changed: %2.</source>
+        <translation>Changé : %1. Non changé : %2.</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="331"/>
+        <source>The box refused this date and time.</source>
+        <translation>La box a refusé cette date et cette heure.</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="333"/>
+        <source>The box does not know this time zone.</source>
+        <translation>La box ne connaît pas ce fuseau horaire.</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="334"/>
+        <source>The box refused this change.</source>
+        <translation>La box a refusé ce changement.</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="380"/>
+        <source>%1 min</source>
+        <translation>%1 min</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="383"/>
+        <source>%1 h</source>
+        <translation>%1 h</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="384"/>
+        <source>%1 days</source>
+        <translation>%1 jours</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="401"/>
+        <source>Enter a complete date and time.</source>
+        <translation>Saisissez une date et une heure complètes.</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="404"/>
+        <source>The year must be between %1 and %2.</source>
+        <translation>L&apos;année doit être comprise entre %1 et %2.</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="407"/>
+        <source>This time does not exist in %1: clocks skip it at the change to summer time.</source>
+        <translation>Cette heure n&apos;existe pas en %1 : les horloges la sautent au passage à l&apos;heure d&apos;été.</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="410"/>
+        <source>This screen does not know the time zone %1: the time cannot be set from here.</source>
+        <translation>Cet écran ne connaît pas le fuseau horaire %1 : l&apos;heure ne peut pas être réglée d&apos;ici.</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="421"/>
+        <source>The box clock will be set to %1, %2 (%3).</source>
+        <translation>L&apos;horloge de la box sera réglée sur %1, %2 (%3).</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="426"/>
+        <source>Automatic time (NTP) will be turned off: the box stops synchronizing with time servers.</source>
+        <translation>L&apos;heure automatique (NTP) sera désactivée : la box cesse de se synchroniser avec des serveurs de temps.</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="428"/>
+        <source>The box clock will move by %1. Moving it back can break secure connections and updates until the time is right.</source>
+        <translation>L&apos;horloge de la box va bouger de %1. La reculer peut casser les connexions sécurisées et les mises à jour jusqu&apos;à ce que l&apos;heure soit juste.</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="458"/>
+        <source>The Calaos server is restarting.</source>
+        <translation>Le serveur Calaos redémarre.</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="464"/>
+        <source>This box must be updated to restart the Calaos server from here.</source>
+        <translation>Cette box doit être mise à jour pour redémarrer le serveur Calaos d&apos;ici.</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="466"/>
+        <source>An update is being installed. Restart once it has finished.</source>
+        <translation>Une mise à jour est en cours d&apos;installation. Redémarrez une fois terminée.</translation>
+    </message>
+    <message>
+        <location filename="../src/BoxTimeManager.cpp" line="468"/>
+        <source>The Calaos server could not be restarted.</source>
+        <translation>Le serveur Calaos n&apos;a pas pu être redémarré.</translation>
+    </message>
+</context>
+<context>
     <name>CalaosOsAPI</name>
     <message>
-        <location filename="../src/CalaosOsAPI.cpp" line="177"/>
-        <location filename="../src/CalaosOsAPI.cpp" line="230"/>
-        <location filename="../src/CalaosOsAPI.cpp" line="475"/>
+        <location filename="../src/CalaosOsAPI.cpp" line="173"/>
+        <location filename="../src/CalaosOsAPI.cpp" line="226"/>
+        <location filename="../src/CalaosOsAPI.cpp" line="503"/>
         <source>Failed to start network request</source>
         <translation>Échec du démarrage de la requête réseau</translation>
     </message>
     <message>
-        <location filename="../src/CalaosOsAPI.cpp" line="497"/>
+        <location filename="../src/CalaosOsAPI.cpp" line="525"/>
         <source>Invalid answer from the update service</source>
-        <translation type="unfinished"></translation>
+        <translation>Réponse invalide du service de mise à jour</translation>
     </message>
 </context>
 <context>
@@ -845,6 +994,187 @@
     </message>
 </context>
 <context>
+    <name>ConfigTimeView</name>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="8"/>
+        <source>Date and time</source>
+        <translation>Date et heure</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="58"/>
+        <source>Set automatically (NTP), synchronized</source>
+        <translation>Réglée automatiquement (NTP), synchronisée</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="59"/>
+        <source>Set automatically (NTP), not yet synchronized</source>
+        <translation>Réglée automatiquement (NTP), pas encore synchronisée</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="60"/>
+        <source>Set by hand</source>
+        <translation>Réglée à la main</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="82"/>
+        <source>Restart the Calaos server?</source>
+        <translation>Redémarrer le serveur Calaos ?</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="83"/>
+        <source>Home automation stops for a moment, then this page reconnects by itself.</source>
+        <translation>La domotique s&apos;arrête un instant, puis cette page se reconnecte d&apos;elle-même.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="84"/>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="301"/>
+        <source>Restart the Calaos server</source>
+        <translation>Redémarrer le serveur Calaos</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="88"/>
+        <source>Restart Calaos Home?</source>
+        <translation>Redémarrer Calaos Home ?</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="90"/>
+        <source>This screen closes for a moment, then comes back by itself.</source>
+        <translation>Cet écran se ferme un instant, puis revient de lui-même.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="91"/>
+        <source>This screen closes for a moment, then comes back by itself. The Calaos server has not been restarted: do it first, this page will not offer it again.</source>
+        <translation>Cet écran se ferme un instant, puis revient de lui-même. Le serveur Calaos n&apos;a pas été redémarré : faites-le d&apos;abord, cette page ne le proposera plus.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="92"/>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="309"/>
+        <source>Restart Calaos Home</source>
+        <translation>Redémarrer Calaos Home</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="102"/>
+        <source>Set the box time?</source>
+        <translation>Régler l&apos;heure de la box ?</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="102"/>
+        <source>Set the time</source>
+        <translation>Régler l&apos;heure</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="132"/>
+        <source>Back to config</source>
+        <translation>Retour à la config</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="138"/>
+        <source>Quit</source>
+        <translation>Quitter</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="184"/>
+        <source>Reading the clock of the box…</source>
+        <translation>Lecture de l&apos;horloge de la box…</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="191"/>
+        <source>This box must be updated to set its date and time from this screen. The rest of the configuration is not affected.</source>
+        <translation>Cette box doit être mise à jour pour régler sa date et son heure depuis cet écran. Le reste de la configuration n&apos;est pas touché.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="208"/>
+        <source>Try again</source>
+        <translation>Réessayer</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="254"/>
+        <source>Applying…</source>
+        <translation>Application…</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="271"/>
+        <source>Read again</source>
+        <translation>Relire</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="287"/>
+        <source>Restart to use the new time zone</source>
+        <translation>Redémarrer pour utiliser le nouveau fuseau</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="292"/>
+        <source>The Calaos server and this screen read the time zone when they start.</source>
+        <translation>Le serveur Calaos et cet écran lisent le fuseau au démarrage.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="315"/>
+        <source>Later</source>
+        <translation>Plus tard</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="323"/>
+        <source>Time zone</source>
+        <translation>Fuseau horaire</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="324"/>
+        <source>No time zone</source>
+        <translation>Aucun fuseau</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="325"/>
+        <source>Change</source>
+        <translation>Modifier</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="332"/>
+        <source>Automatic time (NTP)</source>
+        <translation>Heure automatique (NTP)</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="333"/>
+        <source>The box sets its clock from time servers on the internet.</source>
+        <translation>La box règle son horloge sur des serveurs de temps d&apos;internet.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="334"/>
+        <source>Stop using NTP</source>
+        <translation>Ne plus utiliser NTP</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="334"/>
+        <source>Use NTP</source>
+        <translation>Utiliser NTP</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="341"/>
+        <source>Set the date and time</source>
+        <translation>Régler la date et l&apos;heure</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="342"/>
+        <source>In the time zone of the box. Setting it by hand turns automatic time off.</source>
+        <translation>Dans le fuseau horaire de la box. Un réglage manuel désactive l&apos;heure automatique.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="343"/>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="418"/>
+        <source>Set</source>
+        <translation>Régler</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="383"/>
+        <source>In the time zone of the box (%1).</source>
+        <translation>Dans le fuseau horaire de la box (%1).</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTimeView.qml" line="411"/>
+        <source>Cancel</source>
+        <translation>Annuler</translation>
+    </message>
+</context>
+<context>
     <name>ConfigUpdateView</name>
     <message>
         <location filename="../qml/desktop/ConfigUpdateView.qml" line="12"/>
@@ -904,12 +1234,12 @@
     <message>
         <location filename="../qml/desktop/ConfigUpdateView.qml" line="230"/>
         <source>A reboot is required to finish installing the updates.</source>
-        <translation type="unfinished"></translation>
+        <translation>Un redémarrage est nécessaire pour terminer l&apos;installation des mises à jour.</translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigUpdateView.qml" line="243"/>
         <source>Reboot</source>
-        <translation type="unfinished">Redémarrer</translation>
+        <translation>Redémarrer</translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigUpdateView.qml" line="276"/>
@@ -1236,53 +1566,96 @@
     </message>
     <message>
         <location filename="../src/ControlPanelModel.cpp" line="41"/>
+        <source>Date and time</source>
+        <translation>Date et heure</translation>
+    </message>
+    <message>
+        <location filename="../src/ControlPanelModel.cpp" line="42"/>
+        <source>Clock, time zone, automatic time</source>
+        <translation>Horloge, fuseau horaire et heure automatique</translation>
+    </message>
+    <message>
+        <location filename="../src/ControlPanelModel.cpp" line="48"/>
         <source>Information</source>
         <translation>Informations</translation>
     </message>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="42"/>
+        <location filename="../src/ControlPanelModel.cpp" line="49"/>
         <source>Personal settings</source>
         <translation>Données personnelles</translation>
     </message>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="48"/>
+        <location filename="../src/ControlPanelModel.cpp" line="55"/>
         <source>Network</source>
         <translation>Réseau</translation>
     </message>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="49"/>
+        <location filename="../src/ControlPanelModel.cpp" line="56"/>
         <source>IP, gateway, DNS</source>
         <translation>IP, passerelle, DNS</translation>
     </message>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="55"/>
+        <location filename="../src/ControlPanelModel.cpp" line="62"/>
         <source>Update</source>
         <translation>Mise à jour</translation>
     </message>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="56"/>
+        <location filename="../src/ControlPanelModel.cpp" line="63"/>
         <source>Software updates</source>
         <translation>Mise à jour logicielle</translation>
     </message>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="64"/>
+        <location filename="../src/ControlPanelModel.cpp" line="71"/>
         <source>Installation</source>
         <translation>Installation</translation>
     </message>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="65"/>
+        <location filename="../src/ControlPanelModel.cpp" line="72"/>
         <source>Install on disk</source>
         <translation>Installer sur le disque</translation>
     </message>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="74"/>
+        <location filename="../src/ControlPanelModel.cpp" line="81"/>
         <source>Rollback</source>
         <translation>Revenir en arrière</translation>
     </message>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="75"/>
+        <location filename="../src/ControlPanelModel.cpp" line="82"/>
         <source>Rollback to this snapshot</source>
         <translation>Retour à cet instantané</translation>
+    </message>
+</context>
+<context>
+    <name>DateTimeWheels</name>
+    <message>
+        <location filename="../qml/desktop/DateTimeWheels.qml" line="33"/>
+        <source>Day</source>
+        <translation>Jour</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DateTimeWheels.qml" line="43"/>
+        <source>Month</source>
+        <translation>Mois</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DateTimeWheels.qml" line="52"/>
+        <source>Year</source>
+        <translation>Année</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DateTimeWheels.qml" line="63"/>
+        <source>Hour</source>
+        <translation>Heure</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DateTimeWheels.qml" line="71"/>
+        <source>Minute</source>
+        <translation>Minute</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/DateTimeWheels.qml" line="78"/>
+        <source>Second</source>
+        <translation>Seconde</translation>
     </message>
 </context>
 <context>
@@ -1932,12 +2305,12 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>HardwareUtilsAndroid</name>
     <message>
-        <location filename="../android/HardwareUtils_Android.cpp" line="352"/>
+        <location filename="../android/HardwareUtils_Android.cpp" line="357"/>
         <source>Confirm</source>
         <translation>Valider</translation>
     </message>
     <message>
-        <location filename="../android/HardwareUtils_Android.cpp" line="354"/>
+        <location filename="../android/HardwareUtils_Android.cpp" line="359"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
@@ -1945,12 +2318,12 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>HardwareUtils_iOS</name>
     <message>
-        <location filename="../ios/HardwareUtils.mm" line="843"/>
+        <location filename="../ios/HardwareUtils.mm" line="667"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
     <message>
-        <location filename="../ios/HardwareUtils.mm" line="844"/>
+        <location filename="../ios/HardwareUtils.mm" line="668"/>
         <source>Confirm</source>
         <translation>Valider</translation>
     </message>
@@ -2781,6 +3154,46 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
     </message>
 </context>
 <context>
+    <name>TimeZonePicker</name>
+    <message>
+        <location filename="../qml/desktop/TimeZonePicker.qml" line="20"/>
+        <location filename="../qml/desktop/TimeZonePicker.qml" line="37"/>
+        <source>Time zone</source>
+        <translation>Fuseau horaire</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/TimeZonePicker.qml" line="20"/>
+        <location filename="../qml/desktop/TimeZonePicker.qml" line="47"/>
+        <source>Filter the time zones</source>
+        <translation>Filtrer les fuseaux horaires</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/TimeZonePicker.qml" line="55"/>
+        <source>Clear</source>
+        <translation>Effacer</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/TimeZonePicker.qml" line="114"/>
+        <source>No time zone matches</source>
+        <translation>Aucun fuseau ne correspond</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/TimeZonePicker.qml" line="124"/>
+        <source>Try again</source>
+        <translation>Réessayer</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/TimeZonePicker.qml" line="134"/>
+        <source>Cancel</source>
+        <translation>Annuler</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/TimeZonePicker.qml" line="141"/>
+        <source>Apply</source>
+        <translation>Appliquer</translation>
+    </message>
+</context>
+<context>
     <name>TlsTrustSheet</name>
     <message>
         <location filename="../qml/mobile/TlsTrustSheet.qml" line="90"/>
@@ -2862,78 +3275,82 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
     <name>UpdateManager</name>
     <message>
         <location filename="../src/UpdateManager.cpp" line="167"/>
-        <location filename="../src/UpdateManager.cpp" line="419"/>
+        <location filename="../src/UpdateManager.cpp" line="412"/>
         <source>Cannot contact the update service</source>
         <translation>Impossible de contacter le service de mise à jour</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="387"/>
+        <location filename="../src/UpdateManager.cpp" line="380"/>
         <source>Invalid answer from the update service</source>
-        <translation type="unfinished"></translation>
+        <translation>Réponse invalide du service de mise à jour</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="403"/>
+        <location filename="../src/UpdateManager.cpp" line="396"/>
         <source>Another update was running. Check for updates again, then retry.</source>
-        <translation type="unfinished"></translation>
+        <translation>Une autre mise à jour était en cours. Vérifiez à nouveau les mises à jour, puis réessayez.</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="409"/>
+        <location filename="../src/UpdateManager.cpp" line="402"/>
         <source>Another update operation is in progress, try again later.</source>
-        <translation type="unfinished"></translation>
+        <translation>Une autre opération de mise à jour est en cours, réessayez plus tard.</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="529"/>
+        <location filename="../src/UpdateManager.cpp" line="522"/>
         <source>The update service lost track of the update</source>
-        <translation type="unfinished"></translation>
+        <translation>Le service de mise à jour a perdu la trace de la mise à jour</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="825"/>
-        <location filename="../src/UpdateManager.cpp" line="865"/>
-        <location filename="../src/UpdateManager.cpp" line="903"/>
+        <location filename="../src/UpdateManager.cpp" line="820"/>
+        <location filename="../src/UpdateManager.cpp" line="860"/>
+        <location filename="../src/UpdateManager.cpp" line="898"/>
         <source>Software update</source>
         <translation>Mise à jour logicielle</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="866"/>
+        <location filename="../src/UpdateManager.cpp" line="861"/>
         <source>Update installed successfully.</source>
         <translation>Mise à jour installée avec succès.</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="1214"/>
+        <location filename="../src/UpdateManager.cpp" line="1228"/>
         <source>The outcome of the update is unknown. Check for updates again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le résultat de la mise à jour est inconnu. Vérifiez à nouveau les mises à jour.</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="1236"/>
+        <location filename="../src/UpdateManager.cpp" line="1250"/>
         <source>The outcome of the update is unknown: another update ran meanwhile. Check for updates again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le résultat de la mise à jour est inconnu : une autre mise à jour a eu lieu entre-temps. Vérifiez à nouveau les mises à jour.</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="827"/>
-        <location filename="../src/UpdateManager.cpp" line="867"/>
-        <location filename="../src/UpdateManager.cpp" line="905"/>
+        <location filename="../src/UpdateManager.cpp" line="822"/>
+        <location filename="../src/UpdateManager.cpp" line="862"/>
+        <location filename="../src/UpdateManager.cpp" line="900"/>
+        <location filename="../src/UpdateManager.cpp" line="943"/>
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="899"/>
+        <location filename="../src/UpdateManager.cpp" line="894"/>
         <source>Upgrade failed</source>
         <translation>Échec de la mise à jour</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="904"/>
+        <location filename="../src/UpdateManager.cpp" line="899"/>
         <source>Upgrade failed: %1</source>
         <translation>Échec de la mise à jour : %1</translation>
     </message>
     <message>
+        <location filename="../src/UpdateManager.cpp" line="939"/>
         <source>An update is being installed. Restart once it has finished.</source>
         <translation>Une mise à jour est en cours d&apos;installation. Redémarrez une fois terminée.</translation>
     </message>
     <message>
+        <location filename="../src/UpdateManager.cpp" line="940"/>
         <source>The application could not be restarted.</source>
         <translation>Le redémarrage de l&apos;application a échoué.</translation>
     </message>
     <message>
+        <location filename="../src/UpdateManager.cpp" line="941"/>
         <source>Restart</source>
         <translation>Redémarrer</translation>
     </message>
@@ -3043,119 +3460,119 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
 <context>
     <name>UpdatesView</name>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="184"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="186"/>
         <source>Checking the box…</source>
         <translation>Vérification de la box…</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="197"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="199"/>
         <source>Updates need an https connection to the box</source>
         <translation>Les mises à jour demandent une connexion https à la box</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="198"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="200"/>
         <source>Updates need a WebSocket connection to the box</source>
         <translation>Les mises à jour demandent une connexion WebSocket à la box</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="199"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="201"/>
         <source>Set the admin password from the web app first</source>
         <translation>Définissez d’abord le mot de passe admin depuis la webapp</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="200"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="202"/>
         <source>Administration unavailable</source>
         <translation>Administration indisponible</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="201"/>
-        <location filename="../qml/mobile/UpdatesView.qml" line="412"/>
-        <location filename="../qml/mobile/UpdatesView.qml" line="438"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="203"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="414"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="440"/>
         <source>Restart the box</source>
         <translation>Redémarrer la box</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="202"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="204"/>
         <source>Administration is being activated</source>
         <translation>Activation de l’administration en cours</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="203"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="205"/>
         <source>The box is not answering</source>
         <translation>La box ne répond pas</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="204"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="206"/>
         <source>calaos-server is too old</source>
         <translation>calaos-server est trop ancien</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="208"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="210"/>
         <source>Administration only works over a secure connection. Log in again with the box address alone or one that starts with https://, not http://…:5454.</source>
         <translation>L’administration ne fonctionne que sur une connexion sécurisée. Reconnectez-vous avec l’adresse de la box seule ou une adresse qui commence par https://, pas http://…:5454.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="211"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="213"/>
         <source>The app is connected to the box through its HTTP fallback, which cannot carry administration. Log in again to retry the WebSocket connection.</source>
         <translation>L’application est connectée à la box par son repli HTTP, qui ne peut pas transporter l’administration. Reconnectez-vous pour retenter la connexion WebSocket.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="214"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="216"/>
         <source>No admin password is set on this box yet. Open the Calaos web app on a computer, choose the admin password in its Administration page, then come back here.</source>
         <translation>Aucun mot de passe admin n’est encore défini sur cette box. Ouvrez la webapp Calaos sur un ordinateur, choisissez le mot de passe admin dans sa page Administration, puis revenez ici.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="218"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="220"/>
         <source>Administration from the app is only available on Calaos OS. Trying again automatically.</source>
         <translation>L’administration depuis l’application n’est disponible que sur Calaos OS. Nouvel essai automatique.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="222"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="224"/>
         <source>Activation is taking too long. Unplug the box and plug it back in, or reboot it over SSH.</source>
         <translation>L’activation prend trop de temps. Débranchez la box puis rebranchez-la, ou redémarrez-la en SSH.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="224"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="226"/>
         <source>The box is finishing its update. This usually takes a minute; trying again automatically.</source>
         <translation>La box termine sa mise à jour. Cela prend généralement une minute ; nouvel essai automatique.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="227"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="229"/>
         <source>Trying again automatically.</source>
         <translation>Nouvel essai automatique.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="229"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="231"/>
         <source>This box cannot be administered from the app yet. Update it once with its usual update (the button on the touch screen, or calaos-os upgrade); after that, updates run from here.</source>
         <translation>Cette box ne peut pas encore être administrée depuis l’application. Mettez-la à jour une fois avec l’outil habituel (le bouton de l’écran tactile, ou calaos-os upgrade) ; ensuite, les mises à jour se feront d’ici.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="236"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="238"/>
         <source>Change the box address</source>
         <translation>Changer l’adresse de la box</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="242"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="244"/>
         <source>Log in again</source>
         <translation>Se reconnecter</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="249"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="251"/>
         <source>Try again</source>
         <translation>Réessayer</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="261"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="263"/>
         <source>Updates · %1</source>
         <translation>Mises à jour · %1</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="262"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="264"/>
         <source>Updates</source>
         <translation>Mises à jour</translation>
     </message>
     <message numerus="yes">
-        <location filename="../qml/mobile/UpdatesView.qml" line="271"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="273"/>
         <source>%n update(s) available</source>
         <translation>
             <numerusform>%n mise à jour disponible</numerusform>
@@ -3163,97 +3580,97 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         </translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="272"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="274"/>
         <source>Updating… %1 %</source>
         <translation>Mise à jour… %1 %</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="273"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="275"/>
         <source>Your box is up to date</source>
         <translation>Votre box est à jour</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="274"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="276"/>
         <source>Update finished</source>
         <translation>Mise à jour terminée</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="275"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="277"/>
         <source>Update finished, restart the box</source>
         <translation>Mise à jour terminée, redémarrez la box</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="276"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="278"/>
         <source>The update failed</source>
         <translation>La mise à jour a échoué</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="277"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="279"/>
         <source>Updates not checked yet</source>
         <translation>Mises à jour pas encore vérifiées</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="281"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="283"/>
         <source>Installing takes a few minutes. The box stays usable; the app may lose the connection for a moment and comes back on its own.</source>
         <translation>L’installation prend quelques minutes. La box reste utilisable ; l’application peut perdre la connexion un instant et revient d’elle-même.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="284"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="286"/>
         <source>An update started from elsewhere is running.</source>
         <translation>Une mise à jour lancée ailleurs est en cours.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="285"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="287"/>
         <source>Keep the box powered. The app may lose the connection for a moment while calaos-server restarts; it comes back on its own.</source>
         <translation>Laissez la box allumée. L’application peut perdre la connexion un instant pendant le redémarrage de calaos-server ; elle revient d’elle-même.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="287"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="289"/>
         <source>Nothing to install.</source>
         <translation>Rien à installer.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="288"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="290"/>
         <source>Everything installed. The box is ready.</source>
         <translation>Tout est installé. La box est prête.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="290"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="292"/>
         <source>Some of what was installed only takes effect after a restart.</source>
         <translation>Une partie de ce qui a été installé ne prend effet qu’après un redémarrage.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="292"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="294"/>
         <source>Checking contacts the Calaos servers and can take up to a minute.</source>
         <translation>La vérification contacte les serveurs Calaos et peut prendre jusqu’à une minute.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="302"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="304"/>
         <source>%1 (%2 of %3)</source>
         <translation>%1 (%2 sur %3)</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="304"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="306"/>
         <source>Package %1 of %2</source>
         <translation>Paquet %1 sur %2</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="357"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="359"/>
         <source>%1 → %2</source>
         <translation>%1 → %2</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="379"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="381"/>
         <source>Linux kernel</source>
         <translation>Noyau Linux</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="379"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="381"/>
         <source>System packages</source>
         <translation>Paquets système</translation>
     </message>
     <message numerus="yes">
-        <location filename="../qml/mobile/UpdatesView.qml" line="384"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="386"/>
         <source>%n package(s)</source>
         <translation>
             <numerusform>%n paquet</numerusform>
@@ -3261,67 +3678,67 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         </translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="399"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="401"/>
         <source>Restarting the box… the app reconnects on its own.</source>
         <translation>Redémarrage de la box… l’application se reconnecte d’elle-même.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="419"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="421"/>
         <source>Starting…</source>
         <translation>Démarrage…</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="420"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="422"/>
         <source>Update all</source>
         <translation>Tout mettre à jour</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="426"/>
-        <location filename="../qml/mobile/UpdatesView.qml" line="488"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="428"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="490"/>
         <source>Checking…</source>
         <translation>Vérification…</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="427"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="429"/>
         <source>Check for updates</source>
         <translation>Vérifier les mises à jour</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="437"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="439"/>
         <source>Box</source>
         <translation>Box</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="439"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="441"/>
         <source>Takes about a minute. Your lights and shutters keep their state.</source>
         <translation>Environ une minute. Vos lumières et volets gardent leur état.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="443"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="445"/>
         <source>Reboot</source>
         <translation>Redémarrer</translation>
     </message>
     <message>
         <location filename="../qml/mobile/UpdatesView.qml" line="48"/>
         <location filename="../qml/mobile/UpdatesView.qml" line="52"/>
-        <location filename="../qml/mobile/UpdatesView.qml" line="453"/>
-        <location filename="../qml/mobile/UpdatesView.qml" line="469"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="455"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="471"/>
         <source>Admin password</source>
         <translation>Mot de passe admin</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="455"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="457"/>
         <source>Updates and restarts are protected by the admin password. It is not the one you sign in with.</source>
         <translation>Les mises à jour et les redémarrages sont protégés par le mot de passe admin. Ce n’est pas celui de la connexion.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="461"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="463"/>
         <source>The admin password was just changed. Enter the new one.</source>
         <translation>Le mot de passe admin vient d’être changé. Saisissez le nouveau.</translation>
     </message>
     <message>
         <location filename="../qml/mobile/UpdatesView.qml" line="53"/>
-        <location filename="../qml/mobile/UpdatesView.qml" line="489"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="491"/>
         <source>Unlock</source>
         <translation>Déverrouiller</translation>
     </message>
@@ -3336,33 +3753,33 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <translation>Utilisateur</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="489"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="491"/>
         <source>Enter the admin password</source>
         <translation>Saisir le mot de passe admin</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="500"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="502"/>
         <source>Box updates</source>
         <translation>Mises à jour de la box</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="508"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="510"/>
         <source>Restart the box?</source>
         <translation>Redémarrer la box ?</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="518"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="520"/>
         <source>The app reconnects on its own once the box is back.</source>
         <translation>L’application se reconnecte d’elle-même quand la box est revenue.</translation>
     </message>
     <message>
         <location filename="../qml/mobile/UpdatesView.qml" line="54"/>
-        <location filename="../qml/mobile/UpdatesView.qml" line="526"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="528"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="532"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="534"/>
         <source>Restart</source>
         <translation>Redémarrer</translation>
     </message>
@@ -3520,22 +3937,22 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
 <context>
     <name>main</name>
     <message>
-        <location filename="../qml/desktop/main.qml" line="382"/>
+        <location filename="../qml/desktop/main.qml" line="389"/>
         <source>Keyboard</source>
         <translation>Clavier</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/main.qml" line="383"/>
+        <location filename="../qml/desktop/main.qml" line="390"/>
         <source>Change text for &apos;%1&apos;</source>
         <translation>Changer le texte pour &apos;%1&apos;</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/main.qml" line="518"/>
+        <location filename="../qml/mobile/main.qml" line="522"/>
         <source>Change value</source>
         <translation>Changer la valeur</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/main.qml" line="519"/>
+        <location filename="../qml/mobile/main.qml" line="523"/>
         <source>Enter new value</source>
         <translation>Entrez une nouvelle valeur</translation>
     </message>

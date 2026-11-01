@@ -2,6 +2,7 @@
 #define ADMINUPDATES_H
 
 #include <QObject>
+#include <functional>
 #include <QAbstractItemModel>
 #include <QJsonObject>
 #include <QSet>
@@ -83,6 +84,11 @@ public:
     Q_INVOKABLE void dismissError();
     Q_INVOKABLE void dismissInfo();
 
+    //Called with each answer to unlock(), which holds the password until
+    //then. Nothing else keeps it.
+    using UnlockObserver = std::function<void(const QString &password, bool ok, const QString &code)>;
+    void setUnlockObserver(UnlockObserver observer) { m_unlockObserver = observer; }
+
     bool isUpgrading() const;
     //The screen is shown (between activate() and deactivate()).
     bool isActive() const { return m_active; }
@@ -93,6 +99,9 @@ public:
     //Tests shorten the delays.
     void setPollInterval(int ms);
     void setRetryDelays(int fastMs, int slowMs);
+
+signals:
+    void activeChanged();
 
 private:
     void probe();
@@ -122,6 +131,7 @@ private:
     UpdateProgressModel *m_progressRows;
 
     bool m_active = false;
+    UnlockObserver m_unlockObserver;
     bool m_updatesKnown = false;
     QJsonObject m_available;
     QJsonObject m_progress;

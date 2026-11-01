@@ -29,9 +29,11 @@
 #include <QWebSocket>
 #include <QWebSocketServer>
 
+#include "AdminBiometrics.h"
 #include "AdminRelay.h"
 #include "AdminRelayBackend.h"
 #include "AdminUpdates.h"
+#include "HardwareUtils.h"
 #include "CalaosConnection.h"
 #include "TlsPinning.h"
 #include "ResumePolicy.h"
@@ -65,6 +67,7 @@ public:
     bool trustPending = false;
     bool secure = true;
     bool httpFallback = false;
+    QString host = QStringLiteral("box-a.example:443");
     QList<Frame> frames;
 
     bool sendAdminMessage(const QString &msg, const QJsonObject &data, const QString &msgId) override
@@ -78,6 +81,7 @@ public:
     bool hasPendingTlsTrust() const override { return trustPending; }
     bool isSecure() const override { return up && secure; }
     bool isHttpFallback() const override { return httpFallback; }
+    QString adminHostKey() const override { return up ? host : QString(); }
 
     //The last frame sent for that admin action (or message).
     int last(const QString &actionOrMsg) const
@@ -279,6 +283,95 @@ private:
     bool m_secure = false;
 };
 
+//The platform's protected storage, without a prompt: the tests answer.
+class FakeBiometricHw: public HardwareUtils
+{
+public:
+    FakeBiometricHw(): HardwareUtils(nullptr) {}
+    bool enrolled = true;
+    QHash<QString, QString> vault;
+    QStringList reads;
+    bool hasBiometrics() const override { return enrolled; }
+    void biometricStore(const QString &key, const QString &secret, const QString &) override
+    {
+        vault[key] = secret;
+        emitBiometricStoreDone(key, AdminBiometrics::Ok);
+    }
+    void biometricRead(const QString &key, const QString &) override { reads << key; }
+    void biometricRemove(const QString &key) override { vault.remove(key); }
+    void biometricRemoveAll() override { vault.clear(); }
+    void answerRead(int result = AdminBiometrics::Ok)
+    {
+        const QString key = reads.last();
+        emitBiometricReadDone(key, result, result == AdminBiometrics::Ok ? vault.value(key) : QString());
+    }
+};
+
+//A box whose updates page is open and locked.
+struct BiometricFixture
+{
+    FakeTransport t;
+    AdminRelay relay{ &t };
+    AdminRelayBackend backend{ &relay };
+    AdminUpdates screen{ &backend, &relay };
+    FakeBiometricHw hw;
+    AdminBiometrics bio{ &hw, &relay, &screen, &t };
+
+    BiometricFixture()
+    {
+        QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+        settings.remove(QStringLiteral("admin_biometrics"));
+        settings.sync();
+    }
+
+    void openLocked()
+    {
+        screen.activate();
+        answerProbe();
+    }
+
+    void answerProbe()
+    {
+        relay.handleReply("admin", t.frames.last().msgId,
+                          ok(QJsonObject{{ "progress", QJsonObject() }, { "job", QJsonValue::Null }}));
+        QTest::qWait(1);
+    }
+
+    //A typed password the box takes.
+    void typeAccepted()
+    {
+        screen.unlock(AdminPass);
+        relay.handleReply("admin_unlock", t.frames.last().msgId, unlockOk());
+    }
+
+    void store()
+    {
+        openLocked();
+        typeAccepted();
+        bio.acceptOffer();
+        relay.handleTransportLost();
+        screen.deactivate();
+        QTest::qWait(1);
+        QVERIFY(hw.reads.isEmpty()); //no prompt for a socket going away
+        t.frames.clear();
+    }
+
+    //Back on the page with what store() left, socket up.
+    void reopen()
+    {
+        relay.handleTransportUp();
+        openLocked();
+    }
+
+    int unlocks() const
+    {
+        int n = 0;
+        for (const Frame &f: t.frames)
+            n += f.msg == "admin_unlock" ? 1 : 0;
+        return n;
+    }
+};
+
 class TstAdminRelay: public QObject
 {
     Q_OBJECT
@@ -407,6 +500,23 @@ private slots:
     void oldSocketErrorClearedOnReconnect();
     void replyForAnotherMessageIgnored();
     void resumePolicyKeepsThePage();
+
+    void biometricsOfferedOnceAfterATypedPassword();
+    void biometricsNotOfferedWithoutEnrolment();
+    void biometricsOfferExpiresAndLeavesWithTheSession();
+    void biometricsSecretNeverInSettings();
+    void biometricsAskedWhenTheCardOpens();
+    void biometricsCancelLeavesTheField();
+    void biometricsChangedEnrolmentForgets();
+    void biometricsRefusedPasswordForgets();
+    void biometricsTypedRefusalKeepsTheSecret();
+    void biometricsOtherRefusalKeepsTheSecret();
+    void biometricsReadWaitsForTheNewSocket();
+    void biometricsReadDroppedAfterTheDelay();
+    void biometricsNeverSentToAnotherBox();
+    void biometricsWaitsForTheCertificateAnswer();
+    void biometricsChangedCertificateForgets();
+    void biometricsDisableAndForget();
 };
 
 void TstAdminRelay::unlockSuccessStoresSession()
@@ -1511,6 +1621,272 @@ void TstAdminRelay::resumePolicyKeepsThePage()
     p.resigned(false, true);
     p.reset();
     QVERIFY(p.becameActive());
+}
+
+void TstAdminRelay::biometricsOfferedOnceAfterATypedPassword()
+{
+    BiometricFixture f;
+    f.openLocked();
+    f.typeAccepted();
+    QVERIFY(f.bio.get_offerPending());
+    f.bio.declineOffer();
+    QVERIFY(!f.bio.get_offerPending());
+    QVERIFY(f.hw.vault.isEmpty());
+
+    f.relay.handleTransportLost();
+    f.screen.deactivate();
+    f.reopen();
+    f.typeAccepted();
+    QVERIFY(!f.bio.get_offerPending());
+}
+
+void TstAdminRelay::biometricsNotOfferedWithoutEnrolment()
+{
+    BiometricFixture f;
+    f.hw.enrolled = false;
+    f.openLocked();
+    f.typeAccepted();
+    QVERIFY(!f.bio.get_offerPending());
+    QVERIFY(!f.bio.get_available());
+    QVERIFY(f.hw.reads.isEmpty());
+}
+
+void TstAdminRelay::biometricsOfferExpiresAndLeavesWithTheSession()
+{
+    BiometricFixture f;
+    f.bio.setDelays(AdminBiometrics::HoldMs, 50);
+    f.openLocked();
+    f.typeAccepted();
+    QVERIFY(f.bio.get_offerPending());
+    QTRY_VERIFY(!f.bio.get_offerPending());
+    f.bio.acceptOffer();
+    QVERIFY(f.hw.vault.isEmpty());
+
+    BiometricFixture g;
+    g.openLocked();
+    g.typeAccepted();
+    QVERIFY(g.bio.get_offerPending());
+    g.relay.handleTransportLost();
+    QVERIFY(!g.bio.get_offerPending());
+    g.bio.acceptOffer();
+    QVERIFY(g.hw.vault.isEmpty());
+}
+
+void TstAdminRelay::biometricsSecretNeverInSettings()
+{
+    BiometricFixture f;
+    f.store();
+    QCOMPARE(f.hw.vault.value(f.t.host), AdminPass);
+
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    const QStringList keys = settings.allKeys();
+    bool sawBox = false;
+    for (const QString &key: keys)
+    {
+        QVERIFY(!settings.value(key).toString().contains(AdminPass));
+        sawBox |= key.startsWith(QStringLiteral("admin_biometrics"));
+    }
+    QVERIFY(sawBox);
+}
+
+void TstAdminRelay::biometricsAskedWhenTheCardOpens()
+{
+    BiometricFixture f;
+    f.store();
+    f.reopen();
+    QCOMPARE(f.hw.reads, QStringList{ f.t.host });
+    QVERIFY(f.bio.get_enabled());
+    QCOMPARE(f.unlocks(), 0);
+
+    f.hw.answerRead();
+    QCOMPARE(f.unlocks(), 1);
+    QCOMPARE(f.t.frames.last().data["admin_pass"].toString(), AdminPass);
+    f.relay.handleReply("admin_unlock", f.t.frames.last().msgId, unlockOk());
+    QVERIFY(f.screen.get_isUnlocked());
+    QVERIFY(!f.bio.get_offerPending());
+    QCOMPARE(f.hw.reads.size(), 1);
+}
+
+void TstAdminRelay::biometricsCancelLeavesTheField()
+{
+    BiometricFixture f;
+    f.store();
+    f.reopen();
+    f.hw.answerRead(AdminBiometrics::Canceled);
+    QCOMPARE(f.unlocks(), 0);
+    QCOMPARE(f.hw.vault.value(f.t.host), AdminPass);
+
+    //not asked again on this opening, the field is what is left
+    f.relay.handleTransportLost();
+    f.relay.handleTransportUp();
+    f.screen.retry();
+    f.answerProbe();
+    QCOMPARE(f.relay.gate(), AdminRelay::GateLocked);
+    QCOMPARE(f.hw.reads.size(), 1);
+
+    f.screen.unlock(QStringLiteral("typed"));
+    QCOMPARE(f.t.frames.last().data["admin_pass"].toString(), QStringLiteral("typed"));
+}
+
+void TstAdminRelay::biometricsChangedEnrolmentForgets()
+{
+    BiometricFixture f;
+    f.store();
+    f.reopen();
+    f.hw.answerRead(AdminBiometrics::Invalidated);
+    QCOMPARE(f.unlocks(), 0);
+    QVERIFY(f.hw.vault.isEmpty());
+    QVERIFY(!f.bio.get_enabled());
+
+    //a typed password offers again: what was stored is gone
+    f.typeAccepted();
+    QVERIFY(f.bio.get_offerPending());
+}
+
+void TstAdminRelay::biometricsRefusedPasswordForgets()
+{
+    BiometricFixture f;
+    f.store();
+    f.reopen();
+    f.hw.answerRead();
+    f.relay.handleReply("admin_unlock", f.t.frames.last().msgId, err("bad_password"));
+    QVERIFY(f.hw.vault.isEmpty());
+    QVERIFY(!f.bio.get_enabled());
+    QCOMPARE(f.relay.gate(), AdminRelay::GateLocked);
+    QCOMPARE(f.hw.reads.size(), 1);
+}
+
+void TstAdminRelay::biometricsTypedRefusalKeepsTheSecret()
+{
+    BiometricFixture f;
+    f.store();
+    f.reopen();
+    f.hw.answerRead(AdminBiometrics::Canceled);
+    f.screen.unlock(QStringLiteral("typo"));
+    f.relay.handleReply("admin_unlock", f.t.frames.last().msgId, err("bad_password"));
+    QCOMPARE(f.hw.vault.value(f.t.host), AdminPass);
+}
+
+void TstAdminRelay::biometricsOtherRefusalKeepsTheSecret()
+{
+    BiometricFixture f;
+    f.store();
+    f.reopen();
+    f.hw.answerRead();
+    f.relay.handleReply("admin_unlock", f.t.frames.last().msgId, err("rate_limited"));
+    QCOMPARE(f.hw.vault.value(f.t.host), AdminPass);
+}
+
+//iOS: the prompt resigns the app, which drops the socket.
+void TstAdminRelay::biometricsReadWaitsForTheNewSocket()
+{
+    BiometricFixture f;
+    f.store();
+    f.reopen();
+    f.relay.handleTransportLost();
+    f.t.up = false;
+    f.hw.answerRead();
+    QCOMPARE(f.unlocks(), 0);
+
+    f.t.up = true;
+    f.relay.handleTransportUp();
+    f.screen.retry();
+    QCOMPARE(f.unlocks(), 0);
+    f.answerProbe();
+    QCOMPARE(f.unlocks(), 1);
+    QCOMPARE(f.hw.reads.size(), 1);
+}
+
+void TstAdminRelay::biometricsReadDroppedAfterTheDelay()
+{
+    BiometricFixture f;
+    f.bio.setDelays(50, AdminBiometrics::OfferMs);
+    f.store();
+    f.reopen();
+    f.relay.handleTransportLost();
+    f.t.up = false;
+    f.hw.answerRead();
+    QTest::qWait(120);
+
+    f.t.up = true;
+    f.relay.handleTransportUp();
+    f.screen.retry();
+    f.answerProbe();
+    QCOMPARE(f.unlocks(), 0);
+}
+
+void TstAdminRelay::biometricsNeverSentToAnotherBox()
+{
+    BiometricFixture f;
+    f.store();
+    f.reopen();
+    f.relay.handleTransportLost();
+    f.t.up = false;
+    f.hw.answerRead();
+
+    f.t.host = QStringLiteral("box-b.example:443");
+    f.t.up = true;
+    f.relay.handleTransportUp();
+    f.screen.retry();
+    f.answerProbe();
+    QCOMPARE(f.unlocks(), 0);
+    QVERIFY(!f.bio.get_enabled());
+    QCOMPARE(f.hw.reads.size(), 1);
+}
+
+void TstAdminRelay::biometricsWaitsForTheCertificateAnswer()
+{
+    BiometricFixture f;
+    f.store();
+    f.t.trustPending = true;
+    f.reopen();
+    QVERIFY(f.hw.reads.isEmpty());
+
+    f.t.trustPending = false;
+    f.relay.handleTransportLost();
+    f.relay.handleTransportUp();
+    f.screen.retry();
+    f.answerProbe();
+    QCOMPARE(f.hw.reads.size(), 1);
+    f.t.trustPending = true;
+    f.hw.answerRead();
+    QCOMPARE(f.unlocks(), 0);
+}
+
+void TstAdminRelay::biometricsChangedCertificateForgets()
+{
+    BiometricFixture f;
+    f.store();
+    f.bio.forgetBox(f.t.host);
+    QVERIFY(f.hw.vault.isEmpty());
+    f.reopen();
+    QVERIFY(f.hw.reads.isEmpty());
+    QVERIFY(!f.bio.get_enabled());
+}
+
+void TstAdminRelay::biometricsDisableAndForget()
+{
+    BiometricFixture f;
+    f.store();
+    f.reopen();
+    f.hw.answerRead(AdminBiometrics::Canceled);
+    QVERIFY(f.bio.get_enabled());
+    f.bio.disable();
+    QVERIFY(f.hw.vault.isEmpty());
+    QVERIFY(!f.bio.get_enabled());
+    //turned off on purpose: not offered again
+    f.typeAccepted();
+    QVERIFY(!f.bio.get_offerPending());
+
+    BiometricFixture g;
+    g.store();
+    g.t.host = QStringLiteral("box-b.example:443");
+    g.hw.vault[g.t.host] = QStringLiteral("other");
+    g.bio.forgetAll();
+    QVERIFY(g.hw.vault.isEmpty());
+    g.t.host = QStringLiteral("box-a.example:443");
+    g.reopen();
+    QVERIFY(g.hw.reads.isEmpty());
 }
 
 QTEST_MAIN(TstAdminRelay)

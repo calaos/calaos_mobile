@@ -35,6 +35,7 @@ SOURCES += src/main.cpp \
     $$PWD/src/AdminCode.cpp \
     $$PWD/src/CalaosOsProtocol.cpp \
     $$PWD/src/UpdateModel.cpp \
+    $$PWD/src/AdminBiometrics.cpp \
     $$PWD/src/AdminRelay.cpp \
     $$PWD/src/AdminRelayBackend.cpp \
     $$PWD/src/AdminUpdates.cpp
@@ -73,6 +74,7 @@ HEADERS += \
     $$PWD/src/UpdateGrouping.h \
     $$PWD/src/ResumePolicy.h \
     $$PWD/src/AdminTransport.h \
+    $$PWD/src/AdminBiometrics.h \
     $$PWD/src/AdminRelay.h \
     $$PWD/src/AdminRelayBackend.h \
     $$PWD/src/AdminUpdates.h

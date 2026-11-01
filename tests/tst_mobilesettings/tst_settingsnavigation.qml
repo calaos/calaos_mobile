@@ -33,6 +33,18 @@ TestCase {
         }
     }
     QtObject {
+        id: adminBiometrics
+        property string name: "Face ID"
+        property bool enabled: false
+        property bool offerPending: false
+        property int accepted: 0
+        property int declined: 0
+        property int disabled: 0
+        function acceptOffer() { accepted++ }
+        function declineOffer() { declined++ }
+        function disable() { disabled++ }
+    }
+    QtObject {
         id: calaosApp
         property var tlsPinList: []
         property int logouts: 0

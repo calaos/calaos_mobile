@@ -400,6 +400,10 @@ void Application::createQmlApp()
     adminBackend = new AdminRelayBackend(adminRelay, this);
     boxUpdates = new AdminUpdates(adminBackend, adminRelay, this);
     engine.rootContext()->setContextProperty("boxUpdates", boxUpdates);
+    adminBiometrics = new AdminBiometrics(HardwareUtils::Instance(), adminRelay, boxUpdates,
+                                          calaosConnect, this);
+    adminBiometrics->bindConnection(calaosConnect);
+    engine.rootContext()->setContextProperty("adminBiometrics", adminBiometrics);
 #endif
 
     m_netAddresses = new QQmlObjectListModel<NetworkInfo>(this);
@@ -509,6 +513,8 @@ void Application::forgetTlsPin(const QString &host)
 {
     if (TlsPinStore::instance()->forget(host))
         qInfo() << "TLS: pin forgotten for" << host;
+    if (adminBiometrics)
+        adminBiometrics->forgetBox(host);
 }
 
 void Application::updateTlsPins()
@@ -651,6 +657,8 @@ void Application::userLogout()
     //stale), so the line below drops it too (FIX-7).
     logout();
     HardwareUtils::Instance()->forgetPendingUserActions();
+    if (adminBiometrics)
+        adminBiometrics->forgetAll();
 }
 
 void Application::resetAllData()
@@ -658,6 +666,8 @@ void Application::resetAllData()
     //Also forgets a persisted logout (FIX-11): back to the state of a fresh
     //install, where the demo account is not logged in automatically.
     HardwareUtils::Instance()->resetAuthKeychain();
+    if (adminBiometrics)
+        adminBiometrics->forgetAll();
     //A pin is trust in one particular box: it goes with the host.
     TlsPinStore::instance()->clear();
     calaosConnect->forgetTlsRefusals();

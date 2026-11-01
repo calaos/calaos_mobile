@@ -20,6 +20,7 @@ QT += widgets
 
 HEADERS += \
     $$SRC_DIR/AdminTransport.h \
+    $$SRC_DIR/AdminBiometrics.h \
     $$SRC_DIR/AdminRelay.h \
     $$SRC_DIR/AdminRelayBackend.h \
     $$SRC_DIR/AdminUpdates.h \
@@ -36,6 +37,7 @@ HEADERS += \
     $$SRC_DIR/JsonKeys.h
 
 SOURCES += \
+    $$SRC_DIR/AdminBiometrics.cpp \
     $$SRC_DIR/AdminRelay.cpp \
     $$SRC_DIR/AdminRelayBackend.cpp \
     $$SRC_DIR/AdminUpdates.cpp \

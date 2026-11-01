@@ -127,6 +127,7 @@ void AdminUpdates::activate()
 {
     m_active = true;
     probe();
+    emit activeChanged();
 }
 
 void AdminUpdates::deactivate()
@@ -137,6 +138,7 @@ void AdminUpdates::deactivate()
     update_info(QString());
     if (get_errorCode() != QLatin1String("rate_limited"))
         dismissError();
+    emit activeChanged();
 }
 
 void AdminUpdates::retry()
@@ -204,9 +206,13 @@ void AdminUpdates::unlock(const QString &password)
     update_busy(QStringLiteral("unlock"));
     dismissError();
     update_info(QString());
-    m_relay->unlock(password, [this](const AdminRelay::Outcome &o)
+    //A copy only while an answer is awaited, for the offer to keep it.
+    const QString held = m_unlockObserver ? password : QString();
+    m_relay->unlock(password, [this, held](const AdminRelay::Outcome &o)
     {
         update_busy(QString());
+        if (m_unlockObserver)
+            m_unlockObserver(held, o.ok, o.error.code);
         if (o.ok)
             return; //onGateChanged reads the full view
         if (o.error.code == QLatin1String("rate_limited"))

@@ -28,6 +28,7 @@ set(CALAOS_SOURCES
     src/AdminCode.cpp
     src/CalaosOsProtocol.cpp
     src/UpdateModel.cpp
+    src/AdminBiometrics.cpp
     src/AdminRelay.cpp
     src/AdminRelayBackend.cpp
     src/AdminUpdates.cpp
@@ -64,6 +65,7 @@ set(CALAOS_HEADERS
     src/UpdateGrouping.h
     src/ResumePolicy.h
     src/AdminTransport.h
+    src/AdminBiometrics.h
     src/AdminRelay.h
     src/AdminRelayBackend.h
     src/AdminUpdates.h

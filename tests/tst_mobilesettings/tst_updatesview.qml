@@ -20,6 +20,18 @@ TestCase {
 
     //Stand-ins for the context properties UpdatesView reads.
     QtObject {
+        id: adminBiometrics
+        property string name: "Face ID"
+        property bool enabled: false
+        property bool offerPending: false
+        property int accepted: 0
+        property int declined: 0
+        property int disabled: 0
+        function acceptOffer() { accepted++ }
+        function declineOffer() { declined++ }
+        function disable() { disabled++ }
+    }
+    QtObject {
         id: boxUpdates
         property string gate: "locked"
         property string phase: "unknown"
@@ -94,6 +106,9 @@ TestCase {
         boxUpdates.retries = 0
         boxUpdates.unlocked = []
         calaosApp.logouts = 0
+        adminBiometrics.offerPending = false
+        adminBiometrics.accepted = 0
+        adminBiometrics.declined = 0
     }
 
     function cleanup() {
@@ -356,5 +371,23 @@ TestCase {
         anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
         height: 300
         color: "#2b2b2b"
+    }
+
+    function test_biometricOfferShownOnceUnlocked() {
+        boxUpdates.gate = "unlocked"
+        var page = openPage()
+        var card = findChild(page, "biometricOfferCard")
+        verify(!card.visible)
+
+        adminBiometrics.offerPending = true
+        verify(card.visible)
+        waitForRendering(page)
+        mouseClick(findChild(page, "biometricAccept"))
+        compare(adminBiometrics.accepted, 1)
+        mouseClick(findChild(page, "biometricDecline"))
+        compare(adminBiometrics.declined, 1)
+
+        boxUpdates.gate = "locked"
+        verify(!card.visible)
     }
 }

@@ -105,7 +105,8 @@ void Application::createQmlApp()
         //Leaving for the password manager to copy the admin password resigns
         //the app too: the updates page must still be there afterwards.
         const bool updatesShown = boxUpdates && boxUpdates->isActive();
-        resumePolicy.resigned(m_applicationStatus == Common::LoggedIn && updatesShown);
+        resumePolicy.resigned(m_applicationStatus == Common::LoggedIn && updatesShown,
+                              get_loginEdited());
         syncKeepPage();
 
         qDebug() << "Application is in background, drop the session"
@@ -131,8 +132,14 @@ void Application::createQmlApp()
                 return;
             }
 
-            resumePolicy.becameActive();
+            //The user was typing in the login fields: he logs in himself.
+            const bool autoLogin = resumePolicy.becameActive();
             syncKeepPage();
+            if (!autoLogin)
+            {
+                qDebug() << "Application is in foreground, login fields edited: no automatic login";
+                return;
+            }
 
             qDebug() << "Application is in foreground, login again";
             startLogin(get_username(), get_password(), get_hostname(), false);
@@ -186,6 +193,7 @@ void Application::createQmlApp()
     update_appVersion(PKG_VERSION_STR);
     update_waitingForNetwork(false);
     update_keepPageOnResume(false);
+    set_loginEdited(false);
 
     update_hasInstall(QFile::exists("/.calaos-live") ||
                       QFile::exists("/run/calaos/calaos-live") ||

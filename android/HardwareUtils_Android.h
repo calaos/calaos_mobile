@@ -32,7 +32,6 @@ public:
 
     virtual void inputTextDialog(const QString &title, const QString &message);
 
-
     virtual QString getDeviceName();
 
     //Credentials and server host live on the Java side (CredentialStore:

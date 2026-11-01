@@ -34,7 +34,6 @@
 #include "AdminUpdates.h"
 #include "CalaosConnection.h"
 #include "TlsPinning.h"
-#include "HardwareUtils.h"
 #include "ResumePolicy.h"
 
 static const QString TestUser = QStringLiteral("user");
@@ -1467,43 +1466,46 @@ void TstAdminRelay::replyForAnotherMessageIgnored()
     QVERIFY(relay.isUnlocked());
 }
 
-//The password manager sent the app to the background: the socket is being
-//reopened when the admin password comes back.
-static void reconnecting(FakeTransport &t, AdminRelay &relay)
-{
-    relay.handleTransportLost();
-    relay.handleTransportUp(); //AdminUpdates probes: update_status out
-    Q_UNUSED(t)
-}
-
 void TstAdminRelay::resumePolicyKeepsThePage()
 {
     ResumePolicy p;
     //the password manager: page kept, reconnected in place
-    p.resigned(true);
+    p.resigned(true, false);
     QVERIFY(p.keepPage());
-    p.becameActive();
+    QVERIFY(p.becameActive());
     QCOMPARE(p.phase(), ResumePolicy::Resuming);
     p.sessionFailed();
     QVERIFY(!p.keepPage()); //failed in place: the login screen as usual
 
-    p.resigned(true);
+    p.resigned(true, false);
     p.becameActive();
     p.loggedIn();
     QVERIFY(!p.keepPage());
 
     //the drop itself while in the background does not give the page up
-    p.resigned(true);
+    p.resigned(true, false);
     p.sessionFailed();
     QVERIFY(p.keepPage());
     p.reset();
     QVERIFY(!p.keepPage());
 
     //nothing to keep: the usual path
-    p.resigned(false);
+    p.resigned(false, false);
     QVERIFY(!p.keepPage());
-    p.becameActive();
+    QVERIFY(p.becameActive());
     QVERIFY(!p.keepPage());
+
+    //login fields edited when leaving (to copy the password): no automatic
+    //login on return, which would replace the typed text
+    p.resigned(false, true);
+    QVERIFY(!p.becameActive());
+    QVERIFY(!p.keepPage());
+    QVERIFY(p.becameActive()); //the skip is for one return only
+
+    //a logout in between forgets it
+    p.resigned(false, true);
+    p.reset();
+    QVERIFY(p.becameActive());
 }
 
 QTEST_MAIN(TstAdminRelay)

@@ -62,7 +62,6 @@ AdminUpdates::AdminUpdates(UpdateBackend *backend, AdminRelay *relay, QObject *p
             update_rebootHint(true);
     });
 
-
     m_countdownTimer = new QTimer(this);
     m_countdownTimer->setInterval(1000);
     connect(m_countdownTimer, &QTimer::timeout, this, [this]()

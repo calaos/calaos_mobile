@@ -39,6 +39,18 @@ Item {
         userField.text = calaosApp.username
         passField.text = calaosApp.password
         hostField.text = calaosApp.hostname
+        edited = false
+    }
+
+    // True once the user has typed or pasted in a field. Read by calaosApp
+    // when iOS resigns active, so the automatic login on return does not
+    // replace the text (leaving to copy the password is the usual case).
+    property bool edited: false
+
+    Binding {
+        target: calaosApp
+        property: "loginEdited"
+        value: loginRoot.edited && loginRoot.visible
     }
 
     Component.onCompleted: syncFromApp()
@@ -108,6 +120,7 @@ Item {
                 width: Units.dp(200)
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Username")
+                onTextEdited: loginRoot.edited = true
                 enabled: !loginButton.loadingEnabled
             }
 
@@ -117,6 +130,7 @@ Item {
                 echoMode: TextInput.Password
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Password")
+                onTextEdited: loginRoot.edited = true
                 enabled: !loginButton.loadingEnabled
             }
 
@@ -125,6 +139,7 @@ Item {
                 width: Units.dp(200)
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Hostname")
+                onTextEdited: loginRoot.edited = true
                 enabled: !loginButton.loadingEnabled
             }
 
@@ -138,6 +153,7 @@ Item {
                                          cancelClicked()
                                      } else {
                                          loginRoot.hideKeyboard()
+                                         loginRoot.edited = false
                                          loginClicked(userField.text, passField.text, hostField.text)
                                      }
                                  }

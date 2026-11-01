@@ -23,6 +23,7 @@ TestCase {
         property string username: "user"
         property string password: ""
         property string hostname: "box"
+        property bool loginEdited: false
         property int applicationStatus: Common.NotConnected
         function getPictureSized(pic) { return "" }
     }
@@ -71,5 +72,31 @@ TestCase {
         clipboardSource.copy()
         field.paste()
         compare(view.password, "copied secret")
+    }
+
+    // Read by Application when iOS resigns active: a typed or pasted field
+    // must not be replaced by the automatic login on return.
+    function test_editedFlagFollowsTheUser() {
+        calaosApp.loginEdited = false
+        var view = createTemporaryObject(loginComponent, tc)
+        compare(calaosApp.loginEdited, false)
+
+        var host = fieldOf(view, "Hostname")
+        mouseClick(host)
+        tryCompare(host, "activeFocus", true)
+        keyClick("x")
+        compare(calaosApp.loginEdited, true)
+
+        view.syncFromApp()
+        compare(calaosApp.loginEdited, false)
+
+        var field = fieldOf(view, "Password")
+        mouseClick(field)
+        tryCompare(field, "activeFocus", true)
+        clipboardSource.text = "copied secret"
+        clipboardSource.selectAll()
+        clipboardSource.copy()
+        field.paste()
+        compare(calaosApp.loginEdited, true)
     }
 }

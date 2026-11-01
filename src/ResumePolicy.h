@@ -24,14 +24,28 @@ public:
         Resuming, //back, the automatic login is on its way
     };
 
-    //The app resigns active. keepPage: the page shown must survive.
-    void resigned(bool keepPage) { m_phase = keepPage ? Paused : None; }
-
-    //Back in the foreground: the automatic login runs.
-    void becameActive()
+    //The app resigns active. keepPage: the page shown must survive;
+    //loginEdited: the user has typed in the login fields, the automatic login
+    //on return would replace that text with the stored credentials.
+    void resigned(bool keepPage, bool loginEdited)
     {
+        m_phase = keepPage ? Paused : None;
+        m_skipAutoLogin = loginEdited;
+    }
+
+    //Back in the foreground. Returns whether the automatic login runs.
+    bool becameActive()
+    {
+        const bool skip = m_skipAutoLogin;
+        m_skipAutoLogin = false;
+        if (skip)
+        {
+            m_phase = None;
+            return false;
+        }
         if (m_phase == Paused)
             m_phase = Resuming;
+        return true;
     }
 
     //The session went down again (failed login, untrusted certificate...)
@@ -46,13 +60,18 @@ public:
     void loggedIn() { m_phase = None; }
 
     //Logout, reset: nothing kept.
-    void reset() { m_phase = None; }
+    void reset()
+    {
+        m_phase = None;
+        m_skipAutoLogin = false;
+    }
 
     Phase phase() const { return m_phase; }
     bool keepPage() const { return m_phase != None; }
 
 private:
     Phase m_phase = None;
+    bool m_skipAutoLogin = false;
 };
 
 #endif // RESUMEPOLICY_H

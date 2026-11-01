@@ -3187,7 +3187,7 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
     <message>
         <location filename="../qml/mobile/SettingsView.qml" line="44"/>
         <source>Event log</source>
-        <translation>Journal</translation>
+        <translation>Historique des événements</translation>
     </message>
 </context>
 <context>

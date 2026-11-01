@@ -211,6 +211,25 @@ TestCase {
         compare(counter.visible, data.shown)
     }
 
+    function test_rowIconKeepsItsSizeAndRatio_data() {
+        return [
+            { tag: "square", icon: "icon_temp", narrower: false },
+            { tag: "notif 22x25", icon: "icon_notif", narrower: true },
+        ]
+    }
+
+    function test_rowIconKeepsItsSizeAndRatio(data) {
+        eventLogModel.append(event("Icon", 1, { evIconSource: data.icon }))
+        var view = openView()
+        var icon = findChild(findChild(view, "eventLogList"), "eventLogIcon")
+        verify(icon)
+        tryCompare(icon, "status", Image.Ready)
+        compare(icon.width, Units.dp(22))
+        compare(icon.height, Units.dp(22))
+        compare(icon.paintedHeight, Units.dp(22))
+        compare(icon.paintedWidth < icon.paintedHeight, data.narrower)
+    }
+
     function test_counterHoldsItsTextUnderTheTime() {
         eventLogModel.append(event("Light kitchen", 128))
         var view = openView()

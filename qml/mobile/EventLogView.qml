@@ -250,6 +250,8 @@ Item {
                     spacing: Units.dp(8)
 
                     IconItem {
+                        objectName: "eventLogIcon"
+                        fillMode: Image.PreserveAspectFit
                         source: calaosApp.getPictureSized(evIconSource)
                         visible: evIconSource != ""
                         Layout.alignment: Qt.AlignVCenter

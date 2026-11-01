@@ -1,5 +1,7 @@
 import QtQuick
 import QtQuick.Controls as QuickControls
+import QtQuick.Layouts
+import SharedComponents
 import "../quickflux"
 
 //Entry of the settings. Box and Event log lead straight to their own page,
@@ -8,6 +10,7 @@ SettingsPage {
     id: settingsPage
 
     title: qsTr("Settings")
+    glyph: "tune"
 
     signal favoriteAddClicked()
     signal favoriteEditClicked()
@@ -19,30 +22,62 @@ SettingsPage {
         QuickControls.StackView.view.push(component)
     }
 
-    SettingsEntry {
-        objectName: "settingsEntryDevice"
-        title: qsTr("Device")
-        onButtonClicked: settingsPage.openSubPage(deviceView)
+    component TileGrid: GridLayout {
+        x: Units.dp(16)
+        width: settingsPage.width - Units.dp(32)
+        columns: 2
+        columnSpacing: Units.dp(12)
+        rowSpacing: Units.dp(12)
     }
-    SettingsEntry {
-        objectName: "settingsEntryConnection"
-        title: qsTr("Connection")
-        onButtonClicked: settingsPage.openSubPage(connectionView)
+
+    //The tiles of a row share the height of the one that wraps its label
+    component Tile: SettingsEntry {
+        Layout.fillWidth: true
+        Layout.fillHeight: true
     }
-    SettingsEntry {
-        objectName: "settingsEntryBox"
-        title: qsTr("Box")
-        onButtonClicked: settingsPage.boxUpdatesClicked()
+
+    ListGroupHeader { title: qsTr("This phone") }
+
+    TileGrid {
+        Tile {
+            objectName: "settingsEntryDevice"
+            title: qsTr("Device")
+            glyph: "phone"
+            onButtonClicked: settingsPage.openSubPage(deviceView)
+        }
+        Tile {
+            objectName: "settingsEntryConnection"
+            title: qsTr("Connection")
+            glyph: "link"
+            onButtonClicked: settingsPage.openSubPage(connectionView)
+        }
+        Tile {
+            objectName: "settingsEntryFavorites"
+            title: qsTr("Favorites")
+            glyph: "star"
+            wide: true
+            Layout.columnSpan: 2
+            onButtonClicked: settingsPage.openSubPage(favoritesView)
+        }
     }
-    SettingsEntry {
-        objectName: "settingsEntryFavorites"
-        title: qsTr("Favorites")
-        onButtonClicked: settingsPage.openSubPage(favoritesView)
-    }
-    SettingsEntry {
-        objectName: "settingsEntryEventLog"
-        title: qsTr("Event log")
-        onButtonClicked: AppActions.openEventLog()
+
+    ListGroupHeader { gap: Units.dp(16); title: qsTr("Box") }
+
+    TileGrid {
+        Tile {
+            objectName: "settingsEntryBox"
+            title: qsTr("Box")
+            glyph: "dns"
+            external: true
+            onButtonClicked: settingsPage.boxUpdatesClicked()
+        }
+        Tile {
+            objectName: "settingsEntryEventLog"
+            title: qsTr("Event log")
+            glyph: "history"
+            external: true
+            onButtonClicked: AppActions.openEventLog()
+        }
     }
 
     Component {

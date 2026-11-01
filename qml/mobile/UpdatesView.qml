@@ -128,9 +128,9 @@ Item {
         font { family: calaosFont.fontFamily; pixelSize: Units.dp(13) }
     }
 
-    component Button: CalaosItemBase {
+    component Button: SettingsButton {
         Layout.fillWidth: true
-        Layout.preferredHeight: Units.dp(40)
+        Layout.preferredHeight: Units.dp(52)
     }
 
     component Card: Rectangle {
@@ -466,6 +466,7 @@ Item {
                 CalaosTextField {
                     id: passwordField
                     objectName: "adminPasswordField"
+                    framed: true
                     Layout.fillWidth: true
                     Layout.preferredHeight: Units.dp(48)
                     placeholderText: qsTr("Admin password")
@@ -484,6 +485,9 @@ Item {
                 }
 
                 Button {
+                    id: unlockButton
+                    glyph: disabled ? "lock_off" : "lock"
+
                     objectName: "unlockButton"
                     disabled: (!page.nativeEntry && passwordField.text === "") || boxUpdates.busy !== "" ||
                               boxUpdates.retryAfter > 0
@@ -495,12 +499,17 @@ Item {
         }
     }
 
+    KeyboardScroller {
+        flickable: listFlick
+        revealTo: unlockButton
+    }
+
     ScrollBar { listObject: listFlick }
 
     ViewHeader {
         id: header
         headerLabel: qsTr("Box updates")
-        iconSource: calaosApp.getPictureSized("icon_config")
+        glyph: "dns"
     }
 
     BottomSheet {

@@ -2209,6 +2209,11 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
         <translation>Aujourd&apos;hui</translation>
     </message>
     <message>
+        <location filename="../src/EventLogModel.cpp" line="291"/>
+        <source>Yesterday</source>
+        <translation>Hier</translation>
+    </message>
+    <message>
         <location filename="../src/EventLogModel.cpp" line="259"/>
         <location filename="../src/EventLogModel.cpp" line="272"/>
         <source>On</source>
@@ -2248,9 +2253,39 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>EventLogView</name>
     <message>
-        <location filename="../qml/mobile/EventLogView.qml" line="52"/>
+        <location filename="../qml/mobile/EventLogView.qml" line="85"/>
+        <source>Loading earlier events…</source>
+        <translation>Chargement des événements précédents…</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/EventLogView.qml" line="126"/>
+        <source>Loading…</source>
+        <translation>Chargement…</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/EventLogView.qml" line="127"/>
+        <source>Could not load the events.</source>
+        <translation>Impossible de charger les événements.</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/EventLogView.qml" line="128"/>
         <source>No events in log.&lt;br&gt;Calaos Server &lt;b&gt;v3.1&lt;/b&gt; is required.</source>
-        <translation>Aucun événement dans l&apos;historique.&lt;br&gt;Calaos Server &lt;b&gt;v3.1&lt;/b&gt; est requis.</translation>
+        <translation>Aucun événement dans le journal.&lt;br&gt;Calaos Server &lt;b&gt;v3.1&lt;/b&gt; est requis.</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/EventLogView.qml" line="137"/>
+        <source>Check the connection to the box.</source>
+        <translation>Vérifiez la connexion à la box.</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/EventLogView.qml" line="151"/>
+        <source>Retry</source>
+        <translation>Réessayer</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/EventLogView.qml" line="229"/>
+        <source>%1 times</source>
+        <translation>%1 fois</translation>
     </message>
     <message>
         <location filename="../qml/mobile/EventLogView.qml" line="64"/>
@@ -3036,6 +3071,21 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
         <translation>Connexion</translation>
     </message>
     <message>
+        <location filename="../qml/mobile/SettingsConnectionView.qml" line="10"/>
+        <source>Session</source>
+        <translation>Session</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsConnectionView.qml" line="25"/>
+        <source>Danger zone</source>
+        <translation>Zone sensible</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsConnectionView.qml" line="45"/>
+        <source>Erases this phone&apos;s configuration and certificates.</source>
+        <translation>Efface la configuration et les certificats de ce téléphone.</translation>
+    </message>
+    <message>
         <location filename="../qml/mobile/SettingsConnectionView.qml" line="14"/>
         <source>Logout</source>
         <translation>Se déconnecter</translation>
@@ -3074,9 +3124,9 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
         <translation>Ce nom permet de reconnaître ce téléphone dans l&apos;administration de la box</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsDeviceView.qml" line="105"/>
+        <location filename="../qml/mobile/SettingsDeviceView.qml" line="108"/>
         <source>Language:</source>
-        <translation>Langue:</translation>
+        <translation>Langue :</translation>
     </message>
 </context>
 <context>
@@ -3092,9 +3142,9 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
         <translation>Ajouter un favori</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsFavoritesView.qml" line="30"/>
+        <location filename="../qml/mobile/SettingsFavoritesView.qml" line="22"/>
         <source>Edit favorites list</source>
-        <translation>Éditer la liste des favoris</translation>
+        <translation>Modifier la liste des favoris</translation>
     </message>
 </context>
 <context>
@@ -3160,9 +3210,14 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
         <translation type="vanished">Langue:</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="10"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="12"/>
         <source>Settings</source>
-        <translation>Options</translation>
+        <translation>Réglages</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsView.qml" line="39"/>
+        <source>This phone</source>
+        <translation>Ce téléphone</translation>
     </message>
     <message>
         <location filename="../qml/mobile/SettingsView.qml" line="24"/>
@@ -3185,9 +3240,9 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
         <translation>Favoris</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="44"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="76"/>
         <source>Event log</source>
-        <translation>Historique des événements</translation>
+        <translation>Événements</translation>
     </message>
 </context>
 <context>
@@ -3803,7 +3858,7 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <location filename="../qml/mobile/UpdatesView.qml" line="455"/>
         <location filename="../qml/mobile/UpdatesView.qml" line="471"/>
         <source>Admin password</source>
-        <translation>Mot de passe admin</translation>
+        <translation>Mot de passe administrateur</translation>
     </message>
     <message>
         <location filename="../qml/mobile/UpdatesView.qml" line="457"/>

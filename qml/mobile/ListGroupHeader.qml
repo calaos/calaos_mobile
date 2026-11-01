@@ -2,30 +2,33 @@ import QtQuick
 import SharedComponents
 
 Item {
-
     property alias title: titl.text
+    property bool danger: false
+    //Space above, when the group follows another one
+    property real gap: 0
 
-    height: titl.implicitHeight + Units.dp(10)
+    width: parent ? parent.width : 0
+    height: gap + Units.dp(12) + titl.implicitHeight + Units.dp(6) + rule.height + Units.dp(8)
 
     Text {
         id: titl
-        color: "#3ab4d7"
+        color: danger ? Theme.redColor : Theme.blueColor
         font { family: calaosFont.fontFamily; bold: true; pointSize: 12 }
-        text: title
-        elide: Text.ElideRight
+        wrapMode: Text.WordWrap
         anchors {
-            left: parent.left; leftMargin: Units.dp(8)
-            right: parent.right; rightMargin: Units.dp(8)
-            top: parent.top; topMargin: Units.dp(4)
+            left: parent.left; leftMargin: Units.dp(16)
+            right: parent.right; rightMargin: Units.dp(16)
+            top: parent.top; topMargin: gap + Units.dp(12)
         }
     }
     Rectangle {
-        color: "#424242"
+        id: rule
+        color: danger ? Theme.colorAlpha(Theme.redColor, 0.45) : "#424242"
         height: Units.dp(2)
         anchors {
-            left: parent.left; leftMargin: Units.dp(12)
-            right: parent.right; rightMargin: Units.dp(12)
-            bottom: parent.bottom
+            left: parent.left
+            right: parent.right
+            top: titl.bottom; topMargin: Units.dp(6)
         }
     }
 }

@@ -2189,6 +2189,11 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <translation>Heute</translation>
     </message>
     <message>
+        <location filename="../src/EventLogModel.cpp" line="291"/>
+        <source>Yesterday</source>
+        <translation>Gestern</translation>
+    </message>
+    <message>
         <location filename="../src/EventLogModel.cpp" line="259"/>
         <location filename="../src/EventLogModel.cpp" line="272"/>
         <source>On</source>
@@ -2228,9 +2233,39 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
 <context>
     <name>EventLogView</name>
     <message>
-        <location filename="../qml/mobile/EventLogView.qml" line="52"/>
+        <location filename="../qml/mobile/EventLogView.qml" line="85"/>
+        <source>Loading earlier events…</source>
+        <translation>Frühere Ereignisse werden geladen…</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/EventLogView.qml" line="126"/>
+        <source>Loading…</source>
+        <translation>Wird geladen…</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/EventLogView.qml" line="127"/>
+        <source>Could not load the events.</source>
+        <translation>Die Ereignisse konnten nicht geladen werden.</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/EventLogView.qml" line="128"/>
         <source>No events in log.&lt;br&gt;Calaos Server &lt;b&gt;v3.1&lt;/b&gt; is required.</source>
         <translation>Keine Ereignisse im Protokoll.&lt;br&gt;Calaos Server &lt;b&gt;v3.1&lt;/b&gt; ist erforderlich.</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/EventLogView.qml" line="137"/>
+        <source>Check the connection to the box.</source>
+        <translation>Prüfen Sie die Verbindung zur Box.</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/EventLogView.qml" line="151"/>
+        <source>Retry</source>
+        <translation>Erneut versuchen</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/EventLogView.qml" line="229"/>
+        <source>%1 times</source>
+        <translation>%1 Mal</translation>
     </message>
     <message>
         <location filename="../qml/mobile/EventLogView.qml" line="64"/>
@@ -3012,6 +3047,21 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <translation>Verbindung</translation>
     </message>
     <message>
+        <location filename="../qml/mobile/SettingsConnectionView.qml" line="10"/>
+        <source>Session</source>
+        <translation>Sitzung</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsConnectionView.qml" line="25"/>
+        <source>Danger zone</source>
+        <translation>Gefahrenbereich</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsConnectionView.qml" line="45"/>
+        <source>Erases this phone&apos;s configuration and certificates.</source>
+        <translation>Löscht Konfiguration und Zertifikate dieses Telefons.</translation>
+    </message>
+    <message>
         <location filename="../qml/mobile/SettingsConnectionView.qml" line="14"/>
         <source>Logout</source>
         <translation>Abmelden</translation>
@@ -3022,9 +3072,9 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <translation>Alle Daten zurücksetzen</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsConnectionView.qml" line="39"/>
+        <location filename="../qml/mobile/SettingsConnectionView.qml" line="54"/>
         <source>Trusted certificates:</source>
-        <translation>Vertraute Zertifikate:</translation>
+        <translation>Vertrauenswürdige Zertifikate:</translation>
     </message>
     <message>
         <location filename="../qml/mobile/SettingsConnectionView.qml" line="79"/>
@@ -3045,9 +3095,9 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <translation>Name dieses Geräts:</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsDeviceView.qml" line="102"/>
+        <location filename="../qml/mobile/SettingsDeviceView.qml" line="105"/>
         <source>This name lets you recognise this phone in the box administration</source>
-        <translation>An diesem Namen erkennen Sie dieses Telefon in der Verwaltung der Box</translation>
+        <translation>Mit diesem Namen erkennen Sie dieses Telefon in der Verwaltung der Box</translation>
     </message>
     <message>
         <location filename="../qml/mobile/SettingsDeviceView.qml" line="105"/>
@@ -3063,9 +3113,9 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <translation>Favoriten</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsFavoritesView.qml" line="17"/>
+        <location filename="../qml/mobile/SettingsFavoritesView.qml" line="15"/>
         <source>Add a favorite</source>
-        <translation>Einen Favoriten hinzufügen</translation>
+        <translation>Favorit hinzufügen</translation>
     </message>
     <message>
         <location filename="../qml/mobile/SettingsFavoritesView.qml" line="30"/>
@@ -3136,9 +3186,14 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <translation type="vanished">Sprache:</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsView.qml" line="10"/>
+        <location filename="../qml/mobile/SettingsView.qml" line="12"/>
         <source>Settings</source>
         <translation>Einstellungen</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsView.qml" line="39"/>
+        <source>This phone</source>
+        <translation>Dieses Telefon</translation>
     </message>
     <message>
         <location filename="../qml/mobile/SettingsView.qml" line="24"/>
@@ -3779,7 +3834,7 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <location filename="../qml/mobile/UpdatesView.qml" line="455"/>
         <location filename="../qml/mobile/UpdatesView.qml" line="471"/>
         <source>Admin password</source>
-        <translation>Admin-Passwort</translation>
+        <translation>Administratorpasswort</translation>
     </message>
     <message>
         <location filename="../qml/mobile/UpdatesView.qml" line="457"/>
@@ -3815,7 +3870,7 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
     <message>
         <location filename="../qml/mobile/UpdatesView.qml" line="502"/>
         <source>Box updates</source>
-        <translation>Updates der Box</translation>
+        <translation>Aktualisierungen der Box</translation>
     </message>
     <message>
         <location filename="../qml/mobile/UpdatesView.qml" line="510"/>

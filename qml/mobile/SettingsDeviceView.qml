@@ -6,6 +6,7 @@ SettingsPage {
     id: settingsPage
 
     title: qsTr("Device")
+    glyph: "phone"
 
     //Only what the user typed is saved: an untouched field would otherwise
     //freeze the platform name as an override when the phone is renamed in
@@ -64,17 +65,18 @@ SettingsPage {
 
     //Sent with register_push: since iOS 16 every iPhone reports the
     //same generic name, the admin needs one that tells them apart.
-    ListGroupHeader { width: settingsPage.width; title: qsTr("Name of this device:") }
+    ListGroupHeader { title: qsTr("Name of this device:") }
     Item {
         width: settingsPage.width
         height: Units.dp(48)
         CalaosTextField {
             id: deviceNameField
             objectName: "deviceNameField"
+            framed: true
             anchors {
-                left: parent.left; leftMargin: Units.dp(16)
-                right: parent.right; rightMargin: Units.dp(16)
-                verticalCenter: parent.verticalCenter
+                fill: parent
+                leftMargin: Units.dp(16)
+                rightMargin: Units.dp(16)
             }
             text: hardwareUtils.deviceName
             maximumLength: hardwareUtils.deviceNameMaxLength
@@ -96,32 +98,35 @@ SettingsPage {
     Text {
         x: Units.dp(16)
         width: settingsPage.width - Units.dp(32)
+        topPadding: Units.dp(6)
         wrapMode: Text.WordWrap
         color: Theme.mutedColor
-        font { family: calaosFont.fontFamily; pixelSize: Units.dp(12) }
+        font { family: calaosFont.fontFamily; pixelSize: Units.dp(13) }
         text: qsTr("This name lets you recognise this phone in the box administration")
     }
 
-    ListGroupHeader { width: settingsPage.width; title: qsTr("Language:") }
+    ListGroupHeader { gap: Units.dp(16); title: qsTr("Language:") }
 
-    Repeater {
-        model: langModel
+    SettingsRows {
+        Repeater {
+            model: langModel
 
-        CalaosRadio {
-            objectName: "languageRadio"
+            SettingsRadio {
+                objectName: "languageRadio"
 
-            property variant langItemModel
+                property variant langItemModel
 
-            Component.onCompleted: {
-                langItemModel = Qt.binding(function() { return langModel.getLangModel(model.index) })
-                checked = langItemModel.langActive
-            }
+                Component.onCompleted: {
+                    langItemModel = Qt.binding(function() { return langModel.getLangModel(model.index) })
+                    checked = langItemModel.langActive
+                }
 
-            text: langItemModel.langName
-            onCheckedChanged: {
-                langItemModel.langActive = checked
-                if (checked) {
-                    calaosApp.setLanguage(langItemModel.langCode)
+                text: langItemModel.langName
+                onCheckedChanged: {
+                    langItemModel.langActive = checked
+                    if (checked) {
+                        calaosApp.setLanguage(langItemModel.langCode)
+                    }
                 }
             }
         }

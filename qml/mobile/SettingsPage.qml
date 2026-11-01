@@ -7,6 +7,7 @@ Item {
     id: settingsPage
 
     property alias title: header.headerLabel
+    property alias glyph: header.glyph
     default property alias content: column.data
 
     Image {
@@ -24,7 +25,7 @@ Item {
             id: column
             width: parent.width
             topPadding: Units.dp(8)
-            spacing: 6
+            bottomPadding: Units.dp(16)
         }
 
         contentHeight: column.implicitHeight
@@ -35,10 +36,11 @@ Item {
         flickableDirection: Flickable.VerticalFlick
     }
 
+    KeyboardScroller { flickable: listFlick }
+
     ScrollBar { listObject: listFlick }
 
     ViewHeader {
         id: header
-        iconSource: calaosApp.getPictureSized("icon_config")
     }
 }

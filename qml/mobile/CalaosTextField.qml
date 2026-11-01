@@ -1,9 +1,5 @@
 import QtQuick
 import QtQuick.Controls as Controls
-// ColorOverlay has no MultiEffect equivalent: the tint is half-transparent
-// white, i.e. a 50/50 blend towards white that keeps the source hue.
-// MultiEffect blends towards tint * luminance instead. See T29.
-import Qt5Compat.GraphicalEffects
 import QtQuick.Layouts
 import SharedComponents
 
@@ -17,7 +13,12 @@ Controls.TextField {
     passwordCharacter: "\u2022"
 
     property bool showClearButton: true
+    //A box around the field rather than a line under it, and no floating label
+    property bool framed: false
     signal clearButtonClicked()
+
+    leftPadding: framed ? Units.dp(12) : undefined
+    rightPadding: framed ? Units.dp(44) : undefined
 
     background: Item {
         id: background
@@ -25,10 +26,22 @@ Controls.TextField {
         property color color: "#3AB4D7"
         property color errorColor: "#3AB4D7"
         property string helperText
-        property bool floatingLabel: true
+        property bool floatingLabel: !control.framed
         property bool hasError: characterLimit && length > characterLimit
         property int characterLimit
-        property bool showBorder: true
+        property bool showBorder: !control.framed
+
+        Rectangle {
+            objectName: "fieldFrame"
+            anchors.fill: parent
+            visible: control.framed
+            radius: Units.dp(8)
+            color: "transparent"
+            border {
+                width: Units.dp(2)
+                color: control.activeFocus ? background.color : "#424242"
+            }
+        }
 
         Rectangle {
             id: underline
@@ -57,6 +70,7 @@ Controls.TextField {
         Controls.Label {
             id: fieldPlaceholder
 
+            x: control.framed ? Units.dp(12) : 0
             anchors.verticalCenter: parent.verticalCenter
             text: control.placeholderText
             font.pixelSize: Units.dp(16)
@@ -150,16 +164,22 @@ Controls.TextField {
         id: iconClear
         fillMode: Image.PreserveAspectFit
         source: "qrc:/img/close.svg"
+        sourceSize: Qt.size(Units.dp(18), Units.dp(18))
         opacity: parent.text != ""?1:0
         visible: opacity > 0 && showClearButton
         Behavior on opacity { NumberAnimation { duration: 100 } }
         anchors {
             right: parent.right
+            rightMargin: control.framed ? Units.dp(13) : 0
             top: parent.top
             bottom: parent.bottom
         }
         MouseArea {
-            anchors.fill: parent
+            anchors {
+                fill: parent
+                leftMargin: -Units.dp(13)
+                rightMargin: control.framed ? -Units.dp(13) : 0
+            }
             onClicked: {
                 // cut() is a no-op in Password echo mode, so clear explicitly.
                 // Reset the IME first so a pending preedit cannot reappear.
@@ -171,16 +191,5 @@ Controls.TextField {
                 control.clearButtonClicked()
             }
         }
-    }
-
-    ColorOverlay {
-        id: overlay
-
-        anchors.fill: iconClear
-        source: iconClear
-        color: Qt.rgba(1,1,1,0.5)
-        cached: true
-        visible: iconClear.visible
-        opacity: iconClear.opacity
     }
 }

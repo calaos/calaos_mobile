@@ -347,6 +347,44 @@ TestCase {
         verify(label.width <= tile.width)
     }
 
+    function test_everyTileHasASubtitle() {
+        var page = openSettings()
+        var names = ["settingsEntryDevice", "settingsEntryConnection", "settingsEntryFavorites",
+                     "settingsEntryBox", "settingsEntryEventLog"]
+        for (var i = 0; i < names.length; i++) {
+            var sub = findChild(findChild(page, names[i]), "tileSubtitle")
+            verify(sub, names[i])
+            verify(sub.visible, names[i])
+            verify(sub.text !== "", names[i])
+        }
+    }
+
+    function test_longSubtitleStaysInsideItsTileWhichKeepsTheWholeClickArea_data() {
+        return [
+            { tag: "tile", name: "settingsEntryDevice" },
+            { tag: "wide tile", name: "settingsEntryFavorites" },
+        ]
+    }
+
+    function test_longSubtitleStaysInsideItsTileWhichKeepsTheWholeClickArea(data) {
+        var page = openSettings()
+        var tile = findChild(page, data.name)
+        var sub = findChild(tile, "tileSubtitle")
+        var before = tile.height
+        tile.subtitle ="A subtitle long enough to need several lines in a tile of half a phone, in any language"
+        tryVerify(function() { return tile.height > before })
+        var rect = sub.mapToItem(tile, 0, 0, sub.width, sub.height)
+        verify(rect.x >= 0 && rect.y >= 0)
+        verify(rect.x + rect.width <= tile.width)
+        verify(rect.y + rect.height <= tile.height)
+        //Children outside the parent are ignored by Qt hit testing
+        var mid = sub.mapToItem(tile, sub.width / 2, sub.height / 2)
+        verify(tile.contains(Qt.point(mid.x, mid.y)))
+        mouseClick(tile, mid.x, mid.y)
+        settle()
+        verify(stack.currentItem !== page)
+    }
+
     function test_rowsAreTouchTargets_data() {
         return [
             { tag: "logout", entry: "settingsEntryConnection", item: "logoutButton" },

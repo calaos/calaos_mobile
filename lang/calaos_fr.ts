@@ -3244,6 +3244,31 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
         <source>Event log</source>
         <translation>Événements</translation>
     </message>
+    <message>
+        <location filename="../qml/mobile/SettingsView.qml" line="45"/>
+        <source>Name and language</source>
+        <translation>Nom et langue</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsView.qml" line="52"/>
+        <source>Session and certificates</source>
+        <translation>Session et certificats</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsView.qml" line="59"/>
+        <source>Add or edit</source>
+        <translation>Ajouter ou modifier</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsView.qml" line="73"/>
+        <source>Updates</source>
+        <translation>Mises à jour</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsView.qml" line="81"/>
+        <source>Latest actions</source>
+        <translation>Dernières actions</translation>
+    </message>
 </context>
 <context>
     <name>SpeedDialPage</name>

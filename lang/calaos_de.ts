@@ -3220,6 +3220,31 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <source>Event log</source>
         <translation>Ereignisprotokoll</translation>
     </message>
+    <message>
+        <location filename="../qml/mobile/SettingsView.qml" line="45"/>
+        <source>Name and language</source>
+        <translation>Name und Sprache dieses Telefons</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsView.qml" line="52"/>
+        <source>Session and certificates</source>
+        <translation>Sitzung und Zertifikate</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsView.qml" line="59"/>
+        <source>Add or edit</source>
+        <translation>Hinzufügen oder bearbeiten</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsView.qml" line="73"/>
+        <source>Updates</source>
+        <translation>Aktualisierungen</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsView.qml" line="81"/>
+        <source>Latest actions</source>
+        <translation>Letzte Aktionen</translation>
+    </message>
 </context>
 <context>
     <name>SpeedDialPage</name>

@@ -7,6 +7,7 @@ CalaosItemBase {
     id: entry
 
     property string title
+    property string subtitle
     property string glyph
     property bool wide: false
     property bool external: false
@@ -18,8 +19,8 @@ CalaosItemBase {
     Accessible.name: title
 
     implicitHeight: wide ?
-                        Math.max(Units.dp(60), badge.height + 2 * padV, tileLabel.implicitHeight + 2 * padV) :
-                        Math.max(Units.dp(96), badge.height + Units.dp(8) + tileLabel.implicitHeight + 2 * padV)
+                        Math.max(Units.dp(60), badge.height + 2 * padV, tileText.implicitHeight + 2 * padV) :
+                        Math.max(Units.dp(96), badge.height + Units.dp(8) + tileText.implicitHeight + 2 * padV)
 
     IconBadge {
         id: badge
@@ -41,9 +42,8 @@ CalaosItemBase {
         }
     }
 
-    Text {
-        id: tileLabel
-        objectName: "tileLabel"
+    Column {
+        id: tileText
         anchors {
             left: entry.wide ? badge.right : parent.left
             leftMargin: entry.wide ? Units.dp(14) : entry.padH
@@ -51,9 +51,27 @@ CalaosItemBase {
             bottom: entry.wide ? undefined : parent.bottom; bottomMargin: entry.padV
             verticalCenter: entry.wide ? parent.verticalCenter : undefined
         }
-        wrapMode: Text.WordWrap
-        color: Theme.whiteColor
-        font { family: calaosFont.fontFamily; weight: Font.Light; pixelSize: Units.dp(16) }
-        text: entry.title
+        spacing: Units.dp(2)
+
+        Text {
+            id: tileLabel
+            objectName: "tileLabel"
+            width: parent.width
+            wrapMode: Text.WordWrap
+            color: Theme.whiteColor
+            font { family: calaosFont.fontFamily; weight: Font.Light; pixelSize: Units.dp(16) }
+            text: entry.title
+        }
+
+        Text {
+            id: tileSubtitle
+            objectName: "tileSubtitle"
+            width: parent.width
+            visible: entry.subtitle !== ""
+            wrapMode: Text.WordWrap
+            color: Theme.mutedColor
+            font { family: calaosFont.fontFamily; pixelSize: Units.dp(13) }
+            text: entry.subtitle
+        }
     }
 }

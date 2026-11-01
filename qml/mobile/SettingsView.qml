@@ -42,18 +42,21 @@ SettingsPage {
         Tile {
             objectName: "settingsEntryDevice"
             title: qsTr("Device")
+            subtitle: qsTr("Name and language")
             glyph: "phone"
             onButtonClicked: settingsPage.openSubPage(deviceView)
         }
         Tile {
             objectName: "settingsEntryConnection"
             title: qsTr("Connection")
+            subtitle: qsTr("Session and certificates")
             glyph: "link"
             onButtonClicked: settingsPage.openSubPage(connectionView)
         }
         Tile {
             objectName: "settingsEntryFavorites"
             title: qsTr("Favorites")
+            subtitle: qsTr("Add or edit")
             glyph: "star"
             wide: true
             Layout.columnSpan: 2
@@ -67,6 +70,7 @@ SettingsPage {
         Tile {
             objectName: "settingsEntryBox"
             title: qsTr("Box")
+            subtitle: qsTr("Updates")
             glyph: "dns"
             external: true
             onButtonClicked: settingsPage.boxUpdatesClicked()
@@ -74,6 +78,7 @@ SettingsPage {
         Tile {
             objectName: "settingsEntryEventLog"
             title: qsTr("Event log")
+            subtitle: qsTr("Latest actions")
             glyph: "history"
             external: true
             onButtonClicked: AppActions.openEventLog()

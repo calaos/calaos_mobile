@@ -269,21 +269,27 @@ the phone: those stay in the webapp.
   `idle`/`probing` are its `idle`/`probing`; `websocket_required` is
   mobile-only (logged in over the HTTP fallback, which has no `admin`
   message).
-- Biometric unlock ([AdminBiometrics](../src/AdminBiometrics.h), per box):
-  after a typed password is accepted the app offers once to keep it, in
-  `HardwareUtils::biometric*` (iOS: Keychain with
+- Biometric unlock ([AdminBiometrics](../src/AdminBiometrics.h), per box): the
+  unlock card has an unchecked box as long as no password is stored for this box
+  and biometrics are available. Checked, the password is stored once the box
+  accepts it (`HardwareUtils::biometric*`; iOS: Keychain with
   `kSecAccessControlBiometryCurrentSet`, in an access group the PushNotif
   extension does not have; Android: `CredentialStore`, its own Keystore key
-  invalidated by a new enrolment, through the framework `BiometricPrompt`).
-  The secret is stored under the host:port of the TLS pin, so another box never
-  reads it; QSettings only holds the state of each box. It is asked for when
-  the unlock card opens. Cancelling leaves the QML field. `bad_password` on a
-  stored password erases it, a typed refusal does not. User logout, reset of
-  all data, a forgotten certificate and an accepted certificate change erase
-  it. The password is in memory for 60 s at most for the offer, and 30 s at
-  most after a read: on iOS the prompt resigns the app, which drops the socket,
-  so it waits for the box to answer on the new one, for the same host, with no
-  certificate question pending.
+  invalidated by a new enrolment, through the framework `BiometricPrompt`, which
+  also asks when storing). A store cancelled or failed leaves nothing, and the
+  box comes back at the next typing. The entry is keyed by the host:port of the
+  TLS pin, so another box never reads it; QSettings only holds which box has
+  one. It is asked for when the unlock card opens; cancelling leaves the QML
+  field. `bad_password` on a stored password erases it, a typed refusal does
+  not. A change of enrolment, a user logout, a reset of all data, a forgotten
+  certificate and an accepted certificate change erase it too. The first launch
+  of an install empties the iOS keychain group, which survives uninstalling.
+- The password passes through memory: while the box answers a checked unlock,
+  during the Android prompt that stores it, and up to 30 s after a read, as the
+  iOS prompt resigns the app, which drops the socket: it waits for the box to
+  answer on the new one, for the same host, with no certificate question. The
+  app going to `ApplicationHidden` or `ApplicationSuspended` drops it. Qt strings
+  cannot be wiped: dropped means released, not overwritten.
 - The password never leaves on a socket that has not proved itself:
   `admin_unlock` is refused without sending while a certificate question is
   pending, over the HTTP fallback, before an admin answer on the current

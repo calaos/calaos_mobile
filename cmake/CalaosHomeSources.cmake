@@ -66,6 +66,7 @@ set(CALAOS_HEADERS
     src/ResumePolicy.h
     src/AdminTransport.h
     src/AdminBiometrics.h
+    src/SecretWipe.h
     src/AdminRelay.h
     src/AdminRelayBackend.h
     src/AdminUpdates.h

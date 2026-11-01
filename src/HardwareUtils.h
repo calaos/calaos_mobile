@@ -91,11 +91,14 @@ public:
 
     //Protected storage of a secret, under the biometrics enrolled now: a
     //change of enrolment makes it unreadable. Asynchronous, answered by
-    //biometricStoreDone() and biometricReadDone() with the result values of
-    //AdminBiometrics. reason is what the system prompt shows.
+    //biometricStoreDone() and biometricReadDone(). reason is what the system
+    //prompt shows. biometricName(): proper name, empty for the generic word.
+    enum BiometricResult { BiometricOk, BiometricCanceled, BiometricFailed, BiometricInvalidated };
     virtual bool hasBiometrics() const { return false; }
-    virtual QString biometricName() const { return tr("biometrics"); }
+    virtual QString biometricName() const { return QString(); }
     virtual void biometricStore(const QString &key, const QString &secret, const QString &reason);
+    //Drops a store waiting for its prompt; nothing is stored.
+    virtual void biometricCancelStore() {}
     virtual void biometricRead(const QString &key, const QString &reason);
     virtual void biometricRemove(const QString &key) { Q_UNUSED(key) }
     virtual void biometricRemoveAll() {}

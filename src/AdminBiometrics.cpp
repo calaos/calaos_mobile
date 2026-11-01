@@ -5,17 +5,14 @@
 #include "CalaosConnection.h"
 #include "HardwareUtils.h"
 #include <QCoreApplication>
+#include <QDateTime>
+#include <QGuiApplication>
 #include <QSettings>
 #include <QUrl>
 
 static const QString SettingsGroup = QStringLiteral("admin_biometrics");
+static const QString SettingsSeen = QStringLiteral("admin_biometrics_seen");
 static const QString BadPassword = QStringLiteral("bad_password");
-
-static void wipe(QString &secret)
-{
-    secret.fill(QChar(u'\0'));
-    secret.clear();
-}
 
 static QString settingsKey(const QString &hostKey)
 {
@@ -31,19 +28,27 @@ AdminBiometrics::AdminBiometrics(HardwareUtils *hw, AdminRelay *relay, AdminUpda
     m_transport(transport)
 {
     update_available(false);
-    update_enabled(false);
-    update_offerPending(false);
-    update_name(hw->biometricName());
+    update_stored(false);
+
+    const QString name = hw->biometricName();
+    update_keepText(name.isEmpty() ? tr("Unlock with fingerprint next time")
+                                   : tr("Unlock with %1 next time").arg(name));
+    update_turnOffText(name.isEmpty() ? tr("Turn off the fingerprint for this box")
+                                      : tr("Turn off %1 for this box").arg(name));
+
+    //The iOS keychain outlives the app: what a removed install left must not
+    //come back with this one.
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    if (!settings.value(SettingsSeen, false).toBool())
+    {
+        settings.setValue(SettingsSeen, true);
+        settings.sync();
+        hw->biometricRemoveAll();
+    }
 
     m_holdTimer = new QTimer(this);
     m_holdTimer->setSingleShot(true);
-    m_holdTimer->setInterval(HoldMs);
     connect(m_holdTimer, &QTimer::timeout, this, &AdminBiometrics::dropHeld);
-
-    m_offerTimer = new QTimer(this);
-    m_offerTimer->setSingleShot(true);
-    m_offerTimer->setInterval(OfferMs);
-    connect(m_offerTimer, &QTimer::timeout, this, &AdminBiometrics::dropOffer);
 
     //A socket that drops ends the session first: the gate is locked for an
     //instant, which must not bring a prompt up over an app going away.
@@ -58,8 +63,6 @@ AdminBiometrics::AdminBiometrics(HardwareUtils *hw, AdminRelay *relay, AdminUpda
     connect(relay, &AdminRelay::gateChanged, this, [this]()
     {
         refresh();
-        if (m_relay->gate() != AdminRelay::GateUnlocked)
-            dropOffer();
         trySend();
         m_askTimer->start();
     });
@@ -77,7 +80,7 @@ AdminBiometrics::AdminBiometrics(HardwareUtils *hw, AdminRelay *relay, AdminUpda
         if (!m_updates->isActive())
         {
             dropHeld();
-            dropOffer();
+            dropPending();
             return;
         }
         refresh();
@@ -89,17 +92,22 @@ AdminBiometrics::AdminBiometrics(HardwareUtils *hw, AdminRelay *relay, AdminUpda
         m_askTimer->start();
     });
 
-    updates->setUnlockObserver([this](const QString &password, bool ok, const QString &code)
+    updates->setUnlockObserver([this](bool ok, const QString &code)
     {
-        passwordAnswered(password, ok, code);
+        unlockAnswered(ok, code);
     });
+
+    if (qGuiApp)
+    {
+        connect(qGuiApp, &QGuiApplication::applicationStateChanged,
+                this, &AdminBiometrics::applicationStateChanged);
+    }
 }
 
 AdminBiometrics::~AdminBiometrics()
 {
-    m_updates->setUnlockObserver(nullptr);
-    wipe(m_heldSecret);
-    wipe(m_offerSecret);
+    if (m_updates)
+        m_updates->setUnlockObserver(nullptr);
 }
 
 void AdminBiometrics::bindConnection(CalaosConnection *con)
@@ -107,38 +115,51 @@ void AdminBiometrics::bindConnection(CalaosConnection *con)
     //A new key may be a new machine behind the same name: it must prove
     //itself with a typed password.
     connect(con, &CalaosConnection::tlsTrustAccepted, this, &AdminBiometrics::forgetBox);
+    connect(con, &CalaosConnection::tlsTrustRequested, this, &AdminBiometrics::dropHeld);
 }
 
-void AdminBiometrics::setDelays(int holdMs, int offerMs)
+void AdminBiometrics::setHoldDelay(int holdMs)
 {
-    m_holdTimer->setInterval(holdMs);
-    m_offerTimer->setInterval(offerMs);
+    m_holdMs = holdMs;
 }
 
-AdminBiometrics::BoxState AdminBiometrics::boxState(const QString &key) const
+void AdminBiometrics::applicationStateChanged(Qt::ApplicationState state)
+{
+    if (state != Qt::ApplicationSuspended && state != Qt::ApplicationHidden)
+        return;
+    dropHeld();
+    dropPending();
+    if (!m_storingKey.isEmpty())
+    {
+        m_storingKey.clear();
+        m_hw->biometricCancelStore();
+    }
+}
+
+bool AdminBiometrics::isStored(const QString &key) const
 {
     if (key.isEmpty())
-        return Unknown;
+        return false;
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
-    return BoxState(settings.value(settingsKey(key), int(Unknown)).toInt());
+    return settings.value(settingsKey(key), false).toBool();
 }
 
-void AdminBiometrics::setBoxState(const QString &key, BoxState state)
+void AdminBiometrics::setStored(const QString &key, bool stored)
 {
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
-    if (state == Unknown)
-        settings.remove(settingsKey(key));
+    if (stored)
+        settings.setValue(settingsKey(key), true);
     else
-        settings.setValue(settingsKey(key), int(state));
+        settings.remove(settingsKey(key));
     settings.sync();
 }
 
 void AdminBiometrics::refresh()
 {
     const QString key = m_transport->adminHostKey();
-    const bool usable = !key.isEmpty() && m_hw->hasBiometrics();
-    update_available(usable);
-    update_enabled(usable && boxState(key) == Stored);
+    update_available(!key.isEmpty() && m_hw->hasBiometrics());
+    //Whatever the biometrics became, what is stored must stay removable.
+    update_stored(isStored(key));
 }
 
 bool AdminBiometrics::canUnlockNow() const
@@ -155,7 +176,7 @@ void AdminBiometrics::maybeAsk()
     if (m_transport->hasPendingTlsTrust())
         return;
     const QString key = m_transport->adminHostKey();
-    if (key.isEmpty() || !m_hw->hasBiometrics() || boxState(key) != Stored)
+    if (key.isEmpty() || !m_hw->hasBiometrics() || !isStored(key))
         return;
 
     m_asked = true;
@@ -170,17 +191,18 @@ void AdminBiometrics::readDone(const QString &key, int result, const QString &se
         return;
     m_reading = false;
 
-    if (result == Invalidated)
+    if (result == HardwareUtils::BiometricInvalidated)
     {
         forgetBox(key);
         return;
     }
-    if (result != Ok || secret.isEmpty() || !m_updates->isActive())
+    if (result != HardwareUtils::BiometricOk || secret.isEmpty() || !m_updates->isActive())
         return;
 
     m_heldSecret = secret;
     m_heldKey = key;
-    m_holdTimer->start();
+    m_heldUntil = QDateTime::currentMSecsSinceEpoch() + m_holdMs;
+    m_holdTimer->start(m_holdMs);
     trySend();
 }
 
@@ -188,6 +210,11 @@ void AdminBiometrics::trySend()
 {
     if (m_heldSecret.isEmpty())
         return;
+    if (QDateTime::currentMSecsSinceEpoch() >= m_heldUntil || m_transport->hasPendingTlsTrust())
+    {
+        dropHeld();
+        return;
+    }
 
     const QString gate = m_relay->gate();
     //the socket is being reopened after the prompt: wait for the box
@@ -207,94 +234,96 @@ void AdminBiometrics::trySend()
         dropHeld();
         return;
     }
-    if (m_transport->hasPendingTlsTrust() || !canUnlockNow())
+    if (!canUnlockNow())
         return;
 
-    QString secret = m_heldSecret;
+    const QString secret = std::move(m_heldSecret);
     dropHeld();
     m_sendingStored = true;
     m_sentKey = key;
     m_updates->unlock(secret);
-    wipe(secret);
 }
 
-void AdminBiometrics::passwordAnswered(const QString &password, bool ok, const QString &code)
+void AdminBiometrics::unlockAndKeep(const QString &password)
 {
-    const bool stored = m_sendingStored;
-    m_sendingStored = false;
-
-    if (stored)
+    const QString key = m_transport->adminHostKey();
+    if (!key.isEmpty() && m_hw->hasBiometrics() && !isStored(key))
     {
+        m_pendingSecret = password;
+        m_pendingKey = key;
+    }
+    m_updates->unlock(password);
+}
+
+void AdminBiometrics::unlockAnswered(bool ok, const QString &code)
+{
+    if (m_sendingStored)
+    {
+        m_sendingStored = false;
         //the box does not take it any more: back to the field for good
         if (code == BadPassword)
             forgetBox(m_sentKey);
         return;
     }
 
-    if (!ok)
-        return;
-    const QString key = m_transport->adminHostKey();
-    if (key.isEmpty() || !m_hw->hasBiometrics() || boxState(key) != Unknown)
+    const QString secret = std::move(m_pendingSecret);
+    const QString key = std::move(m_pendingKey);
+    dropPending();
+    //still the box it was typed for: the answer may come from a late socket
+    if (!ok || secret.isEmpty() || key != m_transport->adminHostKey())
         return;
 
-    //once per box, whatever the answer
-    setBoxState(key, NotOffered);
-    m_offerSecret = password;
-    m_offerKey = key;
-    m_offerTimer->start();
-    update_offerPending(true);
-}
-
-void AdminBiometrics::acceptOffer()
-{
-    if (m_offerSecret.isEmpty())
-        return;
-    m_storingKey = m_offerKey;
-    m_hw->biometricStore(m_offerKey, m_offerSecret, tr("Keep the admin password of this box"));
-    dropOffer();
-}
-
-void AdminBiometrics::declineOffer()
-{
-    dropOffer();
+    m_storingKey = key;
+    m_hw->biometricStore(key, secret, tr("Keep the admin password of this box"));
 }
 
 void AdminBiometrics::storeDone(const QString &key, int result)
 {
     if (key != m_storingKey)
+    {
+        //what was erased meanwhile must not come back
+        if (result == HardwareUtils::BiometricOk)
+            m_hw->biometricRemove(key);
         return;
+    }
     m_storingKey.clear();
-    if (result == Ok)
-        setBoxState(key, Stored);
+    if (result == HardwareUtils::BiometricOk)
+        setStored(key, true);
     refresh();
 }
 
 void AdminBiometrics::disable()
 {
     const QString key = m_transport->adminHostKey();
-    if (key.isEmpty())
-        return;
-    dropHeld();
-    m_hw->biometricRemove(key);
-    setBoxState(key, NotOffered);
-    refresh();
+    if (!key.isEmpty())
+        forgetBox(key);
 }
 
 void AdminBiometrics::forgetBox(const QString &hostKey)
 {
     if (m_heldKey == hostKey)
         dropHeld();
-    if (m_offerKey == hostKey)
-        dropOffer();
+    if (m_pendingKey == hostKey)
+        dropPending();
+    if (m_readKey == hostKey)
+    {
+        m_reading = false;
+        m_readKey.clear();
+    }
+    if (m_storingKey == hostKey)
+        m_storingKey.clear();
     m_hw->biometricRemove(hostKey);
-    setBoxState(hostKey, Unknown);
+    setStored(hostKey, false);
     refresh();
 }
 
 void AdminBiometrics::forgetAll()
 {
     dropHeld();
-    dropOffer();
+    dropPending();
+    m_reading = false;
+    m_readKey.clear();
+    m_storingKey.clear();
     m_hw->biometricRemoveAll();
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
     settings.remove(SettingsGroup);
@@ -305,14 +334,12 @@ void AdminBiometrics::forgetAll()
 void AdminBiometrics::dropHeld()
 {
     m_holdTimer->stop();
-    wipe(m_heldSecret);
+    m_heldSecret.clear();
     m_heldKey.clear();
 }
 
-void AdminBiometrics::dropOffer()
+void AdminBiometrics::dropPending()
 {
-    m_offerTimer->stop();
-    wipe(m_offerSecret);
-    m_offerKey.clear();
-    update_offerPending(false);
+    m_pendingSecret.clear();
+    m_pendingKey.clear();
 }

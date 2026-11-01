@@ -206,13 +206,11 @@ void AdminUpdates::unlock(const QString &password)
     update_busy(QStringLiteral("unlock"));
     dismissError();
     update_info(QString());
-    //A copy only while an answer is awaited, for the offer to keep it.
-    const QString held = m_unlockObserver ? password : QString();
-    m_relay->unlock(password, [this, held](const AdminRelay::Outcome &o)
+    m_relay->unlock(password, [this](const AdminRelay::Outcome &o)
     {
         update_busy(QString());
         if (m_unlockObserver)
-            m_unlockObserver(held, o.ok, o.error.code);
+            m_unlockObserver(o.ok, o.error.code);
         if (o.ok)
             return; //onGateChanged reads the full view
         if (o.error.code == QLatin1String("rate_limited"))

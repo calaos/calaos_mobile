@@ -18,8 +18,8 @@ public:
     virtual bool isSecure() const = 0;
     //Logged in over the HTTP fallback: admin messages have no transport.
     virtual bool isHttpFallback() const = 0;
-    //host:port of the logged-in WebSocket, as the TLS pins name it; empty
-    //without one. What is stored for a box is stored under this.
+    //host:port of the WebSocket, as the TLS pins name it, logged in or not;
+    //empty without one. What is stored for a box is stored under this.
     virtual QString adminHostKey() const = 0;
 };
 

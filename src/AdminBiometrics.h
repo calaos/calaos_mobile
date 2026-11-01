@@ -2,6 +2,7 @@
 #define ADMINBIOMETRICS_H
 
 #include <QObject>
+#include <QPointer>
 #include <QString>
 #include <QTimer>
 #include "qqmlhelpers.h"
@@ -13,17 +14,10 @@ class CalaosConnection;
 class HardwareUtils;
 
 /*
- * Unlocks the admin mode of a box with the biometrics of the phone.
- *
- * The admin session cannot be kept (15 min, bound to the socket), so the admin
- * password itself goes behind the biometrics, in the platform's protected
- * storage (HardwareUtils::biometric*). This class only decides: when to offer,
- * when to ask, when to send, when to forget. QSettings holds the state of each
- * box, never the secret.
- *
- * iOS drops the socket when the biometric prompt resigns the app, so a secret
- * that was read waits in memory, for a bounded time and for the same box,
- * until the box answers on the new socket.
+ * Decides when the admin password of a box goes behind the biometrics, and
+ * when it comes back: the platforms only store (HardwareUtils::biometric*),
+ * QSettings only says which box has one. A password read waits in memory for a
+ * new socket, as the iOS prompt drops the current one.
  */
 class AdminBiometrics: public QObject
 {
@@ -32,18 +26,13 @@ class AdminBiometrics: public QObject
     //Biometrics can be used for the box of the current socket
     QML_READONLY_PROPERTY(bool, available)
     //The password of that box is stored
-    QML_READONLY_PROPERTY(bool, enabled)
-    //Face ID, Touch ID, or the generic word
-    QML_READONLY_PROPERTY(QString, name)
-    //The password was just accepted: ask whether to keep it
-    QML_READONLY_PROPERTY(bool, offerPending)
+    QML_READONLY_PROPERTY(bool, stored)
+    //Whole sentences: the proper name reads in them, the generic word does not
+    QML_READONLY_PROPERTY(QString, keepText)
+    QML_READONLY_PROPERTY(QString, turnOffText)
 
 public:
-    //What a read of the secret ends with, see HardwareUtils.
-    enum Result { Ok, Canceled, Failed, Invalidated };
-
     static constexpr int HoldMs = 30000;
-    static constexpr int OfferMs = 60000;
 
     AdminBiometrics(HardwareUtils *hw, AdminRelay *relay, AdminUpdates *updates,
                     AdminTransport *transport, QObject *parent = nullptr);
@@ -51,9 +40,9 @@ public:
 
     void bindConnection(CalaosConnection *con);
 
-    Q_INVOKABLE void acceptOffer();
-    Q_INVOKABLE void declineOffer();
-    //Settings: this box stops using the biometrics, and is not offered again.
+    //The typed password, stored once the box has accepted it.
+    Q_INVOKABLE void unlockAndKeep(const QString &password);
+    //Settings: this box stops using the biometrics.
     Q_INVOKABLE void disable();
 
     //The certificate of this box was forgotten or replaced.
@@ -61,33 +50,36 @@ public:
     //User logout, reset of all data.
     void forgetAll();
 
-    //Tests shorten the delays.
-    void setDelays(int holdMs, int offerMs);
+    //Tests shorten the delay.
+    void setHoldDelay(int holdMs);
+
+public slots:
+    //Timers stop with the app: leaving ends the wait. Inactive does not, the
+    //iOS prompt goes through it.
+    void applicationStateChanged(Qt::ApplicationState state);
 
 private:
-    enum BoxState { Unknown, Stored, NotOffered };
-
+    bool isStored(const QString &key) const;
+    void setStored(const QString &key, bool stored);
     void refresh();
     bool canUnlockNow() const;
     void maybeAsk();
     void trySend();
-    void passwordAnswered(const QString &password, bool ok, const QString &code);
+    void unlockAnswered(bool ok, const QString &code);
     void storeDone(const QString &key, int result);
     void readDone(const QString &key, int result, const QString &secret);
     void dropHeld();
-    void dropOffer();
-
-    BoxState boxState(const QString &key) const;
-    void setBoxState(const QString &key, BoxState state);
+    void dropPending();
 
     HardwareUtils *m_hw;
     AdminRelay *m_relay;
-    AdminUpdates *m_updates;
+    //Goes first when the application closes.
+    QPointer<AdminUpdates> m_updates;
     AdminTransport *m_transport;
 
     QTimer *m_holdTimer;
-    QTimer *m_offerTimer;
     QTimer *m_askTimer;
+    int m_holdMs = HoldMs;
     //Asked once per opening of the unlock card: a cancel leaves the field.
     bool m_asked = false;
     bool m_reading = false;
@@ -97,8 +89,11 @@ private:
     QString m_sentKey;
     QString m_heldSecret;
     QString m_heldKey;
-    QString m_offerSecret;
-    QString m_offerKey;
+    //Checked out of the timer too: suspended, it does not count.
+    qint64 m_heldUntil = 0;
+    //The typed password, until the box answers.
+    QString m_pendingSecret;
+    QString m_pendingKey;
     QString m_storingKey;
 };
 

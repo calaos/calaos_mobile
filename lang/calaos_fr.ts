@@ -3066,10 +3066,6 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>SettingsConnectionView</name>
     <message>
-        <source>Turn off %1 for this box</source>
-        <translation>Désactiver %1 pour cette box</translation>
-    </message>
-    <message>
         <location filename="../qml/mobile/SettingsConnectionView.qml" line="7"/>
         <source>Connection</source>
         <translation>Connexion</translation>
@@ -3623,22 +3619,6 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
 <context>
     <name>UpdatesView</name>
     <message>
-        <source>Not now</source>
-        <translation>Pas maintenant</translation>
-    </message>
-    <message>
-        <source>Use %1</source>
-        <translation>Utiliser %1</translation>
-    </message>
-    <message>
-        <source>The admin password of this box stays on this phone, protected by %1. You can turn it off in Settings, Connection.</source>
-        <translation>Le mot de passe admin de cette box reste sur ce téléphone, protégé par %1. Vous pouvez désactiver cela dans Réglages, Connexion.</translation>
-    </message>
-    <message>
-        <source>Use %1 next time?</source>
-        <translation>Utiliser %1 la prochaine fois ?</translation>
-    </message>
-    <message>
         <location filename="../qml/mobile/UpdatesView.qml" line="186"/>
         <source>Checking the box…</source>
         <translation>Vérification de la box…</translation>
@@ -4134,24 +4114,6 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <location filename="../qml/mobile/main.qml" line="524"/>
         <source>Enter new value</source>
         <translation>Entrez une nouvelle valeur</translation>
-    </message>
-</context>
-<context>
-    <name>AdminBiometrics</name>
-    <message>
-        <source>Keep the admin password of this box</source>
-        <translation>Garder le mot de passe admin de cette box</translation>
-    </message>
-    <message>
-        <source>Unlock the administration of the box</source>
-        <translation>Déverrouiller l'administration de la box</translation>
-    </message>
-</context>
-<context>
-    <name>HardwareUtils</name>
-    <message>
-        <source>biometrics</source>
-        <translation>biométrie</translation>
     </message>
 </context>
 </TS>

@@ -84,9 +84,8 @@ public:
     Q_INVOKABLE void dismissError();
     Q_INVOKABLE void dismissInfo();
 
-    //Called with each answer to unlock(), which holds the password until
-    //then. Nothing else keeps it.
-    using UnlockObserver = std::function<void(const QString &password, bool ok, const QString &code)>;
+    //Called with each answer to unlock().
+    using UnlockObserver = std::function<void(bool ok, const QString &code)>;
     void setUnlockObserver(UnlockObserver observer) { m_unlockObserver = observer; }
 
     bool isUpgrading() const;

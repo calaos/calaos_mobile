@@ -21,6 +21,7 @@ QT += widgets
 HEADERS += \
     $$SRC_DIR/AdminTransport.h \
     $$SRC_DIR/AdminBiometrics.h \
+    $$SRC_DIR/SecretWipe.h \
     $$SRC_DIR/AdminRelay.h \
     $$SRC_DIR/AdminRelayBackend.h \
     $$SRC_DIR/AdminUpdates.h \

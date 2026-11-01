@@ -79,13 +79,13 @@ void HardwareUtils::emitApplicationActiveChanged(bool active)
 void HardwareUtils::biometricStore(const QString &key, const QString &secret, const QString &reason)
 {
     Q_UNUSED(secret) Q_UNUSED(reason)
-    emit biometricStoreDone(key, 2);
+    emit biometricStoreDone(key, BiometricFailed);
 }
 
 void HardwareUtils::biometricRead(const QString &key, const QString &reason)
 {
     Q_UNUSED(reason)
-    emit biometricReadDone(key, 2, QString());
+    emit biometricReadDone(key, BiometricFailed, QString());
 }
 
 void HardwareUtils::emitBiometricStoreDone(const QString &key, int result)

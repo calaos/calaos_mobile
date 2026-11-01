@@ -75,6 +75,7 @@ HEADERS += \
     $$PWD/src/ResumePolicy.h \
     $$PWD/src/AdminTransport.h \
     $$PWD/src/AdminBiometrics.h \
+    $$PWD/src/SecretWipe.h \
     $$PWD/src/AdminRelay.h \
     $$PWD/src/AdminRelayBackend.h \
     $$PWD/src/AdminUpdates.h

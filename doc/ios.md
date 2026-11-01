@@ -203,21 +203,22 @@ comment at the top of `ios/HardwareUtils.mm`.
   `nm -u CalaosHome.app/CalaosHome | grep -E '^_(f|l)?stat(at)?$|statv?fs|getattrlist|mach_absolute_time|CFPreferences|NSUserDefaults'`
   and `strings -a CalaosHome.app/CalaosHome | grep -xE 'systemUptime|activeInputModes'`.
 - Native alerts go through [ios/AlertPrompt.m](../ios/AlertPrompt.m).
-- Password AutoFill (iCloud Keychain, 1Password) only works on real UIKit text
-  fields. Qt 6.12's text responder (`QIOSTextInputResponder`) has no
-  `textContentType`, and is never `secureTextEntry` for a QML password field:
+- No password AutoFill: the login (`LoginView`) and the admin password
+  (`UpdatesView`) are typed in place in the QML fields, `TextInput.Password` with
+  `Qt.ImhSensitiveData | Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase`; a
+  password from a manager is copied and pasted there. iCloud Keychain and
+  1Password need a real UIKit text field: Qt 6.12's responder
+  (`QIOSTextInputResponder`) has no `textContentType`, and is never
+  `secureTextEntry` for a QML password field, because
   `QQuickTextInputPrivate::effectiveInputMethodHints()` removes `ImhHiddenText`
-  for `Password` echo (Qt draws the bullets itself), and the responder maps
-  only `ImhHiddenText` to `secureTextEntry`. A runtime `textContentType` on
-  the responder was tried and did not bring AutoFill (UIKit also reads the
-  traits only when the responder becomes first responder). So the admin
-  password (updates page) and the login password are typed in a native
-  `UIAlertController` with two `UITextField`s (username prefilled,
-  `UITextContentTypeUsername`; password `secureTextEntry`,
-  `UITextContentTypePassword`, no autocorrection) through
-  `HardwareUtils::requestNativePassword()`: one answer, fields wiped, nothing
-  stored or logged. Without Associated Domains, iOS offers the saved entries
-  from the Passwords key rather than a suggestion for the box's site.
+  for `Password` echo. Tried and dropped: a runtime `textContentType` on the
+  responder (no AutoFill), a `UIAlertController` sheet (refused, it covers the
+  app) and `UITextField`s laid over the QML fields (no Passwords key on the
+  device). Leaving for the manager resigns the app: the updates page is kept
+  (`ResumePolicy`) but its typed password is cleared. The login page keeps its
+  fields and runs the automatic login on return, except after a logout, once
+  the server refused the credentials, or when the user edited the login fields
+  (typed, pasted or cleared with the X). Nothing is stored or logged.
 - 3D Touch / Quick Actions: the app uses scenes (Qt does), so UIKit hands them to the
   window scene delegate: `windowScene:performActionForShortcutItem:completionHandler:`
   (app running) or the connection options of `scene:willConnectToSession:options:`

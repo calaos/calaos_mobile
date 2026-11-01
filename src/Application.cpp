@@ -102,13 +102,11 @@ void Application::createQmlApp()
     //the background must not reconnect.
     connect(HardwareUtils::Instance(), &HardwareUtils::applicationWillResignActive, this, [=]()
     {
-        //The password manager filling the native entry resigns the app too:
-        //the page waiting for that password must still be there afterwards.
-        const QString entry = HardwareUtils::Instance()->pendingNativePasswordPurpose();
+        //Leaving for the password manager to copy the admin password resigns
+        //the app too: the updates page must still be there afterwards.
         const bool updatesShown = boxUpdates && boxUpdates->isActive();
-        resumePolicy.resigned(m_applicationStatus == Common::LoggedIn &&
-                                  (entry == QLatin1String("admin_unlock") || updatesShown),
-                              entry == QLatin1String("login"));
+        resumePolicy.resigned(m_applicationStatus == Common::LoggedIn && updatesShown,
+                              get_loginEdited());
         syncKeepPage();
 
         qDebug() << "Application is in background, drop the session"
@@ -124,22 +122,12 @@ void Application::createQmlApp()
         calaosConnect->unpause();
         QTimer::singleShot(0, this, [=]()
         {
-            //Logged out on purpose: stay on the login screen until the user
-            //logs in again.
-            if (calaosConnect->sessionClosedByUser())
-            {
-                resumePolicy.reset();
-                syncKeepPage();
-                qDebug() << "Application is in foreground, logged out by the user: no login";
-                return;
-            }
-
-            //The native login entry is still open: the user logs in himself.
-            const bool autoLogin = resumePolicy.becameActive();
+            const bool autoLogin = LaunchLogin::shouldLoginOnReturn(calaosConnect, resumePolicy);
             syncKeepPage();
             if (!autoLogin)
             {
-                qDebug() << "Application is in foreground, login entry open: no automatic login";
+                qDebug() << "Application is in foreground, no automatic login:"
+                         << "logged out, credentials refused or login fields edited";
                 return;
             }
 
@@ -195,6 +183,7 @@ void Application::createQmlApp()
     update_appVersion(PKG_VERSION_STR);
     update_waitingForNetwork(false);
     update_keepPageOnResume(false);
+    set_loginEdited(false);
 
     update_hasInstall(QFile::exists("/.calaos-live") ||
                       QFile::exists("/run/calaos/calaos-live") ||

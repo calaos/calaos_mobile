@@ -86,6 +86,9 @@ public:
     //ResumePolicy. main.qml neither pops to the login screen nor pushes the
     //home page while it is set.
     QML_READONLY_PROPERTY(bool, keepPageOnResume)
+    //Set by LoginView while the user has typed in its fields: the automatic
+    //login on return from the background must not replace that text.
+    QML_WRITABLE_PROPERTY(bool, loginEdited)
 
 public:
     Application(int &argc, char **argv);

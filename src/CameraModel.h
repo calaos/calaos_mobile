@@ -93,6 +93,9 @@ public:
     Q_INVOKABLE QObject *getItemModel(int idx);
     Q_INVOKABLE int cameraCount() { return rowCount(); }
 
+    //A blanked screen shows nothing, so nothing is polled
+    void setScreenSuspended(bool suspended);
+
 private slots:
     void eventTouchscreenCamera(QString cameraId);
     void applicationStateChanged(Qt::ApplicationState state);
@@ -108,6 +111,7 @@ private:
     //Child of the model, so it outlives the items the model deletes
     CameraFrameDecoder *decoder = nullptr;
     bool inBackground = false;
+    bool screenSuspended = false;
 };
 
 class CameraItem: public QObject, public QStandardItem
@@ -130,6 +134,7 @@ public:
     void addFeed(CameraFeed *feed);
     void removeFeed(CameraFeed *feed);
     void setInBackground(bool background);
+    void setScreenSuspended(bool suspended);
 
     //Tests shorten the delay.
     void setWatchdogInterval(int ms) { watchdogMs = ms; }
@@ -181,6 +186,7 @@ private:
     //Not owning: a feed removes itself when destroyed
     QList<CameraFeed *> feeds;
     bool inBackground = false;
+    bool screenSuspended = false;
 
     //The one and only timer able to re-arm a picture request for this camera.
     //As long as it is active, a polling chain is running and startCamera() will

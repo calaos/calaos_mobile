@@ -326,6 +326,7 @@ private slots:
     void destroyingTheLastFeedStopsTheCamera();
     void reloadingForgetsTheDeletedCameras();
     void backgroundPausesThePolling();
+    void screenSleepPausesThePolling();
 
     //Un serveur lent ne recoit jamais qu'une requete par camera.
     void slowServerGetsOneRequestAtATime();
@@ -793,6 +794,30 @@ void TstCameraPolling::backgroundPausesThePolling()
     //The notification shade of a phone, and always the case on a kiosk without
     //a window manager
     setState(Qt::ApplicationInactive);
+    requestsOverAWindow(500);
+    QCOMPARE(server->polledCameras().size(), 2);
+}
+
+void TstCameraPolling::screenSleepPausesThePolling()
+{
+    loadCameras(2);
+    showCameras(true);
+    pump(300);
+    QVERIFY(!server->requests.isEmpty());
+
+    model->setScreenSuspended(true);
+    requestsOverAWindow(500);
+    QCOMPARE(server->polledCameras(), QStringList());
+
+    //Loaded while asleep: a reconnection can do this
+    qDeleteAll(feeds);
+    feeds.clear();
+    loadCameras(2);
+    showCameras(true);
+    requestsOverAWindow(500);
+    QCOMPARE(server->polledCameras(), QStringList());
+
+    model->setScreenSuspended(false);
     requestsOverAWindow(500);
     QCOMPARE(server->polledCameras().size(), 2);
 }

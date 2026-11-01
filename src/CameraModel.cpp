@@ -104,6 +104,22 @@ CameraModel::CameraModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObj
             this, &CameraModel::eventTouchscreenCamera);
     connect(qGuiApp, &QGuiApplication::applicationStateChanged,
             this, &CameraModel::applicationStateChanged);
+
+#ifdef CALAOS_DESKTOP
+    connect(&ScreenManager::Instance(), &ScreenManager::screenSuspendedChanged,
+            this, [this]() { setScreenSuspended(ScreenManager::Instance().get_screenSuspended()); });
+#endif
+}
+
+void CameraModel::setScreenSuspended(bool suspended)
+{
+    screenSuspended = suspended;
+    for (int i = 0;i < rowCount();i++)
+    {
+        CameraItem *cam = dynamic_cast<CameraItem *>(item(i));
+        if (cam)
+            cam->setScreenSuspended(suspended);
+    }
 }
 
 void CameraModel::applicationStateChanged(Qt::ApplicationState state)
@@ -139,6 +155,7 @@ void CameraModel::load(const QVariantMap &homeData)
         QVariantMap r = it->toMap();
         CameraItem *p = new CameraItem(connection, imageCache, decoder);
         p->setInBackground(inBackground);
+        p->setScreenSuspended(screenSuspended);
         p->load(r, i);
         appendRow(p);
     }
@@ -256,9 +273,15 @@ void CameraItem::setInBackground(bool background)
     refreshVisibility();
 }
 
+void CameraItem::setScreenSuspended(bool suspended)
+{
+    screenSuspended = suspended;
+    refreshVisibility();
+}
+
 void CameraItem::refreshVisibility()
 {
-    update_cameraVisible(!feeds.isEmpty() && !inBackground);
+    update_cameraVisible(!feeds.isEmpty() && !inBackground && !screenSuspended);
 }
 
 QSize CameraItem::decodeSize() const

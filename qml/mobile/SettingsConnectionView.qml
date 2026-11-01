@@ -19,9 +19,9 @@ SettingsPage {
         }
         SettingsRow {
             objectName: "biometricOffButton"
-            title: qsTr("Turn off %1 for this box").arg(adminBiometrics.name)
+            title: adminBiometrics.turnOffText
             glyph: "lock"
-            visible: adminBiometrics.enabled
+            visible: adminBiometrics.stored
             onButtonClicked: adminBiometrics.disable()
         }
     }

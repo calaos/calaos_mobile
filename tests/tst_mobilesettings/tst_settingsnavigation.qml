@@ -34,14 +34,13 @@ TestCase {
     }
     QtObject {
         id: adminBiometrics
-        property string name: "Face ID"
-        property bool enabled: false
-        property bool offerPending: false
-        property int accepted: 0
-        property int declined: 0
+        property bool available: false
+        property bool stored: false
+        property string keepText: "Unlock with Face ID next time"
+        property string turnOffText: "Turn off Face ID for this box"
+        property var kept: []
         property int disabled: 0
-        function acceptOffer() { accepted++ }
-        function declineOffer() { declined++ }
+        function unlockAndKeep(password) { kept.push(password) }
         function disable() { disabled++ }
     }
     QtObject {
@@ -284,6 +283,18 @@ TestCase {
         var item = findChild(stack.currentItem, data.item)
         verify(item)
         verify(item.visible)
+    }
+
+    function test_biometricsTurnedOffFromConnection() {
+        adminBiometrics.stored = false
+        var page = openSubPage("settingsEntryConnection")
+        verify(!findChild(page, "biometricOffButton").visible)
+        adminBiometrics.stored = true
+        adminBiometrics.disabled = 0
+        waitForRendering(page)
+        clickOn(page, "biometricOffButton")
+        compare(adminBiometrics.disabled, 1)
+        adminBiometrics.stored = false
     }
 
     function test_logout() {

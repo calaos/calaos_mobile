@@ -44,9 +44,13 @@ Item {
         Qt.inputMethod.commit()
         // qmllint enable missing-property
         const pass = passwordField.text
+        const keep = keepPassword.visible && keepPassword.checked
         clearPassword()
         passwordField.focus = false
-        boxUpdates.unlock(pass)
+        if (keep)
+            adminBiometrics.unlockAndKeep(pass)
+        else
+            boxUpdates.unlock(pass)
     }
 
     QuickControls.StackView.onActivated: boxUpdates.activate()
@@ -147,28 +151,6 @@ Item {
             spacing: Units.dp(12)
 
             //First contact with the box
-            //Once, right after the password was accepted: it is not kept longer
-            Card {
-                objectName: "biometricOfferCard"
-                visible: page.gate === "unlocked" && adminBiometrics.offerPending
-
-                Title { text: qsTr("Use %1 next time?").arg(adminBiometrics.name) }
-                Hint {
-                    text: qsTr("The admin password of this box stays on this phone, protected by %1. "
-                               + "You can turn it off in Settings, Connection.").arg(adminBiometrics.name)
-                }
-                Button {
-                    objectName: "biometricAccept"
-                    text: qsTr("Use %1").arg(adminBiometrics.name)
-                    onButtonClicked: adminBiometrics.acceptOffer()
-                }
-                Button {
-                    objectName: "biometricDecline"
-                    text: qsTr("Not now")
-                    onButtonClicked: adminBiometrics.declineOffer()
-                }
-            }
-
             Card {
                 visible: page.gate === "idle" || page.gate === "probing"
                 Hint {
@@ -466,6 +448,15 @@ Item {
                     enabled: boxUpdates.busy === ""
                     EnterKey.type: Qt.EnterKeyGo
                     onAccepted: page.submitPassword()
+                }
+
+                CalaosCheck {
+                    id: keepPassword
+                    objectName: "keepPassword"
+                    Layout.fillWidth: true
+                    visible: adminBiometrics.available && !adminBiometrics.stored
+                    enabled: boxUpdates.busy === ""
+                    text: adminBiometrics.keepText
                 }
 
                 ErrorLine {

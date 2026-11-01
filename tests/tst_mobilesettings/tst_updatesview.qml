@@ -21,14 +21,13 @@ TestCase {
     //Stand-ins for the context properties UpdatesView reads.
     QtObject {
         id: adminBiometrics
-        property string name: "Face ID"
-        property bool enabled: false
-        property bool offerPending: false
-        property int accepted: 0
-        property int declined: 0
+        property bool available: false
+        property bool stored: false
+        property string keepText: "Unlock with Face ID next time"
+        property string turnOffText: "Turn off Face ID for this box"
+        property var kept: []
         property int disabled: 0
-        function acceptOffer() { accepted++ }
-        function declineOffer() { declined++ }
+        function unlockAndKeep(password) { kept.push(password) }
         function disable() { disabled++ }
     }
     QtObject {
@@ -106,9 +105,9 @@ TestCase {
         boxUpdates.retries = 0
         boxUpdates.unlocked = []
         calaosApp.logouts = 0
-        adminBiometrics.offerPending = false
-        adminBiometrics.accepted = 0
-        adminBiometrics.declined = 0
+        adminBiometrics.available = false
+        adminBiometrics.stored = false
+        adminBiometrics.kept = []
     }
 
     function cleanup() {
@@ -373,21 +372,43 @@ TestCase {
         color: "#2b2b2b"
     }
 
-    function test_biometricOfferShownOnceUnlocked() {
-        boxUpdates.gate = "unlocked"
+    function test_keepPasswordFollowsTheBiometrics_data() {
+        return [
+            { tag: "available", available: true, stored: false, shown: true },
+            { tag: "stored", available: true, stored: true, shown: false },
+            { tag: "unavailable", available: false, stored: false, shown: false }
+        ]
+    }
+
+    function test_keepPasswordFollowsTheBiometrics(data) {
+        adminBiometrics.available = data.available
+        adminBiometrics.stored = data.stored
         var page = openPage()
-        var card = findChild(page, "biometricOfferCard")
-        verify(!card.visible)
+        var box = findChild(page, "keepPassword")
+        compare(box.visible, data.shown)
+        compare(box.checked, false)
+    }
 
-        adminBiometrics.offerPending = true
-        verify(card.visible)
+    function test_uncheckedKeepsNothing() {
+        adminBiometrics.available = true
+        var page = openPage()
+        findChild(page, "adminPasswordField").text = "pass"
+        mouseClick(findChild(page, "unlockButton"))
+        compare(boxUpdates.unlocked.length, 1)
+        compare(adminBiometrics.kept.length, 0)
+    }
+
+    function test_checkedKeepsThePassword() {
+        adminBiometrics.available = true
+        var page = openPage()
         waitForRendering(page)
-        mouseClick(findChild(page, "biometricAccept"))
-        compare(adminBiometrics.accepted, 1)
-        mouseClick(findChild(page, "biometricDecline"))
-        compare(adminBiometrics.declined, 1)
-
-        boxUpdates.gate = "locked"
-        verify(!card.visible)
+        var box = findChild(page, "keepPassword")
+        mouseClick(box, box.width / 2, box.height / 2)
+        verify(box.checked)
+        findChild(page, "adminPasswordField").text = "pass"
+        mouseClick(findChild(page, "unlockButton"))
+        compare(boxUpdates.unlocked.length, 0)
+        compare(adminBiometrics.kept.length, 1)
+        compare(adminBiometrics.kept[0], "pass")
     }
 }

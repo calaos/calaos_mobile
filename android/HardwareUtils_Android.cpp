@@ -100,6 +100,33 @@ void jniEmitDialogCancel(JNIEnv *, jclass)
     }, Qt::QueuedConnection);
 }
 
+void jniEmitBiometricStoreDone(JNIEnv *, jclass, jstring key, jint result)
+{
+    HardwareUtilsAndroid *hw = s_instance.data();
+    if (!hw)
+        return;
+
+    const QString k = QJniObject(key).toString();
+    QMetaObject::invokeMethod(hw, [hw, k, result]()
+    {
+        hw->emitBiometricStoreDone(k, result);
+    }, Qt::QueuedConnection);
+}
+
+void jniEmitBiometricReadDone(JNIEnv *, jclass, jstring key, jint result, jstring secret)
+{
+    HardwareUtilsAndroid *hw = s_instance.data();
+    if (!hw)
+        return;
+
+    const QString k = QJniObject(key).toString();
+    const QString s = QJniObject(secret).toString();
+    QMetaObject::invokeMethod(hw, [hw, k, result, s]()
+    {
+        hw->emitBiometricReadDone(k, result, s);
+    }, Qt::QueuedConnection);
+}
+
 void jniEmitDeviceToken(JNIEnv *, jclass, jstring token)
 {
     HardwareUtilsAndroid *hw = s_instance.data();
@@ -168,6 +195,8 @@ void HardwareUtilsAndroid::platformInit(QQmlApplicationEngine *e)
     const bool ok = env.registerNativeMethods(kNativesClass, {
         { "emitDialogTextValid", "(Ljava/lang/String;)V", reinterpret_cast<void *>(jniEmitDialogTextValid) },
         { "emitDialogCancel", "()V", reinterpret_cast<void *>(jniEmitDialogCancel) },
+        { "emitBiometricStoreDone", "(Ljava/lang/String;I)V", reinterpret_cast<void *>(jniEmitBiometricStoreDone) },
+        { "emitBiometricReadDone", "(Ljava/lang/String;ILjava/lang/String;)V", reinterpret_cast<void *>(jniEmitBiometricReadDone) },
         { "emitDeviceToken", "(Ljava/lang/String;)V", reinterpret_cast<void *>(jniEmitDeviceToken) },
         { "emitNotificationOpened", "(Ljava/lang/String;)V", reinterpret_cast<void *>(jniEmitNotificationOpened) },
         { "emitAdminCodeNotified", "(Ljava/lang/String;)V", reinterpret_cast<void *>(jniEmitAdminCodeNotified) },
@@ -372,6 +401,46 @@ void HardwareUtilsAndroid::inputTextDialog(const QString &title, const QString &
             emitDialogCancel();
         }, Qt::QueuedConnection);
     }
+}
+
+bool HardwareUtilsAndroid::hasBiometrics() const
+{
+    const jboolean available = QJniObject::callStaticMethod<jboolean>(kHardwareUtilsClass, "biometricsAvailable", "()Z");
+    return !clearJavaException("HardwareUtils.biometricsAvailable") && available;
+}
+
+void HardwareUtilsAndroid::biometricStore(const QString &key, const QString &secret, const QString &reason)
+{
+    QJniObject jKey = QJniObject::fromString(key), jSecret = QJniObject::fromString(secret),
+               jTitle = QJniObject::fromString(reason), jCancel = QJniObject::fromString(tr("Cancel"));
+    QJniObject::callStaticMethod<void>(kHardwareUtilsClass, "biometricStore",
+        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
+        jKey.object<jstring>(), jSecret.object<jstring>(), jTitle.object<jstring>(), jCancel.object<jstring>());
+    clearJavaException("HardwareUtils.biometricStore");
+}
+
+void HardwareUtilsAndroid::biometricRead(const QString &key, const QString &reason)
+{
+    QJniObject jKey = QJniObject::fromString(key), jTitle = QJniObject::fromString(reason),
+               jCancel = QJniObject::fromString(tr("Cancel"));
+    QJniObject::callStaticMethod<void>(kHardwareUtilsClass, "biometricRead",
+        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
+        jKey.object<jstring>(), jTitle.object<jstring>(), jCancel.object<jstring>());
+    clearJavaException("HardwareUtils.biometricRead");
+}
+
+void HardwareUtilsAndroid::biometricRemove(const QString &key)
+{
+    QJniObject jKey = QJniObject::fromString(key);
+    QJniObject::callStaticMethod<void>(kHardwareUtilsClass, "biometricRemove", "(Ljava/lang/String;)V",
+                                       jKey.object<jstring>());
+    clearJavaException("HardwareUtils.biometricRemove");
+}
+
+void HardwareUtilsAndroid::biometricRemoveAll()
+{
+    QJniObject::callStaticMethod<void>(kHardwareUtilsClass, "biometricRemoveAll", "()V");
+    clearJavaException("HardwareUtils.biometricRemoveAll");
 }
 
 //Returns false when Java could not store the pair (Keystore failure).

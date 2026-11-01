@@ -3,6 +3,7 @@ package fr.calaos.calaoshome;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
+import android.os.Build;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyPermanentlyInvalidatedException;
 import android.security.keystore.KeyProperties;
@@ -66,6 +67,10 @@ public final class CredentialStore
 
     // Keep in sync with res/xml/backup_rules.xml and data_extraction_rules.xml.
     static final String PREFS_NAME = "calaos_credentials";
+    // Admin passwords kept behind the biometrics, one entry per box, encrypted
+    // with their own Keystore key. Same backup exclusion as the file above.
+    static final String BIO_PREFS_NAME = "calaos_admin_bio";
+    private static final String BIO_KEY_ALIAS = "calaos_admin_bio_v1";
     private static final String PREF_HOST = "host";
     private static final String PREF_USER = "cn_user";
     private static final String PREF_PASS = "cn_pass";
@@ -593,5 +598,106 @@ public final class CredentialStore
             Log.w(TAG, "CredentialStore: decrypt failed: " + e.getClass().getSimpleName());
             return null;
         }
+    }
+
+    // A key that only opens after a strong biometric authentication, per use,
+    // and that enrolling a new finger or face destroys.
+    private static SecretKey biometricKey() throws GeneralSecurityException, IOException
+    {
+        KeyStore ks = KeyStore.getInstance(KEYSTORE);
+        ks.load(null);
+        if (ks.containsAlias(BIO_KEY_ALIAS))
+            return (SecretKey)ks.getKey(BIO_KEY_ALIAS, null);
+
+        KeyGenParameterSpec.Builder spec = new KeyGenParameterSpec.Builder(BIO_KEY_ALIAS,
+                KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
+            .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+            .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+            .setKeySize(256)
+            .setUserAuthenticationRequired(true)
+            .setInvalidatedByBiometricEnrollment(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+            spec.setUserAuthenticationParameters(0, KeyProperties.AUTH_BIOMETRIC_STRONG);
+
+        KeyGenerator gen = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, KEYSTORE);
+        gen.init(spec.build());
+        return gen.generateKey();
+    }
+
+    // Drops the key whose biometrics changed, so the next activation makes one.
+    private static void deleteBiometricKey() throws GeneralSecurityException, IOException
+    {
+        KeyStore ks = KeyStore.getInstance(KEYSTORE);
+        ks.load(null);
+        ks.deleteEntry(BIO_KEY_ALIAS);
+    }
+
+    public static Cipher biometricEncryptCipher() throws GeneralSecurityException, IOException
+    {
+        Cipher cipher = Cipher.getInstance(TRANSFORMATION);
+        try
+        {
+            cipher.init(Cipher.ENCRYPT_MODE, biometricKey());
+        }
+        catch (KeyPermanentlyInvalidatedException e)
+        {
+            deleteBiometricKey();
+            cipher.init(Cipher.ENCRYPT_MODE, biometricKey());
+        }
+        return cipher;
+    }
+
+    // Null when nothing is stored under this key. Throws
+    // KeyPermanentlyInvalidatedException after a change of enrolment.
+    public static Cipher biometricDecryptCipher(Context ctx, String key)
+            throws GeneralSecurityException, IOException
+    {
+        String stored = biometricPrefs(ctx).getString(key, null);
+        if (stored == null)
+            return null;
+        byte[] iv = Base64.decode(stored.substring(0, stored.indexOf(':')), Base64.NO_WRAP);
+        Cipher cipher = Cipher.getInstance(TRANSFORMATION);
+        cipher.init(Cipher.DECRYPT_MODE, biometricKey(), new GCMParameterSpec(GCM_TAG_BITS, iv));
+        return cipher;
+    }
+
+    public static void biometricSave(Context ctx, String key, Cipher cipher, String secret)
+            throws GeneralSecurityException
+    {
+        byte[] sealed = cipher.doFinal(secret.getBytes(StandardCharsets.UTF_8));
+        String value = Base64.encodeToString(cipher.getIV(), Base64.NO_WRAP) + ":" +
+                       Base64.encodeToString(sealed, Base64.NO_WRAP);
+        biometricPrefs(ctx).edit().putString(key, value).apply();
+    }
+
+    public static String biometricOpen(Context ctx, String key, Cipher cipher)
+            throws GeneralSecurityException
+    {
+        String stored = biometricPrefs(ctx).getString(key, null);
+        byte[] sealed = Base64.decode(stored.substring(stored.indexOf(':') + 1), Base64.NO_WRAP);
+        return new String(cipher.doFinal(sealed), StandardCharsets.UTF_8);
+    }
+
+    public static void biometricRemove(Context ctx, String key)
+    {
+        biometricPrefs(ctx).edit().remove(key).apply();
+    }
+
+    public static void biometricRemoveAll(Context ctx)
+    {
+        biometricPrefs(ctx).edit().clear().apply();
+        try
+        {
+            deleteBiometricKey();
+        }
+        catch (GeneralSecurityException | IOException e)
+        {
+            Log.w(TAG, "Biometric key not deleted");
+        }
+    }
+
+    private static SharedPreferences biometricPrefs(Context ctx)
+    {
+        return ctx.getApplicationContext().getSharedPreferences(BIO_PREFS_NAME, Context.MODE_PRIVATE);
     }
 }

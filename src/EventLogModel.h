@@ -39,9 +39,15 @@ class EventLogItem;
 //the answer to it, so a late answer to an abandoned request is ignored.
 //refresh() always starts over with page 0 and replaces the rows once that
 //page arrives; loadMore() appends the next page and stops at the last one.
+//
+//Identical consecutive events are one row carrying evCount, also across two
+//pages. Paging and shownIds still count the events the server sent.
 class EventLogModel : public QStandardItemModel
 {
     Q_OBJECT
+    Q_PROPERTY(bool loading READ isLoading NOTIFY loadingChanged)
+    Q_PROPERTY(bool loadingMore READ isLoadingMore NOTIFY loadingChanged)
+    Q_PROPERTY(bool error READ hasError NOTIFY errorChanged)
 public:
     explicit EventLogModel(QQmlApplicationEngine *engine, CalaosConnection *con, QObject *parent = nullptr);
     virtual ~EventLogModel() {}
@@ -62,6 +68,7 @@ public:
         RoleNotifHasPic,
         RoleNotifPicUrl,
         RoleActionText,
+        RoleCount,
     };
 
     Q_INVOKABLE QObject *getEventModel(int idx) const;
@@ -81,11 +88,19 @@ public:
     void reset();
 
     bool isLoading() const { return !pendingId.isEmpty(); }
+    //A page to append, not a refresh: the rows below it stay as they are.
+    bool isLoadingMore() const { return isLoading() && !pendingReplace; }
     bool isAtEnd() const { return atEnd; }
+    //The last page asked for did not arrive. The next request clears it.
+    bool hasError() const { return loadFailed; }
 
     //Tests use a short one.
     void setRequestTimeout(int ms) { requestTimeoutMs = ms; }
     int requestTimeout() const { return requestTimeoutMs; }
+
+signals:
+    void loadingChanged();
+    void errorChanged();
 
 private slots:
     void pageFinished(const QString &requestId, bool ok, const QVariantMap &data);
@@ -97,9 +112,18 @@ private:
     //Stops waiting for the request in flight; its answer will be ignored.
     void abandonRequest();
     void appendEvents(const QVariantList &events);
+    void setLoadFailed(bool failed);
+    //Tells QML once an operation is over, not at each step of it: refresh()
+    //must not look idle between dropping a request and sending the next, nor
+    //a page look done before its rows are in.
+    void publishLoading();
 
     QQmlApplicationEngine *engine;
     CalaosConnection *connection;
+
+    bool loadFailed = false;
+    bool shownLoading = false;
+    bool shownLoadingMore = false;
 
     //Request in flight: its id (empty when none), the page it asks for and
     //whether its answer replaces the rows (refresh) or is appended.
@@ -134,6 +158,7 @@ class EventLogItem: public QObject, public QStandardItem
     QML_READONLY_PROPERTY_MODEL(bool, evHasPicture, EventLogModel::RoleNotifHasPic)
     QML_READONLY_PROPERTY_MODEL(QString, evPictureUrl, EventLogModel::RoleNotifPicUrl)
     QML_READONLY_PROPERTY_MODEL(QString, evActionText, EventLogModel::RoleActionText)
+    QML_READONLY_PROPERTY_MODEL(int, evCount, EventLogModel::RoleCount)
 
     QML_READONLY_PROPERTY(bool, loading)
 
@@ -142,6 +167,9 @@ public:
     virtual ~EventLogItem() {}
 
     void load(const QVariantMap &data);
+    //Whether the two read the same in the list, whatever their time. A
+    //notification with a picture stays alone: each one opens its own picture.
+    bool isSameEvent(const EventLogItem &other) const;
     //Asks the server for that one event. loading stays true until it is
     //answered, the session drops, or timeoutMs passes without an answer
     //(a silent server must not leave the push view spinning forever).

@@ -210,6 +210,7 @@ private slots:
     void iosReturnOverEditedLoginFieldsDoesNotLogIn();
     void wrongPasswordFailsOnceAtOnce();
     void refusalAfterASessionStillRetries();
+    void offlineLaunchRefusalStillRetries();
     void iosReturnAfterARefusalDoesNotReplay();
     void iosReturnAfterARefusedStoredPasswordDoesNotReplay();
     void iosReturnAfterAGiveUpDoesNotReplay();
@@ -555,13 +556,12 @@ void TstSessionLifecycle::wrongPasswordFailsOnceAtOnce()
 {
     QSignalSpy failed(connection, &CalaosConnection::loginFailed);
     QSignalSpy states(connection, &CalaosConnection::connectionStateChanged);
-    QElapsedTimer timer;
-    timer.start();
 
     connection->login(TypedUser, TypedPass, server->baseUrl());
     QTRY_COMPARE_WITH_TIMEOUT(failed.size(), 1, 8000);
-    QVERIFY2(timer.elapsed() < ReconnectPolicy::BaseDelayMs / 2, "refusal not reported at once");
 
+    //The first refusal is the one reported: no attempt came before the alert.
+    QCOMPARE(server->attempts.size(), 1);
     QCOMPARE(connection->connectionState(), ReconnectPolicy::Disconnected);
     for (const QList<QVariant> &state: std::as_const(states))
         QVERIFY(state.at(0).toInt() != ReconnectPolicy::Reconnecting);
@@ -571,8 +571,8 @@ void TstSessionLifecycle::wrongPasswordFailsOnceAtOnce()
     QCOMPARE(failed.size(), 1);
 }
 
-//A session that was up and whose reconnection is refused keeps its bounded
-//retries: a box restarting can refuse a login for a moment.
+//An attempt that does not come from a UserRequest keeps its bounded retries:
+//a session that was up and whose reconnection is refused...
 void TstSessionLifecycle::refusalAfterASessionStillRetries()
 {
     loginAndWait();
@@ -585,6 +585,18 @@ void TstSessionLifecycle::refusalAfterASessionStillRetries()
     QCOMPARE(failed.size(), 0);
     QTRY_VERIFY_WITH_TIMEOUT(server->attempts.size() == ReconnectPolicy::MaxAuthFailures, 15000);
     QTRY_COMPARE(failed.size(), 1);
+}
+
+//...and a launch login deferred offline, even with a password never accepted.
+void TstSessionLifecycle::offlineLaunchRefusalStillRetries()
+{
+    QSignalSpy failed(connection, &CalaosConnection::loginFailed);
+    networkDown();
+    QVERIFY(launchLoginOffline(TypedUser, TypedPass));
+    networkUp();
+    QTRY_VERIFY_WITH_TIMEOUT(server->attempts.size() == ReconnectPolicy::MaxAuthFailures, 15000);
+    QTRY_COMPARE(failed.size(), 1);
+    QCOMPARE(server->attempts.size(), ReconnectPolicy::MaxAuthFailures);
 }
 
 //iOS: the same once the connection gave up, i.e. after the "Login failed"

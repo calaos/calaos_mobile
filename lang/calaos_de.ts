@@ -4,32 +4,12 @@
 <context>
     <name>AdminBiometrics</name>
     <message>
-        <location filename="../src/AdminBiometrics.cpp" line="34"/>
-        <source>Unlock with fingerprint next time</source>
-        <translation>Nächstes Mal mit Fingerabdruck entsperren</translation>
-    </message>
-    <message>
-        <location filename="../src/AdminBiometrics.cpp" line="35"/>
-        <source>Unlock with %1 next time</source>
-        <translation>Nächstes Mal mit %1 entsperren</translation>
-    </message>
-    <message>
-        <location filename="../src/AdminBiometrics.cpp" line="36"/>
-        <source>Turn off the fingerprint for this box</source>
-        <translation>Fingerabdruck für diese Box deaktivieren</translation>
-    </message>
-    <message>
-        <location filename="../src/AdminBiometrics.cpp" line="37"/>
-        <source>Turn off %1 for this box</source>
-        <translation>%1 für diese Box deaktivieren</translation>
-    </message>
-    <message>
-        <location filename="../src/AdminBiometrics.cpp" line="185"/>
+        <location filename="../src/AdminBiometrics.cpp" line="187"/>
         <source>Unlock the administration of the box</source>
         <translation>Verwaltung der Box entsperren</translation>
     </message>
     <message>
-        <location filename="../src/AdminBiometrics.cpp" line="277"/>
+        <location filename="../src/AdminBiometrics.cpp" line="284"/>
         <source>Keep the admin password of this box</source>
         <translation>Admin-Passwort dieser Box speichern</translation>
     </message>
@@ -3091,12 +3071,22 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <translation>Sitzung</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsConnectionView.qml" line="32"/>
+        <location filename="../qml/mobile/SettingsConnectionView.qml" line="23"/>
+        <source>Turn off %1 for this box</source>
+        <translation>%1 für diese Box deaktivieren</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsConnectionView.qml" line="24"/>
+        <source>Turn off the fingerprint for this box</source>
+        <translation>Fingerabdruck für diese Box deaktivieren</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsConnectionView.qml" line="34"/>
         <source>Danger zone</source>
         <translation>Gefahrenbereich</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsConnectionView.qml" line="52"/>
+        <location filename="../qml/mobile/SettingsConnectionView.qml" line="54"/>
         <source>Erases this phone&apos;s configuration and certificates.</source>
         <translation>Löscht Konfiguration und Zertifikate dieses Telefons.</translation>
     </message>
@@ -3106,17 +3096,17 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <translation>Abmelden</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsConnectionView.qml" line="40"/>
+        <location filename="../qml/mobile/SettingsConnectionView.qml" line="42"/>
         <source>Reset all data</source>
         <translation>Alle Daten zurücksetzen</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsConnectionView.qml" line="61"/>
+        <location filename="../qml/mobile/SettingsConnectionView.qml" line="63"/>
         <source>Trusted certificates:</source>
         <translation>Vertrauenswürdige Zertifikate:</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsConnectionView.qml" line="103"/>
+        <location filename="../qml/mobile/SettingsConnectionView.qml" line="105"/>
         <source>Forget</source>
         <translation>Vergessen</translation>
     </message>
@@ -3869,7 +3859,7 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
     </message>
     <message>
         <location filename="../qml/mobile/UpdatesView.qml" line="401"/>
-        <location filename="../qml/mobile/UpdatesView.qml" line="474"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="487"/>
         <source>Checking…</source>
         <translation>Wird geprüft…</translation>
     </message>
@@ -3910,7 +3900,27 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <translation>Das Admin-Passwort wurde gerade geändert. Geben Sie das neue ein.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="474"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="460"/>
+        <source>Unlock with %1 next time</source>
+        <translation>Nächstes Mal mit %1 entsperren</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/UpdatesView.qml" line="461"/>
+        <source>Unlock with fingerprint next time</source>
+        <translation>Nächstes Mal mit Fingerabdruck entsperren</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/UpdatesView.qml" line="470"/>
+        <source>The admin password then stays on this phone, protected by %1.</source>
+        <translation>Das Admin-Passwort bleibt dann auf diesem Telefon, geschützt durch %1.</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/UpdatesView.qml" line="472"/>
+        <source>The admin password then stays on this phone, protected by your fingerprint.</source>
+        <translation>Das Admin-Passwort bleibt dann auf diesem Telefon, geschützt durch Ihren Fingerabdruck.</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/UpdatesView.qml" line="487"/>
         <source>Unlock</source>
         <translation>Entsperren</translation>
     </message>
@@ -3927,27 +3937,27 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <translation type="vanished">Admin-Passwort eingeben</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="490"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="503"/>
         <source>Box updates</source>
         <translation>Aktualisierungen der Box</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="498"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="511"/>
         <source>Restart the box?</source>
         <translation>Box neu starten?</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="508"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="521"/>
         <source>The app reconnects on its own once the box is back.</source>
         <translation>Die App verbindet sich von selbst wieder, sobald die Box zurück ist.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="516"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="529"/>
         <source>Cancel</source>
         <translation>Abbrechen</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="522"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="535"/>
         <source>Restart</source>
         <translation>Neu starten</translation>
     </message>

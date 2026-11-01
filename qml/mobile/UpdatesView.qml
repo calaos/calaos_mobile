@@ -456,7 +456,20 @@ Item {
                     Layout.fillWidth: true
                     visible: adminBiometrics.available && !adminBiometrics.stored
                     enabled: boxUpdates.busy === ""
-                    text: adminBiometrics.keepText
+                    text: adminBiometrics.name !== "" ?
+                              qsTr("Unlock with %1 next time").arg(adminBiometrics.name) :
+                              qsTr("Unlock with fingerprint next time")
+                    //Each new unlock is a new decision.
+                    onVisibleChanged: if (visible) checked = false
+                }
+
+                Hint {
+                    objectName: "keepPasswordHint"
+                    visible: keepPassword.visible
+                    text: adminBiometrics.name !== "" ?
+                              qsTr("The admin password then stays on this phone, protected by %1.")
+                                  .arg(adminBiometrics.name) :
+                              qsTr("The admin password then stays on this phone, protected by your fingerprint.")
                 }
 
                 ErrorLine {

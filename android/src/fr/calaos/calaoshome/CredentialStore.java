@@ -687,16 +687,18 @@ public final class CredentialStore
         biometricPrefs(ctx).edit().remove(key).apply();
     }
 
-    public static void biometricRemoveAll(Context ctx)
+    public static boolean biometricRemoveAll(Context ctx)
     {
         biometricPrefs(ctx).edit().clear().apply();
         try
         {
             deleteBiometricKey();
+            return true;
         }
         catch (GeneralSecurityException | IOException e)
         {
             Log.w(TAG, "Biometric key not deleted");
+            return false;
         }
     }
 

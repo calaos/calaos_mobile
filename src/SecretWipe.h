@@ -15,11 +15,11 @@ namespace SecretWipe
 inline void userLogout(HardwareUtils *hw, AdminBiometrics *biometrics, const std::function<void()> &logout)
 {
     //Persisted: the next launches stay logged out until a login succeeds
-    //(homeLoaded()), see LaunchLogin (FIX-11).
+    //(homeLoaded()), see LaunchLogin.
     hw->setSessionActive(false);
     //logout() first: it hands a tap taken but not opened yet back to
     //HardwareUtils (DeferredNotifGate::loggedOut() also makes any armed delay
-    //stale), so the line below drops it too (FIX-7).
+    //stale), so the line below drops it too.
     logout();
     hw->forgetPendingUserActions();
     if (biometrics)
@@ -28,7 +28,7 @@ inline void userLogout(HardwareUtils *hw, AdminBiometrics *biometrics, const std
 
 inline void resetCredentials(HardwareUtils *hw, AdminBiometrics *biometrics)
 {
-    //Also forgets a persisted logout (FIX-11): back to the state of a fresh
+    //Also forgets a persisted logout: back to the state of a fresh
     //install, where the demo account is not logged in automatically.
     hw->resetAuthKeychain();
     if (biometrics)

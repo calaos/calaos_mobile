@@ -27,9 +27,8 @@ class AdminBiometrics: public QObject
     QML_READONLY_PROPERTY(bool, available)
     //The password of that box is stored
     QML_READONLY_PROPERTY(bool, stored)
-    //Whole sentences: the proper name reads in them, the generic word does not
-    QML_READONLY_PROPERTY(QString, keepText)
-    QML_READONLY_PROPERTY(QString, turnOffText)
+    //Face ID, Touch ID; empty for the fingerprint, which needs other sentences
+    QML_READONLY_PROPERTY(QString, name)
 
 public:
     static constexpr int HoldMs = 30000;
@@ -68,6 +67,7 @@ private:
     void unlockAnswered(bool ok, const QString &code);
     void storeDone(const QString &key, int result);
     void readDone(const QString &key, int result, const QString &secret);
+    void cancelStore();
     void dropHeld();
     void dropPending();
 

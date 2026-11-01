@@ -4,32 +4,12 @@
 <context>
     <name>AdminBiometrics</name>
     <message>
-        <location filename="../src/AdminBiometrics.cpp" line="34"/>
-        <source>Unlock with fingerprint next time</source>
-        <translation>Déverrouiller avec l'empreinte la prochaine fois</translation>
-    </message>
-    <message>
-        <location filename="../src/AdminBiometrics.cpp" line="35"/>
-        <source>Unlock with %1 next time</source>
-        <translation>Déverrouiller avec %1 la prochaine fois</translation>
-    </message>
-    <message>
-        <location filename="../src/AdminBiometrics.cpp" line="36"/>
-        <source>Turn off the fingerprint for this box</source>
-        <translation>Désactiver l'empreinte pour cette box</translation>
-    </message>
-    <message>
-        <location filename="../src/AdminBiometrics.cpp" line="37"/>
-        <source>Turn off %1 for this box</source>
-        <translation>Désactiver %1 pour cette box</translation>
-    </message>
-    <message>
-        <location filename="../src/AdminBiometrics.cpp" line="185"/>
+        <location filename="../src/AdminBiometrics.cpp" line="187"/>
         <source>Unlock the administration of the box</source>
-        <translation>Déverrouiller l'administration de la box</translation>
+        <translation>Déverrouiller l&apos;administration de la box</translation>
     </message>
     <message>
-        <location filename="../src/AdminBiometrics.cpp" line="277"/>
+        <location filename="../src/AdminBiometrics.cpp" line="284"/>
         <source>Keep the admin password of this box</source>
         <translation>Garder le mot de passe admin de cette box</translation>
     </message>
@@ -3115,12 +3095,22 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
         <translation>Session</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsConnectionView.qml" line="32"/>
+        <location filename="../qml/mobile/SettingsConnectionView.qml" line="23"/>
+        <source>Turn off %1 for this box</source>
+        <translation>Désactiver %1 pour cette box</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsConnectionView.qml" line="24"/>
+        <source>Turn off the fingerprint for this box</source>
+        <translation>Désactiver l&apos;empreinte pour cette box</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsConnectionView.qml" line="34"/>
         <source>Danger zone</source>
         <translation>Zone sensible</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsConnectionView.qml" line="52"/>
+        <location filename="../qml/mobile/SettingsConnectionView.qml" line="54"/>
         <source>Erases this phone&apos;s configuration and certificates.</source>
         <translation>Efface la configuration et les certificats de ce téléphone.</translation>
     </message>
@@ -3130,17 +3120,17 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
         <translation>Se déconnecter</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsConnectionView.qml" line="40"/>
+        <location filename="../qml/mobile/SettingsConnectionView.qml" line="42"/>
         <source>Reset all data</source>
         <translation>Remise à zéro des données</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsConnectionView.qml" line="61"/>
+        <location filename="../qml/mobile/SettingsConnectionView.qml" line="63"/>
         <source>Trusted certificates:</source>
         <translation>Certificats de confiance :</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsConnectionView.qml" line="103"/>
+        <location filename="../qml/mobile/SettingsConnectionView.qml" line="105"/>
         <source>Forget</source>
         <translation>Oublier</translation>
     </message>
@@ -3893,7 +3883,7 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
     </message>
     <message>
         <location filename="../qml/mobile/UpdatesView.qml" line="401"/>
-        <location filename="../qml/mobile/UpdatesView.qml" line="474"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="487"/>
         <source>Checking…</source>
         <translation>Vérification…</translation>
     </message>
@@ -3934,7 +3924,27 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <translation>Le mot de passe admin vient d’être changé. Saisissez le nouveau.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="474"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="460"/>
+        <source>Unlock with %1 next time</source>
+        <translation>Déverrouiller avec %1 la prochaine fois</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/UpdatesView.qml" line="461"/>
+        <source>Unlock with fingerprint next time</source>
+        <translation>Déverrouiller avec l&apos;empreinte la prochaine fois</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/UpdatesView.qml" line="470"/>
+        <source>The admin password then stays on this phone, protected by %1.</source>
+        <translation>Le mot de passe admin reste alors sur ce téléphone, protégé par %1.</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/UpdatesView.qml" line="472"/>
+        <source>The admin password then stays on this phone, protected by your fingerprint.</source>
+        <translation>Le mot de passe admin reste alors sur ce téléphone, protégé par votre empreinte.</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/UpdatesView.qml" line="487"/>
         <source>Unlock</source>
         <translation>Déverrouiller</translation>
     </message>
@@ -3951,27 +3961,27 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <translation type="vanished">Saisir le mot de passe admin</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="490"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="503"/>
         <source>Box updates</source>
         <translation>Mises à jour de la box</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="498"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="511"/>
         <source>Restart the box?</source>
         <translation>Redémarrer la box ?</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="508"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="521"/>
         <source>The app reconnects on its own once the box is back.</source>
         <translation>L’application se reconnecte d’elle-même quand la box est revenue.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="516"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="529"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/UpdatesView.qml" line="522"/>
+        <location filename="../qml/mobile/UpdatesView.qml" line="535"/>
         <source>Restart</source>
         <translation>Redémarrer</translation>
     </message>

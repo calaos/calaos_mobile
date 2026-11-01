@@ -21,6 +21,8 @@ import android.net.NetworkCapabilities;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CancellationSignal;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.PersistableBundle;
 import android.provider.Settings;
 import android.security.keystore.KeyPermanentlyInvalidatedException;
@@ -544,15 +546,10 @@ public class HardwareUtils extends QtActivity
         });
     }
 
+    // The main thread owns these two, and may have no activity left to post on.
     public static void biometricCancelStore()
     {
-        final HardwareUtils activity = _context;
-        if (!isUsable(activity))
-        {
-            pendingStoreSecret = null;
-            return;
-        }
-        activity.runOnUiThread(new Runnable()
+        new Handler(Looper.getMainLooper()).post(new Runnable()
         {
             @Override
             public void run()

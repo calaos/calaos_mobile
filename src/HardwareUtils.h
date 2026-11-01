@@ -101,7 +101,8 @@ public:
     virtual void biometricCancelStore() {}
     virtual void biometricRead(const QString &key, const QString &reason);
     virtual void biometricRemove(const QString &key) { Q_UNUSED(key) }
-    virtual void biometricRemoveAll() {}
+    //False when something may be left.
+    virtual bool biometricRemoveAll() { return true; }
 
     //This is set by platform code if app was started with options
     //It is used by iOS when started with a QuickAction

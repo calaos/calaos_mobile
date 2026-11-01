@@ -36,8 +36,7 @@ TestCase {
         id: adminBiometrics
         property bool available: false
         property bool stored: false
-        property string keepText: "Unlock with Face ID next time"
-        property string turnOffText: "Turn off Face ID for this box"
+        property string name: "Face ID"
         property var kept: []
         property int disabled: 0
         function unlockAndKeep(password) { kept.push(password) }
@@ -475,6 +474,21 @@ TestCase {
 
     function test_iconsAreInTheAppResources(data) {
         verify(harness.isResource("img/settings/" + data.name + ".svg"))
+    }
+
+    function test_captureBiometricOff_data() {
+        return [ { tag: "faceid", name: "Face ID" }, { tag: "fingerprint", name: "" } ]
+    }
+
+    function test_captureBiometricOff(data) {
+        if (shotsDir === "")
+            skip("SETTINGS_SHOTS_DIR not set")
+        adminBiometrics.stored = true
+        adminBiometrics.name = data.name
+        var page = openSubPage("settingsEntryConnection")
+        shot("connection-off-" + data.tag + ".png")
+        adminBiometrics.stored = false
+        adminBiometrics.name = "Face ID"
     }
 
     function test_captures() {

@@ -288,8 +288,9 @@ the phone: those stay in the webapp.
   during the Android prompt that stores it, and up to 30 s after a read, as the
   iOS prompt resigns the app, which drops the socket: it waits for the box to
   answer on the new one, for the same host, with no certificate question. The
-  app going to `ApplicationHidden` or `ApplicationSuspended` drops it. Qt strings
-  cannot be wiped: dropped means released, not overwritten.
+  app going to `ApplicationHidden` or `ApplicationSuspended` drops it, and a read
+  answered after that is ignored: the QML field is what is left. Qt strings cannot
+  be wiped: dropped means released, not overwritten.
 - The password never leaves on a socket that has not proved itself:
   `admin_unlock` is refused without sending while a certificate question is
   pending, over the HTTP fallback, before an admin answer on the current

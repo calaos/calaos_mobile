@@ -446,12 +446,12 @@ void HardwareUtilsAndroid::biometricRemove(const QString &key)
     clearJavaException("CredentialStore.biometricRemove");
 }
 
-void HardwareUtilsAndroid::biometricRemoveAll()
+bool HardwareUtilsAndroid::biometricRemoveAll()
 {
     QJniObject ctx = androidContext();
-    QJniObject::callStaticMethod<void>(kCredentialStoreClass, "biometricRemoveAll",
-                                       "(Landroid/content/Context;)V", ctx.object<jobject>());
-    clearJavaException("CredentialStore.biometricRemoveAll");
+    const jboolean ok = QJniObject::callStaticMethod<jboolean>(kCredentialStoreClass, "biometricRemoveAll",
+                                                               "(Landroid/content/Context;)Z", ctx.object<jobject>());
+    return !clearJavaException("CredentialStore.biometricRemoveAll") && ok;
 }
 
 //Returns false when Java could not store the pair (Keystore failure).

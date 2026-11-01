@@ -23,8 +23,7 @@ TestCase {
         id: adminBiometrics
         property bool available: false
         property bool stored: false
-        property string keepText: "Unlock with Face ID next time"
-        property string turnOffText: "Turn off Face ID for this box"
+        property string name: "Face ID"
         property var kept: []
         property int disabled: 0
         function unlockAndKeep(password) { kept.push(password) }
@@ -410,5 +409,91 @@ TestCase {
         compare(boxUpdates.unlocked.length, 0)
         compare(adminBiometrics.kept.length, 1)
         compare(adminBiometrics.kept[0], "pass")
+    }
+
+    function test_keepPasswordComesBackUnchecked() {
+        adminBiometrics.available = true
+        var page = openPage()
+        waitForRendering(page)
+        var box = findChild(page, "keepPassword")
+        mouseClick(box, box.width / 2, box.height / 2)
+        verify(box.checked)
+        adminBiometrics.stored = true
+        verify(!box.visible)
+        adminBiometrics.stored = false
+        verify(box.visible)
+        verify(!box.checked)
+    }
+
+    function test_keepPasswordHintFollowsTheBox() {
+        adminBiometrics.available = true
+        var page = openPage()
+        var hint = findChild(page, "keepPasswordHint")
+        verify(hint.visible)
+        verify(hint.text.indexOf("Face ID") >= 0)
+        adminBiometrics.name = ""
+        verify(hint.text.indexOf("fingerprint") >= 0)
+        adminBiometrics.name = "Face ID"
+        adminBiometrics.stored = true
+        verify(!hint.visible)
+    }
+
+    Component {
+        id: longCheck
+        CalaosCheck {
+            width: 320
+            text: "Déverrouiller avec l'empreinte la prochaine fois, mot de passe compris"
+        }
+    }
+
+    Component {
+        id: shortCheck
+        CalaosCheck {
+            width: 320
+            text: "Court"
+        }
+    }
+
+    function test_longCheckLabelStaysInside() {
+        var check = createTemporaryObject(longCheck, tc)
+        waitForRendering(check)
+        verify(check.contentItem.lineCount > 1, "not wrapped")
+        verify(check.height >= check.contentItem.implicitHeight)
+        verify(check.contentItem.contentWidth <= check.contentItem.width)
+    }
+
+    function test_shortCheckLabelKeepsItsHeight() {
+        var check = createTemporaryObject(shortCheck, tc)
+        compare(check.implicitHeight, Units.dp(40))
+    }
+
+    function test_captureKeepPassword_data() {
+        return [
+            { tag: "faceid-360", name: "Face ID", w: 360, h: 780 },
+            { tag: "faceid-320", name: "Face ID", w: 320, h: 780 },
+            { tag: "fingerprint-360", name: "", w: 360, h: 780 },
+            { tag: "fingerprint-320", name: "", w: 320, h: 780 },
+            { tag: "faceid-landscape", name: "Face ID", w: 780, h: 360 },
+            { tag: "fingerprint-landscape", name: "", w: 780, h: 360 }
+        ]
+    }
+
+    function test_captureKeepPassword(data) {
+        var dir = harness.env("SETTINGS_SHOTS_DIR")
+        if (dir === "")
+            skip("SETTINGS_SHOTS_DIR not set")
+        var w = tc.width, h = tc.height
+        tc.width = data.w
+        tc.height = data.h
+        isLandscape = data.w > data.h
+        adminBiometrics.available = true
+        adminBiometrics.name = data.name
+        var page = openPage()
+        wait(50)
+        grabImage(tc).save(dir + "/unlock-" + data.tag + ".png")
+        adminBiometrics.name = "Face ID"
+        isLandscape = false
+        tc.width = w
+        tc.height = h
     }
 }

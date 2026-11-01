@@ -37,7 +37,7 @@ public:
     void biometricRead(const QString &key, const QString &reason) override;
     void biometricCancelStore() override;
     void biometricRemove(const QString &key) override;
-    void biometricRemoveAll() override;
+    bool biometricRemoveAll() override;
 
     virtual QString getDeviceName();
 

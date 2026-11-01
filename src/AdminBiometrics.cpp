@@ -30,20 +30,15 @@ AdminBiometrics::AdminBiometrics(HardwareUtils *hw, AdminRelay *relay, AdminUpda
     update_available(false);
     update_stored(false);
 
-    const QString name = hw->biometricName();
-    update_keepText(name.isEmpty() ? tr("Unlock with fingerprint next time")
-                                   : tr("Unlock with %1 next time").arg(name));
-    update_turnOffText(name.isEmpty() ? tr("Turn off the fingerprint for this box")
-                                      : tr("Turn off %1 for this box").arg(name));
+    update_name(hw->biometricName());
 
     //The iOS keychain outlives the app: what a removed install left must not
-    //come back with this one.
+    //come back with this one. Marked only once done, or it is tried again.
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
-    if (!settings.value(SettingsSeen, false).toBool())
+    if (!settings.value(SettingsSeen, false).toBool() && hw->biometricRemoveAll())
     {
         settings.setValue(SettingsSeen, true);
         settings.sync();
-        hw->biometricRemoveAll();
     }
 
     m_holdTimer = new QTimer(this);
@@ -129,11 +124,18 @@ void AdminBiometrics::applicationStateChanged(Qt::ApplicationState state)
         return;
     dropHeld();
     dropPending();
-    if (!m_storingKey.isEmpty())
-    {
-        m_storingKey.clear();
-        m_hw->biometricCancelStore();
-    }
+    //an answer delivered after leaving is no recent gesture: the field remains
+    m_reading = false;
+    m_readKey.clear();
+    cancelStore();
+}
+
+void AdminBiometrics::cancelStore()
+{
+    if (m_storingKey.isEmpty())
+        return;
+    m_storingKey.clear();
+    m_hw->biometricCancelStore();
 }
 
 bool AdminBiometrics::isStored(const QString &key) const
@@ -164,12 +166,12 @@ void AdminBiometrics::refresh()
 
 bool AdminBiometrics::canUnlockNow() const
 {
-    return m_updates->get_busy().isEmpty() && m_updates->get_retryAfter() <= 0;
+    return m_updates && m_updates->get_busy().isEmpty() && m_updates->get_retryAfter() <= 0;
 }
 
 void AdminBiometrics::maybeAsk()
 {
-    if (m_asked || m_reading || !m_heldSecret.isEmpty() || !m_updates->isActive())
+    if (!m_updates || m_asked || m_reading || !m_heldSecret.isEmpty() || !m_updates->isActive())
         return;
     if (m_relay->gate() != AdminRelay::GateLocked || !canUnlockNow())
         return;
@@ -196,7 +198,7 @@ void AdminBiometrics::readDone(const QString &key, int result, const QString &se
         forgetBox(key);
         return;
     }
-    if (result != HardwareUtils::BiometricOk || secret.isEmpty() || !m_updates->isActive())
+    if (result != HardwareUtils::BiometricOk || secret.isEmpty() || !m_updates || !m_updates->isActive())
         return;
 
     m_heldSecret = secret;
@@ -239,6 +241,8 @@ void AdminBiometrics::trySend()
 
     const QString secret = std::move(m_heldSecret);
     dropHeld();
+    if (!m_updates)
+        return;
     m_sendingStored = true;
     m_sentKey = key;
     m_updates->unlock(secret);
@@ -246,8 +250,11 @@ void AdminBiometrics::trySend()
 
 void AdminBiometrics::unlockAndKeep(const QString &password)
 {
+    if (!m_updates)
+        return;
     const QString key = m_transport->adminHostKey();
-    if (!key.isEmpty() && m_hw->hasBiometrics() && !isStored(key))
+    //refused below when busy: there would be no answer to end the wait
+    if (canUnlockNow() && !key.isEmpty() && m_hw->hasBiometrics() && !isStored(key))
     {
         m_pendingSecret = password;
         m_pendingKey = key;
@@ -311,7 +318,7 @@ void AdminBiometrics::forgetBox(const QString &hostKey)
         m_readKey.clear();
     }
     if (m_storingKey == hostKey)
-        m_storingKey.clear();
+        cancelStore();
     m_hw->biometricRemove(hostKey);
     setStored(hostKey, false);
     refresh();
@@ -323,7 +330,7 @@ void AdminBiometrics::forgetAll()
     dropPending();
     m_reading = false;
     m_readKey.clear();
-    m_storingKey.clear();
+    cancelStore();
     m_hw->biometricRemoveAll();
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
     settings.remove(SettingsGroup);

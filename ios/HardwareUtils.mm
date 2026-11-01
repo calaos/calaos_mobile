@@ -954,12 +954,13 @@ void HardwareUtils_iOS::biometricRemove(const QString &key)
     SecItemDelete((CFDictionaryRef)query);
 }
 
-void HardwareUtils_iOS::biometricRemoveAll()
+bool HardwareUtils_iOS::biometricRemoveAll()
 {
     NSDictionary *query = @{ (id)kSecClass: (id)kSecClassGenericPassword,
                              (id)kSecAttrService: kAdminBioService,
                              (id)kSecAttrAccessGroup: kAdminBioGroup };
-    SecItemDelete((CFDictionaryRef)query);
+    const OSStatus status = SecItemDelete((CFDictionaryRef)query);
+    return status == errSecSuccess || status == errSecItemNotFound;
 }
 
 void HardwareUtils_iOS::handlePerformActionForShortcutItem(void *shortcut)

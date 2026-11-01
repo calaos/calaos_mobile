@@ -5,7 +5,7 @@ import "."
 Controls.CheckBox {
     id: control
 
-    implicitHeight: Units.dp(40)
+    implicitHeight: Math.max(Units.dp(40), contentItem.implicitHeight + Units.dp(8))
     implicitWidth: Units.dp(200)
 
     background: Rectangle {
@@ -19,6 +19,7 @@ Controls.CheckBox {
         font.weight: Font.Thin
         color: "#E7E7E7"
         verticalAlignment: Text.AlignVCenter
+        wrapMode: Text.WordWrap
         leftPadding: control.indicator.width + control.spacing
     }
 

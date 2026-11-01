@@ -427,6 +427,7 @@ private slots:
     void oldSocketErrorClearedOnReconnect();
     void replyForAnotherMessageIgnored();
     void nativePasswordAnsweredOnce();
+    void inlineEntryIsThePendingPurpose();
     void answerDuringReconnectUnlocksAfterProbe();
     void heldAnswerWipedOnTimeout();
     void heldAnswerDroppedForAnotherBox();
@@ -1490,6 +1491,21 @@ void TstAdminRelay::replyForAnotherMessageIgnored()
     relay.handleReply("admin_unlock", id, unlockOk());
     QVERIFY(called);
     QVERIFY(relay.isUnlocked());
+}
+
+void TstAdminRelay::inlineEntryIsThePendingPurpose()
+{
+    NativeEntryHw hw;
+    QVERIFY(hw.pendingNativePasswordPurpose().isEmpty());
+    hw.setInlineEntryPurpose("login");
+    QCOMPARE(hw.pendingNativePasswordPurpose(), QString("login"));
+    //an inline field being edited does not count as an open dialog
+    QVERIFY(hw.requestNativePassword("admin_unlock", {}));
+    QCOMPARE(hw.pendingNativePasswordPurpose(), QString("admin_unlock"));
+    hw.emitNativePasswordCanceled("admin_unlock");
+    QCOMPARE(hw.pendingNativePasswordPurpose(), QString("login"));
+    hw.setInlineEntryPurpose({});
+    QVERIFY(hw.pendingNativePasswordPurpose().isEmpty());
 }
 
 void TstAdminRelay::nativePasswordAnsweredOnce()

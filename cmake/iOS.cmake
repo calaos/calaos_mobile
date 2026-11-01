@@ -47,6 +47,13 @@ set_source_files_properties(ios/Splash.storyboard PROPERTIES
 target_sources(CalaosHome PRIVATE ios/Splash.storyboard)
 
 # ── Privacy manifest ──────────────────────────────────────────────────────────
+# Translated usage descriptions: Info.plist itself holds the English ones.
+foreach(_lang fr de)
+    set_source_files_properties(ios/${_lang}.lproj/InfoPlist.strings PROPERTIES
+        MACOSX_PACKAGE_LOCATION Resources/${_lang}.lproj)
+    target_sources(CalaosHome PRIVATE ios/${_lang}.lproj/InfoPlist.strings)
+endforeach()
+
 # Required-reason APIs of the app binary (see the comments in the file). Must land
 # at the root of CalaosHome.app: the Resources build phase puts it there.
 set_source_files_properties(ios/PrivacyInfo.xcprivacy PROPERTIES
@@ -55,6 +62,7 @@ target_sources(CalaosHome PRIVATE ios/PrivacyInfo.xcprivacy)
 
 # ── Frameworks ────────────────────────────────────────────────────────────────
 target_link_libraries(CalaosHome PRIVATE
+    "-framework LocalAuthentication"
     "-framework SystemConfiguration"
     "-framework UserNotifications"
 )

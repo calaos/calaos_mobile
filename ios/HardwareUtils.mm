@@ -1,5 +1,6 @@
 #import "HardwareUtils_iOS.h"
 #import <UIKit/UIKit.h>
+#import <LocalAuthentication/LocalAuthentication.h>
 #import <UserNotifications/UserNotifications.h>
 #import <objc/runtime.h>
 #import <fcntl.h>
@@ -10,6 +11,7 @@
 #import "SimpleKeychain/A0SimpleKeychain+KeyPair.h"
 #import "../src/Common.h"
 #import "../src/AdminCode.h"
+#import "../src/AdminBiometrics.h"
 #include <algorithm>
 #include <QDir>
 #include <QFile>
@@ -64,6 +66,10 @@ static NSString *const kAdminCodeDir = @"admin_codes";
 static NSString *const kPushKeyService = @"CalaosMobile.push";
 static NSString *const kPushKeyItem = @"calaos-push-key";
 static NSString *const kKeychainGroup = @"9WYC46992U.fr.calaos.CalaosMobile";
+//Not the group shared with the PushNotif extension: it reads the household
+//credentials in the background and has no use for the admin password.
+static NSString *const kAdminBioGroup = @"9WYC46992U.fr.calaos.CalaosMobile.admin";
+static NSString *const kAdminBioService = @"calaos-admin-biometrics";
 //Stash bounds, same as Android's CredentialStore and the extension.
 static const qint64 kAdminCodeMaxAgeMs = 10 * 60 * 1000;
 static const int kAdminCodeMaxFiles = 16;
@@ -846,6 +852,115 @@ void HardwareUtils_iOS::inputTextDialog(const QString &title, const QString &mes
                          message:message.toNSString()
                           cancel:cancel.toNSString()
                          confirm:valid.toNSString()];
+}
+
+bool HardwareUtils_iOS::hasBiometrics() const
+{
+    LAContext *context = [[[LAContext alloc] init] autorelease];
+    return [context canEvaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics error:nil];
+}
+
+QString HardwareUtils_iOS::biometricName() const
+{
+    LAContext *context = [[[LAContext alloc] init] autorelease];
+    [context canEvaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics error:nil];
+    if (context.biometryType == LABiometryTypeTouchID)
+        return QStringLiteral("Touch ID");
+    return QStringLiteral("Face ID");
+}
+
+void HardwareUtils_iOS::biometricStore(const QString &key, const QString &secret, const QString &reason)
+{
+    Q_UNUSED(reason) //adding an item asks nothing
+    biometricRemove(key);
+
+    //CurrentSet: a change of the enrolled faces or fingers makes it unreadable.
+    SecAccessControlRef access = SecAccessControlCreateWithFlags(kCFAllocatorDefault,
+                                                                 kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly,
+                                                                 kSecAccessControlBiometryCurrentSet, NULL);
+    OSStatus status = errSecParam;
+    if (access)
+    {
+        NSData *data = [secret.toNSString() dataUsingEncoding:NSUTF8StringEncoding];
+        NSDictionary *item = @{ (id)kSecClass: (id)kSecClassGenericPassword,
+                                (id)kSecAttrService: kAdminBioService,
+                                (id)kSecAttrAccount: key.toNSString(),
+                                (id)kSecAttrAccessGroup: kAdminBioGroup,
+                                (id)kSecAttrAccessControl: (id)access,
+                                (id)kSecValueData: data };
+        status = SecItemAdd((CFDictionaryRef)item, NULL);
+        CFRelease(access);
+    }
+    if (status != errSecSuccess)
+        qWarning() << "Admin password not stored in the keychain, status" << int(status);
+    QMetaObject::invokeMethod(this, [this, key, status]()
+    {
+        emitBiometricStoreDone(key, status == errSecSuccess ? AdminBiometrics::Ok : AdminBiometrics::Failed);
+    }, Qt::QueuedConnection);
+}
+
+void HardwareUtils_iOS::biometricRead(const QString &key, const QString &reason)
+{
+    NSString *account = [[key.toNSString() copy] autorelease];
+    NSString *prompt = [[reason.toNSString() copy] autorelease];
+    //Blocks until the prompt is answered.
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        LAContext *context = [[LAContext alloc] init];
+        context.localizedReason = prompt;
+        NSDictionary *query = @{ (id)kSecClass: (id)kSecClassGenericPassword,
+                                 (id)kSecAttrService: kAdminBioService,
+                                 (id)kSecAttrAccount: account,
+                                 (id)kSecAttrAccessGroup: kAdminBioGroup,
+                                 (id)kSecUseAuthenticationContext: context,
+                                 (id)kSecReturnData: @YES,
+                                 (id)kSecMatchLimit: (id)kSecMatchLimitOne };
+        CFTypeRef found = NULL;
+        const OSStatus status = SecItemCopyMatching((CFDictionaryRef)query, &found);
+        [context release];
+
+        int result = AdminBiometrics::Failed;
+        QString secret;
+        if (status == errSecSuccess && found)
+        {
+            NSString *text = [[NSString alloc] initWithData:(NSData *)found encoding:NSUTF8StringEncoding];
+            secret = QString::fromNSString(text);
+            [text release];
+            result = AdminBiometrics::Ok;
+        }
+        else if (status == errSecUserCanceled)
+        {
+            result = AdminBiometrics::Canceled;
+        }
+        else if (status == errSecItemNotFound)
+        {
+            result = AdminBiometrics::Invalidated;
+        }
+        if (found)
+            CFRelease(found);
+
+        const QString name = QString::fromNSString(account);
+        QMetaObject::invokeMethod(this, [this, name, result, secret]()
+        {
+            emitBiometricReadDone(name, result, secret);
+        }, Qt::QueuedConnection);
+    });
+}
+
+void HardwareUtils_iOS::biometricRemove(const QString &key)
+{
+    NSDictionary *query = @{ (id)kSecClass: (id)kSecClassGenericPassword,
+                             (id)kSecAttrService: kAdminBioService,
+                             (id)kSecAttrAccount: key.toNSString(),
+                             (id)kSecAttrAccessGroup: kAdminBioGroup };
+    SecItemDelete((CFDictionaryRef)query);
+}
+
+void HardwareUtils_iOS::biometricRemoveAll()
+{
+    NSDictionary *query = @{ (id)kSecClass: (id)kSecClassGenericPassword,
+                             (id)kSecAttrService: kAdminBioService,
+                             (id)kSecAttrAccessGroup: kAdminBioGroup };
+    SecItemDelete((CFDictionaryRef)query);
 }
 
 void HardwareUtils_iOS::handlePerformActionForShortcutItem(void *shortcut)

@@ -8,7 +8,7 @@ SvgGlyph {
     size: Units.dp(32)
 
     RotationAnimator on rotation {
-        running: spinner.visible
+        running: spinner.visible && !Theme.reduceMotion
         loops: Animation.Infinite
         duration: 1000
         from: 0

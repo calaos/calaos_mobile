@@ -17,8 +17,9 @@ Controls.TextField {
     property bool framed: false
     signal clearButtonClicked()
 
-    leftPadding: framed ? Units.dp(12) : undefined
-    rightPadding: framed ? Units.dp(44) : undefined
+    //Binding restores the style's own padding when framed is false
+    Binding on leftPadding { when: control.framed; value: Units.dp(12) }
+    Binding on rightPadding { when: control.framed; value: Units.dp(44) }
 
     background: Item {
         id: background
@@ -39,7 +40,7 @@ Controls.TextField {
             color: "transparent"
             border {
                 width: Units.dp(2)
-                color: control.activeFocus ? background.color : "#424242"
+                color: control.activeFocus ? background.color : Theme.borderColor
             }
         }
 
@@ -175,9 +176,10 @@ Controls.TextField {
             bottom: parent.bottom
         }
         MouseArea {
+            objectName: "clearArea"
             anchors {
                 fill: parent
-                leftMargin: -Units.dp(13)
+                leftMargin: control.framed ? -Units.dp(13) : 0
                 rightMargin: control.framed ? -Units.dp(13) : 0
             }
             onClicked: {

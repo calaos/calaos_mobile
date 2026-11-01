@@ -23,7 +23,7 @@ Item {
     }
     Rectangle {
         id: rule
-        color: danger ? Theme.colorAlpha(Theme.redColor, 0.45) : "#424242"
+        color: danger ? Theme.colorAlpha(Theme.redColor, 0.45) : Theme.borderColor
         height: Units.dp(2)
         anchors {
             left: parent.left

@@ -23,7 +23,7 @@ CalaosItemBase {
         color: "transparent"
         border {
             width: Units.dp(2)
-            color: button.disabled ? "#424242" : Theme.colorAlpha(Theme.blueColor, 0.4)
+            color: button.disabled ? Theme.borderColor : Theme.colorAlpha(Theme.blueColor, 0.4)
         }
     }
 

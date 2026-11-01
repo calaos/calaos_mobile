@@ -20,7 +20,7 @@ CalaosItemBase {
         visible: row.Positioner.index > 0
         width: parent.width
         height: 1
-        color: "#424242"
+        color: Theme.borderColor
     }
 
     IconBadge {

@@ -15,7 +15,7 @@ Rectangle {
     color: danger ? "transparent" : Theme.colorAlpha(Theme.whiteColor, 0.03)
     border {
         width: Units.dp(2)
-        color: danger ? Theme.colorAlpha(Theme.redColor, 0.45) : "#424242"
+        color: danger ? Theme.colorAlpha(Theme.redColor, 0.45) : Theme.borderColor
     }
 
     Column {

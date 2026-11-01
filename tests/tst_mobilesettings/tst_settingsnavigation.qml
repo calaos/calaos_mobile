@@ -434,6 +434,50 @@ TestCase {
             shot(pages[i][1])
             back()
         }
+
+        calaosApp.tlsPinList = []
+        clickOn(entryPage, "settingsEntryConnection")
+        settle()
+        shot("settings-connection-nocert.png")
+        back()
+
+        //The keyboard is not there offscreen: its place is forced and drawn
+        tc.height = 700
+        clickOn(entryPage, "settingsEntryDevice")
+        settle()
+        var device = stack.currentItem
+        var field = findChild(device, "deviceNameField")
+        verify(field)
+        field.forceActiveFocus()
+        var scroller = findScroller(device)
+        verify(scroller)
+        scroller.keyboardRect = Qt.rect(0, tc.height - 300, tc.width, 300)
+        keyboardBlock.visible = true
+        shot("settings-device-keyboard.png")
+        keyboardBlock.visible = false
+        scroller.keyboardRect = Qt.rect(0, 0, 0, 0)
+        back()
+        tc.height = 900
         tc.width = 420
+    }
+
+    function findScroller(item) {
+        if (item.keyboardRect !== undefined)
+            return item
+        for (var i = 0; i < item.children.length; i++) {
+            var found = findScroller(item.children[i])
+            if (found)
+                return found
+        }
+        return null
+    }
+
+    Rectangle {
+        id: keyboardBlock
+        visible: false
+        z: 10
+        anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+        height: 300
+        color: "#2b2b2b"
     }
 }

@@ -104,7 +104,7 @@ SettingsPage {
             Rectangle {
                 anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
                 height: 1
-                color: "#424242"
+                color: Theme.borderColor
             }
         }
     }

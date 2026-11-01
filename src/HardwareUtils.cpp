@@ -76,35 +76,6 @@ void HardwareUtils::emitApplicationActiveChanged(bool active)
     }
 }
 
-bool HardwareUtils::requestNativePassword(const QString &purpose, const QVariantMap &options)
-{
-    if (!hasNativePasswordEntry() || !pendingPasswordPurpose.isEmpty() || purpose.isEmpty())
-        return false;
-    pendingPasswordPurpose = purpose;
-    if (!showNativePasswordEntry(purpose, options))
-    {
-        pendingPasswordPurpose.clear();
-        return false;
-    }
-    return true;
-}
-
-void HardwareUtils::emitNativePassword(const QString &purpose, const QString &user, const QString &password)
-{
-    if (purpose.isEmpty() || purpose != pendingPasswordPurpose)
-        return;
-    pendingPasswordPurpose.clear();
-    emit nativePasswordEntered(purpose, user, password);
-}
-
-void HardwareUtils::emitNativePasswordCanceled(const QString &purpose)
-{
-    if (purpose.isEmpty() || purpose != pendingPasswordPurpose)
-        return;
-    pendingPasswordPurpose.clear();
-    emit nativePasswordCanceled(purpose);
-}
-
 void HardwareUtils::emitDialogTextValid(const QString &s)
 {
     emit dialogTextValid(s);

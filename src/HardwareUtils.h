@@ -28,19 +28,9 @@ protected:
     //state of calaos connection (logged in/out)
     bool calaosConnected = false;
 
-    //Shows the platform dialog of requestNativePassword(); false if it could
-    //not. The answer comes back through emitNativePassword*().
-    virtual bool showNativePasswordEntry(const QString &purpose, const QVariantMap &options)
-    {
-        Q_UNUSED(purpose) Q_UNUSED(options)
-        return false;
-    }
-
 private:
     //Event uuid of a notification tapped while not logged in
     QString pendingNotifUuid;
-    //The request whose dialog is on screen, empty when none.
-    QString pendingPasswordPurpose;
 
     //Admin code notified before the code sheet could read the stash
     QString pendingAdminCodeId;
@@ -98,19 +88,6 @@ public:
     //to be typed, the platform decides how. The answer comes back through the
     //dialogTextValid()/dialogCanceled() signals below.
     Q_INVOKABLE virtual void inputTextDialog(const QString &title, const QString &message);
-
-    //Native credential entry: a platform dialog with a real username and
-    //password field, the only ones the password manager (iCloud Keychain,
-    //1Password, Android Autofill) can fill; Qt's own text fields cannot.
-    //options: title, message, user (prefilled), userLabel, passwordLabel,
-    //confirm, cancel. Exactly one nativePasswordEntered() or
-    //nativePasswordCanceled() per accepted request; false (nothing shown,
-    //nothing emitted) when the platform has none, or one is already open.
-    //Nothing is stored or logged on the way.
-    Q_INVOKABLE virtual bool hasNativePasswordEntry() const { return false; }
-    Q_INVOKABLE bool requestNativePassword(const QString &purpose, const QVariantMap &options);
-    //The purpose of the native entry on screen, empty when none.
-    QString pendingNativePasswordPurpose() const { return pendingPasswordPurpose; }
 
     //This is set by platform code if app was started with options
     //It is used by iOS when started with a QuickAction
@@ -237,10 +214,6 @@ public:
     void emitApplicationActiveChanged(bool active);
     void emitDialogTextValid(const QString &s);
     void emitDialogCancel();
-    //Platform answers of requestNativePassword(): only the pending request's
-    //first answer goes through.
-    void emitNativePassword(const QString &purpose, const QString &user, const QString &password);
-    void emitNativePasswordCanceled(const QString &purpose);
     void emitCalaosServerDetected();
     void emitPushNotifReceived(const QString &uuid);
 
@@ -251,9 +224,6 @@ signals:
 
     void dialogCanceled();
     void dialogTextValid(const QString &text);
-
-    void nativePasswordEntered(const QString &purpose, const QString &user, const QString &password);
-    void nativePasswordCanceled(const QString &purpose);
 
     //emited when a calaos_server has been detected on the LAN
     void calaosServerDetected();

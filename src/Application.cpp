@@ -102,13 +102,10 @@ void Application::createQmlApp()
     //the background must not reconnect.
     connect(HardwareUtils::Instance(), &HardwareUtils::applicationWillResignActive, this, [=]()
     {
-        //The password manager filling the native entry resigns the app too:
-        //the page waiting for that password must still be there afterwards.
-        const QString entry = HardwareUtils::Instance()->pendingNativePasswordPurpose();
+        //Leaving for the password manager to copy the admin password resigns
+        //the app too: the updates page must still be there afterwards.
         const bool updatesShown = boxUpdates && boxUpdates->isActive();
-        resumePolicy.resigned(m_applicationStatus == Common::LoggedIn &&
-                                  (entry == QLatin1String("admin_unlock") || updatesShown),
-                              entry == QLatin1String("login"));
+        resumePolicy.resigned(m_applicationStatus == Common::LoggedIn && updatesShown);
         syncKeepPage();
 
         qDebug() << "Application is in background, drop the session"
@@ -134,14 +131,8 @@ void Application::createQmlApp()
                 return;
             }
 
-            //The native login entry is still open: the user logs in himself.
-            const bool autoLogin = resumePolicy.becameActive();
+            resumePolicy.becameActive();
             syncKeepPage();
-            if (!autoLogin)
-            {
-                qDebug() << "Application is in foreground, login entry open: no automatic login";
-                return;
-            }
 
             qDebug() << "Application is in foreground, login again";
             startLogin(get_username(), get_password(), get_hostname(), false);

@@ -6,12 +6,11 @@
 //
 //iOS drops the session when the app resigns active (FIX-7), which pops the
 //whole page stack to the login screen; the automatic login on return then
-//opens the home page. Resign-active is also sent when the password manager
-//(1Password, iCloud Keychain) takes over to fill the native password entry,
-//so the page waiting for that password was gone when it came back. While a
-//page must survive (a native admin password entry is open, or the box
-//updates page is shown), the session still drops but the page stays and the
-//automatic login on return reconnects in place; if that login fails, the
+//opens the home page. Resign-active is also sent when the user leaves for the
+//password manager (1Password, iCloud Keychain) to copy a password, so the page
+//waiting for that password was gone on return. While a page must survive (the
+//box updates page is shown), the session still drops but the page stays and
+//the automatic login on return reconnects in place; if that login fails, the
 //usual return to the login screen happens.
 //
 //Header-only, no QObject: tests drive it without Application.
@@ -25,28 +24,14 @@ public:
         Resuming, //back, the automatic login is on its way
     };
 
-    //The app resigns active. keepPage: the page shown must survive;
-    //loginEntry: the native login entry is open, the user is filling the
-    //login fields and logs in himself.
-    void resigned(bool keepPage, bool loginEntry)
-    {
-        m_phase = keepPage ? Paused : None;
-        m_skipAutoLogin = loginEntry;
-    }
+    //The app resigns active. keepPage: the page shown must survive.
+    void resigned(bool keepPage) { m_phase = keepPage ? Paused : None; }
 
-    //Back in the foreground. Returns whether the automatic login runs.
-    bool becameActive()
+    //Back in the foreground: the automatic login runs.
+    void becameActive()
     {
-        const bool skip = m_skipAutoLogin;
-        m_skipAutoLogin = false;
-        if (skip)
-        {
-            m_phase = None;
-            return false;
-        }
         if (m_phase == Paused)
             m_phase = Resuming;
-        return true;
     }
 
     //The session went down again (failed login, untrusted certificate...)
@@ -61,18 +46,13 @@ public:
     void loggedIn() { m_phase = None; }
 
     //Logout, reset: nothing kept.
-    void reset()
-    {
-        m_phase = None;
-        m_skipAutoLogin = false;
-    }
+    void reset() { m_phase = None; }
 
     Phase phase() const { return m_phase; }
     bool keepPage() const { return m_phase != None; }
 
 private:
     Phase m_phase = None;
-    bool m_skipAutoLogin = false;
 };
 
 #endif // RESUMEPOLICY_H

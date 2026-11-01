@@ -32,7 +32,6 @@ public:
 
     virtual void inputTextDialog(const QString &title, const QString &message);
 
-    bool hasNativePasswordEntry() const override;
 
     virtual QString getDeviceName();
 
@@ -60,13 +59,7 @@ public:
     virtual QList<QJsonObject> adminCodeStash();
     virtual void removeAdminCodes(const QStringList &codeIds);
 
-protected:
-    bool showNativePasswordEntry(const QString &purpose, const QVariantMap &options) override;
-
 private:
-    //JNI callbacks registered: the native dialogs can answer
-    bool nativesRegistered = false;
-
     //Qt's Android backend (ConnectivityManager default-network callback) feeds
     //QNetworkInformation; its changes become networkStatusChanged(), like
     //Reachability does on iOS.

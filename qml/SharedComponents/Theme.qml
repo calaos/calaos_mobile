@@ -13,6 +13,11 @@ QtObject {
     property color mutedColor: "#868482"
     property color amberColor: "#e0a356"
     property color backgroundColor: "#171717"
+    property color borderColor: "#424242"
+
+    //Qt has no query for the system "reduce animations" setting; this is the
+    //single switch the continuous animations honour.
+    property bool reduceMotion: false
 
     function colorAlpha(c, alpha) {
         var realColor = Qt.darker(c, 1)

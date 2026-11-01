@@ -174,9 +174,17 @@ Views in [qml/mobile/](../qml/mobile):
   `Suspended`/`Hidden` in `CameraModel`.
 - `MusicListView.qml`, `IconMusic.qml`, `IconMusicPlayer.qml` — audio.
 - `EventLogView.qml`, `PushEventView.qml` — event log + push notification deep
-  link viewer.
+  link viewer. Identical consecutive events are grouped by `EventLogModel`
+  (`evCount` role, shown under the time); the view follows the model's
+  `loading`, `loadingMore` and `error` states.
 - `UpdatesView.qml` — box updates with the admin password (section 8.1).
-- `SettingsView.qml`, `ColorPickerRGBView.qml`, `ColorPickerView.qml`,
+- `SettingsView.qml` (entry, five tiles), `SettingsDeviceView.qml`,
+  `SettingsConnectionView.qml`, `SettingsFavoritesView.qml` (sub-pages),
+  `SettingsPage.qml`, `SettingsEntry.qml` (tile), `SettingsRow.qml`,
+  `SettingsRows.qml`, `SettingsRadio.qml`, `SettingsButton.qml`,
+  `IconBadge.qml`, `SvgGlyph.qml`, `LoadingSpinner.qml`,
+  `KeyboardScroller.qml` (keeps the focused field above the keyboard),
+  `ColorPickerRGBView.qml`, `ColorPickerView.qml`,
   `CalaosTextField.qml`, `ButtonLogin.qml`, `ButtonFooter.qml`,
   `StyleButtonDefault.qml` — settings & utilities.
 
@@ -219,7 +227,7 @@ QuickFlux dispatches.
 
 ### 8.1 Box updates (admin password)
 
-Settings → « Box updates » opens [UpdatesView.qml](../qml/mobile/UpdatesView.qml):
+Settings → Box opens [UpdatesView.qml](../qml/mobile/UpdatesView.qml):
 check and install the box updates and reboot it, with the **admin** password
 (distinct from `cn_user`/`cn_pass`), through calaos_server's admin relay on the
 household WebSocket (contract: calaos_base `docs/08_http_api.md`,
@@ -327,7 +335,7 @@ Shared rules (in [src/HardwareUtils.cpp](../src/HardwareUtils.cpp) and
   carries `cn_user`/`cn_pass` like every api.php call. It also carries
   `device_name` (`HardwareUtils::effectiveDeviceName()`), which the admin
   uses to pick the approver phone in the web app: the name typed in
-  Settings → "Name of this device" (config option `device_name`, sanitized:
+  Settings → Device → "Name of this device" (config option `device_name`, sanitized:
   control characters and line breaks become spaces, bidi controls and
   invisible characters dropped, whitespace collapsed, trimmed, at most 64 UTF-16 code units cut on a grapheme boundary; empty =
   no override), else `HardwareUtils::getDeviceName()` (iOS `UIDevice.name`,
@@ -349,8 +357,8 @@ Shared rules (in [src/HardwareUtils.cpp](../src/HardwareUtils.cpp) and
   session that drops before the event is shown hands it back with
   `restorePendingNotif()`, and a delay armed by an earlier login never opens
   anything).
-- **Explicit logout** (Settings → Logout, `Application::userLogout()`, and
-  Settings → Reset all data, `Application::resetAllData()`):
+- **Explicit logout** (Settings → Connection → Logout, `Application::userLogout()`, and
+  Settings → Connection → Reset all data, `Application::resetAllData()`):
   after `logout()` hands back a tap taken but not opened yet,
   `HardwareUtils::forgetPendingUserActions()` drops the deferred tap and the
   iOS Quick Action start option, so neither fires (possibly stale, possibly

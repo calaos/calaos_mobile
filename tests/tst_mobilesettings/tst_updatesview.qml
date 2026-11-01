@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtTest
 import SharedComponents
+import Calaos
 import "../../qml/mobile"
 
 //The box updates page: the admin password field never keeps or predicts
@@ -54,8 +55,12 @@ TestCase {
     QtObject {
         id: calaosApp
         property int logouts: 0
-        signal applicationStatusChanged(int status)
-        function getPictureSized(pic) { return "" }
+        property bool isAndroid: false
+        property string username: "raoul"
+        property string password: ""
+        property string hostname: "calaos.local"
+        property int applicationStatus: 0
+        function getPictureSized(pic) { return "qrc:/img/" + pic + ".png" }
         function userLogout() { logouts++ }
     }
 
@@ -281,5 +286,75 @@ TestCase {
         compare(boxUpdates.unlocked.length, 1)
         compare(boxUpdates.unlocked[0], "copied secret")
         compare(field.text, "")
+    }
+
+    function test_capture() {
+        var dir = harness.env("SETTINGS_SHOTS_DIR")
+        if (dir === "")
+            skip("SETTINGS_SHOTS_DIR not set")
+        tc.width = 360
+        boxUpdates.boxName = "calaos-box"
+        var page = openPage()
+        wait(50)
+        grabImage(tc).save(dir + "/settings-box.png")
+
+        //No keyboard offscreen: its place is forced and drawn.
+        tc.height = 700
+        findChild(page, "adminPasswordField").forceActiveFocus()
+        var scroller = findScroller(page)
+        verify(scroller)
+        scroller.keyboardRect = Qt.rect(0, tc.height - 300, tc.width, 300)
+        keyboardBlock.visible = true
+        wait(300)
+        grabImage(tc).save(dir + "/settings-box-keyboard.png")
+        keyboardBlock.visible = false
+        scroller.keyboardRect = Qt.rect(0, 0, 0, 0)
+        tc.height = 900
+        stack.pop(null, StackView.Immediate)
+
+        boxUpdates.gate = "unlocked"
+        boxUpdates.phase = "available"
+        boxUpdates.updatesCount = 2
+        boxUpdates.packagesModel.append({ pkgName: "calaos-server", pkgInstalledVersion: "3.2.0",
+                                          pkgNewVersion: "3.3.0", pkgHasUpdate: true })
+        boxUpdates.packagesModel.append({ pkgName: "calaos-container", pkgInstalledVersion: "1.4.1",
+                                          pkgNewVersion: "1.5.0", pkgHasUpdate: true })
+        openPage()
+        wait(300)
+        grabImage(tc).save(dir + "/settings-box-unlocked.png")
+        boxUpdates.packagesModel.clear()
+        boxUpdates.boxName = ""
+        stack.pop(null, StackView.Immediate)
+
+        //LoginView shares CalaosTextField with the settings, unframed
+        stack.push(loginComponent, {}, StackView.Immediate)
+        wait(300)
+        grabImage(tc).save(dir + "/loginview.png")
+        tc.width = 420
+    }
+
+    Component {
+        id: loginComponent
+        LoginView {}
+    }
+
+    function findScroller(item) {
+        if (item.keyboardRect !== undefined)
+            return item
+        for (var i = 0; i < item.children.length; i++) {
+            var found = findScroller(item.children[i])
+            if (found)
+                return found
+        }
+        return null
+    }
+
+    Rectangle {
+        id: keyboardBlock
+        visible: false
+        z: 10
+        anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+        height: 300
+        color: "#2b2b2b"
     }
 }

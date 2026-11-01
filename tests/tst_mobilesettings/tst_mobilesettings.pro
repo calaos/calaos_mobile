@@ -3,7 +3,7 @@ TARGET = tst_mobilesettings
 
 include(../common.pri)
 
-# Qt Quick Test of the mobile settings page (qml/mobile/SettingsView.qml),
+# Qt Quick Test of the mobile settings pages (qml/mobile/Settings*.qml),
 # of the login page (qml/mobile/LoginView.qml), of the box updates page
 # (qml/mobile/UpdatesView.qml) and of the admin code
 # sheet (qml/mobile/AdminCodeSheet.qml) with stand-ins for the context
@@ -14,9 +14,14 @@ CONFIG += qmltestcase
 DEFINES += QUICK_TEST_SOURCE_DIR=\\\"$$PWD\\\"
 DEFINES += CALAOS_STUB_QML_DIR=\\\"$$clean_path($$PWD/../tst_climatewidget/stubs)\\\"
 DEFINES += CALAOS_QML_DIR=\\\"$$clean_path($$PWD/../../qml)\\\"
+DEFINES += CALAOS_FONTS_DIR=\\\"$$clean_path($$PWD/../../fonts)\\\"
+DEFINES += CALAOS_LANG_DIR=\\\"$$clean_path($$PWD/../../lang)\\\"
 
-# The real images (the clear icon of the text field).
-RESOURCES += $$PWD/../../img_mobile.qrc
+# The real images (the clear icon of the text field, the captures); the QML
+# resources tell whether the pages reach the app.
+RESOURCES += \
+    $$PWD/../../img_mobile.qrc \
+    $$PWD/../../qml_mobile.qrc
 
 # The bottom sheets import the Calaos module (Common).
 HEADERS += \
@@ -29,7 +34,10 @@ SOURCES += \
     tst_mobilesettings.cpp
 
 OTHER_FILES += \
+    tst_keyboardscroller.qml \
     tst_settingsdevicename.qml \
+    tst_settingsnavigation.qml \
+    tst_settingseventlog.qml \
     tst_admincodesheet.qml \
     tst_updatesview.qml \
     tst_loginview.qml

@@ -140,7 +140,7 @@ reached through a LAN or VPN address) is shown with its SHA-256 key
 fingerprint and must be trusted once; the key is then pinned for that
 `host:port`, and a new key asks again. A pinned box that moves to a
 certificate signed by a public CA is asked about once; trusting it stops
-pinning that host, so its renewals no longer ask. Settings lists the trusted
+pinning that host, so its renewals no longer ask. Settings → Connection lists the trusted
 certificates (Forget), "Reset all data" clears them.
 
 ### Desktop kiosk

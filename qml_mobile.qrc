@@ -15,6 +15,19 @@
         <file>qml/mobile/MusicListView.qml</file>
         <file>qml/mobile/IconMusicPlayer.qml</file>
         <file>qml/mobile/SettingsView.qml</file>
+        <file>qml/mobile/SettingsPage.qml</file>
+        <file>qml/mobile/SettingsEntry.qml</file>
+        <file>qml/mobile/SettingsDeviceView.qml</file>
+        <file>qml/mobile/SettingsConnectionView.qml</file>
+        <file>qml/mobile/SettingsFavoritesView.qml</file>
+        <file>qml/mobile/SettingsRow.qml</file>
+        <file>qml/mobile/SettingsRows.qml</file>
+        <file>qml/mobile/SettingsRadio.qml</file>
+        <file>qml/mobile/SettingsButton.qml</file>
+        <file>qml/mobile/IconBadge.qml</file>
+        <file>qml/mobile/SvgGlyph.qml</file>
+        <file>qml/mobile/KeyboardScroller.qml</file>
+        <file>qml/mobile/LoadingSpinner.qml</file>
         <file>qml/mobile/ListGroupHeader.qml</file>
         <file>qml/mobile/ScenarioView.qml</file>
         <file>qml/mobile/RoomDetailView.qml</file>

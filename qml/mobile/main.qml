@@ -260,6 +260,7 @@ Window {
         id: settingsView
 
         SettingsView {
+            onSubPageOpened: menuBar.menuType = Common.MenuBack
             onFavoriteAddClicked: {
                 menuBar.menuType = Common.MenuBack
                 stackView.push(favAddView)

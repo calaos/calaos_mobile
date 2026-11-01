@@ -1,20 +1,91 @@
 #include "CameraModel.h"
+#include "CameraFrameDecoder.h"
 #include "ScreenManager.h"
 #include "JsonKeys.h"
+#include <QGuiApplication>
+#include <limits>
 #include <qfappdispatcher.h>
 
 //Delay between two picture requests of a visible camera
 static const int CameraPollIntervalMs = 200;
-//Safety net: if a reply is ever lost, retry after this delay instead of
-//freezing the camera forever
+//Safety net: a request silent for this long is lost, retry instead of freezing
+//the camera forever. Every received byte restarts it: a slow link must get its
+//frame late rather than never.
 static const int CameraPollWatchdogMs = 5000;
-//Delay before the very first picture request of a freshly loaded camera
-static const int CameraFirstPictureDelayMs = 100;
+
+CameraFeed::CameraFeed(QObject *parent):
+    QObject(parent),
+    intervalMs(CameraPollIntervalMs)
+{
+}
+
+CameraFeed::~CameraFeed()
+{
+    if (item && feedActive)
+        item->removeFeed(this);
+}
+
+QObject *CameraFeed::camera() const
+{
+    return item.data();
+}
+
+void CameraFeed::setCamera(QObject *camera)
+{
+    CameraItem *next = qobject_cast<CameraItem *>(camera);
+    if (item == next)
+        return;
+
+    if (item && feedActive)
+        item->removeFeed(this);
+    item = next;
+    if (item && feedActive)
+        item->addFeed(this);
+
+    emit cameraChanged();
+}
+
+void CameraFeed::setActive(bool active)
+{
+    if (feedActive == active)
+        return;
+
+    feedActive = active;
+    if (item)
+    {
+        if (feedActive)
+            item->addFeed(this);
+        else
+            item->removeFeed(this);
+    }
+
+    emit activeChanged();
+}
+
+void CameraFeed::setFrameSize(const QSize &frameSize)
+{
+    if (size == frameSize)
+        return;
+
+    size = frameSize;
+    emit frameSizeChanged();
+}
+
+void CameraFeed::setInterval(int interval)
+{
+    const int ms = qMax(interval, CameraPollIntervalMs);
+    if (intervalMs == ms)
+        return;
+
+    intervalMs = ms;
+    emit intervalChanged();
+}
 
 CameraModel::CameraModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent):
     QStandardItemModel(parent),
     engine(eng),
-    connection(con)
+    connection(con),
+    decoder(new CameraFrameDecoder(this))
 {
     QHash<int, QByteArray> roles;
     roles[RoleId] = "cameraId";
@@ -23,33 +94,31 @@ CameraModel::CameraModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObj
     roles[RolePTZ] = "hasPTZ";
     setItemRoleNames(roles);
 
-    set_cameraVisible(false);
-
     //add a special image provider for single pictures of cameras
     //The cache is shared with the items, the provider itself is owned by the engine
     imageCache = ImageCachePtr::create();
     imgProvider = new CameraImageProvider(imageCache);
     engine->addImageProvider(QLatin1String("camera"), imgProvider);
 
-    connect(this, &CameraModel::cameraVisibleChanged, this, [this](bool visible)
-    {
-        for (int i = 0;i < rowCount();i++)
-        {
-            CameraItem *obj = dynamic_cast<CameraItem *>(item(i));
-            if (!obj)
-            {
-                qWarning() << "CameraModel: row" << i << "is not a CameraItem, skipping";
-                continue;
-            }
-            //set_cameraVisible already starts or stops the chain through the
-            //item's own cameraVisibleChanged handler, calling it again here
-            //was one of the ways chains used to pile up.
-            obj->set_cameraVisible(visible);
-        }
-    });
-
     connect(connection, &CalaosConnection::eventTouchscreenCamera,
             this, &CameraModel::eventTouchscreenCamera);
+    connect(qGuiApp, &QGuiApplication::applicationStateChanged,
+            this, &CameraModel::applicationStateChanged);
+}
+
+void CameraModel::applicationStateChanged(Qt::ApplicationState state)
+{
+    //Not "anything but active": the kiosk runs without a window manager and
+    //may never become ApplicationActive, and a phone goes through Inactive for
+    //a notification shade that leaves the view on screen.
+    inBackground = state == Qt::ApplicationSuspended || state == Qt::ApplicationHidden;
+
+    for (int i = 0;i < rowCount();i++)
+    {
+        CameraItem *cam = dynamic_cast<CameraItem *>(item(i));
+        if (cam)
+            cam->setInBackground(inBackground);
+    }
 }
 
 void CameraModel::load(const QVariantMap &homeData)
@@ -68,16 +137,10 @@ void CameraModel::load(const QVariantMap &homeData)
     for (int i = 0;it != cameras.end();it++, i++)
     {
         QVariantMap r = it->toMap();
-        CameraItem *p = new CameraItem(connection, imageCache);
+        CameraItem *p = new CameraItem(connection, imageCache, decoder);
+        p->setInBackground(inBackground);
         p->load(r, i);
         appendRow(p);
-        //Fresh items default to hidden, but the model level property survives
-        //the reload. A reconnection while the camera view is open would
-        //otherwise leave every item hidden with the model still saying
-        //visible, and nothing would poll again until the user left the media
-        //section and came back.
-        if (get_cameraVisible())
-            p->set_cameraVisible(true);
     }
 }
 
@@ -111,12 +174,13 @@ QObject *CameraModel::getItemModel(int idx)
     return obj;
 }
 
-CameraItem::CameraItem(CalaosConnection *con, const ImageCachePtr &cache):
+CameraItem::CameraItem(CalaosConnection *con, const ImageCachePtr &cache, CameraFrameDecoder *frameDecoder):
     QStandardItem(),
     connection(con),
-    imageCache(cache)
+    imageCache(cache),
+    decoder(frameDecoder),
+    watchdogMs(CameraPollWatchdogMs)
 {
-    set_cameraVisible(false);
     update_hasPTZ(false);
 
     //One single timer per camera. It is the only object able to re-arm a
@@ -130,6 +194,10 @@ CameraItem::CameraItem(CalaosConnection *con, const ImageCachePtr &cache):
             this, &CameraItem::cameraPictureDownloaded);
     connect(connection, &CalaosConnection::cameraPictureFailed,
             this, &CameraItem::cameraPictureFailed);
+    connect(connection, &CalaosConnection::cameraPictureProgress,
+            this, &CameraItem::cameraPictureProgress);
+    connect(decoder, &CameraFrameDecoder::decoded,
+            this, &CameraItem::frameDecoded, Qt::QueuedConnection);
 
     connect(this, &CameraItem::cameraVisibleChanged, this, [this](bool visible)
     {
@@ -167,11 +235,50 @@ void CameraItem::load(QVariantMap &d, int countId)
                       .arg(QRandomGenerator::global()->generate()));
 
     qDebug() << "New camera loaded: " << get_name();
+}
 
-    //Fetch a first picture even though the camera is not visible yet. The reply
-    //handler only re-arms the timer when the camera is visible, so this single
-    //request does not turn into a polling chain.
-    pollTimer->start(CameraFirstPictureDelayMs);
+void CameraItem::addFeed(CameraFeed *feed)
+{
+    if (!feeds.contains(feed))
+        feeds.append(feed);
+    refreshVisibility();
+}
+
+void CameraItem::removeFeed(CameraFeed *feed)
+{
+    feeds.removeAll(feed);
+    refreshVisibility();
+}
+
+void CameraItem::setInBackground(bool background)
+{
+    inBackground = background;
+    refreshVisibility();
+}
+
+void CameraItem::refreshVisibility()
+{
+    update_cameraVisible(!feeds.isEmpty() && !inBackground);
+}
+
+QSize CameraItem::decodeSize() const
+{
+    QSize largest;
+    for (const CameraFeed *feed: feeds)
+    {
+        if (feed->frameSize().isEmpty())
+            return QSize();
+        largest = largest.expandedTo(feed->frameSize());
+    }
+    return largest;
+}
+
+int CameraItem::pollIntervalMs() const
+{
+    int shortest = std::numeric_limits<int>::max();
+    for (const CameraFeed *feed: feeds)
+        shortest = qMin(shortest, feed->interval());
+    return shortest;
 }
 
 void CameraItem::publishImage(const QImage &image)
@@ -182,38 +289,61 @@ void CameraItem::publishImage(const QImage &image)
 
 void CameraItem::cameraPictureDownloaded(const QString &camid, const QByteArray &data)
 {
-    if (camid != get_cameraId())
+    //pollInFlight: the reply of a previous item of the same id, after a reload
+    if (camid != get_cameraId() || !pollInFlight)
         return;
 
-    publishImage(QImage::fromData(data));
+    pendingDecode = decoder->submit(data, decodeSize());
+}
 
-    update_url_single(QString("image://camera/%1/%2")
-                      .arg(get_cameraId())
-                      .arg(QRandomGenerator::global()->generate()));
+void CameraItem::frameDecoded(quint64 ticket, const QImage &image)
+{
+    if (ticket != pendingDecode)
+        return;
 
-    pictureReplyDone();
+    pendingDecode = 0;
+
+    //A broken frame keeps the last good picture on screen
+    if (image.isNull())
+    {
+        qDebug() << "Camera frame could not be decoded" << get_cameraId();
+    }
+    else
+    {
+        publishImage(image);
+        update_url_single(QString("image://camera/%1/%2")
+                          .arg(get_cameraId())
+                          .arg(QRandomGenerator::global()->generate()));
+    }
+
+    pictureDone();
 }
 
 void CameraItem::cameraPictureFailed(const QString &camid)
 {
-    if (camid != get_cameraId())
+    if (camid != get_cameraId() || !pollInFlight)
         return;
 
     qDebug() << "Camera picture download failed " << camid;
 
-    pictureReplyDone();
+    pictureDone();
 }
 
-void CameraItem::pictureReplyDone()
+void CameraItem::cameraPictureProgress(const QString &camid)
+{
+    //pollInFlight: outside a request the timer holds the poll interval
+    if (camid == get_cameraId() && pollInFlight)
+        pollTimer->start(watchdogMs);
+}
+
+void CameraItem::pictureDone()
 {
     pollInFlight = false;
 
+    //Hiding the camera cancels the request, so it is still visible here.
     //Restarting the single member timer replaces the watchdog armed by
     //sendPictureRequest(), it never adds a second pending timeout.
-    if (get_cameraVisible())
-        pollTimer->start(CameraPollIntervalMs);
-    else
-        pollTimer->stop();
+    pollTimer->start(pollIntervalMs());
 }
 
 void CameraItem::cameraMoveUp()
@@ -316,9 +446,11 @@ void CameraItem::sendPictureRequest()
 {
     //Arming the watchdog marks the chain as running, so that any concurrent
     //startCamera() becomes a no-op, and guarantees the chain survives a lost
-    //reply.
+    //reply. When it is the watchdog calling, a frame stuck in the decoder is
+    //abandoned and the connection replaces the lost request.
     pollInFlight = true;
-    pollTimer->start(CameraPollWatchdogMs);
+    pendingDecode = 0;
+    pollTimer->start(watchdogMs);
     sinceLastRequest.start();
     connection->getCameraPicture(get_cameraId(), get_v1Url());
 }
@@ -332,15 +464,6 @@ void CameraItem::startCamera()
     if (pollTimer->isActive())
         return;
 
-    if (pollInFlight)
-    {
-        //A request issued before the camera was hidden is still pending. Do not
-        //send a second one, only re-arm the watchdog so that polling resumes
-        //even if that reply never comes back.
-        pollTimer->start(CameraPollWatchdogMs);
-        return;
-    }
-
     //Entering the view is not a reason to skip the poll interval. Without this,
     //navigating in and out faster than the interval costs one request per
     //entry: measured at 8.05 req/s per camera against 4.94 in steady state on
@@ -348,9 +471,9 @@ void CameraItem::startCamera()
     if (sinceLastRequest.isValid())
     {
         const qint64 waited = sinceLastRequest.elapsed();
-        if (waited < CameraPollIntervalMs)
+        if (waited < pollIntervalMs())
         {
-            pollTimer->start(int(CameraPollIntervalMs - waited));
+            pollTimer->start(int(pollIntervalMs() - waited));
             return;
         }
     }
@@ -361,8 +484,14 @@ void CameraItem::startCamera()
 
 void CameraItem::stopCamera()
 {
-    //Stopping the timer kills the chain. pollInFlight is left untouched on
-    //purpose: an already sent request cannot be cancelled, and its reply
-    //handler will not re-arm anything while the camera is hidden.
     pollTimer->stop();
+
+    //Nobody is left for this frame: drop it wherever it is, on the network or
+    //in the decoder
+    pendingDecode = 0;
+    if (pollInFlight)
+    {
+        pollInFlight = false;
+        connection->cancelCameraPicture(get_cameraId());
+    }
 }

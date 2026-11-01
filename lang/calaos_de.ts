@@ -3042,6 +3042,10 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
 <context>
     <name>SettingsConnectionView</name>
     <message>
+        <source>Turn off %1 for this box</source>
+        <translation>%1 für diese Box deaktivieren</translation>
+    </message>
+    <message>
         <location filename="../qml/mobile/SettingsConnectionView.qml" line="7"/>
         <source>Connection</source>
         <translation>Verbindung</translation>
@@ -3595,6 +3599,22 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
 <context>
     <name>UpdatesView</name>
     <message>
+        <source>Not now</source>
+        <translation>Nicht jetzt</translation>
+    </message>
+    <message>
+        <source>Use %1</source>
+        <translation>%1 verwenden</translation>
+    </message>
+    <message>
+        <source>The admin password of this box stays on this phone, protected by %1. You can turn it off in Settings, Connection.</source>
+        <translation>Das Admin-Passwort dieser Box bleibt auf diesem Telefon, geschützt durch %1. Sie können dies unter Einstellungen, Verbindung deaktivieren.</translation>
+    </message>
+    <message>
+        <source>Use %1 next time?</source>
+        <translation>%1 beim nächsten Mal verwenden?</translation>
+    </message>
+    <message>
         <location filename="../qml/mobile/UpdatesView.qml" line="186"/>
         <source>Checking the box…</source>
         <translation>Box wird geprüft…</translation>
@@ -4090,6 +4110,24 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <location filename="../qml/mobile/main.qml" line="524"/>
         <source>Enter new value</source>
         <translation type="unfinished">Neuen Wert eingeben</translation>
+    </message>
+</context>
+<context>
+    <name>AdminBiometrics</name>
+    <message>
+        <source>Keep the admin password of this box</source>
+        <translation>Admin-Passwort dieser Box speichern</translation>
+    </message>
+    <message>
+        <source>Unlock the administration of the box</source>
+        <translation>Verwaltung der Box entsperren</translation>
+    </message>
+</context>
+<context>
+    <name>HardwareUtils</name>
+    <message>
+        <source>biometrics</source>
+        <translation>Biometrie</translation>
     </message>
 </context>
 </TS>

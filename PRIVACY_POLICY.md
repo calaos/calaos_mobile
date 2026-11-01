@@ -10,6 +10,7 @@ The app has no account system, no advertising, no analytics and no tracking. It 
 
 - The address of your Calaos server, your Calaos user name and password, and your app settings (language, favourites).
 - The password is stored in the system's secure storage (Android Keystore-encrypted storage, iOS Keychain).
+- If you choose to unlock the administration of your box with biometrics, the admin password of that box is stored on this phone, in the same secure storage, behind your fingerprint or face. It stays on the device, is not included in backups, becomes unreadable if your enrolled biometrics change, and is deleted when you turn this off, log out or reset the app's data. The app never receives your biometric data: the system only tells it whether the check succeeded.
 - To show notifications, the app keeps a push notification token and an unread counter for the iOS icon badge.
 
 You can erase all of this at any time with *Settings → Reset all data* in the app, or by uninstalling it.

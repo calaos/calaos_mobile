@@ -200,6 +200,26 @@ TestCase {
         calaosApp.applicationStatus = Common.NotConnected
     }
 
+    //Qt 6.12 skips an item and its children for a point outside the item once
+    //it cached that all of them are inside, and that cache can go stale (see
+    //LoginView): whatever takes touches must stay inside its parents. Replayed
+    //with real taps on iOS only, the order of the first layout does not happen
+    //offscreen.
+    function test_buttonStaysInsideItsParents() {
+        var view = createTemporaryObject(loginComponent, tc)
+        waitForRendering(view)
+        var child = findIn(view, "", "Login")
+        verify(child)
+        while (child !== view) {
+            var parent = child.parent
+            verify(child.y + child.height <= parent.height,
+                   child + " sticks out of " + parent)
+            verify(child.x >= 0 && child.x + child.width <= parent.width,
+                   child + " sticks out of " + parent)
+            child = parent
+        }
+    }
+
     function test_hiddenViewReportsNothing() {
         calaosApp.loginEdited = false
         var view = createTemporaryObject(loginComponent, tc)

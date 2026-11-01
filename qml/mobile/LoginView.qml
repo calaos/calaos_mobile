@@ -86,10 +86,14 @@ Item {
         smooth: true
 
         width: isLandscape?Units.dp(300):parent.width - Units.dp(20)
-        height: Units.dp(300)
+        //Holds the whole form: since Qt 6.12 a child sticking out of its
+        //parent can stop getting touches there, and the Login button only
+        //answered on its top third.
+        height: form.y + form.height + Units.dp(10)
 
         anchors {
-            verticalCenter: parent.verticalCenter
+            top: parent.top
+            topMargin: Math.round((parent.height - Units.dp(300)) / 2)
             horizontalCenter: parent.horizontalCenter
         }
 
@@ -108,7 +112,6 @@ Item {
             id: form
             anchors {
                 top: parent.top; topMargin: Units.dp(80)
-                bottom: parent.bottom; bottomMargin: Units.dp(10)
                 //left: parent.left; leftMargin: 10
                 //right: parent.right; rightMargin: 10
                 horizontalCenter: parent.horizontalCenter

@@ -10,6 +10,7 @@ class ScreenManager: public QObject
 
     QML_WRITABLE_PROPERTY(int, dpmsTime)
     QML_WRITABLE_PROPERTY(bool, dpmsEnabled)
+    QML_READONLY_PROPERTY(bool, screenSuspended)
 public:
     static ScreenManager& Instance()
     {

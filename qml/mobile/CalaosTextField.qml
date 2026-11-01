@@ -13,11 +13,34 @@ Controls.TextField {
     placeholderTextColor: "transparent"
     selectedTextColor: "#3AB4D7"
     selectionColor: Qt.rgba(58, 180, 215, 0.15)
-    color: "#e7e7e7"
+    color: inlineField ? "transparent" : inlineTextColor
     passwordCharacter: "\u2022"
+    activeFocusOnPress: !inlineField
 
     property bool showClearButton: true
     signal clearButtonClicked()
+
+    //"username" or "password": on a platform with inline text fields, a real
+    //native field sits on this one, the only kind the password manager
+    //fills. This item keeps the text, the label, the underline and the clear
+    //button; the native field shows the text and writes it here.
+    property string inlineContentType: ""
+    property string inlinePurpose: ""
+    readonly property bool inlineField: inlineContentType !== "" && hardwareUtils.hasInlineTextFields()
+    readonly property color inlineTextColor: "#e7e7e7"
+    readonly property real inlineRightInset: iconClear.visible ? iconClear.width : 0
+    //Set by the native field.
+    property bool inlineEditing: false
+    property real inlineKeyboardOverlap: 0
+    signal inlineReturnPressed()
+    signal inlineFocusRequested()
+
+    readonly property bool editing: activeFocus || inlineEditing
+
+    Component.onCompleted: {
+        if (inlineField)
+            hardwareUtils.bindInlineTextField(control, inlinePurpose, inlineContentType)
+    }
 
     background: Item {
         id: background
@@ -33,7 +56,7 @@ Controls.TextField {
         Rectangle {
             id: underline
             color: background.hasError ? background.errorColor
-                                    : control.activeFocus ? background.color
+                                    : control.editing ? background.color
                                                           : Qt.rgba(1, 1, 1, 0.3)
 
             height: Units.dp(2)
@@ -62,7 +85,7 @@ Controls.TextField {
             font.pixelSize: Units.dp(16)
             anchors.margins: Units.dp(-12)
             color: background.hasError ? background.errorColor
-                                  : control.activeFocus && control.text !== ""
+                                  : control.editing && control.text !== ""
                                         ? background.color : Qt.rgba(1, 1, 1, 0.3)
 
             states: [

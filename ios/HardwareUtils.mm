@@ -5,6 +5,7 @@
 #import <fcntl.h>
 #import <sys/file.h>
 #import <unistd.h>
+#import "InlineTextField.h"
 #import "Reachability.h"
 #import "SimpleKeychain/A0SimpleKeychain.h"
 #import "SimpleKeychain/A0SimpleKeychain+KeyPair.h"
@@ -12,6 +13,7 @@
 #import "../src/AdminCode.h"
 #include <algorithm>
 #include <QDir>
+#include <QQuickItem>
 #include <QFile>
 #include <QJsonDocument>
 #include <QRegularExpression>
@@ -921,6 +923,19 @@ bool HardwareUtils_iOS::showNativePasswordEntry(const QString &purpose, const QV
     for (const char *key: { "title", "message", "user", "userLabel", "passwordLabel", "confirm", "cancel" })
         opts[@(key)] = options.value(QLatin1String(key)).toString().toNSString();
     return [hwclass showPasswordEntry:purpose.toNSString() options:opts];
+}
+
+void HardwareUtils_iOS::bindInlineTextField(QObject *item, const QString &purpose, const QString &contentType)
+{
+    if (QQuickItem *quickItem = qobject_cast<QQuickItem *>(item))
+        new InlineTextField(quickItem, this, purpose, contentType);
+}
+
+void HardwareUtils_iOS::endInlineEditing()
+{
+    const auto fields = findChildren<InlineTextField *>();
+    for (InlineTextField *field: fields)
+        field->endEditing();
 }
 
 void HardwareUtils_iOS::handlePerformActionForShortcutItem(void *shortcut)

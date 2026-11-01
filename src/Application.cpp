@@ -102,7 +102,7 @@ void Application::createQmlApp()
     //the background must not reconnect.
     connect(HardwareUtils::Instance(), &HardwareUtils::applicationWillResignActive, this, [=]()
     {
-        //The password manager filling the native entry resigns the app too:
+        //The password manager filling a native entry resigns the app too:
         //the page waiting for that password must still be there afterwards.
         const QString entry = HardwareUtils::Instance()->pendingNativePasswordPurpose();
         const bool updatesShown = boxUpdates && boxUpdates->isActive();

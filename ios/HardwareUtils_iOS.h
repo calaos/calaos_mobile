@@ -70,6 +70,9 @@ public:
     virtual void inputTextDialog(const QString &title, const QString &message);
 
     bool hasNativePasswordEntry() const override { return true; }
+    bool hasInlineTextFields() const override { return true; }
+    void bindInlineTextField(QObject *item, const QString &purpose, const QString &contentType) override;
+    void endInlineEditing() override;
 
     virtual QString getStartOption(const QString &key);
     virtual void setQuickLinks(QVariantList quicklinks);

@@ -25,8 +25,10 @@ QT += gui-private
 #Add framework for Reachability
 LIBS += -framework SystemConfiguration -framework UserNotifications
 
-HEADERS += $$PWD/HardwareUtils_iOS.h
+HEADERS += $$PWD/HardwareUtils_iOS.h \
+        $$PWD/InlineTextField.h
 OBJECTIVE_SOURCES += $$PWD/HardwareUtils.mm \
+        $$PWD/InlineTextField.mm \
         $$PWD/Reachability.h \
         $$PWD/Reachability.m \
         $$PWD/SimpleKeychain/A0SimpleKeychain+KeyPair.h \

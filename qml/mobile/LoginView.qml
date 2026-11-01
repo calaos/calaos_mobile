@@ -17,7 +17,7 @@ Item {
     visible: opacity > 0?true:false
     Behavior on opacity { PropertyAnimation { } }
 
-    readonly property bool nativeEntry: hardwareUtils.hasNativePasswordEntry()
+    readonly property bool nativeEntry: hardwareUtils.hasNativePasswordEntry() && !passField.inlineField
 
     function askNativePassword() {
         hideKeyboard()
@@ -44,6 +44,8 @@ Item {
     }
 
     function hideKeyboard() {
+        if (passField.inlineField)
+            hardwareUtils.endInlineEditing()
         userField.focus = false
         passField.focus = false
         hostField.focus = false
@@ -103,8 +105,12 @@ Item {
 
         anchors {
             verticalCenter: parent.verticalCenter
+            //the native fields are out of reach of Qt's scroll to the cursor
+            verticalCenterOffset: -Math.max(userField.inlineKeyboardOverlap, passField.inlineKeyboardOverlap)
             horizontalCenter: parent.horizontalCenter
         }
+
+        Behavior on anchors.verticalCenterOffset { NumberAnimation { duration: 200 } }
 
         Text {
             id: ftitle
@@ -135,6 +141,9 @@ Item {
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Username")
                 enabled: !loginButton.loadingEnabled
+                inlineContentType: "username"
+                inlinePurpose: "login"
+                onInlineReturnPressed: passField.inlineFocusRequested()
             }
 
             CalaosTextField {
@@ -144,6 +153,9 @@ Item {
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Password")
                 enabled: !loginButton.loadingEnabled
+                inlineContentType: "password"
+                inlinePurpose: "login"
+                onInlineReturnPressed: loginRoot.hideKeyboard()
 
                 //Where the platform has a native credential entry, a tap
                 //opens it instead: only real platform fields get AutoFill.

@@ -6,6 +6,8 @@
 target_sources(CalaosHome PRIVATE
     ios/HardwareUtils.mm
     ios/HardwareUtils_iOS.h
+    ios/InlineTextField.h
+    ios/InlineTextField.mm
     ios/Reachability.h
     ios/Reachability.m
     ios/SimpleKeychain/SimpleKeychain.h

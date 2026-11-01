@@ -41,6 +41,7 @@ private:
     QString pendingNotifUuid;
     //The request whose dialog is on screen, empty when none.
     QString pendingPasswordPurpose;
+    QString inlineEntryPurpose;
 
     //Admin code notified before the code sheet could read the stash
     QString pendingAdminCodeId;
@@ -109,8 +110,18 @@ public:
     //Nothing is stored or logged on the way.
     Q_INVOKABLE virtual bool hasNativePasswordEntry() const { return false; }
     Q_INVOKABLE bool requestNativePassword(const QString &purpose, const QVariantMap &options);
-    //The purpose of the native entry on screen, empty when none.
-    QString pendingNativePasswordPurpose() const { return pendingPasswordPurpose; }
+    //Native text fields laid over the QML ones, typed in place; where the
+    //platform has them, a field that asks for one (CalaosTextField
+    //inlineContentType: "username" or "password") needs no dialog. item is
+    //the CalaosTextField, purpose as for requestNativePassword().
+    Q_INVOKABLE virtual bool hasInlineTextFields() const { return false; }
+    Q_INVOKABLE virtual void bindInlineTextField(QObject *item, const QString &purpose, const QString &contentType)
+    { Q_UNUSED(item) Q_UNUSED(purpose) Q_UNUSED(contentType) }
+    Q_INVOKABLE virtual void endInlineEditing() {}
+    //The purpose of the native entry on screen (dialog or inline field being
+    //edited), empty when none.
+    QString pendingNativePasswordPurpose() const
+    { return pendingPasswordPurpose.isEmpty() ? inlineEntryPurpose : pendingPasswordPurpose; }
 
     //This is set by platform code if app was started with options
     //It is used by iOS when started with a QuickAction
@@ -241,6 +252,7 @@ public:
     //first answer goes through.
     void emitNativePassword(const QString &purpose, const QString &user, const QString &password);
     void emitNativePasswordCanceled(const QString &purpose);
+    void setInlineEntryPurpose(const QString &purpose) { inlineEntryPurpose = purpose; }
     void emitCalaosServerDetected();
     void emitPushNotifReceived(const QString &uuid);
 

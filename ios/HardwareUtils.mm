@@ -11,7 +11,6 @@
 #import "SimpleKeychain/A0SimpleKeychain+KeyPair.h"
 #import "../src/Common.h"
 #import "../src/AdminCode.h"
-#import "../src/AdminBiometrics.h"
 #include <algorithm>
 #include <QDir>
 #include <QFile>
@@ -895,7 +894,7 @@ void HardwareUtils_iOS::biometricStore(const QString &key, const QString &secret
         qWarning() << "Admin password not stored in the keychain, status" << int(status);
     QMetaObject::invokeMethod(this, [this, key, status]()
     {
-        emitBiometricStoreDone(key, status == errSecSuccess ? AdminBiometrics::Ok : AdminBiometrics::Failed);
+        emitBiometricStoreDone(key, status == errSecSuccess ? BiometricOk : BiometricFailed);
     }, Qt::QueuedConnection);
 }
 
@@ -918,22 +917,22 @@ void HardwareUtils_iOS::biometricRead(const QString &key, const QString &reason)
         const OSStatus status = SecItemCopyMatching((CFDictionaryRef)query, &found);
         [context release];
 
-        int result = AdminBiometrics::Failed;
+        int result = BiometricFailed;
         QString secret;
         if (status == errSecSuccess && found)
         {
             NSString *text = [[NSString alloc] initWithData:(NSData *)found encoding:NSUTF8StringEncoding];
             secret = QString::fromNSString(text);
             [text release];
-            result = AdminBiometrics::Ok;
+            result = BiometricOk;
         }
         else if (status == errSecUserCanceled)
         {
-            result = AdminBiometrics::Canceled;
+            result = BiometricCanceled;
         }
         else if (status == errSecItemNotFound)
         {
-            result = AdminBiometrics::Invalidated;
+            result = BiometricInvalidated;
         }
         if (found)
             CFRelease(found);

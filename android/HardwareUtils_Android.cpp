@@ -429,18 +429,29 @@ void HardwareUtilsAndroid::biometricRead(const QString &key, const QString &reas
     clearJavaException("HardwareUtils.biometricRead");
 }
 
+void HardwareUtilsAndroid::biometricCancelStore()
+{
+    QJniObject::callStaticMethod<void>(kHardwareUtilsClass, "biometricCancelStore", "()V");
+    clearJavaException("HardwareUtils.biometricCancelStore");
+}
+
+//Through the application context: nothing may depend on a live activity.
 void HardwareUtilsAndroid::biometricRemove(const QString &key)
 {
+    QJniObject ctx = androidContext();
     QJniObject jKey = QJniObject::fromString(key);
-    QJniObject::callStaticMethod<void>(kHardwareUtilsClass, "biometricRemove", "(Ljava/lang/String;)V",
-                                       jKey.object<jstring>());
-    clearJavaException("HardwareUtils.biometricRemove");
+    QJniObject::callStaticMethod<void>(kCredentialStoreClass, "biometricRemove",
+                                       "(Landroid/content/Context;Ljava/lang/String;)V",
+                                       ctx.object<jobject>(), jKey.object<jstring>());
+    clearJavaException("CredentialStore.biometricRemove");
 }
 
 void HardwareUtilsAndroid::biometricRemoveAll()
 {
-    QJniObject::callStaticMethod<void>(kHardwareUtilsClass, "biometricRemoveAll", "()V");
-    clearJavaException("HardwareUtils.biometricRemoveAll");
+    QJniObject ctx = androidContext();
+    QJniObject::callStaticMethod<void>(kCredentialStoreClass, "biometricRemoveAll",
+                                       "(Landroid/content/Context;)V", ctx.object<jobject>());
+    clearJavaException("CredentialStore.biometricRemoveAll");
 }
 
 //Returns false when Java could not store the pair (Keystore failure).

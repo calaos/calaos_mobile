@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Locale;
 import java.util.concurrent.Executor;
+import javax.crypto.AEADBadTagException;
 import javax.crypto.Cipher;
 
 // Native callbacks implemented in android/HardwareUtils_Android.cpp. They are
@@ -419,7 +420,7 @@ public class HardwareUtils extends QtActivity
         return true;
     }
 
-    // Values of AdminBiometrics::Result.
+    // Values of HardwareUtils::BiometricResult.
     private static final int BIOMETRIC_OK = 0;
     private static final int BIOMETRIC_CANCELED = 1;
     private static final int BIOMETRIC_FAILED = 2;
@@ -448,7 +449,8 @@ public class HardwareUtils extends QtActivity
     }
 
     private static void authenticate(final Activity activity, Cipher cipher, String title, String cancelText,
-                                      final BiometricPrompt.AuthenticationCallback callback, final Runnable canceled)
+                                      CancellationSignal signal, BiometricPrompt.AuthenticationCallback callback,
+                                      final Runnable canceled)
     {
         Executor executor = activity.getMainExecutor();
         BiometricPrompt prompt = new BiometricPrompt.Builder(activity)
@@ -461,7 +463,7 @@ public class HardwareUtils extends QtActivity
                 }
             })
             .build();
-        prompt.authenticate(new BiometricPrompt.CryptoObject(cipher), new CancellationSignal(), executor, callback);
+        prompt.authenticate(new BiometricPrompt.CryptoObject(cipher), signal, executor, callback);
     }
 
     private static boolean isCancel(int errorCode)
@@ -470,7 +472,11 @@ public class HardwareUtils extends QtActivity
                errorCode == BiometricPrompt.BIOMETRIC_ERROR_USER_CANCELED;
     }
 
-    public static void biometricStore(final String key, final String secret, final String title, final String cancelText)
+    // The password waits here for the prompt alone, and goes with the store.
+    private static String pendingStoreSecret;
+    private static CancellationSignal pendingStoreSignal;
+
+    public static void biometricStore(final String key, String secret, final String title, final String cancelText)
     {
         final HardwareUtils activity = _context;
         if (!isUsable(activity))
@@ -478,25 +484,35 @@ public class HardwareUtils extends QtActivity
             notifyBiometricStoreDone(key, BIOMETRIC_FAILED);
             return;
         }
+        final String typed = secret;
         activity.runOnUiThread(new Runnable()
         {
             @Override
             public void run()
             {
+                pendingStoreSecret = typed;
+                pendingStoreSignal = new CancellationSignal();
                 try
                 {
                     Cipher cipher = CredentialStore.biometricEncryptCipher();
-                    authenticate(activity, cipher, title, cancelText, new BiometricPrompt.AuthenticationCallback()
+                    authenticate(activity, cipher, title, cancelText, pendingStoreSignal, new BiometricPrompt.AuthenticationCallback()
                     {
                         @Override
                         public void onAuthenticationSucceeded(BiometricPrompt.AuthenticationResult result)
                         {
+                            String secret = pendingStoreSecret;
+                            pendingStoreSecret = null;
+                            if (secret == null)
+                            {
+                                notifyBiometricStoreDone(key, BIOMETRIC_CANCELED);
+                                return;
+                            }
                             try
                             {
                                 CredentialStore.biometricSave(activity, key, result.getCryptoObject().getCipher(), secret);
                                 notifyBiometricStoreDone(key, BIOMETRIC_OK);
                             }
-                            catch (GeneralSecurityException e)
+                            catch (GeneralSecurityException | RuntimeException e)
                             {
                                 notifyBiometricStoreDone(key, BIOMETRIC_FAILED);
                             }
@@ -505,6 +521,7 @@ public class HardwareUtils extends QtActivity
                         @Override
                         public void onAuthenticationError(int errorCode, CharSequence errString)
                         {
+                            pendingStoreSecret = null;
                             notifyBiometricStoreDone(key, isCancel(errorCode) ? BIOMETRIC_CANCELED : BIOMETRIC_FAILED);
                         }
                     }, new Runnable()
@@ -512,15 +529,37 @@ public class HardwareUtils extends QtActivity
                         @Override
                         public void run()
                         {
+                            pendingStoreSecret = null;
                             notifyBiometricStoreDone(key, BIOMETRIC_CANCELED);
                         }
                     });
                 }
-                catch (GeneralSecurityException | IOException e)
+                catch (GeneralSecurityException | IOException | RuntimeException e)
                 {
+                    pendingStoreSecret = null;
                     Log.w(TAG, "Biometric storage not available");
                     notifyBiometricStoreDone(key, BIOMETRIC_FAILED);
                 }
+            }
+        });
+    }
+
+    public static void biometricCancelStore()
+    {
+        final HardwareUtils activity = _context;
+        if (!isUsable(activity))
+        {
+            pendingStoreSecret = null;
+            return;
+        }
+        activity.runOnUiThread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                pendingStoreSecret = null;
+                if (pendingStoreSignal != null)
+                    pendingStoreSignal.cancel();
             }
         });
     }
@@ -546,7 +585,7 @@ public class HardwareUtils extends QtActivity
                         notifyBiometricReadDone(key, BIOMETRIC_INVALIDATED, "");
                         return;
                     }
-                    authenticate(activity, cipher, title, cancelText, new BiometricPrompt.AuthenticationCallback()
+                    authenticate(activity, cipher, title, cancelText, new CancellationSignal(), new BiometricPrompt.AuthenticationCallback()
                     {
                         @Override
                         public void onAuthenticationSucceeded(BiometricPrompt.AuthenticationResult result)
@@ -554,9 +593,16 @@ public class HardwareUtils extends QtActivity
                             try
                             {
                                 String secret = CredentialStore.biometricOpen(activity, key, result.getCryptoObject().getCipher());
-                                notifyBiometricReadDone(key, BIOMETRIC_OK, secret);
+                                if (secret == null)
+                                    notifyBiometricReadDone(key, BIOMETRIC_INVALIDATED, "");
+                                else
+                                    notifyBiometricReadDone(key, BIOMETRIC_OK, secret);
                             }
-                            catch (GeneralSecurityException e)
+                            catch (AEADBadTagException e)
+                            {
+                                notifyBiometricReadDone(key, BIOMETRIC_INVALIDATED, "");
+                            }
+                            catch (GeneralSecurityException | RuntimeException e)
                             {
                                 notifyBiometricReadDone(key, BIOMETRIC_FAILED, "");
                             }
@@ -580,27 +626,13 @@ public class HardwareUtils extends QtActivity
                 {
                     notifyBiometricReadDone(key, BIOMETRIC_INVALIDATED, "");
                 }
-                catch (GeneralSecurityException | IOException e)
+                catch (GeneralSecurityException | IOException | RuntimeException e)
                 {
                     Log.w(TAG, "Biometric storage not available");
                     notifyBiometricReadDone(key, BIOMETRIC_FAILED, "");
                 }
             }
         });
-    }
-
-    public static void biometricRemove(String key)
-    {
-        HardwareUtils activity = _context;
-        if (activity != null)
-            CredentialStore.biometricRemove(activity, key);
-    }
-
-    public static void biometricRemoveAll()
-    {
-        HardwareUtils activity = _context;
-        if (activity != null)
-            CredentialStore.biometricRemoveAll(activity);
     }
 
     private static void notifyBiometricStoreDone(String key, int result)

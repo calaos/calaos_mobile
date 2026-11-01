@@ -647,13 +647,13 @@ public final class CredentialStore
         return cipher;
     }
 
-    // Null when nothing is stored under this key. Throws
+    // Null when nothing usable is stored under this key. Throws
     // KeyPermanentlyInvalidatedException after a change of enrolment.
     public static Cipher biometricDecryptCipher(Context ctx, String key)
             throws GeneralSecurityException, IOException
     {
         String stored = biometricPrefs(ctx).getString(key, null);
-        if (stored == null)
+        if (stored == null || stored.indexOf(':') < 0)
             return null;
         byte[] iv = Base64.decode(stored.substring(0, stored.indexOf(':')), Base64.NO_WRAP);
         Cipher cipher = Cipher.getInstance(TRANSFORMATION);
@@ -670,10 +670,14 @@ public final class CredentialStore
         biometricPrefs(ctx).edit().putString(key, value).apply();
     }
 
+    // Null when the entry went away. AEADBadTagException: sealed by a key that
+    // a change of enrolment replaced, the current one only opens newer entries.
     public static String biometricOpen(Context ctx, String key, Cipher cipher)
             throws GeneralSecurityException
     {
         String stored = biometricPrefs(ctx).getString(key, null);
+        if (stored == null || stored.indexOf(':') < 0)
+            return null;
         byte[] sealed = Base64.decode(stored.substring(stored.indexOf(':') + 1), Base64.NO_WRAP);
         return new String(cipher.doFinal(sealed), StandardCharsets.UTF_8);
     }

@@ -35,6 +35,7 @@ public:
     bool hasBiometrics() const override;
     void biometricStore(const QString &key, const QString &secret, const QString &reason) override;
     void biometricRead(const QString &key, const QString &reason) override;
+    void biometricCancelStore() override;
     void biometricRemove(const QString &key) override;
     void biometricRemoveAll() override;
 

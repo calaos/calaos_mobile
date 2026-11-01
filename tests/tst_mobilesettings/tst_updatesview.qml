@@ -52,18 +52,6 @@ TestCase {
         function retry() { retries++ }
     }
     QtObject {
-        id: hardwareUtils
-        property bool nativeOn: false
-        property var requests: []
-        signal nativePasswordEntered(string purpose, string user, string password)
-        signal nativePasswordCanceled(string purpose)
-        function hasNativePasswordEntry() { return nativeOn }
-        function requestNativePassword(purpose, options) {
-            requests.push({ purpose: purpose, options: options })
-            return true
-        }
-    }
-    QtObject {
         id: calaosApp
         property int logouts: 0
         signal applicationStatusChanged(int status)
@@ -87,6 +75,8 @@ TestCase {
         Item {}
     }
 
+    TextInput { id: clipboardSource; visible: false }
+
     function init() {
         boxUpdates.gate = "locked"
         boxUpdates.phase = "unknown"
@@ -99,8 +89,6 @@ TestCase {
         boxUpdates.retries = 0
         boxUpdates.unlocked = []
         calaosApp.logouts = 0
-        hardwareUtils.nativeOn = false
-        hardwareUtils.requests = []
     }
 
     function cleanup() {
@@ -272,50 +260,26 @@ TestCase {
         compare(boxUpdates.reboots, 0)
     }
 
-    //iOS/Android: the password is typed in the platform's own dialog, the
-    //only fields the password manager fills.
-    function test_nativeEntryReplacesTheField() {
-        hardwareUtils.nativeOn = true
+    //Typed in place, without a dialog, and a copied password can be pasted.
+    function test_passwordFieldInPlaceWithoutNativeEntry() {
         var page = openPage()
-        verify(!findChild(page, "adminPasswordField").visible)
-        var button = findChild(page, "unlockButton")
-        verify(!button.disabled)
-        mouseClick(button)
-        compare(hardwareUtils.requests.length, 1)
-        compare(hardwareUtils.requests[0].purpose, "admin_unlock")
-        compare(hardwareUtils.requests[0].options.user, "admin")
+        var field = findChild(page, "adminPasswordField")
+        verify(field.visible)
+        compare(field.echoMode, TextInput.Password)
+        verify(field.inputMethodHints & Qt.ImhSensitiveData)
+        verify(field.inputMethodHints & Qt.ImhNoPredictiveText)
+        verify(field.inputMethodHints & Qt.ImhNoAutoUppercase)
 
-        //another request's answer is not ours
-        hardwareUtils.nativePasswordEntered("login", "user", "household")
-        compare(boxUpdates.unlocked.length, 0)
-        hardwareUtils.nativePasswordEntered("admin_unlock", "admin", "admin pass")
+        clipboardSource.text = "copied secret"
+        clipboardSource.selectAll()
+        clipboardSource.copy()
+        field.forceActiveFocus()
+        field.paste()
+        compare(field.text, "copied secret")
+
+        mouseClick(findChild(page, "unlockButton"))
         compare(boxUpdates.unlocked.length, 1)
-        compare(boxUpdates.unlocked[0], "admin pass")
-    }
-
-    function test_nativeAnswerDuringReconnectHandedOver() {
-        hardwareUtils.nativeOn = true
-        openPage()
-        boxUpdates.gate = "idle" //socket reopened after the password manager
-        hardwareUtils.nativePasswordEntered("admin_unlock", "admin", "held")
-        //boxUpdates holds it until the box answers on the new socket
-        compare(boxUpdates.unlocked.length, 1)
-    }
-
-    function test_nativeAnswerIgnoredOnAnotherScreen() {
-        hardwareUtils.nativeOn = true
-        openPage()
-        boxUpdates.gate = "https_required"
-        hardwareUtils.nativePasswordEntered("admin_unlock", "admin", "late")
-        compare(boxUpdates.unlocked.length, 0)
-    }
-
-    function test_nativeEntryWaitsForRateLimit() {
-        hardwareUtils.nativeOn = true
-        boxUpdates.retryAfter = 10
-        var page = openPage()
-        verify(findChild(page, "unlockButton").disabled)
-        page.askNativePassword()
-        compare(hardwareUtils.requests.length, 0)
+        compare(boxUpdates.unlocked[0], "copied secret")
+        compare(field.text, "")
     }
 }

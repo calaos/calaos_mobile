@@ -748,6 +748,8 @@ signals:
     void eventScenarioChange();
     void cameraPictureDownloaded(const QString &camid, const QByteArray &data);
     void cameraPictureFailed(const QString &camid);
+    //Bytes of this camera's picture are arriving
+    void cameraPictureProgress(const QString &camid);
     void eventTouchscreenCamera(QString camid);
     //End of an event log request, see requestEventLogPage(). ok is true when
     //the server sent what was asked for (a page carries "events"); the map

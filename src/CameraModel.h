@@ -131,6 +131,9 @@ public:
     void removeFeed(CameraFeed *feed);
     void setInBackground(bool background);
 
+    //Tests shorten the delay.
+    void setWatchdogInterval(int ms) { watchdogMs = ms; }
+
     Q_INVOKABLE void cameraMoveUp();
     Q_INVOKABLE void cameraMoveDown();
     Q_INVOKABLE void cameraMoveRight();
@@ -154,6 +157,7 @@ signals:
 private slots:
     void cameraPictureDownloaded(const QString &camid, const QByteArray &data);
     void cameraPictureFailed(const QString &camid);
+    void cameraPictureProgress(const QString &camid);
     void frameDecoded(quint64 ticket, const QImage &image);
 
 private:
@@ -182,6 +186,7 @@ private:
     //As long as it is active, a polling chain is running and startCamera() will
     //not start another one.
     QTimer *pollTimer = nullptr;
+    int watchdogMs;
     //From the request until its frame is decoded: the next request waits for
     //that, so a slow network or decoder drops frames instead of queueing them.
     bool pollInFlight = false;

@@ -8,8 +8,9 @@
 
 //Delay between two picture requests of a visible camera
 static const int CameraPollIntervalMs = 200;
-//Safety net: if a reply is ever lost, retry after this delay instead of
-//freezing the camera forever
+//Safety net: a request silent for this long is lost, retry instead of freezing
+//the camera forever. Every received byte restarts it: a slow link must get its
+//frame late rather than never.
 static const int CameraPollWatchdogMs = 5000;
 
 CameraFeed::CameraFeed(QObject *parent):
@@ -177,7 +178,8 @@ CameraItem::CameraItem(CalaosConnection *con, const ImageCachePtr &cache, Camera
     QStandardItem(),
     connection(con),
     imageCache(cache),
-    decoder(frameDecoder)
+    decoder(frameDecoder),
+    watchdogMs(CameraPollWatchdogMs)
 {
     update_hasPTZ(false);
 
@@ -192,6 +194,8 @@ CameraItem::CameraItem(CalaosConnection *con, const ImageCachePtr &cache, Camera
             this, &CameraItem::cameraPictureDownloaded);
     connect(connection, &CalaosConnection::cameraPictureFailed,
             this, &CameraItem::cameraPictureFailed);
+    connect(connection, &CalaosConnection::cameraPictureProgress,
+            this, &CameraItem::cameraPictureProgress);
     connect(decoder, &CameraFrameDecoder::decoded,
             this, &CameraItem::frameDecoded, Qt::QueuedConnection);
 
@@ -325,6 +329,13 @@ void CameraItem::cameraPictureFailed(const QString &camid)
     pictureDone();
 }
 
+void CameraItem::cameraPictureProgress(const QString &camid)
+{
+    //pollInFlight: outside a request the timer holds the poll interval
+    if (camid == get_cameraId() && pollInFlight)
+        pollTimer->start(watchdogMs);
+}
+
 void CameraItem::pictureDone()
 {
     pollInFlight = false;
@@ -439,7 +450,7 @@ void CameraItem::sendPictureRequest()
     //abandoned and the connection replaces the lost request.
     pollInFlight = true;
     pendingDecode = 0;
-    pollTimer->start(CameraPollWatchdogMs);
+    pollTimer->start(watchdogMs);
     sinceLastRequest.start();
     connection->getCameraPicture(get_cameraId(), get_v1Url());
 }

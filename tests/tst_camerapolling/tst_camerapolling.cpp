@@ -72,6 +72,12 @@
 static const int PollIntervalMs = 200;
 //Chien de garde de CameraItem (CameraModel.cpp).
 static const int WatchdogMs = 5000;
+//Delai raccourci et transfert lent qui le depasse trois fois : c'est le rapport
+//entre les deux qui compte, pas les 5 s.
+static const int ShortWatchdogMs = 600;
+static const int SlowChunks = 20;
+static const int SlowChunkMs = 100;
+static const int SlowTransferMs = SlowChunks * SlowChunkMs;
 
 /*
  * Serveur HTTP minimal qui joue le role de calaos_server pour ce test :
@@ -94,6 +100,10 @@ public:
     QSet<QString> swallowed;
     //Corps servi pour get_picture, a la place du petit JPEG par defaut.
     QByteArray frame;
+    //Lien lent : la reponse part en SlowChunks morceaux, un tous les SlowChunkMs.
+    bool slowLink = false;
+    //Cameras dont le transfert lent se fige a mi-chemin, connexion ouverte.
+    QSet<QString> stalled;
 
     //Horodatage (ms depuis le demarrage du serveur) de chaque requete recue.
     QMultiHash<QString, qint64> requests;
@@ -178,10 +188,15 @@ private:
             openPictures.insert(sock, camId);
             if (swallowed.contains(camId))
                 return; //never answer: exercises the watchdog
-            QTimer::singleShot(replyDelayMs, sock, [this, sock]()
+            QTimer::singleShot(replyDelayMs, sock, [this, sock, camId]()
             {
-                if (sock->state() == QAbstractSocket::ConnectedState)
-                    reply(sock, "image/jpeg", frame.isEmpty() ? jpeg() : frame);
+                if (sock->state() != QAbstractSocket::ConnectedState)
+                    return;
+                const QByteArray picture = frame.isEmpty() ? jpeg() : frame;
+                if (slowLink)
+                    sendChunk(sock, camId, picture, 0);
+                else
+                    reply(sock, "image/jpeg", picture);
             });
             return;
         }
@@ -191,16 +206,42 @@ private:
               QByteArray("{\"success\":\"true\",\"home\":[],\"cameras\":[],\"audio\":[]}"));
     }
 
-    static void reply(QTcpSocket *sock, const char *mime, const QByteArray &body)
+    static QByteArray headers(const char *mime, qsizetype size)
     {
         QByteArray out = "HTTP/1.1 200 OK\r\nContent-Type: ";
         out += mime;
-        out += "\r\nContent-Length: " + QByteArray::number(body.size());
+        out += "\r\nContent-Length: " + QByteArray::number(size);
         out += "\r\nConnection: close\r\n\r\n";
-        out += body;
-        sock->write(out);
+        return out;
+    }
+
+    static void reply(QTcpSocket *sock, const char *mime, const QByteArray &body)
+    {
+        sock->write(headers(mime, body.size()) + body);
         sock->flush();
         sock->disconnectFromHost();
+    }
+
+    void sendChunk(QTcpSocket *sock, const QString &camId, const QByteArray &body, int chunk)
+    {
+        const qsizetype chunkSize = body.size() / SlowChunks + 1;
+        const qsizetype sent = chunk * chunkSize;
+        if (chunk == 0)
+            sock->write(headers("image/jpeg", body.size()));
+        sock->write(body.mid(sent, chunkSize));
+        sock->flush();
+
+        if (sent + chunkSize >= body.size())
+        {
+            sock->disconnectFromHost();
+            return;
+        }
+        if (chunk + 1 == SlowChunks / 2 && stalled.contains(camId))
+            return;
+        QTimer::singleShot(SlowChunkMs, sock, [this, sock, camId, body, chunk]()
+        {
+            sendChunk(sock, camId, body, chunk + 1);
+        });
     }
 
     static QByteArray jpeg()
@@ -290,6 +331,14 @@ private slots:
     void slowServerGetsOneRequestAtATime();
     void watchdogReplacesTheLostRequest();
 
+    //Le chien de garde mesure le silence, pas la duree du transfert.
+    void slowTransferIsShownOnceComplete();
+    void silentRequestIsReplacedAndTheCameraRecovers();
+    void stalledTransferIsReplacedAfterItsLastByte();
+    void progressOfAnotherCameraDoesNotHoldTheWatchdog();
+    void moreCamerasThanConnectionsAllGetAFrame();
+    void slowTransferOfADeletedCameraStartsNothing();
+
     //Plusieurs vues sur une camera : la plus exigeante decide.
     void pollingFollowsTheFeedInterval();
     void shortestFeedIntervalWins();
@@ -329,6 +378,7 @@ private:
     QStringList camerasOnScreen(int camerasPerDelegate) const;
     int aliveOffScreen() const;
     void requestsOverAWindow(int ms);
+    void shortenWatchdogs();
 
     QQmlApplicationEngine *engine = nullptr;
     CalaosConnection *connection = nullptr;
@@ -570,6 +620,12 @@ void TstCameraPolling::requestsOverAWindow(int ms)
     pump(ms);
 }
 
+void TstCameraPolling::shortenWatchdogs()
+{
+    for (int i = 0; i < model->cameraCount(); i++)
+        cameraAt(i)->setWatchdogInterval(ShortWatchdogMs);
+}
+
 void TstCameraPolling::decoderRunsOutsideTheCallingThread()
 {
     CameraFrameDecoder decoder;
@@ -780,6 +836,101 @@ void TstCameraPolling::watchdogReplacesTheLostRequest()
     //Left open, each lost reply would hold one of the six connections per host
     //of QNetworkAccessManager until none is left for the other cameras
     QTRY_COMPARE_WITH_TIMEOUT(server->openPictures.size(), 1, 200);
+}
+
+void TstCameraPolling::slowTransferIsShownOnceComplete()
+{
+    const QString cam = QStringLiteral("camera_1");
+    loadCameras(1);
+    shortenWatchdogs();
+    server->slowLink = true;
+    showCameras(true);
+
+    QTRY_VERIFY_WITH_TIMEOUT(shownImage(0).size() == QSize(2, 2), 3 * SlowTransferMs);
+
+    const QList<qint64> ts = server->stampsFor(cam);
+    QCOMPARE(ts.size(), 1);
+    const qint64 transfer = server->now() - ts.first();
+    QVERIFY2(transfer >= 3 * ShortWatchdogMs, qPrintable(QString::number(transfer)));
+}
+
+void TstCameraPolling::silentRequestIsReplacedAndTheCameraRecovers()
+{
+    const QString cam = QStringLiteral("camera_1");
+    loadCameras(1);
+    shortenWatchdogs();
+    server->swallowed.insert(cam);
+    showCameras(true);
+
+    QTRY_COMPARE_WITH_TIMEOUT(server->stampsFor(cam).size(), 2, 3 * ShortWatchdogMs);
+    const QList<qint64> ts = server->stampsFor(cam);
+    QVERIFY(ts[1] - ts[0] >= ShortWatchdogMs / 2);
+    QTRY_COMPARE_WITH_TIMEOUT(server->openPictures.size(), 1, 200);
+
+    server->swallowed.clear();
+    QTRY_VERIFY_WITH_TIMEOUT(shownImage(0).size() == QSize(2, 2), 3 * ShortWatchdogMs);
+}
+
+void TstCameraPolling::stalledTransferIsReplacedAfterItsLastByte()
+{
+    const QString cam = QStringLiteral("camera_1");
+    loadCameras(1);
+    shortenWatchdogs();
+    server->slowLink = true;
+    server->stalled.insert(cam);
+    showCameras(true);
+
+    QTRY_COMPARE_WITH_TIMEOUT(server->stampsFor(cam).size(), 2, 2 * SlowTransferMs);
+
+    //The bytes stop half way through: the delay counts from there, not from the
+    //request, and the bytes do not switch the watchdog off either. Half a delay
+    //of margin: the timer is coarse and the last chunk may raise no progress.
+    const QList<qint64> ts = server->stampsFor(cam);
+    const qint64 lastByte = (SlowChunks / 2 - 1) * SlowChunkMs;
+    QVERIFY2(ts[1] - ts[0] >= lastByte + ShortWatchdogMs / 2,
+             qPrintable(QString::number(ts[1] - ts[0])));
+
+    server->stalled.clear();
+    QTRY_VERIFY_WITH_TIMEOUT(shownImage(0).size() == QSize(2, 2), 3 * SlowTransferMs);
+}
+
+void TstCameraPolling::progressOfAnotherCameraDoesNotHoldTheWatchdog()
+{
+    const QString lost = QStringLiteral("camera_1");
+    loadCameras(2);
+    shortenWatchdogs();
+    server->slowLink = true;
+    server->swallowed.insert(lost);
+    showCameras(true);
+
+    QTRY_COMPARE_WITH_TIMEOUT(server->stampsFor(lost).size(), 2, 2 * ShortWatchdogMs);
+}
+
+//Six connections per host in QNetworkAccessManager: the last two cameras wait in
+//its queue, with no byte to show, while the first six take longer than the delay.
+void TstCameraPolling::moreCamerasThanConnectionsAllGetAFrame()
+{
+    loadCameras(8);
+    shortenWatchdogs();
+    server->slowLink = true;
+    showCameras(true);
+
+    for (int i = 0; i < 8; i++)
+        QTRY_VERIFY_WITH_TIMEOUT(shownImage(i).size() == QSize(2, 2), 5 * SlowTransferMs);
+}
+
+void TstCameraPolling::slowTransferOfADeletedCameraStartsNothing()
+{
+    loadCameras(1);
+    server->slowLink = true;
+    showCameras(true);
+    QTRY_COMPARE(server->requests.size(), 1);
+
+    //Same id, nobody watching: the bytes of the old reply concern it no more
+    loadCameras(1);
+    shortenWatchdogs();
+    pump(SlowTransferMs + 2 * ShortWatchdogMs);
+    QCOMPARE(server->requests.size(), 1);
 }
 
 void TstCameraPolling::pollingFollowsTheFeedInterval()

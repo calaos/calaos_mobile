@@ -1333,6 +1333,7 @@ void CalaosConnection::getCameraPicture(const QString &camid, QString urlSuffix)
     QNetworkReply *reqReply = accessManagerCam->post(request, jdoc.toJson());
 
     connect(reqReply, &QNetworkReply::finished, this, [=]() { requestCamFinished(reqReply, camid); });
+    connect(reqReply, &QNetworkReply::downloadProgress, this, [=]() { emit cameraPictureProgress(camid); });
 //    connect(reqReply, &QNetworkReply::errorOccurred, this, &CalaosConnection::requestError);
 
     reqReplies.append(reqReply);

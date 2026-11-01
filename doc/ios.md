@@ -210,14 +210,33 @@ comment at the top of `ios/HardwareUtils.mm`.
   for `Password` echo (Qt draws the bullets itself), and the responder maps
   only `ImhHiddenText` to `secureTextEntry`. A runtime `textContentType` on
   the responder was tried and did not bring AutoFill (UIKit also reads the
-  traits only when the responder becomes first responder). So the admin
-  password (updates page) and the login password are typed in a native
-  `UIAlertController` with two `UITextField`s (username prefilled,
-  `UITextContentTypeUsername`; password `secureTextEntry`,
-  `UITextContentTypePassword`, no autocorrection) through
-  `HardwareUtils::requestNativePassword()`: one answer, fields wiped, nothing
-  stored or logged. Without Associated Domains, iOS offers the saved entries
-  from the Passwords key rather than a suggestion for the box's site.
+  traits only when the responder becomes first responder). Two native entries
+  answer that:
+  - Login: [ios/InlineTextField.mm](../ios/InlineTextField.mm) lays a real
+    `UITextField` over the username and password `CalaosTextField`s (subview of
+    the Qt window's `UIView`, from `winId()`; `UITextContentTypeUsername`, and
+    `UITextContentTypePassword` with `secureTextEntry`). The user types in
+    place, with no sheet. The QML field stays below as the shell (label,
+    underline, clear button, text in `transparent`) and keeps the text: every
+    native change is written to its `text`, so `LoginView` reads it as before.
+    The position follows the item on every `QQuickWindow::afterAnimating`
+    (`mapRectToScene`); the field is hidden with the item, when an ancestor
+    clips it and while a popup is open, since a native view sits above
+    everything Qt draws. Qt's scroll to the cursor does not run for it: the
+    field reports `inlineKeyboardOverlap` and `LoginView` lifts the form. One
+    text responder at a time: a native field taking the focus clears the Qt
+    field's, a Qt field taking it resigns the native one, a tap on the Qt
+    surface resigns it. While one is being edited,
+    `pendingNativePasswordPurpose()` is `login`, so the resign-active of the
+    password manager keeps the typed fields and runs no automatic login.
+  - Admin password (updates page): still a `UIAlertController` with two
+    `UITextField`s through `HardwareUtils::requestNativePassword()`, one
+    answer, fields wiped. Its card leaves the screen while the socket reopens
+    after the password manager, so an inline field would be hidden, and lose
+    the fill, at the moment it arrives.
+  Nothing is stored or logged by either. Without Associated Domains, iOS offers
+  the saved entries from the Passwords key rather than a suggestion for the
+  box's site.
 - 3D Touch / Quick Actions: the app uses scenes (Qt does), so UIKit hands them to the
   window scene delegate: `windowScene:performActionForShortcutItem:completionHandler:`
   (app running) or the connection options of `scene:willConnectToSession:options:`

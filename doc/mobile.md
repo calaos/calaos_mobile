@@ -116,7 +116,8 @@ specifically used on mobile:
   `Application::keepPageOnResume` tells `main.qml` to keep the page stack
   (no pop to the login screen, no push of the home page); the automatic login
   on return reconnects in place, and a failure of that login goes to the
-  login screen as usual. With the native login entry open, no automatic login
+  login screen as usual. With the native login entry open (on iOS, a native
+  login field being edited), no automatic login
   runs on return: the user logs in himself with the filled fields.
 - `applicationBecomeActive` (iOS only) — `unpause()`, then re-issues `login()`
   from the saved keychain credentials, **unless the user logged out**
@@ -254,8 +255,9 @@ the phone: those stay in the webapp.
   never bound to a setting, cleared on submit, when leaving the page, when the
   gate leaves `locked` and when the app leaves the foreground. On iOS and Android the password is typed in a
   native dialog instead (`HardwareUtils::requestNativePassword()`, purpose
-  `admin_unlock`; the login screen uses it for its password, purpose
-  `login`): Qt's text fields get no password AutoFill on either platform
+  `admin_unlock`; on Android the login screen uses it for its password,
+  purpose `login`, on iOS it has native fields in place, see
+  [ios.md](ios.md) section 5): Qt's text fields get no password AutoFill on either platform
   (iOS: see [ios.md](ios.md) section 5; Android: Qt 6.12 routes every field
   through one proxy `QtEditText` without autofill hints or view structure).
   The dialog has a username field (`admin`, or the typed household user) and

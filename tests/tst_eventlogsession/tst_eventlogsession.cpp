@@ -33,7 +33,12 @@
  *  - loadMore() stops at the last page, a short last page is not loaded
  *    twice and an event already shown is not added again;
  *  - the view asking for more while a refresh replaces the rows (found on
- *    the simulator) does not start a request with stale paging.
+ *    the simulator) does not start a request with stale paging;
+ *  - identical consecutive events are one row with a count, also across two
+ *    pages; events that differ, are not consecutive, or carry a picture are
+ *    kept apart, and paging still follows the events the server sent;
+ *  - QML sees loading, loadingMore and error change once per operation, and
+ *    never an idle model in the middle of a refresh or before a page's rows.
  */
 
 #include <QtTest>
@@ -43,10 +48,12 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QPointer>
+#include <QQmlApplicationEngine>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QWebSocket>
 #include <QWebSocketServer>
+#include <functional>
 
 #include "CalaosConnection.h"
 #include "EventLogModel.h"
@@ -68,6 +75,16 @@ struct FakeLog
 {
     int totalCount = 120;
     QString label = QStringLiteral("a");
+    //Rewrites event i of a page before it is sent.
+    std::function<void(int, QJsonObject &)> shape;
+
+    static void setRaw(QJsonObject &event, const QString &message, const QString &picUid = QString())
+    {
+        QJsonObject raw{{ "message", message }};
+        if (!picUid.isEmpty())
+            raw["pic_uid"] = picUid;
+        event["event_raw"] = raw;
+    }
 
     static QJsonObject event(int i, const QString &message)
     {
@@ -90,7 +107,12 @@ struct FakeLog
 
         QJsonArray events;
         for (int i = page * perPage; i < qMin(totalCount, (page + 1) * perPage); i++)
-            events.append(event(i, QStringLiteral("%1 #%2").arg(label).arg(i)));
+        {
+            QJsonObject e = event(i, QStringLiteral("%1 #%2").arg(label).arg(i));
+            if (shape)
+                shape(i, e);
+            events.append(e);
+        }
 
         return QJsonObject{
             { "total_page", totalPage },
@@ -318,6 +340,9 @@ private:
     }
 };
 
+using EventChange = void (*)(EventLogItem &);
+Q_DECLARE_METATYPE(EventChange)
+
 class TstEventLogSession: public QObject
 {
     Q_OBJECT
@@ -330,6 +355,20 @@ class TstEventLogSession: public QObject
     {
         EventLogItem *it = dynamic_cast<EventLogItem *>(model->item(row));
         return it ? it->get_evNotifText() : QString();
+    }
+
+    int count(int row) const
+    {
+        EventLogItem *it = dynamic_cast<EventLogItem *>(model->item(row));
+        return it ? it->get_evCount() : 0;
+    }
+
+    //Logs in and waits for the first page, whatever its rows are.
+    void loginAndSettle(FakeCalaosWs &ws)
+    {
+        con->login(TestUser, TestPass, ws.url());
+        QTRY_COMPARE(homes, 1);
+        QTRY_VERIFY(ws.pageRequests() == 1 && !model->isLoading());
     }
 
     //Every row once, in order: "ev-0".."ev-<n-1>" with the given label.
@@ -408,6 +447,26 @@ private slots:
     void loadMoreStopsAtLastPage();
     void loadMoreSkipsEventsAlreadyShown();
     void viewLoadingMoreWhileRowsAreReplaced();
+    void identicalEventsShareOneRow();
+    void refreshCountsFromScratch();
+    void identicalEventsAcrossTwoPages();
+    void eventsNotConsecutiveStayApart();
+    void eventAlreadyShownIsNotCounted();
+    void picturesAreNeverGrouped();
+    void anotherDayIsNotGrouped();
+    void recentDaysAreNamed();
+    void countReachesQmlThroughGetEventModel();
+    void sameEventComparesWhatTheRowShows_data();
+    void sameEventComparesWhatTheRowShows();
+    void loadingFollowsARequest();
+    void refreshNeverLooksIdle();
+    void pageRowsAreInWhenLoadingEnds();
+    void errorAnswerIsShownUntilTheNextRequest();
+    void silentServerIsAnError();
+    void connectionLostInFlightIsAnError();
+    void connectionLostIdleIsNoError();
+    void noSessionIsAnError();
+    void resetClearsTheError();
 };
 
 //Path 2 of the ticket: calaos_server (or haproxy) restarts while a page is in
@@ -926,6 +985,453 @@ void TstEventLogSession::viewLoadingMoreWhileRowsAreReplaced()
     QTRY_COMPARE(ws.pageRequests(), 5);
     QCOMPARE(ws.requests.last().data["page"].toInt(), 1);
     QTRY_VERIFY(rowsAre(2 * DEFAULT_PER_PAGE, ws.log.label));
+}
+
+//Five events in a row with a second between them, then events that all
+//differ. The row keeps the time of the newest one, the first sent.
+void TstEventLogSession::identicalEventsShareOneRow()
+{
+    const QDateTime newest = QDateTime(QDate(2026, 1, 15), QTime(12, 0, 30), Qt::UTC);
+    FakeCalaosWs ws;
+    QVERIFY(ws.start());
+    ws.log.totalCount = 8;
+    ws.log.shape = [newest](int i, QJsonObject &e)
+    {
+        if (i < 5)
+            FakeLog::setRaw(e, QStringLiteral("Clim Buanderie"));
+        e["created_at"] = newest.addSecs(-i).toString("yyyy-MM-dd hh:mm:ss");
+    };
+    loginAndSettle(ws);
+
+    QCOMPARE(model->rowCount(), 4);
+    QCOMPARE(message(0), QStringLiteral("Clim Buanderie"));
+    QCOMPARE(count(0), 5);
+    QCOMPARE(model->item(0)->data(EventLogModel::RoleCount).toInt(), 5);
+    const auto *first = dynamic_cast<EventLogItem *>(model->item(0));
+    QCOMPARE(first->get_evTime(), newest.toLocalTime().time().toString("hh:mm:ss"));
+    for (int row = 1; row < 4; row++)
+    {
+        QCOMPARE(message(row), QStringLiteral("a #%1").arg(row + 4));
+        QCOMPARE(count(row), 1);
+    }
+}
+
+void TstEventLogSession::refreshCountsFromScratch()
+{
+    FakeCalaosWs ws;
+    QVERIFY(ws.start());
+    ws.log.totalCount = 3;
+    ws.log.shape = [](int, QJsonObject &e) { FakeLog::setRaw(e, QStringLiteral("same")); };
+    loginAndSettle(ws);
+    QCOMPARE(model->rowCount(), 1);
+    QCOMPARE(count(0), 3);
+
+    model->refresh();
+    QTRY_COMPARE(ws.pageRequests(), 2);
+    QTRY_VERIFY(!model->isLoading());
+    QCOMPARE(model->rowCount(), 1);
+    QCOMPARE(count(0), 3);
+}
+
+//The run starts on page 0 and ends on page 1: the last row of the list grows,
+//no row is added for it, and page 2 is still the next one asked for even
+//though the rows do not add up to two pages.
+void TstEventLogSession::identicalEventsAcrossTwoPages()
+{
+    FakeCalaosWs ws;
+    QVERIFY(ws.start());
+    ws.log.shape = [](int i, QJsonObject &e)
+    {
+        if (i >= 45 && i < 55)
+            FakeLog::setRaw(e, QStringLiteral("same"));
+    };
+    loginAndSettle(ws);
+    QCOMPARE(model->rowCount(), 46);
+    QCOMPARE(count(45), 5);
+
+    QSignalSpy changed(model, &QAbstractItemModel::dataChanged);
+    model->loadMore();
+    QTRY_VERIFY(ws.pageRequests() == 2 && !model->isLoading());
+    QCOMPARE(model->rowCount(), 91);
+    QCOMPARE(message(45), QStringLiteral("same"));
+    QCOMPARE(count(45), 10);
+    QCOMPARE(message(46), QStringLiteral("a #55"));
+
+    //The delegate of the row follows the count.
+    bool rowNotified = false;
+    for (const QList<QVariant> &args: changed)
+        rowNotified = rowNotified || args.at(0).toModelIndex().row() == 45;
+    QVERIFY(rowNotified);
+
+    model->loadMore();
+    QTRY_COMPARE(ws.pageRequests(), 3);
+    QCOMPARE(ws.requests.last().data["page"].toInt(), 2);
+    QTRY_VERIFY(!model->isLoading());
+    QCOMPARE(model->rowCount(), 111);
+    QVERIFY(model->isAtEnd());
+}
+
+void TstEventLogSession::eventsNotConsecutiveStayApart()
+{
+    FakeCalaosWs ws;
+    QVERIFY(ws.start());
+    ws.log.totalCount = 4;
+    ws.log.shape = [](int i, QJsonObject &e)
+    {
+        FakeLog::setRaw(e, i == 2 ? QStringLiteral("B") : QStringLiteral("A"));
+    };
+    loginAndSettle(ws);
+
+    QCOMPARE(model->rowCount(), 3);
+    QCOMPARE(message(0), QStringLiteral("A"));
+    QCOMPARE(count(0), 2);
+    QCOMPARE(message(1), QStringLiteral("B"));
+    QCOMPARE(count(1), 1);
+    QCOMPARE(message(2), QStringLiteral("A"));
+    QCOMPARE(count(2), 1);
+}
+
+//New events logged between two pages shift them: the event sent again must
+//not count twice.
+void TstEventLogSession::eventAlreadyShownIsNotCounted()
+{
+    FakeCalaosWs ws;
+    QVERIFY(ws.start());
+    ws.log.shape = [](int i, QJsonObject &e)
+    {
+        if (i >= 49 && i < 53)
+            FakeLog::setRaw(e, QStringLiteral("same"));
+        if (i >= DEFAULT_PER_PAGE)
+            e["id"] = QStringLiteral("ev-%1").arg(i - 1);
+    };
+    loginAndSettle(ws);
+    QCOMPARE(count(49), 1);
+
+    model->loadMore();
+    QTRY_VERIFY(ws.pageRequests() == 2 && !model->isLoading());
+    QCOMPARE(count(49), 3);
+}
+
+//The first and last two carry a picture, the two in the middle are plain.
+void TstEventLogSession::picturesAreNeverGrouped()
+{
+    FakeCalaosWs ws;
+    QVERIFY(ws.start());
+    ws.log.totalCount = 6;
+    ws.log.shape = [](int i, QJsonObject &e)
+    {
+        const bool picture = i < 2 || i >= 4;
+        FakeLog::setRaw(e, QStringLiteral("same"),
+                        picture ? QStringLiteral("pic-%1").arg(i) : QString());
+    };
+    loginAndSettle(ws);
+
+    QCOMPARE(model->rowCount(), 5);
+    const QList<int> counts{ 1, 1, 2, 1, 1 };
+    for (int row = 0; row < counts.size(); row++)
+        QCOMPARE(count(row), counts.at(row));
+}
+
+void TstEventLogSession::anotherDayIsNotGrouped()
+{
+    const QDateTime day = QDateTime(QDate(2026, 1, 15), QTime(12, 0, 0), Qt::UTC);
+    FakeCalaosWs ws;
+    QVERIFY(ws.start());
+    ws.log.totalCount = 4;
+    ws.log.shape = [day](int i, QJsonObject &e)
+    {
+        FakeLog::setRaw(e, QStringLiteral("same"));
+        e["created_at"] = day.addDays(i < 2 ? 0 : -1).toString("yyyy-MM-dd hh:mm:ss");
+    };
+    loginAndSettle(ws);
+
+    QCOMPARE(model->rowCount(), 2);
+    QCOMPARE(count(0), 2);
+    QCOMPARE(count(1), 2);
+}
+
+//Noon stays on the same local day once written in UTC, as the server stores it.
+void TstEventLogSession::recentDaysAreNamed()
+{
+    const QDateTime noon(QDate::currentDate(), QTime(12, 0, 0));
+    FakeCalaosWs ws;
+    QVERIFY(ws.start());
+    ws.log.totalCount = 3;
+    ws.log.shape = [noon](int i, QJsonObject &e)
+    {
+        e["created_at"] = noon.addDays(-i).toUTC().toString("yyyy-MM-dd hh:mm:ss");
+    };
+    loginAndSettle(ws);
+
+    QCOMPARE(model->rowCount(), 3);
+    QCOMPARE(model->item(0)->data(EventLogModel::RoleDate).toString(), QStringLiteral("Today"));
+    QCOMPARE(model->item(1)->data(EventLogModel::RoleDate).toString(), QStringLiteral("Yesterday"));
+    QCOMPARE(model->item(2)->data(EventLogModel::RoleDate).toString(),
+             noon.date().addDays(-2).toString(QLocale::system().dateFormat(QLocale::ShortFormat)));
+}
+
+//QML reads a row by getEventModel() and by the evCount role.
+void TstEventLogSession::countReachesQmlThroughGetEventModel()
+{
+    FakeCalaosWs ws;
+    QVERIFY(ws.start());
+    ws.log.totalCount = 5;
+    ws.log.shape = [](int i, QJsonObject &e)
+    {
+        if (i < 4)
+            FakeLog::setRaw(e, QStringLiteral("same"));
+    };
+    loginAndSettle(ws);
+
+    QQmlApplicationEngine engine;
+    EventLogModel withEngine(&engine, con);
+    withEngine.refresh();
+    QTRY_COMPARE(withEngine.rowCount(), 2);
+    QTRY_VERIFY(!withEngine.isLoading());
+
+    QVERIFY(withEngine.roleNames().key("evCount", -1) == EventLogModel::RoleCount);
+
+    QObject *group = withEngine.getEventModel(0);
+    QVERIFY(group);
+    QCOMPARE(group->property("evCount").toInt(), 4);
+    QCOMPARE(QQmlEngine::objectOwnership(group), QQmlEngine::CppOwnership);
+
+    //Rows, not events: the row after the group is the next event shown.
+    QObject *next = withEngine.getEventModel(1);
+    QVERIFY(next);
+    QCOMPARE(next->property("evNotifText").toString(), QStringLiteral("a #4"));
+    QCOMPARE(next->property("evCount").toInt(), 1);
+    QCOMPARE(withEngine.getEventModel(2), nullptr);
+}
+
+void TstEventLogSession::sameEventComparesWhatTheRowShows_data()
+{
+    QTest::addColumn<EventChange>("change");
+    QTest::addColumn<bool>("same");
+
+    QTest::newRow("nothing") << EventChange([](EventLogItem &) {}) << true;
+    QTest::newRow("time") << EventChange([](EventLogItem &e) { e.update_evTime("11:59:59"); }) << true;
+    QTest::newRow("type") << EventChange([](EventLogItem &e) { e.update_evType(Common::EventIoChanged); }) << false;
+    QTest::newRow("title") << EventChange([](EventLogItem &e) { e.update_evTitle("other"); }) << false;
+    QTest::newRow("room") << EventChange([](EventLogItem &e) { e.update_evRoomName("other"); }) << false;
+    QTest::newRow("action") << EventChange([](EventLogItem &e) { e.update_evActionText("other"); }) << false;
+    QTest::newRow("notification") << EventChange([](EventLogItem &e) { e.update_evNotifText("other"); }) << false;
+    QTest::newRow("date") << EventChange([](EventLogItem &e) { e.update_evDate("other"); }) << false;
+    QTest::newRow("picture") << EventChange([](EventLogItem &e) { e.update_evHasPicture(true); }) << false;
+}
+
+void TstEventLogSession::sameEventComparesWhatTheRowShows()
+{
+    QFETCH(EventChange, change);
+    QFETCH(bool, same);
+
+    const auto fill = [](EventLogItem &e)
+    {
+        e.update_evType(Common::EventPush);
+        e.update_evTitle("Clim Buanderie");
+        e.update_evRoomName("Buanderie");
+        e.update_evActionText("remote temperature");
+        e.update_evNotifText("");
+        e.update_evDate("Today");
+        e.update_evTime("12:00:00");
+        e.update_evHasPicture(false);
+    };
+    EventLogItem a(nullptr, con);
+    EventLogItem b(nullptr, con);
+    fill(a);
+    fill(b);
+    change(b);
+
+    QCOMPARE(a.isSameEvent(b), same);
+    QCOMPARE(b.isSameEvent(a), same);
+}
+
+void TstEventLogSession::loadingFollowsARequest()
+{
+    FakeCalaosWs ws;
+    QVERIFY(ws.start());
+    loginAndLoad(ws);
+    QVERIFY(!model->isLoadingMore());
+
+    QSignalSpy loading(model, &EventLogModel::loadingChanged);
+    ws.mode = FakeCalaosWs::Hold;
+    model->loadMore();
+    QTRY_COMPARE(ws.pageRequests(), 2);
+    QVERIFY(model->isLoading());
+    QVERIFY(model->isLoadingMore());
+    QCOMPARE(loading.count(), 1);
+
+    ws.answer(1);
+    QTRY_VERIFY(!model->isLoading());
+    QVERIFY(!model->isLoadingMore());
+    QCOMPARE(loading.count(), 2);
+
+    //A refresh shows no "earlier events" line: it does not append.
+    model->refresh();
+    QTRY_COMPARE(ws.pageRequests(), 3);
+    QVERIFY(model->isLoading());
+    QVERIFY(!model->isLoadingMore());
+    QCOMPARE(loading.count(), 3);
+    ws.answer(2);
+    QTRY_VERIFY(!model->isLoading());
+    QCOMPARE(loading.count(), 4);
+}
+
+//The view reacts to loading going down by asking for the next page: a refresh
+//replacing the one in flight must not look like the end of a request.
+void TstEventLogSession::refreshNeverLooksIdle()
+{
+    FakeCalaosWs ws;
+    QVERIFY(ws.start());
+    loginAndLoad(ws);
+
+    ws.mode = FakeCalaosWs::Hold;
+    model->loadMore();
+    QTRY_COMPARE(ws.pageRequests(), 2);
+
+    QList<bool> seen;
+    connect(model, &EventLogModel::loadingChanged, this, [this, &seen]()
+    {
+        seen << model->isLoading();
+    });
+
+    model->refresh();
+    QTRY_COMPARE(ws.pageRequests(), 3);
+    QVERIFY(model->isLoading());
+    QVERIFY(!model->isLoadingMore());
+    QCOMPARE(seen, QList<bool>{ true }); //loadingMore went down, loading did not
+
+    model->refresh();
+    QTRY_COMPARE(ws.pageRequests(), 4);
+    QCOMPARE(seen, QList<bool>{ true });
+
+    ws.answer(3);
+    QTRY_VERIFY(!model->isLoading());
+    QCOMPARE(seen, (QList<bool>{ true, false }));
+}
+
+//Same reason: the rows must be in when the view looks at where the list ends.
+void TstEventLogSession::pageRowsAreInWhenLoadingEnds()
+{
+    FakeCalaosWs ws;
+    QVERIFY(ws.start());
+    loginAndLoad(ws);
+
+    QList<int> rowsSeen;
+    connect(model, &EventLogModel::loadingChanged, this, [this, &rowsSeen]()
+    {
+        if (!model->isLoading())
+            rowsSeen << model->rowCount();
+    });
+    model->loadMore();
+    QTRY_VERIFY(!rowsSeen.isEmpty());
+    QCOMPARE(rowsSeen, QList<int>{ 2 * DEFAULT_PER_PAGE });
+}
+
+void TstEventLogSession::errorAnswerIsShownUntilTheNextRequest()
+{
+    FakeCalaosWs ws;
+    QVERIFY(ws.start());
+    loginAndLoad(ws);
+    QVERIFY(!model->hasError());
+
+    QSignalSpy errors(model, &EventLogModel::errorChanged);
+    ws.mode = FakeCalaosWs::Error;
+    model->refresh();
+    QTRY_VERIFY(model->hasError());
+    QVERIFY(!model->isLoading());
+    QCOMPARE(errors.count(), 1);
+    QVERIFY(rowsAre(DEFAULT_PER_PAGE, ws.log.label)); //kept
+
+    //Retry: the spinner, not the error, while it runs.
+    ws.mode = FakeCalaosWs::Hold;
+    model->refresh();
+    QVERIFY(!model->hasError());
+    QVERIFY(model->isLoading());
+    QCOMPARE(errors.count(), 2);
+
+    QTRY_COMPARE(ws.pageRequests(), 3);
+    ws.answerError(2);
+    QTRY_VERIFY(model->hasError());
+    ws.mode = FakeCalaosWs::Answer;
+    model->refresh();
+    QTRY_VERIFY(!model->isLoading());
+    QVERIFY(!model->hasError());
+}
+
+void TstEventLogSession::silentServerIsAnError()
+{
+    FakeCalaosWs ws;
+    QVERIFY(ws.start());
+    loginAndLoad(ws);
+
+    model->setRequestTimeout(100);
+    ws.mode = FakeCalaosWs::Hold;
+    QSignalSpy loading(model, &EventLogModel::loadingChanged);
+    model->refresh();
+    QVERIFY(!model->hasError());
+    QTRY_VERIFY(model->hasError());
+    QVERIFY(!model->isLoading());
+    QCOMPARE(loading.count(), 2);
+}
+
+void TstEventLogSession::connectionLostInFlightIsAnError()
+{
+    FakeCalaosWs ws;
+    QVERIFY(ws.start());
+    loginAndLoad(ws);
+
+    ws.mode = FakeCalaosWs::Hold;
+    model->refresh();
+    QTRY_COMPARE(ws.pageRequests(), 2);
+    QVERIFY(!model->hasError());
+
+    ws.stop();
+    QTRY_VERIFY(model->hasError());
+    QVERIFY(!model->isLoading());
+}
+
+//Nothing was asked for: the refresh after the reconnection has nothing to
+//recover from.
+void TstEventLogSession::connectionLostIdleIsNoError()
+{
+    FakeCalaosWs ws;
+    QVERIFY(ws.start());
+    loginAndLoad(ws);
+
+    QSignalSpy errors(model, &EventLogModel::errorChanged);
+    con->logout();
+    QTest::qWait(50);
+    QVERIFY(!model->hasError());
+    QCOMPARE(errors.count(), 0);
+}
+
+//Retry with the connection down: no spinner, the error stays.
+void TstEventLogSession::noSessionIsAnError()
+{
+    QSignalSpy loading(model, &EventLogModel::loadingChanged);
+    model->refresh();
+    QVERIFY(model->hasError());
+    QVERIFY(!model->isLoading());
+    QCOMPARE(loading.count(), 0);
+
+    model->loadMore();
+    QVERIFY(model->hasError());
+    QVERIFY(!model->isLoading());
+}
+
+//The view asks for more when clear() empties the list, without a session.
+void TstEventLogSession::resetClearsTheError()
+{
+    model->refresh();
+    QVERIFY(model->hasError());
+
+    connect(model, &QAbstractItemModel::modelReset, this, [this]() { model->loadMore(); });
+    QSignalSpy loading(model, &EventLogModel::loadingChanged);
+    model->reset();
+    QVERIFY(!model->hasError());
+    QVERIFY(!model->isLoading());
+    QCOMPARE(loading.count(), 0);
 }
 
 QTEST_MAIN(TstEventLogSession)

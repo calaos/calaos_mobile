@@ -49,13 +49,6 @@ TestCase {
         id: langModel
         function getLangModel(idx) { return get(idx) }
     }
-    ListModel {
-        id: eventLogModel
-        ListElement { evDate: "1 November"; evTitle: "Light kitchen"; evTime: "18:42" }
-        ListElement { evDate: "1 November"; evTitle: "Shutter living room"; evTime: "18:10" }
-        function loadMore() {}
-        function refresh() {}
-    }
 
     SignalSpy { id: subPageSpy; signalName: "subPageOpened" }
     SignalSpy { id: addSpy; signalName: "favoriteAddClicked" }
@@ -71,11 +64,6 @@ TestCase {
     Component {
         id: settingsComponent
         SettingsView {}
-    }
-
-    Component {
-        id: eventLogComponent
-        EventLogView {}
     }
 
     function init() {
@@ -142,18 +130,83 @@ TestCase {
         grabImage(tc).save(shotsDir + "/" + file)
     }
 
+    function entryRect(page, name) {
+        var entry = findChild(page, name)
+        verify(entry, name)
+        verify(entry.visible, name)
+        return entry.mapToItem(page, 0, 0, entry.width, entry.height)
+    }
+
+    //In reading order: from the top, and from the left on a row
     function test_entryListsTheFiveSubPagesInOrder() {
         var page = openSettings()
-        var names = ["settingsEntryDevice", "settingsEntryConnection", "settingsEntryBox",
-                     "settingsEntryFavorites", "settingsEntryEventLog"]
-        var previous = -1
+        var names = ["settingsEntryDevice", "settingsEntryConnection", "settingsEntryFavorites",
+                     "settingsEntryBox", "settingsEntryEventLog"]
+        var previous = null
         for (var i = 0; i < names.length; i++) {
-            var entry = findChild(page, names[i])
-            verify(entry, names[i])
-            verify(entry.visible, names[i])
-            verify(entry.y > previous, names[i])
-            previous = entry.y
+            var rect = entryRect(page, names[i])
+            if (previous)
+                verify(rect.y > previous.y || (rect.y === previous.y && rect.x > previous.x), names[i])
+            previous = rect
         }
+    }
+
+    function test_entryTilesShareTheirRow_data() {
+        return [
+            { tag: "this phone", left: "settingsEntryDevice", right: "settingsEntryConnection" },
+            { tag: "box", left: "settingsEntryBox", right: "settingsEntryEventLog" },
+        ]
+    }
+
+    function test_entryTilesShareTheirRow(data) {
+        var page = openSettings()
+        var left = entryRect(page, data.left)
+        var right = entryRect(page, data.right)
+        compare(left.y, right.y)
+        compare(left.width, right.width)
+        compare(left.height, right.height)
+        compare(left.x, Units.dp(16))
+        compare(right.x + right.width, page.width - Units.dp(16))
+        compare(right.x - (left.x + left.width), Units.dp(12))
+        verify(left.height >= Units.dp(96))
+    }
+
+    function test_favoritesTakeTheWholeRow() {
+        var page = openSettings()
+        var favorites = entryRect(page, "settingsEntryFavorites")
+        compare(favorites.x, Units.dp(16))
+        compare(favorites.width, page.width - Units.dp(32))
+        compare(favorites.height, Units.dp(60))
+    }
+
+    function test_longLabelGrowsItsRowAndNotOnlyItsTile() {
+        var page = openSettings()
+        var tile = findChild(page, "settingsEntryEventLog")
+        var before = tile.height
+        tile.title = "A label long enough to need several lines in a tile of half a phone"
+        tryVerify(function() { return tile.height > before })
+        compare(findChild(page, "settingsEntryBox").height, tile.height)
+    }
+
+    function test_everyEntryHasItsOwnIcon() {
+        var page = openSettings()
+        var names = ["settingsEntryDevice", "settingsEntryConnection", "settingsEntryFavorites",
+                     "settingsEntryBox", "settingsEntryEventLog"]
+        var seen = {}
+        for (var i = 0; i < names.length; i++) {
+            var glyph = findChild(page, names[i]).glyph
+            verify(glyph !== "", names[i])
+            verify(!seen[glyph], names[i])
+            seen[glyph] = true
+        }
+    }
+
+    function test_onlyTheEntriesLeavingTheSettingsHaveTheCornerArrow() {
+        var page = openSettings()
+        verify(findChild(findChild(page, "settingsEntryBox"), "tileOut").visible)
+        verify(findChild(findChild(page, "settingsEntryEventLog"), "tileOut").visible)
+        verify(!findChild(findChild(page, "settingsEntryDevice"), "tileOut").visible)
+        verify(!findChild(findChild(page, "settingsEntryFavorites"), "tileOut").visible)
     }
 
     function test_subPageComesBackToTheEntry_data() {
@@ -280,14 +333,107 @@ TestCase {
         compare(editSpy.count, 1)
     }
 
+    function test_dangerZoneIsApartFromTheSession() {
+        var page = openSubPage("settingsEntryConnection")
+        var logout = entryRect(page, "logoutButton")
+        var reset = entryRect(page, "resetButton")
+        verify(reset.y >= logout.y + logout.height + Units.dp(16))
+    }
+
+    function test_tileWithAWideLabelStaysInTheColumn() {
+        var page = openSettings()
+        var label = findChild(findChild(page, "settingsEntryEventLog"), "tileLabel")
+        var tile = findChild(page, "settingsEntryEventLog")
+        verify(label.width <= tile.width)
+    }
+
+    function test_everyTileHasASubtitle() {
+        var page = openSettings()
+        var names = ["settingsEntryDevice", "settingsEntryConnection", "settingsEntryFavorites",
+                     "settingsEntryBox", "settingsEntryEventLog"]
+        for (var i = 0; i < names.length; i++) {
+            var sub = findChild(findChild(page, names[i]), "tileSubtitle")
+            verify(sub, names[i])
+            verify(sub.visible, names[i])
+            verify(sub.text !== "", names[i])
+        }
+    }
+
+    function test_longSubtitleStaysInsideItsTileWhichKeepsTheWholeClickArea_data() {
+        return [
+            { tag: "tile", name: "settingsEntryDevice" },
+            { tag: "wide tile", name: "settingsEntryFavorites" },
+        ]
+    }
+
+    function test_longSubtitleStaysInsideItsTileWhichKeepsTheWholeClickArea(data) {
+        var page = openSettings()
+        var tile = findChild(page, data.name)
+        var sub = findChild(tile, "tileSubtitle")
+        var before = tile.height
+        tile.subtitle ="A subtitle long enough to need several lines in a tile of half a phone, in any language"
+        tryVerify(function() { return tile.height > before })
+        var rect = sub.mapToItem(tile, 0, 0, sub.width, sub.height)
+        verify(rect.x >= 0 && rect.y >= 0)
+        verify(rect.x + rect.width <= tile.width)
+        verify(rect.y + rect.height <= tile.height)
+        //Children outside the parent are ignored by Qt hit testing
+        var mid = sub.mapToItem(tile, sub.width / 2, sub.height / 2)
+        verify(tile.contains(Qt.point(mid.x, mid.y)))
+        mouseClick(tile, mid.x, mid.y)
+        settle()
+        verify(stack.currentItem !== page)
+    }
+
+    function test_rowsAreTouchTargets_data() {
+        return [
+            { tag: "logout", entry: "settingsEntryConnection", item: "logoutButton" },
+            { tag: "reset", entry: "settingsEntryConnection", item: "resetButton" },
+            { tag: "forget", entry: "settingsEntryConnection", item: "forgetButton" },
+            { tag: "add a favorite", entry: "settingsEntryFavorites", item: "favoriteAddButton" },
+            { tag: "language", entry: "settingsEntryDevice", item: "languageRadio" },
+        ]
+    }
+
+    function test_rowsAreTouchTargets(data) {
+        calaosApp.tlsPinList = [{ host: "box:443", fingerprint: "ab:cd" }]
+        var item = findChild(openSubPage(data.entry), data.item)
+        verify(item.height >= Units.dp(44))
+        verify(item.width >= Units.dp(44))
+    }
+
+    function test_rowLongTitleWrapsInsideTheRow() {
+        var page = openSubPage("settingsEntryFavorites")
+        var row = findChild(page, "favoriteAddButton")
+        var before = row.height
+        row.title = "A title long enough to need more than a single line on the narrowest phone that we have to support here"
+        tryVerify(function() { return row.height > before })
+    }
+
+    function test_longCertificateHostLeavesRoomForForget() {
+        calaosApp.tlsPinList = [{ host: "a-very-long-host-name-of-a-box-behind-a-reverse-proxy.example.org:443",
+                                  fingerprint: "4f:9a:1c:7e:22:b0:63:d8:15:ae:90:c4:4f:9a:1c:7e:22:b0:63:d8:15:ae:90:c4" }]
+        var page = openSubPage("settingsEntryConnection")
+        var button = entryRect(page, "forgetButton")
+        compare(button.x + button.width, page.width - Units.dp(16))
+    }
+
     function test_pagesAreInTheAppResources_data() {
         return [
             { tag: "entry", file: "SettingsView.qml" },
             { tag: "page", file: "SettingsPage.qml" },
-            { tag: "row", file: "SettingsEntry.qml" },
+            { tag: "tile", file: "SettingsEntry.qml" },
             { tag: "device", file: "SettingsDeviceView.qml" },
             { tag: "connection", file: "SettingsConnectionView.qml" },
             { tag: "favorites", file: "SettingsFavoritesView.qml" },
+            { tag: "row", file: "SettingsRow.qml" },
+            { tag: "rows", file: "SettingsRows.qml" },
+            { tag: "radio", file: "SettingsRadio.qml" },
+            { tag: "button", file: "SettingsButton.qml" },
+            { tag: "badge", file: "IconBadge.qml" },
+            { tag: "glyph", file: "SvgGlyph.qml" },
+            { tag: "spinner", file: "LoadingSpinner.qml" },
+            { tag: "keyboard", file: "KeyboardScroller.qml" },
         ]
     }
 
@@ -295,9 +441,24 @@ TestCase {
         verify(harness.isResource("qml/mobile/" + data.file))
     }
 
+    //SvgGlyph builds the path from a name: a missing file is only an empty
+    //square on the phone.
+    function test_iconsAreInTheAppResources_data() {
+        var names = ["phone", "link", "star", "dns", "history", "tune", "add", "edit", "logout",
+                     "refresh", "lock", "lock_off", "out", "chev", "check", "delete",
+                     "error_outline", "spinner"]
+        return names.map(function(name) { return { tag: name, name: name } })
+    }
+
+    function test_iconsAreInTheAppResources(data) {
+        verify(harness.isResource("img/settings/" + data.name + ".svg"))
+    }
+
     function test_captures() {
         if (shotsDir === "")
             skip("SETTINGS_SHOTS_DIR not set")
+        //The narrowest phone: what fits here fits everywhere
+        tc.width = 360
         calaosApp.tlsPinList = [{ host: "calaos.local:443",
                                   fingerprint: "4f:9a:1c:7e:22:b0:63:d8:15:ae:90:c4" }]
         var entryPage = openSettings()
@@ -311,7 +472,50 @@ TestCase {
             shot(pages[i][1])
             back()
         }
-        stack.push(eventLogComponent, {}, StackView.Immediate)
-        shot("settings-eventlog.png")
+
+        calaosApp.tlsPinList = []
+        clickOn(entryPage, "settingsEntryConnection")
+        settle()
+        shot("settings-connection-nocert.png")
+        back()
+
+        //The keyboard is not there offscreen: its place is forced and drawn
+        tc.height = 700
+        clickOn(entryPage, "settingsEntryDevice")
+        settle()
+        var device = stack.currentItem
+        var field = findChild(device, "deviceNameField")
+        verify(field)
+        field.forceActiveFocus()
+        var scroller = findScroller(device)
+        verify(scroller)
+        scroller.keyboardRect = Qt.rect(0, tc.height - 300, tc.width, 300)
+        keyboardBlock.visible = true
+        shot("settings-device-keyboard.png")
+        keyboardBlock.visible = false
+        scroller.keyboardRect = Qt.rect(0, 0, 0, 0)
+        back()
+        tc.height = 900
+        tc.width = 420
+    }
+
+    function findScroller(item) {
+        if (item.keyboardRect !== undefined)
+            return item
+        for (var i = 0; i < item.children.length; i++) {
+            var found = findScroller(item.children[i])
+            if (found)
+                return found
+        }
+        return null
+    }
+
+    Rectangle {
+        id: keyboardBlock
+        visible: false
+        z: 10
+        anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+        height: 300
+        color: "#2b2b2b"
     }
 }

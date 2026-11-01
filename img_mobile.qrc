@@ -168,6 +168,24 @@
         <file>img/camera_back_big@2x.png</file>
         <file>img/camera_nocam.png</file>
         <file>img/close.svg</file>
+        <file>img/settings/add.svg</file>
+        <file>img/settings/check.svg</file>
+        <file>img/settings/chev.svg</file>
+        <file>img/settings/delete.svg</file>
+        <file>img/settings/dns.svg</file>
+        <file>img/settings/edit.svg</file>
+        <file>img/settings/error_outline.svg</file>
+        <file>img/settings/history.svg</file>
+        <file>img/settings/link.svg</file>
+        <file>img/settings/lock.svg</file>
+        <file>img/settings/lock_off.svg</file>
+        <file>img/settings/logout.svg</file>
+        <file>img/settings/out.svg</file>
+        <file>img/settings/phone.svg</file>
+        <file>img/settings/refresh.svg</file>
+        <file>img/settings/spinner.svg</file>
+        <file>img/settings/star.svg</file>
+        <file>img/settings/tune.svg</file>
         <file>img/button_action_glow.png</file>
         <file>img/button_action_glow@2x.png</file>
         <file>img/player_line_decoration_left.png</file>

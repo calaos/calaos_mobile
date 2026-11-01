@@ -144,6 +144,35 @@ TestCase {
         compare(hardwareUtils.saved, ["Pix"])
     }
 
+    Component {
+        id: plainFieldComponent
+        TextField { width: 200 }
+    }
+    Component {
+        id: calaosFieldComponent
+        CalaosTextField { width: 200; text: "a long text" }
+    }
+
+    //LoginView uses the unframed field: it keeps the style padding and a
+    //clear zone the size of the icon, so a tap at the end of the text
+    //cannot empty it.
+    function test_unframedFieldKeepsItsStyleAndItsClearZone() {
+        var plain = createTemporaryObject(plainFieldComponent, tc)
+        var f = createTemporaryObject(calaosFieldComponent, tc)
+        verify(plain && f)
+        compare(f.leftPadding, plain.leftPadding)
+        compare(f.rightPadding, plain.rightPadding)
+        var area = findChild(f, "clearArea")
+        compare(area.width, area.parent.width)
+        compare(area.x, 0)
+        f.framed = true
+        compare(f.leftPadding, 12)
+        compare(area.width, area.parent.width + 26)
+        f.framed = false
+        compare(f.leftPadding, plain.leftPadding)
+        compare(area.width, area.parent.width)
+    }
+
     function test_clearButtonThenLeaveRevertsToTheDefault() {
         hardwareUtils.override = "Pixel"
         var p = openPage()

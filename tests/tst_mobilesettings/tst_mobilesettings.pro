@@ -15,6 +15,7 @@ DEFINES += QUICK_TEST_SOURCE_DIR=\\\"$$PWD\\\"
 DEFINES += CALAOS_STUB_QML_DIR=\\\"$$clean_path($$PWD/../tst_climatewidget/stubs)\\\"
 DEFINES += CALAOS_QML_DIR=\\\"$$clean_path($$PWD/../../qml)\\\"
 DEFINES += CALAOS_FONTS_DIR=\\\"$$clean_path($$PWD/../../fonts)\\\"
+DEFINES += CALAOS_LANG_DIR=\\\"$$clean_path($$PWD/../../lang)\\\"
 
 # The real images (the clear icon of the text field, the captures); the QML
 # resources tell whether the pages reach the app.
@@ -33,8 +34,10 @@ SOURCES += \
     tst_mobilesettings.cpp
 
 OTHER_FILES += \
+    tst_keyboardscroller.qml \
     tst_settingsdevicename.qml \
     tst_settingsnavigation.qml \
+    tst_settingseventlog.qml \
     tst_admincodesheet.qml \
     tst_updatesview.qml \
     tst_loginview.qml

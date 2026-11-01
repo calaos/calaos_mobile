@@ -4,6 +4,7 @@
 #include <QQmlEngine>
 #include <QQmlContext>
 #include <QQmlPropertyMap>
+#include <QTranslator>
 #include "Common.h"
 
 namespace {
@@ -69,6 +70,13 @@ public slots:
         }
         engine->rootContext()->setContextProperty(QStringLiteral("calaosFont"), fonts);
         engine->rootContext()->setContextProperty(QStringLiteral("harness"), new Harness(engine));
+
+        //Captures in French or German: the pages have to hold there too.
+        //The assertions are on the English strings, so test_captures alone.
+        const QString lang = qEnvironmentVariable("SETTINGS_SHOTS_LANG");
+        auto *translator = new QTranslator(engine);
+        if (!lang.isEmpty() && translator->load(QStringLiteral(CALAOS_LANG_DIR "/calaos_") + lang))
+            QCoreApplication::installTranslator(translator);
     }
 };
 

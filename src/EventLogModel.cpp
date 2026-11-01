@@ -20,6 +20,7 @@ EventLogModel::EventLogModel(QQmlApplicationEngine *eng, CalaosConnection *con, 
     roles[RoleNotifHasPic] = "evHasPicture";
     roles[RoleNotifPicUrl] = "evPictureUrl";
     roles[RoleActionText] = "evActionText";
+    roles[RoleCount] = "evCount";
     setItemRoleNames(roles);
 
     connect(connection, &CalaosConnection::eventLogPageFinished,
@@ -46,6 +47,7 @@ void EventLogModel::requestPage(int page, bool replace)
         //No session up: nothing was sent, so nothing is waited for. The next
         //login refreshes (Application::homeLoaded()).
         qDebug() << "Event log: no session, page" << page << "not requested";
+        setLoadFailed(true);
         return;
     }
 
@@ -53,6 +55,7 @@ void EventLogModel::requestPage(int page, bool replace)
     pendingPage = page;
     pendingReplace = replace;
     requestTimer.start(requestTimeoutMs);
+    setLoadFailed(false);
 }
 
 void EventLogModel::abandonRequest()
@@ -65,12 +68,30 @@ void EventLogModel::abandonRequest()
     requestTimer.stop();
 }
 
+void EventLogModel::setLoadFailed(bool failed)
+{
+    if (failed == loadFailed)
+        return;
+    loadFailed = failed;
+    emit errorChanged();
+}
+
+void EventLogModel::publishLoading()
+{
+    if (isLoading() == shownLoading && isLoadingMore() == shownLoadingMore)
+        return;
+    shownLoading = isLoading();
+    shownLoadingMore = isLoadingMore();
+    emit loadingChanged();
+}
+
 void EventLogModel::loadMore()
 {
     qDebug() << "Load more... rowCount:" << rowCount();
     if (isLoading() || atEnd) return;
 
     requestPage(nextPage, false);
+    publishLoading();
 }
 
 void EventLogModel::refresh()
@@ -80,6 +101,7 @@ void EventLogModel::refresh()
     //Whatever is in flight is superseded: an answer to it is ignored.
     abandonRequest();
     requestPage(0, true);
+    publishLoading();
 }
 
 void EventLogModel::reset()
@@ -90,6 +112,9 @@ void EventLogModel::reset()
     nextPage = 0;
     atEnd = false;
     clear();
+    //After clear(): the loadMore() of the view fails without a session.
+    setLoadFailed(false);
+    publishLoading();
 }
 
 void EventLogModel::pageFinished(const QString &requestId, bool ok, const QVariantMap &data)
@@ -106,6 +131,8 @@ void EventLogModel::pageFinished(const QString &requestId, bool ok, const QVaria
         //again.
         qWarning() << "Event log page" << pendingPage << "not loaded:"
                    << data.value(JsonKeys::Error).toString();
+        setLoadFailed(true);
+        publishLoading();
         return;
     }
 
@@ -128,6 +155,7 @@ void EventLogModel::pageFinished(const QString &requestId, bool ok, const QVaria
             (data.contains(JsonKeys::TotalPage) &&
              nextPage >= Common::toIntSafe(data.value(JsonKeys::TotalPage), 0, "eventlog.total_page"));
     pendingId.clear();
+    publishLoading();
 }
 
 void EventLogModel::appendEvents(const QVariantList &events)
@@ -147,6 +175,16 @@ void EventLogModel::appendEvents(const QVariantList &events)
 
         EventLogItem *it = new EventLogItem(engine, connection);
         it->load(e);
+
+        //Pages come newest first: the row keeps the time of the latest one.
+        EventLogItem *last = rowCount() > 0
+            ? dynamic_cast<EventLogItem *>(item(rowCount() - 1)) : nullptr;
+        if (last && last->isSameEvent(*it))
+        {
+            last->update_evCount(last->get_evCount() + 1);
+            delete it;
+            continue;
+        }
         appendRow(it);
     }
 }
@@ -156,8 +194,12 @@ void EventLogModel::connectionStateChanged(int state)
     //Whatever was in flight is lost with the session: stop waiting, the
     //refresh after the next login sends a new request. The rows are kept
     //(stale is better than empty) until that refresh replaces them.
-    if (state != ReconnectPolicy::Connected)
-        abandonRequest();
+    if (state == ReconnectPolicy::Connected || !isLoading())
+        return;
+
+    abandonRequest();
+    setLoadFailed(true);
+    publishLoading();
 }
 
 void EventLogModel::requestTimedOut()
@@ -165,6 +207,8 @@ void EventLogModel::requestTimedOut()
     qWarning() << "Event log page" << pendingPage << "not answered after"
                << requestTimeoutMs << "ms, giving up on" << pendingId;
     abandonRequest();
+    setLoadFailed(true);
+    publishLoading();
 }
 
 QObject *EventLogModel::loadEvent(QString uuid)
@@ -180,6 +224,18 @@ EventLogItem::EventLogItem(QQmlApplicationEngine *eng, CalaosConnection *con):
     connection(con)
 {
     update_loading(false);
+    update_evCount(1);
+}
+
+bool EventLogItem::isSameEvent(const EventLogItem &other) const
+{
+    return !get_evHasPicture() && !other.get_evHasPicture() &&
+           get_evType() == other.get_evType() &&
+           get_evTitle() == other.get_evTitle() &&
+           get_evRoomName() == other.get_evRoomName() &&
+           get_evActionText() == other.get_evActionText() &&
+           get_evNotifText() == other.get_evNotifText() &&
+           get_evDate() == other.get_evDate();
 }
 
 void EventLogItem::load(const QVariantMap &data)
@@ -230,6 +286,8 @@ void EventLogItem::load(const QVariantMap &data)
 
     if (dt.date() == QDate::currentDate())
         update_evDate(tr("Today"));
+    else if (dt.date() == QDate::currentDate().addDays(-1))
+        update_evDate(tr("Yesterday"));
     else
         update_evDate(dt.date().toString(QLocale::system().dateFormat(QLocale::ShortFormat)));
 

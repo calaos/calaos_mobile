@@ -5,6 +5,10 @@ import QtQuick.Layouts
 import "../quickflux"
 
 Item {
+    id: eventLogView
+
+    readonly property bool failed: eventLogModel.error && !eventLogModel.loading
+
     Image {
         source: calaosApp.getPictureSized(isLandscape?
                                               "background_landscape":
@@ -15,14 +19,12 @@ Item {
 
     ListView {
         id: listViewLog
+        objectName: "eventLogList"
         model: eventLogModel
 
         y: header.height
-        x: Units.dp(2)
-        width: parent.width - x
+        width: parent.width
         height: parent.height - header.height
-
-        spacing: Units.dp(5)
 
         delegate: default_delegate
 
@@ -45,16 +47,112 @@ Item {
         }
     }
 
-    Text {
-        color: "#3ab4d7"
-        font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
-        anchors.centerIn: listViewLog
-        text: qsTr("No events in log.<br>Calaos Server <b>v3.1</b> is required.")
-        verticalAlignment: Text.AlignVCenter
-        horizontalAlignment: Text.AlignHCenter
-        visible: listViewLog.count == 0
-        textFormat: Text.RichText
-        wrapMode: Text.WordWrap
+    Connections {
+        target: eventLogModel
+
+        //A page merged into the last rows leaves the list at its end: atYEnd
+        //does not change and nothing else would ask for the next one.
+        function onLoadingChanged() {
+            if (eventLogModel.loading || eventLogModel.error)
+                return
+            listViewLog.forceLayout()
+            if (listViewLog.atYEnd)
+                eventLogModel.loadMore()
+        }
+    }
+
+    //Over the list rather than its footer: a footer moves atYEnd, and it
+    //would stay below the fold when the page was asked for from further up.
+    Rectangle {
+        objectName: "eventLogMore"
+        anchors { left: listViewLog.left; right: listViewLog.right; bottom: listViewLog.bottom }
+        height: Units.dp(56)
+        color: Theme.backgroundColor
+        visible: eventLogModel.loadingMore && listViewLog.count > 0
+
+        Row {
+            anchors.centerIn: parent
+            spacing: Units.dp(12)
+
+            LoadingSpinner {
+                size: Units.dp(20)
+                anchors.verticalCenter: parent.verticalCenter
+            }
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                color: Theme.mutedColor
+                font { family: calaosFont.fontFamily; pixelSize: Units.dp(13) }
+                text: qsTr("Loading earlier events…")
+            }
+        }
+    }
+
+    Column {
+        objectName: "eventLogState"
+        x: Units.dp(32)
+        y: header.height + Units.dp(56)
+        width: parent.width - 2 * x
+        spacing: Units.dp(12)
+        visible: listViewLog.count === 0
+
+        LoadingSpinner {
+            anchors.horizontalCenter: parent.horizontalCenter
+            visible: eventLogModel.loading
+        }
+
+        Rectangle {
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: Units.dp(64)
+            height: width
+            radius: width / 2
+            color: Theme.colorAlpha(eventLogView.failed ? Theme.redColor : Theme.blueColor, 0.14)
+            visible: !eventLogModel.loading
+
+            SvgGlyph {
+                anchors.centerIn: parent
+                size: Units.dp(32)
+                name: eventLogView.failed ? "error_outline" : "history"
+            }
+        }
+
+        Text {
+            objectName: "eventLogMessage"
+            width: parent.width
+            horizontalAlignment: Text.AlignHCenter
+            wrapMode: Text.WordWrap
+            textFormat: Text.RichText
+            color: Theme.whiteColor
+            font { family: calaosFont.fontFamily; pointSize: 12 }
+            text: eventLogModel.loading ? qsTr("Loading…") :
+                  eventLogView.failed ? qsTr("Could not load the events.") :
+                  qsTr("No events in log.<br>Calaos Server <b>v3.1</b> is required.")
+        }
+
+        Text {
+            width: parent.width
+            horizontalAlignment: Text.AlignHCenter
+            wrapMode: Text.WordWrap
+            color: Theme.mutedColor
+            font { family: calaosFont.fontFamily; pixelSize: Units.dp(13) }
+            text: qsTr("Check the connection to the box.")
+            visible: eventLogView.failed
+        }
+
+        Item {
+            width: parent.width
+            height: retryButton.height + Units.dp(8)
+            visible: eventLogView.failed
+
+            SettingsButton {
+                id: retryButton
+                objectName: "eventLogRetry"
+                small: true
+                glyph: "refresh"
+                text: qsTr("Retry")
+                anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom }
+                onButtonClicked: eventLogModel.refresh()
+            }
+        }
     }
 
     ScrollBar { listObject: listViewLog }
@@ -62,7 +160,7 @@ Item {
     ViewHeader {
         id: header
         headerLabel: qsTr("Event log")
-        iconSource: calaosApp.getPictureSized("history")
+        glyph: "history"
 
         ItemButtonAction {
             iconSource: "icon_filter"
@@ -82,37 +180,17 @@ Item {
 
     Component {
         id: sectionHeading
+
+        //Opaque: it stays at the top while the events scroll under it
         Rectangle {
             z: 99
             width: listViewLog.width
-            color: "black"
-            height: Units.dp(45)
+            height: groupTitle.height
+            color: Theme.backgroundColor
 
-            Image {
-                id: ic
-                source: calaosApp.getPictureSized("icon_date")
-                anchors {
-                    verticalCenter: parent.verticalCenter
-                    left: parent.left; leftMargin: Units.dp(10)
-                }
-            }
-
-            Text {
-                id: txt
-                color: "#e7e7e7"
-                font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
-                text: section
-                anchors {
-                    left: ic.source === ""?parent.left:ic.right
-                    leftMargin: Units.dp(5)
-                    verticalCenter: parent.verticalCenter
-                }
-            }
-
-            Rectangle {
-                anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
-                color: "#333333"
-                height: Units.dp(2)
+            ListGroupHeader {
+                id: groupTitle
+                title: section
             }
         }
     }
@@ -120,108 +198,126 @@ Item {
     Component {
         id: default_delegate
 
-        BorderImage {
-            property variant modelData
+        Item {
+            width: ListView.view.width
+            height: Math.max(Units.dp(44),
+                             Math.max(timeColumn.implicitHeight, textColumn.implicitHeight) + Units.dp(16))
 
-            source: calaosApp.getPictureSized("back_items_home")
-            border.left: Units.dp(5); border.top: Units.dp(5)
-            border.right: Units.dp(5); border.bottom: Units.dp(5)
+            Column {
+                id: timeColumn
+                x: Units.dp(16)
+                y: Units.dp(8)
+                width: Units.dp(60)
+                spacing: Units.dp(4)
 
-            width: parent.width - Units.dp(10)
-            height: col.implicitHeight
-
-            ColumnLayout {
-                id: col
-                anchors {
-                    left: parent.left; leftMargin: Units.dp(8)
-                    right: parent.right; rightMargin: Units.dp(8)
-                    top: parent.top; topMargin: Units.dp(8)
+                Text {
+                    topPadding: Units.dp(3)
+                    color: Theme.yellowColor
+                    font { family: calaosFont.fontFamily; pixelSize: Units.dp(13) }
+                    text: evTime
                 }
 
-                spacing: Units.dp(8)
+                Rectangle {
+                    objectName: "eventCount"
+                    visible: evCount > 1
+                    width: Math.max(Units.dp(32), countLabel.implicitWidth + Units.dp(16))
+                    height: Units.dp(24)
+                    radius: Units.dp(12)
+                    color: Theme.colorAlpha(Theme.blueColor, 0.18)
+
+                    Accessible.role: Accessible.StaticText
+                    Accessible.name: qsTr("%1 times").arg(evCount)
+
+                    Text {
+                        id: countLabel
+                        anchors.centerIn: parent
+                        color: Theme.blueColor
+                        font { family: calaosFont.fontFamily; bold: true; pixelSize: Units.dp(13) }
+                        text: evCount + "x"
+                    }
+                }
+            }
+
+            Column {
+                id: textColumn
+                x: timeColumn.x + timeColumn.width + Units.dp(12)
+                y: Units.dp(8)
+                width: parent.width - x - Units.dp(16)
+                spacing: Units.dp(4)
 
                 RowLayout {
-                    Layout.fillWidth: true
+                    width: parent.width
                     spacing: Units.dp(8)
 
                     IconItem {
-                        id: icon
                         source: calaosApp.getPictureSized(evIconSource)
                         visible: evIconSource != ""
                         Layout.alignment: Qt.AlignVCenter
                     }
 
                     Text {
-                        color: "#3ab4d7"
+                        color: Theme.blueColor
                         font { family: calaosFont.fontFamily; bold: false; pointSize: 12 }
                         text: evTitle
-                        elide: Text.ElideRight
-                        Layout.alignment: Qt.AlignVCenter
-                    }
-
-                    Item { Layout.fillWidth: true; height: 1 }
-
-                    Text {
-                        color: "#ffda5a"
-                        font { family: calaosFont.fontFamily; bold: false; pointSize: 8 }
-                        text: evTime
-                        elide: Text.ElideRight
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
                         Layout.alignment: Qt.AlignVCenter
                     }
                 }
 
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: Units.dp(8)
-
+                Flow {
+                    width: parent.width
                     visible: evType == Common.EventIoChanged
 
                     Text {
-                        color: "#e7e7e7"
-                        font { family: calaosFont.fontFamily; weight: Font.ExtraLight; bold: false; pointSize: 10 }
+                        width: Math.min(implicitWidth, parent.width)
+                        elide: Text.ElideRight
+                        color: Theme.whiteColor
+                        font { family: calaosFont.fontFamily; weight: Font.Light; pointSize: 10 }
                         text: evRoomName
-                        elide: Text.ElideRight
-                        //anchors.verticalCenter: btview.verticalCenter
                     }
-
-                    Item { Layout.fillWidth: true; height: 1 }
-
                     Text {
-                        color: "#ffda5a"
-                        font { family: calaosFont.fontFamily; weight: Font.ExtraLight; bold: false; pointSize: 10 }
-                        text: evActionText
+                        color: Theme.whiteColor
+                        font { family: calaosFont.fontFamily; weight: Font.Light; pointSize: 10 }
+                        text: " · "
+                        visible: evRoomName != "" && evActionText != ""
+                    }
+                    Text {
+                        width: Math.min(implicitWidth, parent.width)
                         elide: Text.ElideRight
+                        color: Theme.yellowColor
+                        font { family: calaosFont.fontFamily; weight: Font.Light; pointSize: 10 }
+                        text: evActionText
                     }
                 }
 
                 RowLayout {
-                    Layout.fillWidth: true
+                    width: parent.width
                     spacing: Units.dp(8)
 
                     visible: evType == Common.EventPush
 
                     Text {
-                        color: "#e7e7e7"
-                        font { family: calaosFont.fontFamily; weight: Font.ExtraLight; bold: false; pointSize: 10 }
+                        color: Theme.whiteColor
+                        font { family: calaosFont.fontFamily; weight: Font.Light; pointSize: 10 }
                         text: evNotifText
-                        wrapMode: Text.Wrap
-                        anchors.verticalCenter: evHasPicture?btview.verticalCenter:undefined
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
                     }
 
-                    Item { Layout.fillWidth: true; height: 1 }
-
                     ItemButtonAction {
-                        id: btview
                         iconSource: "icon_camera_title"
                         visible: evHasPicture
                         onButtonClicked: AppActions.openEventPushViewer(evNotifText, evPictureUrl)
                     }
                 }
-
-                Item { Layout.fillWidth: true; height: Units.dp(10) }
             }
 
+            Rectangle {
+                anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+                height: 1
+                color: Theme.borderColor
+            }
         }
-
     }
 }

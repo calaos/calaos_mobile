@@ -174,11 +174,17 @@ Views in [qml/mobile/](../qml/mobile):
   `Suspended`/`Hidden` in `CameraModel`.
 - `MusicListView.qml`, `IconMusic.qml`, `IconMusicPlayer.qml` — audio.
 - `EventLogView.qml`, `PushEventView.qml` — event log + push notification deep
-  link viewer.
+  link viewer. Identical consecutive events are grouped by `EventLogModel`
+  (`evCount` role, shown under the time); the view follows the model's
+  `loading`, `loadingMore` and `error` states.
 - `UpdatesView.qml` — box updates with the admin password (section 8.1).
-- `SettingsView.qml` (entry), `SettingsDeviceView.qml`,
+- `SettingsView.qml` (entry, five tiles), `SettingsDeviceView.qml`,
   `SettingsConnectionView.qml`, `SettingsFavoritesView.qml` (sub-pages),
-  `SettingsPage.qml`, `SettingsEntry.qml`, `ColorPickerRGBView.qml`, `ColorPickerView.qml`,
+  `SettingsPage.qml`, `SettingsEntry.qml` (tile), `SettingsRow.qml`,
+  `SettingsRows.qml`, `SettingsRadio.qml`, `SettingsButton.qml`,
+  `IconBadge.qml`, `SvgGlyph.qml`, `LoadingSpinner.qml`,
+  `KeyboardScroller.qml` (keeps the focused field above the keyboard),
+  `ColorPickerRGBView.qml`, `ColorPickerView.qml`,
   `CalaosTextField.qml`, `ButtonLogin.qml`, `ButtonFooter.qml`,
   `StyleButtonDefault.qml` — settings & utilities.
 

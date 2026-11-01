@@ -19,17 +19,13 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.PersistableBundle;
 import android.provider.Settings;
-import android.text.InputType;
 import android.util.Log;
-import android.view.View;
 import android.view.WindowManager;
 import android.view.WindowInsetsController;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 import com.google.firebase.messaging.FirebaseMessaging;
 import org.qtproject.qt.android.bindings.QtActivity;
 import java.util.Locale;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 // Native callbacks implemented in android/HardwareUtils_Android.cpp. They are
 // registered by HardwareUtilsAndroid::platformInit() through
@@ -41,8 +37,6 @@ class HardwareUtilsNatives
     public static native void emitDeviceToken(String token);
     public static native void emitNotificationOpened(String eventUuid);
     public static native void emitAdminCodeNotified(String codeId);
-    public static native void emitPasswordEntered(String purpose, String user, String password);
-    public static native void emitPasswordCanceled(String purpose);
 }
 
 public class HardwareUtils extends QtActivity
@@ -412,138 +406,6 @@ public class HardwareUtils extends QtActivity
         });
 
         return true;
-    }
-
-    // Native credential entry (HardwareUtils::requestNativePassword): real
-    // EditTexts the Android Autofill framework can fill, which Qt's single
-    // proxy QtEditText cannot. Answers exactly once, then wipes the fields.
-    // Nothing is stored or logged.
-    public static boolean passwordDialog(final String purpose, final String title, final String message,
-                                         final String user, final String userLabel,
-                                         final String passwordLabel, final String confirmText,
-                                         final String cancelText)
-    {
-        final HardwareUtils activity = _context;
-        if (!isUsable(activity))
-        {
-            Log.w(TAG, "passwordDialog: no activity");
-            return false;
-        }
-
-        activity.runOnUiThread(new Runnable()
-        {
-            public void run()
-            {
-                if (!isUsable(activity))
-                {
-                    notifyPasswordCanceled(purpose);
-                    return;
-                }
-
-                final EditText userEdit = new EditText(activity);
-                userEdit.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-                userEdit.setHint(userLabel);
-                userEdit.setText(user);
-                userEdit.setAutofillHints(View.AUTOFILL_HINT_USERNAME);
-                userEdit.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_YES);
-
-                final EditText passEdit = new EditText(activity);
-                passEdit.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
-                passEdit.setHint(passwordLabel);
-                passEdit.setAutofillHints(View.AUTOFILL_HINT_PASSWORD);
-                passEdit.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_YES);
-
-                final int pad = Math.round(20 * activity.getResources().getDisplayMetrics().density);
-                LinearLayout layout = new LinearLayout(activity);
-                layout.setOrientation(LinearLayout.VERTICAL);
-                layout.setPadding(pad, 0, pad, 0);
-                layout.addView(userEdit);
-                layout.addView(passEdit);
-
-                final AtomicBoolean answered = new AtomicBoolean(false);
-                final Runnable wipe = new Runnable()
-                {
-                    public void run()
-                    {
-                        userEdit.setText("");
-                        passEdit.setText("");
-                    }
-                };
-
-                AlertDialog dialog = new AlertDialog.Builder(activity)
-                    .setTitle(title)
-                    .setMessage(message)
-                    .setView(layout)
-                    .setPositiveButton(confirmText, new DialogInterface.OnClickListener()
-                    {
-                        public void onClick(DialogInterface d, int which)
-                        {
-                            if (answered.getAndSet(true))
-                                return;
-                            final String u = userEdit.getText().toString();
-                            final String p = passEdit.getText().toString();
-                            wipe.run();
-                            notifyPasswordEntered(purpose, u, p);
-                            d.dismiss();
-                        }
-                    })
-                    .setNegativeButton(cancelText, new DialogInterface.OnClickListener()
-                    {
-                        public void onClick(DialogInterface d, int which)
-                        {
-                            if (answered.getAndSet(true))
-                                return;
-                            wipe.run();
-                            notifyPasswordCanceled(purpose);
-                            d.dismiss();
-                        }
-                    })
-                    // Back key or tap outside the dialog
-                    .setOnCancelListener(new DialogInterface.OnCancelListener()
-                    {
-                        public void onCancel(DialogInterface d)
-                        {
-                            if (answered.getAndSet(true))
-                                return;
-                            wipe.run();
-                            notifyPasswordCanceled(purpose);
-                        }
-                    })
-                    .create();
-                if (dialog.getWindow() != null)
-                    dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
-                dialog.show();
-                // The user name is known: straight to the password
-                if (user != null && !user.isEmpty())
-                    passEdit.requestFocus();
-            }
-        });
-
-        return true;
-    }
-
-    private static void notifyPasswordEntered(String purpose, String user, String password)
-    {
-        try
-        {
-            HardwareUtilsNatives.emitPasswordEntered(purpose, user, password);
-        }
-        catch (UnsatisfiedLinkError e)
-        {
-            Log.e(TAG, "emitPasswordEntered: native method not registered", e);
-        }
-    }
-
-    private static void notifyPasswordCanceled(String purpose)
-    {
-        try
-        {
-            HardwareUtilsNatives.emitPasswordCanceled(purpose);
-        }
-        catch (UnsatisfiedLinkError e)
-        {
-            Log.e(TAG, "emitPasswordCanceled: native method not registered", e);
-        }
     }
 
     private static void notifyDialogTextValid(String text)

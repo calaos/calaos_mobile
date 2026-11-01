@@ -17,6 +17,7 @@ ScreenManager::ScreenManager(QObject *parent) : QObject(parent)
 
 void ScreenManager::wakeupScreen()
 {
+    update_screenSuspended(false);
 #ifdef Q_OS_LINUX
     //Sometimes the screen wakes up but it remain black
     //doing ON->OFF->ON prevents this
@@ -30,6 +31,7 @@ void ScreenManager::wakeupScreen()
 
 void ScreenManager::suspendScreen()
 {
+    update_screenSuspended(true);
     XUtils::UpdateDPMS(true, 0);
     XUtils::WakeUpScreen(false);
 }

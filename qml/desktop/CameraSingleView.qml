@@ -2,12 +2,24 @@ import QtQuick
 import SharedComponents
 import QtQuick.Layouts
 import Calaos
+//Qualified: this folder has components named like some of the Controls
+import QtQuick.Controls as Controls
 
 Item {
+    id: page
+
     property QtObject camModel
 
-    Component.onCompleted: camModel.cameraVisible = true
-    Component.onDestruction: camModel.cameraVisible = false
+    readonly property bool onScreen: Controls.StackView.status === Controls.StackView.Active ||
+                                     Controls.StackView.status === Controls.StackView.Activating
+    readonly property real pixelRatio: Screen.devicePixelRatio
+
+    CameraFeed {
+        camera: page.camModel
+        active: page.onScreen
+        frameSize: Qt.size(cameraPic.width * page.pixelRatio,
+                           cameraPic.height * page.pixelRatio)
+    }
 
     Image {
         source: "qrc:/img/module_header_shadow.png"

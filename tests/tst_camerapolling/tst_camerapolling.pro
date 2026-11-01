@@ -19,8 +19,12 @@ DEFINES += CALAOS_MOBILE
 # QQmlApplicationEngine needs a QGuiApplication; QApplication covers both.
 QT += widgets quick
 
+# The real camera pages are loaded from the source tree.
+DEFINES += CALAOS_QML_DIR=\\\"$$clean_path($$PWD/../../qml)\\\"
+
 HEADERS += \
     $$SRC_DIR/CameraModel.h \
+    $$SRC_DIR/CameraFrameDecoder.h \
     $$SRC_DIR/ModelImageProvider.h \
     $$SRC_DIR/CalaosConnection.h \
     $$SRC_DIR/TlsPinning.h \
@@ -31,6 +35,7 @@ HEADERS += \
 
 SOURCES += \
     $$SRC_DIR/CameraModel.cpp \
+    $$SRC_DIR/CameraFrameDecoder.cpp \
     $$SRC_DIR/ModelImageProvider.cpp \
     $$SRC_DIR/CalaosConnection.cpp \
     $$SRC_DIR/TlsPinning.cpp \

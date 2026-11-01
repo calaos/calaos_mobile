@@ -37,37 +37,6 @@ Item {
         passwordField.text = ""
     }
 
-    //Real platform text fields: the only ones the password manager fills
-    //(Qt's own fields get no AutoFill on iOS nor Android).
-    readonly property bool nativeEntry: hardwareUtils.hasNativePasswordEntry()
-
-    function askNativePassword() {
-        if (boxUpdates.busy !== "" || boxUpdates.retryAfter > 0)
-            return
-        hardwareUtils.requestNativePassword("admin_unlock", {
-            title: qsTr("Admin password"),
-            message: qsTr("The admin password of the box, not the one you sign in with."),
-            user: "admin",
-            userLabel: qsTr("User"),
-            passwordLabel: qsTr("Admin password"),
-            confirm: qsTr("Unlock"),
-            cancel: qsTr("Cancel")
-        })
-    }
-
-    //Handed straight to the relay, never kept in a property.
-    Connections {
-        target: hardwareUtils
-        function onNativePasswordEntered(purpose, user, password) {
-            if (purpose !== "admin_unlock" || password === "")
-                return
-            //While the socket is reopened (the password manager sent the app
-            //to the background) boxUpdates holds it until the box answers.
-            if (page.gate === "locked" || page.gate === "idle" || page.gate === "probing")
-                boxUpdates.unlock(password)
-        }
-    }
-
     function submitPassword() {
         if (passwordField.text === "" || boxUpdates.busy !== "" || boxUpdates.retryAfter > 0)
             return
@@ -471,8 +440,6 @@ Item {
                     placeholderText: qsTr("Admin password")
                     echoMode: TextInput.Password
                     inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase
-                    //the native entry replaces it where the platform has one
-                    visible: !page.nativeEntry
                     enabled: boxUpdates.busy === ""
                     EnterKey.type: Qt.EnterKeyGo
                     onAccepted: page.submitPassword()
@@ -485,11 +452,10 @@ Item {
 
                 Button {
                     objectName: "unlockButton"
-                    disabled: (!page.nativeEntry && passwordField.text === "") || boxUpdates.busy !== "" ||
+                    disabled: passwordField.text === "" || boxUpdates.busy !== "" ||
                               boxUpdates.retryAfter > 0
-                    text: boxUpdates.busy === "unlock" ? qsTr("Checking…") :
-                          page.nativeEntry ? qsTr("Enter the admin password") : qsTr("Unlock")
-                    onButtonClicked: page.nativeEntry ? page.askNativePassword() : page.submitPassword()
+                    text: boxUpdates.busy === "unlock" ? qsTr("Checking…") : qsTr("Unlock")
+                    onButtonClicked: page.submitPassword()
                 }
             }
         }

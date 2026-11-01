@@ -6,12 +6,11 @@
 //
 //iOS drops the session when the app resigns active (FIX-7), which pops the
 //whole page stack to the login screen; the automatic login on return then
-//opens the home page. Resign-active is also sent when the password manager
-//(1Password, iCloud Keychain) takes over to fill the native password entry,
-//so the page waiting for that password was gone when it came back. While a
-//page must survive (a native admin password entry is open, or the box
-//updates page is shown), the session still drops but the page stays and the
-//automatic login on return reconnects in place; if that login fails, the
+//opens the home page. Resign-active is also sent when the user leaves for the
+//password manager (1Password, iCloud Keychain) to copy a password, so the page
+//waiting for that password was gone on return. While a page must survive (the
+//box updates page is shown), the session still drops but the page stays and
+//the automatic login on return reconnects in place; if that login fails, the
 //usual return to the login screen happens.
 //
 //Header-only, no QObject: tests drive it without Application.
@@ -26,12 +25,12 @@ public:
     };
 
     //The app resigns active. keepPage: the page shown must survive;
-    //loginEntry: the native login entry is open, the user is filling the
-    //login fields and logs in himself.
-    void resigned(bool keepPage, bool loginEntry)
+    //loginEdited: the user has typed in the login fields, the automatic login
+    //on return would replace that text with the stored credentials.
+    void resigned(bool keepPage, bool loginEdited)
     {
         m_phase = keepPage ? Paused : None;
-        m_skipAutoLogin = loginEntry;
+        m_skipAutoLogin = loginEdited;
     }
 
     //Back in the foreground. Returns whether the automatic login runs.

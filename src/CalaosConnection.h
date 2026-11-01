@@ -63,10 +63,9 @@ public:
     //+-20% jitter so a fleet of clients does not hammer a server that just
     //came back in lockstep.
     static constexpr int JitterPercent = 20;
-    //Wrong credentials will not fix themselves: after that many rejections of
-    //a session that was up (a restarting box can refuse for a moment) we stop
-    //retrying and hand over to the login screen. Credentials never accepted
-    //yet get no retry at all, see m_credentialsUnproven.
+    //Wrong credentials will not fix themselves: after that many rejections we
+    //stop retrying and hand over to the login screen. After a UserRequest the
+    //first rejection is enough, see m_credentialsUnproven.
     static constexpr int MaxAuthFailures = 3;
     //A single long-poll error is not a disconnection. Only a run of them is.
     static constexpr int MaxPollFailures = 3;
@@ -305,9 +304,12 @@ private:
     int m_pollFailures = 0;
     int m_pendingDelayMs = 0;
     bool m_givenUp = false;
-    //The explicit login has not been accepted yet: a refusal is the server's
-    //answer to it, retrying would only delay the error and drop the login
-    //screen out of Loading between attempts.
+    //A UserRequest (login screen, launch login and return to the foreground
+    //online) has not been followed by an accepted login yet: a refusal is the
+    //server's answer to it, retrying would only delay the error and drop the
+    //login screen out of Loading between attempts. Not set by the automatic
+    //logins deferred offline (FIX-9) nor by server discovery, which keep
+    //MaxAuthFailures attempts, even with a password never accepted.
     bool m_credentialsUnproven = false;
     bool m_wantsConnection = false;
     bool m_stopped = false;

@@ -138,10 +138,12 @@ specifically used on mobile:
   [CalaosConnection.h](../src/CalaosConnection.h). While it is not connected
   the mobile UI shows the login screen
   (`stackView.pop(null, StackView.Immediate)`).
-- A refused login is not retried while the credentials were never accepted
-  (login screen, launch, return to the foreground): the status stays `Loading`
-  until the answer, then one "Login failed" alert. Only a session that was up
-  gets `MaxAuthFailures` tries, because a restarting box can refuse for a moment.
+- A login started by a `UserRequest` (login screen, launch login and return to
+  the foreground online) is not retried once refused: the status stays
+  `Loading` until the answer, then one "Login failed" alert. The automatic
+  attempts keep `MaxAuthFailures` tries: reconnecting a session that was up, a
+  launch login deferred offline and server discovery, so those last two can
+  send a never accepted password three times.
 
 WebSocket / HTTP fallback logic in
 [CalaosConnection](../src/CalaosConnection.cpp) is identical on both variants

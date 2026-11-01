@@ -208,6 +208,8 @@ private slots:
     void iosForegroundLogsBackIn();
     void iosLogoutThenBackgroundAndForegroundStaysLoggedOut();
     void iosReturnOverEditedLoginFieldsDoesNotLogIn();
+    void wrongPasswordFailsOnceAtOnce();
+    void refusalAfterASessionStillRetries();
     void iosReturnAfterARefusalDoesNotReplay();
     void iosReturnAfterARefusedStoredPasswordDoesNotReplay();
     void iosReturnAfterAGiveUpDoesNotReplay();
@@ -527,7 +529,7 @@ void TstSessionLifecycle::iosReturnOverEditedLoginFieldsDoesNotLogIn()
 void TstSessionLifecycle::iosReturnAfterARefusalDoesNotReplay()
 {
     connection->login(TypedUser, TypedPass, server->baseUrl());
-    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Reconnecting);
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Disconnected);
     QCOMPARE(server->attempts.size(), 1);
 
     QVERIFY(returnsReachNoServer(false));
@@ -539,10 +541,50 @@ void TstSessionLifecycle::iosReturnAfterARefusalDoesNotReplay()
 void TstSessionLifecycle::iosReturnAfterARefusedStoredPasswordDoesNotReplay()
 {
     QVERIFY(launchLogin(TypedUser, TypedPass));
-    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Reconnecting);
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Disconnected);
     QCOMPARE(server->attempts.size(), 1);
 
     QVERIFY(returnsReachNoServer(false));
+}
+
+//A wrong password on the login screen: the server said no, so no second
+//attempt. It used to retry with a backoff, the status dropping out of Loading
+//between attempts, so the spinner stopped, the alert came seconds later, and a
+//tap on the button that looked idle started the whole run again.
+void TstSessionLifecycle::wrongPasswordFailsOnceAtOnce()
+{
+    QSignalSpy failed(connection, &CalaosConnection::loginFailed);
+    QSignalSpy states(connection, &CalaosConnection::connectionStateChanged);
+    QElapsedTimer timer;
+    timer.start();
+
+    connection->login(TypedUser, TypedPass, server->baseUrl());
+    QTRY_COMPARE_WITH_TIMEOUT(failed.size(), 1, 8000);
+    QVERIFY2(timer.elapsed() < ReconnectPolicy::BaseDelayMs / 2, "refusal not reported at once");
+
+    QCOMPARE(connection->connectionState(), ReconnectPolicy::Disconnected);
+    for (const QList<QVariant> &state: std::as_const(states))
+        QVERIFY(state.at(0).toInt() != ReconnectPolicy::Reconnecting);
+
+    QTest::qWait(ReconnectPolicy::BaseDelayMs * 3);
+    QCOMPARE(server->attempts.size(), 1);
+    QCOMPARE(failed.size(), 1);
+}
+
+//A session that was up and whose reconnection is refused keeps its bounded
+//retries: a box restarting can refuse a login for a moment.
+void TstSessionLifecycle::refusalAfterASessionStillRetries()
+{
+    loginAndWait();
+    QSignalSpy failed(connection, &CalaosConnection::loginFailed);
+    server->acceptedPass = QStringLiteral("changed");
+    server->attempts.clear();
+    networkDown();
+    networkUp();
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Reconnecting);
+    QCOMPARE(failed.size(), 0);
+    QTRY_VERIFY_WITH_TIMEOUT(server->attempts.size() == ReconnectPolicy::MaxAuthFailures, 15000);
+    QTRY_COMPARE(failed.size(), 1);
 }
 
 //iOS: the same once the connection gave up, i.e. after the "Login failed"
@@ -551,8 +593,8 @@ void TstSessionLifecycle::iosReturnAfterAGiveUpDoesNotReplay()
 {
     QSignalSpy failed(connection, &CalaosConnection::loginFailed);
     connection->login(TypedUser, TypedPass, server->baseUrl());
-    QTRY_VERIFY_WITH_TIMEOUT(server->attempts.size() == ReconnectPolicy::MaxAuthFailures, 15000);
     QTRY_COMPARE(failed.size(), 1);
+    QCOMPARE(server->attempts.size(), 1);
 
     QVERIFY(returnsReachNoServer(false));
     QCOMPARE(failed.size(), 1);
@@ -563,7 +605,7 @@ void TstSessionLifecycle::iosReturnAfterAGiveUpDoesNotReplay()
 void TstSessionLifecycle::iosReturnWorksAgainAfterASuccessfulLogin()
 {
     connection->login(TypedUser, TypedPass, server->baseUrl());
-    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Reconnecting);
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Disconnected);
     QVERIFY(returnsReachNoServer(false));
 
     loginAndWait();
@@ -584,7 +626,7 @@ void TstSessionLifecycle::iosReturnDropsTheKeptPageWhenItDoesNotLogIn()
     QVERIFY(!resumePolicy.keepPage());
 
     connection->login(TypedUser, TypedPass, server->baseUrl());
-    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Reconnecting);
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Disconnected);
     appBackground(false, true);
     QVERIFY(resumePolicy.keepPage());
     QVERIFY(!appForeground());
@@ -601,33 +643,16 @@ void TstSessionLifecycle::typedCredentialsRejectedThenNetworkChangeUsesNoOtherCr
 
     connection->login(TypedUser, TypedPass, server->baseUrl());
     QTRY_COMPARE(server->attempts.size(), 1);
-    //Rejected once: a retry is pending, the session is still wanted, which
-    //is exactly when resume() acts.
-    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Reconnecting);
+    //Rejected: given up at once, nothing is wanted any more.
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Disconnected);
     QVERIFY(connection->failingOnCredentials());
 
-    networkDown();
-    networkUp();
-    //The resume really happened (otherwise this test proves nothing) and
-    //used the typed credentials.
-    QTRY_COMPARE(server->attempts.size(), 2);
-
-    //Let the policy run to its give-up on the credentials.
-    for (int i = 0; i < 4; i++)
-        settle();
-
-    QCOMPARE(server->logins, 0);
-    QVERIFY(server->attempts.size() >= 2);
-    for (const QString &a: std::as_const(server->attempts))
-        QCOMPARE(a, typed);
-    QVERIFY(connection->connectionState() != ReconnectPolicy::Connected);
-
-    //And after the give-up, the network changing again starts nothing.
-    const int count = server->attempts.size();
+    //The network changing starts nothing, with any credentials.
     networkDown();
     networkUp();
     settle();
-    QCOMPARE(server->attempts.size(), count);
+    QCOMPARE(server->logins, 0);
+    QCOMPARE(server->attempts, QStringList{ typed });
 }
 
 //FIX-8: an active session that loses the link reconnects with its own
@@ -921,12 +946,12 @@ void TstSessionLifecycle::offlineBannerNotShownAfterLogout()
     QVERIFY(!connection->waitsForNetwork(true));
 }
 
-//FIX-10: the credentials were given up on (rejected MaxAuthFailures times):
+//FIX-10: the credentials were given up on:
 //the link coming back would not reconnect, so there is nothing to wait for.
 void TstSessionLifecycle::offlineBannerNotShownAfterCredentialsGiveUp()
 {
     connection->login(TypedUser, TypedPass, server->baseUrl());
-    QTRY_VERIFY_WITH_TIMEOUT(server->attempts.size() == ReconnectPolicy::MaxAuthFailures, 15000);
+    QTRY_COMPARE(server->attempts.size(), 1);
     QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Disconnected);
 
     networkDown();

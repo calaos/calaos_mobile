@@ -36,6 +36,7 @@ TestCase {
     TextInput { id: clipboardSource; visible: false }
 
     SignalSpy { id: loginSpy; signalName: "loginClicked" }
+    SignalSpy { id: cancelSpy; signalName: "cancelClicked" }
 
     function fieldOf(view, alias) {
         for (var i = 0; i < view.children.length; i++) {
@@ -46,11 +47,12 @@ TestCase {
         return null
     }
 
-    function findIn(item, alias) {
-        if (item.placeholderText === alias)
+    function findIn(item, alias, buttonText) {
+        if (buttonText ? item.text === buttonText && item.loadingEnabled !== undefined
+                       : item.placeholderText === alias)
             return item
         for (var i = 0; i < item.children.length; i++) {
-            var found = findIn(item.children[i], alias)
+            var found = findIn(item.children[i], alias, buttonText)
             if (found)
                 return found
         }
@@ -180,6 +182,24 @@ TestCase {
 
     // Only the login page counts: once it left the screen (logged in), the
     // fields say nothing about what comes back to the foreground.
+    //The button belongs to the attempt in flight: a click cancels it, and
+    //starts nothing that could end in a second alert.
+    function test_clickWhileLoadingStartsNothing() {
+        var view = createTemporaryObject(loginComponent, tc)
+        loginSpy.target = view
+        loginSpy.clear()
+        cancelSpy.target = view
+        cancelSpy.clear()
+        calaosApp.applicationStatus = Common.Loading
+        var button = findIn(view, "", "Login")
+        verify(button)
+        verify(button.loadingEnabled)
+        mouseClick(button)
+        compare(loginSpy.count, 0)
+        compare(cancelSpy.count, 1)
+        calaosApp.applicationStatus = Common.NotConnected
+    }
+
     function test_hiddenViewReportsNothing() {
         calaosApp.loginEdited = false
         var view = createTemporaryObject(loginComponent, tc)

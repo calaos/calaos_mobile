@@ -16,12 +16,13 @@ TestCase {
         RowLayout {
             width: 200
             property alias icon: item
-            // icon_heater_on.svg is 44x44 natively
-            IconItem { id: item; source: "qrc:/img/icon_heater_on.svg" }
+            // 44x44 natively. A raster on purpose: the CI test job has no QtSvg
+            // image plugin, and a layout takes the native size of any source.
+            IconItem { id: item; source: "qrc:/img/icon_temp@2x.png" }
         }
     }
 
-    function test_svg_in_layout_keeps_icon_size() {
+    function test_icon_in_layout_keeps_icon_size() {
         var row = createTemporaryObject(rowComponent, tc)
         verify(row)
         tryCompare(row.icon, "status", Image.Ready)

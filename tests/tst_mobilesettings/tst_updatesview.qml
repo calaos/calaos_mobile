@@ -67,7 +67,7 @@ TestCase {
         id: calaosApp
         property int logouts: 0
         signal applicationStatusChanged(int status)
-        function getPictureSized(pic) { return "" }
+        function getPictureSized(pic) { return "qrc:/img/" + pic + ".png" }
         function userLogout() { logouts++ }
     }
 
@@ -317,5 +317,14 @@ TestCase {
         verify(findChild(page, "unlockButton").disabled)
         page.askNativePassword()
         compare(hardwareUtils.requests.length, 0)
+    }
+
+    function test_capture() {
+        var dir = harness.env("SETTINGS_SHOTS_DIR")
+        if (dir === "")
+            skip("SETTINGS_SHOTS_DIR not set")
+        openPage()
+        wait(50)
+        grabImage(tc).save(dir + "/settings-box.png")
     }
 }

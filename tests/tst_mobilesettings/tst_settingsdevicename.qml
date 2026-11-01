@@ -6,7 +6,7 @@ import "../../qml/mobile"
 
 //The device name field of the mobile settings: only what the user typed is
 //saved, on every way out of the page; an untouched field follows a rename
-//of the phone; "Reset all data" drops what was being typed.
+//of the phone.
 TestCase {
     id: tc
     name: "SettingsDeviceName"
@@ -17,7 +17,7 @@ TestCase {
 
     property bool isLandscape: false
 
-    //Stand-ins for the context properties SettingsView reads, found by its
+    //Stand-ins for the context properties the page reads, found by its
     //unqualified lookups before the root context.
     QtObject {
         id: hardwareUtils
@@ -34,11 +34,7 @@ TestCase {
     }
     QtObject {
         id: calaosApp
-        property var tlsPinList: []
-        property int resets: 0
         function getPictureSized(pic) { return "" }
-        function userLogout() {}
-        function resetAllData() { resets++; hardwareUtils.override = "" }
     }
     ListModel { id: langModel }
 
@@ -50,14 +46,13 @@ TestCase {
 
     Component {
         id: settingsComponent
-        SettingsView {}
+        SettingsDeviceView {}
     }
 
     function init() {
         hardwareUtils.platformName = "iPhone"
         hardwareUtils.override = ""
         hardwareUtils.saved = []
-        calaosApp.resets = 0
     }
 
     function cleanup() {
@@ -160,17 +155,6 @@ TestCase {
         p.field.clearButtonClicked()
         leave()
         compare(hardwareUtils.saved, [""])
-        compare(hardwareUtils.override, "")
-    }
-
-    function test_resetDropsWhatWasBeingTyped() {
-        var p = openPage()
-        type(p.field, "Pixel")
-        p.page.discardDeviceName()
-        calaosApp.resetAllData()
-        compare(calaosApp.resets, 1)
-        leave()
-        compare(hardwareUtils.saved.length, 0)
         compare(hardwareUtils.override, "")
     }
 }

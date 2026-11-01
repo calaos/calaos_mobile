@@ -378,14 +378,14 @@ credential or image bytes.
 
 Session semantics (decided for AND-7, reversible):
 
-- **Logout** (Settings → Logout, `Application::userLogout()`): the
+- **Logout** (Settings → Connection → Logout, `Application::userLogout()`): the
   credentials stay in the store (login screen prefill) but
   `CredentialStore.setSessionActive(false)` is written and the worker stops
   downloading pictures: pushes show as **text only** until the next
   successful login (`Application::homeLoaded()` sets the flag back). The
   flag is **not** touched by a lost connection, a reconnection, the login
   cancel button or the iOS resign-active pause.
-- **Reset all data** (`Application::resetAllData()` →
+- **Reset all data** (Settings → Connection, `Application::resetAllData()` →
   `resetAuthKeychain()`): full wipe of the store (host, credentials,
   session flag and Keystore key) and of any QSettings leftovers.
 - A store without the flag (install updated in the background, never logged
@@ -510,12 +510,12 @@ in with a user that is **not** the demo one. Watch with
    updating the phone, trigger: text only, `server answered HTTP 400`.
 6. **Rule without camera**: trigger a push rule with no picture: text only,
    `event uuid: <none>` in the log, no worker.
-7. **Logout**: Settings → Logout, then trigger the camera rule: text
+7. **Logout**: Settings → Connection → Logout, then trigger the camera rule: text
    notification only, `Push picture: user logged out` in the log;
    `adb shell run-as fr.calaos.calaoshome cat shared_prefs/calaos_credentials.xml`
    shows `session_active` false and the credentials still there (prefill).
    Log in again: the next event has its picture.
-8. **Reset all data**: Settings → Reset all data. Then
+8. **Reset all data**: Settings → Connection → Reset all data. Then
    `adb shell run-as fr.calaos.calaoshome cat shared_prefs/calaos_credentials.xml`
    must be an empty map, and
    `adb shell run-as fr.calaos.calaoshome cat files/settings/Calaos/CalaosHome.conf`
@@ -528,7 +528,7 @@ in with a user that is **not** the demo one. Watch with
    base64 blobs only.
 10. **Self-signed server** (if applicable): picture shown once the certificate
    was trusted in the app; text notification only before that, or after the
-   pin was forgotten in Settings.
+   pin was forgotten in Settings → Connection.
 
 ## 7. Project layout and packaging
 

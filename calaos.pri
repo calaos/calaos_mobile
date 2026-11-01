@@ -24,6 +24,7 @@ SOURCES += src/main.cpp \
     src/FavoritesModel.cpp \
     src/HardwareUtils.cpp \
     src/CameraModel.cpp \
+    $$PWD/src/CameraFrameDecoder.cpp \
     $$PWD/src/RoomFilterModel.cpp \
     $$PWD/src/Machine.cpp \
     $$PWD/src/Lang.cpp \
@@ -56,6 +57,7 @@ HEADERS += \
     src/HardwareUtils.h \
     src/LaunchLogin.h \
     src/CameraModel.h \
+    $$PWD/src/CameraFrameDecoder.h \
     $$PWD/src/RoomFilterModel.h \
     $$PWD/src/Machine.h \
     $$PWD/src/qqmlhelpers.h \

@@ -442,6 +442,7 @@ private slots:
     void singleEventReleasedByTimeout();
     void logoutResetsState();
     void logoutThenAnotherHome();
+    void refusedWebsocketLoginFailsOnce();
     void loginFailedResetsState();
     void loadMoreStopsAtLastPage();
     void loadMoreSkipsEventsAlreadyShown();
@@ -830,6 +831,23 @@ void TstEventLogSession::logoutThenAnotherHome()
     QCOMPARE(home2.requests.at(1).data["page"].toInt(), 1);
     QTRY_VERIFY(rowsAre(80, home2.log.label));
     QCOMPARE(home1.pageRequests(), 2);
+}
+
+//A login refused over the WebSocket, the transport of a mobile login: one
+//attempt, one loginFailed, no fallback to HTTP.
+void TstEventLogSession::refusedWebsocketLoginFailsOnce()
+{
+    FakeCalaosWs ws;
+    QVERIFY(ws.start());
+    ws.acceptLogins = false;
+    QSignalSpy failed(con, &CalaosConnection::loginFailed);
+    QSignalSpy states(con, &CalaosConnection::connectionStateChanged);
+
+    con->login(TestUser, TestPass, ws.url());
+    QTRY_COMPARE_WITH_TIMEOUT(failed.size(), 1, 8000);
+    QCOMPARE(con->connectionState(), ReconnectPolicy::Disconnected);
+    for (const QList<QVariant> &state: std::as_const(states))
+        QVERIFY(state.at(0).toInt() != ReconnectPolicy::Reconnecting);
 }
 
 //The session drops with a page in flight and the server then rejects the

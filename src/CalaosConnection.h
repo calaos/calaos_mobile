@@ -64,7 +64,8 @@ public:
     //came back in lockstep.
     static constexpr int JitterPercent = 20;
     //Wrong credentials will not fix themselves: after that many rejections we
-    //stop retrying and hand over to the login screen.
+    //stop retrying and hand over to the login screen. After a UserRequest the
+    //first rejection is enough, see m_credentialsUnproven.
     static constexpr int MaxAuthFailures = 3;
     //A single long-poll error is not a disconnection. Only a run of them is.
     static constexpr int MaxPollFailures = 3;
@@ -120,6 +121,7 @@ public:
             m_failures = 0;
             m_authFailures = 0;
             m_givenUp = false;
+            m_credentialsUnproven = true;
             //An explicit login reopens a deliberately closed session. It does
             //not lift a pause: only the app coming back to the foreground does.
             m_stopped = false;
@@ -132,6 +134,7 @@ public:
 
     void attemptSucceeded()
     {
+        m_credentialsUnproven = false;
         m_failures = 0;
         m_authFailures = 0;
         m_pollFailures = 0;
@@ -166,7 +169,7 @@ public:
         if (f == AuthFailure)
         {
             m_authFailures++;
-            if (m_authFailures >= MaxAuthFailures)
+            if (m_credentialsUnproven || m_authFailures >= MaxAuthFailures)
             {
                 //No infinite retry on a wrong password.
                 m_givenUp = true;
@@ -191,6 +194,7 @@ public:
     //app sent to the background and back) until an explicit login.
     void stop()
     {
+        m_credentialsUnproven = false;
         m_state = Disconnected;
         m_failures = 0;
         m_authFailures = 0;
@@ -235,6 +239,7 @@ public:
             m_authFailures = 0;
             m_givenUp = false;
             m_stopped = false;
+            m_credentialsUnproven = true;
         }
         m_pollFailures = 0;
         m_pendingDelayMs = 0;
@@ -299,6 +304,13 @@ private:
     int m_pollFailures = 0;
     int m_pendingDelayMs = 0;
     bool m_givenUp = false;
+    //A UserRequest (login screen, launch login and return to the foreground
+    //online) has not been followed by an accepted login yet: a refusal is the
+    //server's answer to it, retrying would only delay the error and drop the
+    //login screen out of Loading between attempts. Not set by the automatic
+    //logins deferred offline (FIX-9) nor by server discovery, which keep
+    //MaxAuthFailures attempts, even with a password never accepted.
+    bool m_credentialsUnproven = false;
     bool m_wantsConnection = false;
     bool m_stopped = false;
     bool m_paused = false;
@@ -531,7 +543,6 @@ public:
                wsocket->requestUrl().scheme() == QLatin1String("wss");
     }
     bool isHttpFallback() const override { return constate == ConStateHttp; }
-    QString hostKey() const override { return lasthost; }
     //A certificate refused in this run is refused silently afterwards (the
     //launch login, iOS become-active), so the prompt cannot come back in a
     //loop. An explicit login from the login screen asks again.
@@ -609,6 +620,8 @@ private:
     int constate = ConStateUnknown;
 
     QList<QNetworkReply *> reqReplies;
+    //Picture requests in flight, also listed in reqReplies.
+    QHash<QString, QNetworkReply *> cameraReplies;
 
     //Event log requests in flight, by request id (EVLOG-1).
     enum class EventLogKind { Page, Event };
@@ -746,6 +759,8 @@ signals:
     void eventScenarioChange();
     void cameraPictureDownloaded(const QString &camid, const QByteArray &data);
     void cameraPictureFailed(const QString &camid);
+    //Bytes of this camera's picture are arriving
+    void cameraPictureProgress(const QString &camid);
     void eventTouchscreenCamera(QString camid);
     //End of an event log request, see requestEventLogPage(). ok is true when
     //the server sent what was asked for (a page carries "events"); the map
@@ -796,7 +811,10 @@ public slots:
     void sendCommand(QString id, QString value, QString type = QString(), QString action = QString()) override;
     void sendNumberedCommand(QString id, QString value, QString type, QString action, int seq) override;
     void queryState(QStringList inputs, QStringList outputs, QStringList audio_players);
+    //At most one request per camera: a new one replaces the one in flight.
     void getCameraPicture(const QString &camid, QString urlSuffix = QString());
+    //Drops the request of this camera without any answer.
+    void cancelCameraPicture(const QString &camid);
     void getAudioCover(const QString &playerid);
 
 private slots:

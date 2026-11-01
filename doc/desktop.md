@@ -126,7 +126,10 @@ Key views in [qml/desktop/](../qml/desktop):
 - `RoomDetailView.qml`, `ScenarioView.qml` — IO and scenario controls.
 - `MediaView.qml`, `MusicListView.qml`, `AudioPlayer.qml`, `SpotifyView.qml`,
   `MediaWebView.qml`, `WebBrowserMenu*.qml` — media and embedded browser.
-- `CameraListView.qml`, `CameraSingleView.qml`, `CameraCommandItem.qml`.
+- `CameraListView.qml`, `CameraSingleView.qml`, `CameraCommandItem.qml`. Requests
+  follow `CameraFeed`, as on mobile ([doc/mobile.md](mobile.md)): only the cameras
+  of the page in view are polled. The kiosk has no window manager and stays
+  `ApplicationInactive`, which therefore must not pause the polling.
 - `ConfigView.qml` + `ConfigNetworkView.qml`, `ConfigScreenView.qml`,
   `ConfigL18nView.qml`, `ConfigTimeView.qml`, `ConfigUserInfoView.qml`,
   `ConfigUpdateView.qml`, `ConfigInstallView.qml` — system / OS configuration tabs.

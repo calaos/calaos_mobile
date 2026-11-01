@@ -17,32 +17,6 @@ Item {
     visible: opacity > 0?true:false
     Behavior on opacity { PropertyAnimation { } }
 
-    readonly property bool nativeEntry: hardwareUtils.hasNativePasswordEntry()
-
-    function askNativePassword() {
-        hideKeyboard()
-        hardwareUtils.requestNativePassword("login", {
-            title: qsTr("Sign in"),
-            message: "",
-            user: userField.text,
-            userLabel: qsTr("Username"),
-            passwordLabel: qsTr("Password"),
-            confirm: qsTr("OK"),
-            cancel: qsTr("Cancel")
-        })
-    }
-
-    Connections {
-        target: hardwareUtils
-        function onNativePasswordEntered(purpose, user, password) {
-            if (purpose !== "login")
-                return
-            if (user !== "")
-                userField.text = user
-            passField.text = password
-        }
-    }
-
     function hideKeyboard() {
         userField.focus = false
         passField.focus = false
@@ -65,6 +39,19 @@ Item {
         userField.text = calaosApp.username
         passField.text = calaosApp.password
         hostField.text = calaosApp.hostname
+        edited = false
+    }
+
+    // True once the user has typed, pasted or cleared a field, and until the
+    // view leaves the screen: a refused login keeps it. Read by calaosApp when
+    // iOS resigns active, so the automatic login on return does not replace
+    // the text (leaving to copy the password is the usual case).
+    property bool edited: false
+
+    Binding {
+        target: calaosApp
+        property: "loginEdited"
+        value: loginRoot.edited && loginRoot.visible
     }
 
     Component.onCompleted: syncFromApp()
@@ -99,10 +86,14 @@ Item {
         smooth: true
 
         width: isLandscape?Units.dp(300):parent.width - Units.dp(20)
-        height: Units.dp(300)
+        //Holds the whole form: since Qt 6.12 a child sticking out of its
+        //parent can stop getting touches there, and the Login button only
+        //answered on its top third.
+        height: form.y + form.height + Units.dp(10)
 
         anchors {
-            verticalCenter: parent.verticalCenter
+            top: parent.top
+            topMargin: Math.round((parent.height - Units.dp(300)) / 2)
             horizontalCenter: parent.horizontalCenter
         }
 
@@ -121,7 +112,6 @@ Item {
             id: form
             anchors {
                 top: parent.top; topMargin: Units.dp(80)
-                bottom: parent.bottom; bottomMargin: Units.dp(10)
                 //left: parent.left; leftMargin: 10
                 //right: parent.right; rightMargin: 10
                 horizontalCenter: parent.horizontalCenter
@@ -134,6 +124,8 @@ Item {
                 width: Units.dp(200)
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Username")
+                onTextEdited: loginRoot.edited = true
+                onClearButtonClicked: loginRoot.edited = true
                 enabled: !loginButton.loadingEnabled
             }
 
@@ -143,15 +135,9 @@ Item {
                 echoMode: TextInput.Password
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Password")
+                onTextEdited: loginRoot.edited = true
+                onClearButtonClicked: loginRoot.edited = true
                 enabled: !loginButton.loadingEnabled
-
-                //Where the platform has a native credential entry, a tap
-                //opens it instead: only real platform fields get AutoFill.
-                MouseArea {
-                    anchors.fill: parent
-                    enabled: loginRoot.nativeEntry && parent.enabled
-                    onClicked: loginRoot.askNativePassword()
-                }
             }
 
             CalaosTextField {
@@ -159,6 +145,8 @@ Item {
                 width: Units.dp(200)
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Hostname")
+                onTextEdited: loginRoot.edited = true
+                onClearButtonClicked: loginRoot.edited = true
                 enabled: !loginButton.loadingEnabled
             }
 

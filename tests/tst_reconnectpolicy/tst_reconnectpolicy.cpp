@@ -38,6 +38,7 @@ private slots:
     void transientFailuresNeverGiveUp();
     void wrongPasswordStopsRetrying();
     void wrongPasswordStillAllowsAManualLogin();
+    void wrongPasswordOnTheLoginScreenGivesUpAtOnce();
     void authFailureCounterIsResetByASuccess();
     void untrustedCertificateNeverRetriesByItself();
 
@@ -320,8 +321,12 @@ void TstReconnectPolicy::wrongPasswordStopsRetrying()
     ReconnectPolicy p;
     p.setJitterEnabled(false);
 
-    //First rejection comes from the login screen.
-    QVERIFY(attemptAndFail(p, ReconnectPolicy::AuthFailure, ReconnectPolicy::UserRequest));
+    //A session was up; its reconnection is refused.
+    p.beginAttempt(ReconnectPolicy::UserRequest);
+    p.attemptSucceeded();
+    QVERIFY(p.failed(ReconnectPolicy::TransientFailure));
+
+    QVERIFY(attemptAndFail(p, ReconnectPolicy::AuthFailure));
     QCOMPARE(p.authFailureCount(), 1);
     QVERIFY(!p.hasGivenUp());
 
@@ -346,16 +351,29 @@ void TstReconnectPolicy::wrongPasswordStopsRetrying()
     QVERIFY(!p.wantsConnection());
 }
 
+void TstReconnectPolicy::wrongPasswordOnTheLoginScreenGivesUpAtOnce()
+{
+    ReconnectPolicy p;
+    p.setJitterEnabled(false);
+
+    QVERIFY(!attemptAndFail(p, ReconnectPolicy::AuthFailure, ReconnectPolicy::UserRequest));
+    QVERIFY(p.hasGivenUp());
+    QCOMPARE(p.authFailureCount(), 1);
+    QCOMPARE(p.state(), ReconnectPolicy::Disconnected);
+    QCOMPARE(p.pendingDelayMs(), 0);
+
+    //Still before any accepted login: a server down first, refused next.
+    QVERIFY(attemptAndFail(p, ReconnectPolicy::TransientFailure, ReconnectPolicy::UserRequest));
+    QVERIFY(!attemptAndFail(p, ReconnectPolicy::AuthFailure));
+    QVERIFY(p.hasGivenUp());
+}
+
 void TstReconnectPolicy::wrongPasswordStillAllowsAManualLogin()
 {
     ReconnectPolicy p;
     p.setJitterEnabled(false);
 
-    for (int i = 0; i < ReconnectPolicy::MaxAuthFailures; i++)
-    {
-        attemptAndFail(p, ReconnectPolicy::AuthFailure,
-                       i == 0 ? ReconnectPolicy::UserRequest : ReconnectPolicy::AutoRetry);
-    }
+    attemptAndFail(p, ReconnectPolicy::AuthFailure, ReconnectPolicy::UserRequest);
     QVERIFY(p.hasGivenUp());
 
     //The user retypes the password on the login screen: that must work, and it
@@ -373,7 +391,9 @@ void TstReconnectPolicy::authFailureCounterIsResetByASuccess()
     ReconnectPolicy p;
     p.setJitterEnabled(false);
 
-    QVERIFY(attemptAndFail(p, ReconnectPolicy::AuthFailure, ReconnectPolicy::UserRequest));
+    p.beginAttempt(ReconnectPolicy::UserRequest);
+    p.attemptSucceeded();
+    QVERIFY(p.failed(ReconnectPolicy::AuthFailure));
     QCOMPARE(p.authFailureCount(), 1);
 
     p.beginAttempt(ReconnectPolicy::AutoRetry);

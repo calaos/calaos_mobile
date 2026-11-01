@@ -4,6 +4,11 @@ import QtQuick.Controls
 import SharedComponents
 
 Item {
+    id: page
+
+    readonly property bool onScreen: StackView.status === StackView.Active ||
+                                     StackView.status === StackView.Activating
+    readonly property real pixelRatio: Screen.devicePixelRatio
 
     Image {
         source: calaosApp.getPictureSized(isLandscape?
@@ -30,11 +35,26 @@ Item {
             id: delegate
 
             Item {
+                id: cameraDelegate
 
                 Component.onCompleted: {
                     modelData = Qt.binding(function() { return cameraModel.getItemModel(model.index) })
                 }
                 property variant modelData
+
+                //The ListView keeps delegates alive past its edges, only those
+                //in the viewport are worth a request
+                CameraFeed {
+                    camera: cameraDelegate.modelData ? cameraDelegate.modelData : null
+                    active: page.onScreen &&
+                            cameraDelegate.y + cameraDelegate.height > lst.contentY &&
+                            cameraDelegate.y < lst.contentY + lst.height
+                    frameSize: Qt.size(cameraPic.width * page.pixelRatio,
+                                       cameraPic.height * page.pixelRatio)
+                    //Thumbnails: at the 200 ms of the single view, six cameras
+                    //pull 20 MB/s from the box
+                    interval: 500
+                }
 
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.horizontalCenterOffset: -Units.dp(3)
@@ -94,10 +114,6 @@ Item {
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
-                        //set only camera visible for current camera
-                        isSingleCameraView = true
-                        cameraModel.cameraVisible = false
-                        modelData.cameraVisible = true
                         currentCameraModel = modelData
                         stackView.push(cameraSingleView)
                     }

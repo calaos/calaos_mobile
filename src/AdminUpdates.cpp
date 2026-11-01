@@ -62,11 +62,6 @@ AdminUpdates::AdminUpdates(UpdateBackend *backend, AdminRelay *relay, QObject *p
             update_rebootHint(true);
     });
 
-    m_heldTimer = new QTimer(this);
-    m_heldTimer->setSingleShot(true);
-    m_heldTimer->setInterval(HeldUnlockMs);
-    connect(m_heldTimer, &QTimer::timeout, this, &AdminUpdates::dropHeldUnlock);
-
     m_countdownTimer = new QTimer(this);
     m_countdownTimer->setInterval(1000);
     connect(m_countdownTimer, &QTimer::timeout, this, [this]()
@@ -134,36 +129,8 @@ void AdminUpdates::activate()
     probe();
 }
 
-void AdminUpdates::holdUnlock(const QString &password)
-{
-    m_heldPassword = password;
-    m_heldHost = m_relay->hostKey();
-    m_heldTimer->start();
-}
-
-void AdminUpdates::dropHeldUnlock()
-{
-    m_heldTimer->stop();
-    m_heldPassword.clear();
-    m_heldHost.clear();
-}
-
-void AdminUpdates::sendHeldUnlock()
-{
-    if (m_heldPassword.isEmpty())
-        return;
-    const QString password = m_heldPassword;
-    const bool sameBox = m_heldHost == m_relay->hostKey();
-    dropHeldUnlock();
-    //never to another box than the one it was typed for; AdminRelay still
-    //refuses anything but a proven wss socket without a certificate question
-    if (sameBox && m_relay->gate() == AdminRelay::GateLocked)
-        unlock(password);
-}
-
 void AdminUpdates::deactivate()
 {
-    dropHeldUnlock();
     m_active = false;
     m_retryTimer->stop();
     m_unavailableSince = 0;
@@ -227,22 +194,10 @@ void AdminUpdates::readSystemInfo()
     });
 }
 
-void AdminUpdates::setHeldUnlockTimeout(int ms)
-{
-    m_heldTimer->setInterval(ms);
-}
-
 void AdminUpdates::unlock(const QString &password)
 {
     if (password.isEmpty())
         return;
-    //the socket is being reopened: the answer waits for the probe
-    const QString gate = m_relay->gate();
-    if (m_active && (gate == AdminRelay::GateIdle || gate == AdminRelay::GateProbing))
-    {
-        holdUnlock(password);
-        return;
-    }
     if (!get_busy().isEmpty() || get_retryAfter() > 0)
         return;
 
@@ -438,16 +393,6 @@ void AdminUpdates::onGateChanged()
     //rate limit still holds whatever the socket
     if (gate == AdminRelay::GateIdle && get_errorCode() != QLatin1String("rate_limited"))
         dismissError();
-
-    if (!m_heldPassword.isEmpty())
-    {
-        //sent once the box answered on the new socket, outside the reply
-        //being handled; any other screen than waiting or locked drops it
-        if (gate == AdminRelay::GateLocked)
-            QMetaObject::invokeMethod(this, &AdminUpdates::sendHeldUnlock, Qt::QueuedConnection);
-        else if (gate != AdminRelay::GateIdle && gate != AdminRelay::GateProbing)
-            dropHeldUnlock();
-    }
 
     const bool blocked = gate == AdminRelay::GateUnavailable ||
                          gate == AdminRelay::GateTooOld ||

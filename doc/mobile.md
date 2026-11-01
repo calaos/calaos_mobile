@@ -117,9 +117,18 @@ specifically used on mobile:
   on return reconnects in place, and a failure of that login goes to the
   login screen as usual.
 - `applicationBecomeActive` (iOS only) — `unpause()`, then re-issues `login()`
-  from the saved keychain credentials, **unless the user logged out**
-  (`sessionClosedByUser()`): an explicit logout survives the app going to the
-  background and back.
+  from the saved keychain credentials, **unless**
+  `LaunchLogin::shouldLoginOnReturn()` says no:
+  - the user logged out (`sessionClosedByUser()`): an explicit logout survives
+    the app going to the background and back;
+  - the server refused the credentials (`failingOnCredentials()`): one refusal
+    is enough, stored password included, and it lasts until the user logs in
+    again or a login succeeds;
+  - the login fields were edited when the app resigned (`LoginView.edited`,
+    `calaosApp.loginEdited`, `ResumePolicy`): typing, pasting and the X button
+    all count, and the text stays on screen.
+  The demo account is not excluded: returning without having typed anything on
+  a fresh install logs into the demo, as it does without these rules.
 - `networkStatusChanged` (iOS Reachability, Android `QNetworkInformation`) —
   `suspend()` when the link is lost, `resume()` when it is back. `resume()`
   only reconnects a session that is wanted: never after a logout or the login

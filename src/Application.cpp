@@ -122,22 +122,12 @@ void Application::createQmlApp()
         calaosConnect->unpause();
         QTimer::singleShot(0, this, [=]()
         {
-            //Logged out on purpose: stay on the login screen until the user
-            //logs in again.
-            if (calaosConnect->sessionClosedByUser())
-            {
-                resumePolicy.reset();
-                syncKeepPage();
-                qDebug() << "Application is in foreground, logged out by the user: no login";
-                return;
-            }
-
-            //The user was typing in the login fields: he logs in himself.
-            const bool autoLogin = resumePolicy.becameActive();
+            const bool autoLogin = LaunchLogin::shouldLoginOnReturn(calaosConnect, resumePolicy);
             syncKeepPage();
             if (!autoLogin)
             {
-                qDebug() << "Application is in foreground, login fields edited: no automatic login";
+                qDebug() << "Application is in foreground, no automatic login:"
+                         << "logged out, credentials refused or login fields edited";
                 return;
             }
 

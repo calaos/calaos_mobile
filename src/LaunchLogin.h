@@ -3,9 +3,11 @@
 
 #include "CalaosConnection.h"
 #include "HardwareUtils.h"
+#include "ResumePolicy.h"
 #include "Common.h"
 
-//What a fresh start of the app does with the session (FIX-11).
+//What a fresh start of the app does with the session (FIX-11), and the
+//automatic login when it comes back to the foreground.
 //
 //A deliberate logout (Application::userLogout()) is persisted by the platform
 //(HardwareUtils::setSessionActive(false)) and survives a restart: the new
@@ -44,6 +46,21 @@ inline bool shouldAutoLogin(const CalaosConnection *connection,
     if (connection->sessionClosedByUser())
         return false;
     return !isDemoAccount(user, pass, host);
+}
+
+//The automatic login when iOS brings the app back. Not after a logout, not
+//once the server refused the credentials (one refusal is enough: only the user
+//or a successful login lifts it), not over edited login fields (ResumePolicy).
+//The demo account is not excluded here: it would drop a demo session the user
+//opened himself back to the login screen.
+inline bool shouldLoginOnReturn(const CalaosConnection *connection, ResumePolicy &policy)
+{
+    if (connection->sessionClosedByUser() || connection->failingOnCredentials())
+    {
+        policy.reset();
+        return false;
+    }
+    return policy.becameActive();
 }
 
 }

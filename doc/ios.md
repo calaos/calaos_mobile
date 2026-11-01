@@ -215,9 +215,10 @@ comment at the top of `ios/HardwareUtils.mm`.
   responder (no AutoFill), a `UIAlertController` sheet (refused, it covers the
   app) and `UITextField`s laid over the QML fields (no Passwords key on the
   device). Leaving for the manager resigns the app: the updates page is kept
-  (`ResumePolicy`) but its typed password is cleared, and the login page keeps
-  its fields and runs the automatic login on return unless the user logged out.
-  Nothing is stored or logged.
+  (`ResumePolicy`) but its typed password is cleared. The login page keeps its
+  fields and runs the automatic login on return, except after a logout, once
+  the server refused the credentials, or when the user edited the login fields
+  (typed, pasted or cleared with the X). Nothing is stored or logged.
 - 3D Touch / Quick Actions: the app uses scenes (Qt does), so UIKit hands them to the
   window scene delegate: `windowScene:performActionForShortcutItem:completionHandler:`
   (app running) or the connection options of `scene:willConnectToSession:options:`

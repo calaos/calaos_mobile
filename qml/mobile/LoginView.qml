@@ -42,9 +42,10 @@ Item {
         edited = false
     }
 
-    // True once the user has typed or pasted in a field. Read by calaosApp
-    // when iOS resigns active, so the automatic login on return does not
-    // replace the text (leaving to copy the password is the usual case).
+    // True once the user has typed, pasted or cleared a field, and until the
+    // view leaves the screen: a refused login keeps it. Read by calaosApp when
+    // iOS resigns active, so the automatic login on return does not replace
+    // the text (leaving to copy the password is the usual case).
     property bool edited: false
 
     Binding {
@@ -121,6 +122,7 @@ Item {
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Username")
                 onTextEdited: loginRoot.edited = true
+                onClearButtonClicked: loginRoot.edited = true
                 enabled: !loginButton.loadingEnabled
             }
 
@@ -131,6 +133,7 @@ Item {
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Password")
                 onTextEdited: loginRoot.edited = true
+                onClearButtonClicked: loginRoot.edited = true
                 enabled: !loginButton.loadingEnabled
             }
 
@@ -140,6 +143,7 @@ Item {
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: qsTr("Hostname")
                 onTextEdited: loginRoot.edited = true
+                onClearButtonClicked: loginRoot.edited = true
                 enabled: !loginButton.loadingEnabled
             }
 
@@ -153,7 +157,6 @@ Item {
                                          cancelClicked()
                                      } else {
                                          loginRoot.hideKeyboard()
-                                         loginRoot.edited = false
                                          loginClicked(userField.text, passField.text, hostField.text)
                                      }
                                  }

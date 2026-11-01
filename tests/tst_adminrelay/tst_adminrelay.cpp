@@ -1502,6 +1502,11 @@ void TstAdminRelay::resumePolicyKeepsThePage()
     QVERIFY(!p.keepPage());
     QVERIFY(p.becameActive()); //the skip is for one return only
 
+    //the skip wins over a kept page
+    p.resigned(true, true);
+    QVERIFY(!p.becameActive());
+    QVERIFY(!p.keepPage());
+
     //a logout in between forgets it
     p.resigned(false, true);
     p.reset();

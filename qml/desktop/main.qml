@@ -18,8 +18,6 @@ Window {
     property string currentRoomType
     property QtObject cameraSingleModel
 
-    property bool isSingleCameraView: false
-
     //this is called by HardwareUtils
     function showAlertMessage(title, message, buttonText, timeout) {
         notif.showMessage(title, message, timeout)
@@ -31,14 +29,6 @@ Window {
     }
 
     function handleBack() {
-        //enable all cameras if going back to CameraListView
-        if (isSingleCameraView) {
-            cameraModel.cameraVisible = true
-            isSingleCameraView = false
-        }
-        else
-            cameraModel.cameraVisible = false
-
         if (stackView.depth > 1) {
             stackView.pop()
             if (stackView.depth == 1)
@@ -367,11 +357,6 @@ Window {
             type: ActionTypes.openCameraSingleView
             onDispatched: (filtertype, message) => {
                 cameraSingleModel = message.camModel
-                //handleBack() only re-enables the cameras when this is set, and
-                //nothing on the desktop ever set it: leaving the single camera
-                //view stopped every camera of the list underneath, which stayed
-                //frozen until the user left the media section and came back.
-                isSingleCameraView = true
                 stackView.push(cameraSingleView)
             }
         }

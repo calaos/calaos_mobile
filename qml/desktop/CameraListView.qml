@@ -1,8 +1,14 @@
 import QtQuick
 import SharedComponents
 import QtQuick.Layouts
+//Qualified: unqualified, its RoundButton would hide the one of this folder
+import QtQuick.Controls as Controls
 
 PageScaffold {
+    id: page
+
+    readonly property bool onScreen: Controls.StackView.status === Controls.StackView.Active ||
+                                     Controls.StackView.status === Controls.StackView.Activating
 
     title: qsTr("CCTV Camera")
 
@@ -45,9 +51,6 @@ PageScaffold {
         ListView {
             id: listview
 
-            Component.onCompleted: cameraModel.cameraVisible = true
-            Component.onDestruction: cameraModel.cameraVisible = false
-
             anchors.fill: parent
             orientation: ListView.Horizontal
             spacing: Units.dp(10)
@@ -55,14 +58,19 @@ PageScaffold {
 
             model: Math.ceil(cameraModel.cameraCount() / 4)
             delegate: Row {
-                property int page: index
+                id: cameraPage
+                property int pageIndex: index
+                //The ListView keeps pages alive past its edges
+                readonly property bool inViewport: x + width > listview.contentX &&
+                                                   x < listview.contentX + listview.width
                 height: Units.dp(300)
                 spacing: Units.dp(10)
                 Repeater {
                     model: 4
                     CameraItem {
+                        feedActive: page.onScreen && cameraPage.inViewport
                         Component.onCompleted: {
-                            var idx = page * 4 + modelData
+                            var idx = pageIndex * 4 + modelData
                             if (idx < cameraModel.cameraCount()) {
                                 camModel = Qt.binding(function() {
                                     return cameraModel.getItemModel(idx)

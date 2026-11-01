@@ -609,6 +609,8 @@ private:
     int constate = ConStateUnknown;
 
     QList<QNetworkReply *> reqReplies;
+    //Picture requests in flight, also listed in reqReplies.
+    QHash<QString, QNetworkReply *> cameraReplies;
 
     //Event log requests in flight, by request id (EVLOG-1).
     enum class EventLogKind { Page, Event };
@@ -796,7 +798,10 @@ public slots:
     void sendCommand(QString id, QString value, QString type = QString(), QString action = QString()) override;
     void sendNumberedCommand(QString id, QString value, QString type, QString action, int seq) override;
     void queryState(QStringList inputs, QStringList outputs, QStringList audio_players);
+    //At most one request per camera: a new one replaces the one in flight.
     void getCameraPicture(const QString &camid, QString urlSuffix = QString());
+    //Drops the request of this camera without any answer.
+    void cancelCameraPicture(const QString &camid);
     void getAudioCover(const QString &playerid);
 
 private slots:

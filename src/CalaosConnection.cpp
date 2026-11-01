@@ -973,6 +973,7 @@ void CalaosConnection::requestCamFinished(QNetworkReply *reqReply, const QString
     //common, and left listed it was aborted after its deletion by the next
     //resetTransport() (logout, reconnection, iOS going to the background).
     reqReplies.removeAll(reqReply);
+    cameraReplies.remove(camid);
 
     if (reqReply->error() != QNetworkReply::NoError)
     {
@@ -1285,8 +1286,23 @@ void CalaosConnection::queryState(QStringList inputs, QStringList outputs, QStri
         sendHttp("get_state", jroot);
 }
 
+void CalaosConnection::cancelCameraPicture(const QString &camid)
+{
+    QNetworkReply *reply = cameraReplies.take(camid);
+    if (!reply)
+        return;
+
+    reqReplies.removeAll(reply);
+    //Before the abort, which emits finished() synchronously
+    disconnect(reply, nullptr, this, nullptr);
+    reply->abort();
+    reply->deleteLater();
+}
+
 void CalaosConnection::getCameraPicture(const QString &camid, QString urlSuffix)
 {
+    cancelCameraPicture(camid);
+
     QString u = httphost;
     QJsonObject jroot;
     jroot[JsonKeys::CnUser] = username;
@@ -1320,6 +1336,7 @@ void CalaosConnection::getCameraPicture(const QString &camid, QString urlSuffix)
 //    connect(reqReply, &QNetworkReply::errorOccurred, this, &CalaosConnection::requestError);
 
     reqReplies.append(reqReply);
+    cameraReplies.insert(camid, reqReply);
 }
 
 void CalaosConnection::getAudioCover(const QString &playerid)

@@ -23,10 +23,7 @@ Item {
         MediaMenuItem {
             label: qsTr("Surveillance")
             icon: IconCamera {}
-            onButtonClicked: {
-                cameraModel.cameraVisible = true
-                stackView.push(cameraView)
-            }
+            onButtonClicked: stackView.push(cameraView)
         }
 
         width: Math.floor(parent.width / (Units.dp(198))) * Units.dp(198)

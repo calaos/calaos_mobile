@@ -17,6 +17,7 @@ set(CALAOS_SOURCES
     src/FavoritesModel.cpp
     src/HardwareUtils.cpp
     src/CameraModel.cpp
+    src/CameraFrameDecoder.cpp
     src/RoomFilterModel.cpp
     src/Machine.cpp
     src/Lang.cpp
@@ -47,6 +48,7 @@ set(CALAOS_HEADERS
     src/HardwareUtils.h
     src/LaunchLogin.h
     src/CameraModel.h
+    src/CameraFrameDecoder.h
     src/RoomFilterModel.h
     src/Machine.h
     src/qqmlhelpers.h

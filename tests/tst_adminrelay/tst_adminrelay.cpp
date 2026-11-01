@@ -29,9 +29,12 @@
 #include <QWebSocket>
 #include <QWebSocketServer>
 
+#include "AdminBiometrics.h"
 #include "AdminRelay.h"
 #include "AdminRelayBackend.h"
 #include "AdminUpdates.h"
+#include "HardwareUtils.h"
+#include "SecretWipe.h"
 #include "CalaosConnection.h"
 #include "TlsPinning.h"
 #include "ResumePolicy.h"
@@ -65,6 +68,7 @@ public:
     bool trustPending = false;
     bool secure = true;
     bool httpFallback = false;
+    QString host = QStringLiteral("box-a.example:443");
     QList<Frame> frames;
 
     bool sendAdminMessage(const QString &msg, const QJsonObject &data, const QString &msgId) override
@@ -78,6 +82,7 @@ public:
     bool hasPendingTlsTrust() const override { return trustPending; }
     bool isSecure() const override { return up && secure; }
     bool isHttpFallback() const override { return httpFallback; }
+    QString adminHostKey() const override { return up ? host : QString(); }
 
     //The last frame sent for that admin action (or message).
     int last(const QString &actionOrMsg) const
@@ -279,6 +284,132 @@ private:
     bool m_secure = false;
 };
 
+//The platform's protected storage, without a prompt: the tests answer.
+class FakeBiometricHw: public HardwareUtils
+{
+public:
+    FakeBiometricHw(): HardwareUtils(nullptr) {}
+    bool enrolled = true;
+    //The store waits for answerStore(), as behind an Android prompt.
+    bool deferStore = false;
+    int canceledStores = 0;
+    QHash<QString, QString> vault;
+    QStringList reads;
+    QString deferredKey, deferredSecret;
+    bool hasBiometrics() const override { return enrolled; }
+    void biometricStore(const QString &key, const QString &secret, const QString &) override
+    {
+        deferredKey = key;
+        deferredSecret = secret;
+        if (!deferStore)
+            answerStore(BiometricOk);
+    }
+    void biometricCancelStore() override { canceledStores++; }
+    void biometricRead(const QString &key, const QString &) override { reads << key; }
+    void biometricRemove(const QString &key) override { vault.remove(key); }
+    bool removeAllFails = false;
+    bool biometricRemoveAll() override
+    {
+        if (removeAllFails)
+            return false;
+        vault.clear();
+        return true;
+    }
+    void answerRead(int result = BiometricOk)
+    {
+        const QString key = reads.last();
+        emitBiometricReadDone(key, result, result == BiometricOk ? vault.value(key) : QString());
+    }
+    void answerStore(int result)
+    {
+        if (result == BiometricOk)
+            vault[deferredKey] = deferredSecret;
+        emitBiometricStoreDone(deferredKey, result);
+    }
+};
+
+//A box whose updates page is open and locked.
+struct BiometricFixture
+{
+    FakeTransport t;
+    AdminRelay relay{ &t };
+    AdminRelayBackend backend{ &relay };
+    AdminUpdates screen{ &backend, &relay };
+    FakeBiometricHw hw;
+    AdminBiometrics bio{ &hw, &relay, &screen, &t };
+
+    BiometricFixture()
+    {
+        QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+        settings.remove(QStringLiteral("admin_biometrics"));
+        settings.sync();
+    }
+
+    void openLocked()
+    {
+        screen.activate();
+        answerProbe();
+    }
+
+    void answerProbe()
+    {
+        relay.handleReply("admin", t.frames.last().msgId,
+                          ok(QJsonObject{{ "progress", QJsonObject() }, { "job", QJsonValue::Null }}));
+        QTest::qWait(1);
+    }
+
+    void answerUnlock(const QJsonObject &answer = unlockOk())
+    {
+        relay.handleReply("admin_unlock", t.frames.last().msgId, answer);
+    }
+
+    //The password stored, the page left, the socket gone.
+    void store()
+    {
+        openLocked();
+        bio.unlockAndKeep(AdminPass);
+        answerUnlock();
+        relay.handleTransportLost();
+        screen.deactivate();
+        QTest::qWait(1);
+        QVERIFY(hw.reads.isEmpty()); //no prompt for a socket going away
+        t.frames.clear();
+    }
+
+    //Back on the page with what store() left, socket up.
+    void reopen()
+    {
+        relay.handleTransportUp();
+        openLocked();
+    }
+
+    //Read done and held, the socket gone.
+    void holdWithoutSocket()
+    {
+        store();
+        reopen();
+        relay.handleTransportLost();
+        t.up = false;
+        hw.answerRead();
+    }
+
+    void socketBack()
+    {
+        t.up = true;
+        relay.handleTransportUp();
+        screen.retry();
+        answerProbe();
+    }
+
+    int unlocks() const
+    {
+        int n = 0;
+        for (const Frame &f: t.frames)
+            n += f.msg == "admin_unlock" ? 1 : 0;
+        return n;
+    }
+};
+
 class TstAdminRelay: public QObject
 {
     Q_OBJECT
@@ -407,6 +538,38 @@ private slots:
     void oldSocketErrorClearedOnReconnect();
     void replyForAnotherMessageIgnored();
     void resumePolicyKeepsThePage();
+
+    void biometricsStoredOnlyWhenAsked();
+    void biometricsStoredOnceTheBoxAccepted();
+    void biometricsNotStoredWithoutEnrolment();
+    void biometricsStoreCanceledOrFailedLeavesNothing();
+    void biometricsSecretNeverInSettings();
+    void biometricsAskedWhenTheCardOpens();
+    void biometricsCancelLeavesTheField();
+    void biometricsFailedReadLeavesTheField();
+    void biometricsChangedEnrolmentForgets();
+    void biometricsRefusedPasswordForgets();
+    void biometricsTypedRefusalKeepsTheSecret();
+    void biometricsOtherRefusalKeepsTheSecret();
+    void biometricsReadWaitsForTheNewSocket();
+    void biometricsReadDroppedByTheTimer();
+    void biometricsReadDroppedByTheClock();
+    void biometricsSuspensionDropsWhatIsHeld();
+    void biometricsReadAnsweredAfterLeavingIsDropped();
+    void biometricsInactiveKeepsTheRead();
+    void biometricsNeverSentToAnotherBox();
+    void biometricsCertificateQuestionDropsTheRead();
+    void biometricsCertificateSignalsOfTheConnection();
+    void biometricsForgetDuringARead();
+    void biometricsForgetDuringAStore();
+    void biometricsRowStaysWithoutEnrolment();
+    void biometricsDisable();
+    void biometricsForgetAllAndForgetBox();
+    void biometricsWipeOnUserActions();
+    void biometricsFirstLaunchEmptiesTheStore();
+    void biometricsBusyUnlockKeepsNothing();
+    void biometricsEraseCancelsTheStore();
+    void biometricsOutlivesTheUpdatesPage();
 };
 
 void TstAdminRelay::unlockSuccessStoresSession()
@@ -1511,6 +1674,524 @@ void TstAdminRelay::resumePolicyKeepsThePage()
     p.resigned(false, true);
     p.reset();
     QVERIFY(p.becameActive());
+}
+
+void TstAdminRelay::biometricsStoredOnlyWhenAsked()
+{
+    BiometricFixture f;
+    f.openLocked();
+    f.screen.unlock(AdminPass);
+    f.answerUnlock();
+    QVERIFY(f.hw.vault.isEmpty());
+    QVERIFY(!f.bio.get_stored());
+    QVERIFY(f.bio.get_available());
+}
+
+void TstAdminRelay::biometricsStoredOnceTheBoxAccepted()
+{
+    BiometricFixture f;
+    f.openLocked();
+    f.bio.unlockAndKeep(QStringLiteral("typo"));
+    QVERIFY(f.hw.vault.isEmpty());
+    f.answerUnlock(err("bad_password"));
+    QVERIFY(f.hw.vault.isEmpty());
+
+    f.bio.unlockAndKeep(AdminPass);
+    QCOMPARE(f.t.frames.last().data["admin_pass"].toString(), AdminPass);
+    f.answerUnlock();
+    QCOMPARE(f.hw.vault.value(f.t.host), AdminPass);
+    QVERIFY(f.bio.get_stored());
+}
+
+void TstAdminRelay::biometricsNotStoredWithoutEnrolment()
+{
+    BiometricFixture f;
+    f.hw.enrolled = false;
+    f.openLocked();
+    QVERIFY(!f.bio.get_available());
+    f.bio.unlockAndKeep(AdminPass);
+    f.answerUnlock();
+    QVERIFY(f.relay.isUnlocked());
+    QVERIFY(f.hw.vault.isEmpty());
+    QVERIFY(f.hw.deferredKey.isEmpty());
+    QVERIFY(f.hw.reads.isEmpty());
+}
+
+void TstAdminRelay::biometricsStoreCanceledOrFailedLeavesNothing()
+{
+    for (int result: { int(HardwareUtils::BiometricCanceled), int(HardwareUtils::BiometricFailed) })
+    {
+        BiometricFixture f;
+        f.hw.deferStore = true;
+        f.openLocked();
+        f.bio.unlockAndKeep(AdminPass);
+        f.answerUnlock();
+        f.hw.answerStore(result);
+        QVERIFY(f.hw.vault.isEmpty());
+        QVERIFY(!f.bio.get_stored());
+        //the box comes back: nothing condemns the next try
+        QVERIFY(f.bio.get_available());
+    }
+}
+
+void TstAdminRelay::biometricsSecretNeverInSettings()
+{
+    BiometricFixture f;
+    f.store();
+    QCOMPARE(f.hw.vault.value(f.t.host), AdminPass);
+
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    const QStringList keys = settings.allKeys();
+    bool sawBox = false;
+    for (const QString &key: keys)
+    {
+        QVERIFY(!settings.value(key).toString().contains(AdminPass));
+        sawBox |= key.startsWith(QStringLiteral("admin_biometrics/"));
+    }
+    QVERIFY(sawBox);
+}
+
+void TstAdminRelay::biometricsAskedWhenTheCardOpens()
+{
+    BiometricFixture f;
+    f.store();
+    f.reopen();
+    QCOMPARE(f.hw.reads, QStringList{ f.t.host });
+    QVERIFY(f.bio.get_stored());
+    QCOMPARE(f.unlocks(), 0);
+
+    f.hw.answerRead();
+    QCOMPARE(f.unlocks(), 1);
+    QCOMPARE(f.t.frames.last().data["admin_pass"].toString(), AdminPass);
+    f.answerUnlock();
+    QVERIFY(f.screen.get_isUnlocked());
+    QCOMPARE(f.hw.reads.size(), 1);
+}
+
+void TstAdminRelay::biometricsCancelLeavesTheField()
+{
+    BiometricFixture f;
+    f.store();
+    f.reopen();
+    f.hw.answerRead(HardwareUtils::BiometricCanceled);
+    QCOMPARE(f.unlocks(), 0);
+    QCOMPARE(f.hw.vault.value(f.t.host), AdminPass);
+
+    //not asked again on this opening, the field is what is left
+    f.relay.handleTransportLost();
+    f.relay.handleTransportUp();
+    f.screen.retry();
+    f.answerProbe();
+    QCOMPARE(f.relay.gate(), AdminRelay::GateLocked);
+    QCOMPARE(f.hw.reads.size(), 1);
+
+    f.screen.unlock(QStringLiteral("typed"));
+    QCOMPARE(f.t.frames.last().data["admin_pass"].toString(), QStringLiteral("typed"));
+}
+
+void TstAdminRelay::biometricsFailedReadLeavesTheField()
+{
+    BiometricFixture f;
+    f.store();
+    f.reopen();
+    f.hw.answerRead(HardwareUtils::BiometricFailed);
+    QCOMPARE(f.unlocks(), 0);
+    QCOMPARE(f.hw.vault.value(f.t.host), AdminPass);
+    QVERIFY(f.bio.get_stored());
+}
+
+void TstAdminRelay::biometricsChangedEnrolmentForgets()
+{
+    BiometricFixture f;
+    f.store();
+    f.reopen();
+    f.hw.answerRead(HardwareUtils::BiometricInvalidated);
+    QCOMPARE(f.unlocks(), 0);
+    QVERIFY(f.hw.vault.isEmpty());
+    QVERIFY(!f.bio.get_stored());
+}
+
+void TstAdminRelay::biometricsRefusedPasswordForgets()
+{
+    BiometricFixture f;
+    f.store();
+    f.reopen();
+    f.hw.answerRead();
+    f.answerUnlock(err("bad_password"));
+    QVERIFY(f.hw.vault.isEmpty());
+    QVERIFY(!f.bio.get_stored());
+    QCOMPARE(f.relay.gate(), AdminRelay::GateLocked);
+    QCOMPARE(f.hw.reads.size(), 1);
+}
+
+void TstAdminRelay::biometricsTypedRefusalKeepsTheSecret()
+{
+    BiometricFixture f;
+    f.store();
+    f.reopen();
+    f.hw.answerRead(HardwareUtils::BiometricCanceled);
+    f.screen.unlock(QStringLiteral("typo"));
+    f.answerUnlock(err("bad_password"));
+    QCOMPARE(f.hw.vault.value(f.t.host), AdminPass);
+}
+
+void TstAdminRelay::biometricsOtherRefusalKeepsTheSecret()
+{
+    BiometricFixture f;
+    f.store();
+    f.reopen();
+    f.hw.answerRead();
+    f.answerUnlock(err("rate_limited"));
+    QCOMPARE(f.hw.vault.value(f.t.host), AdminPass);
+}
+
+//iOS: the prompt resigns the app, which drops the socket.
+void TstAdminRelay::biometricsReadWaitsForTheNewSocket()
+{
+    BiometricFixture f;
+    f.holdWithoutSocket();
+    QCOMPARE(f.unlocks(), 0);
+
+    f.t.up = true;
+    f.relay.handleTransportUp();
+    f.screen.retry();
+    QCOMPARE(f.unlocks(), 0);
+    f.answerProbe();
+    QCOMPARE(f.unlocks(), 1);
+    QCOMPARE(f.hw.reads.size(), 1);
+}
+
+void TstAdminRelay::biometricsReadDroppedByTheTimer()
+{
+    BiometricFixture f;
+    f.bio.setHoldDelay(50);
+    f.holdWithoutSocket();
+    QTest::qWait(120);
+    f.socketBack();
+    QCOMPARE(f.unlocks(), 0);
+}
+
+//qSleep: no event loop, as while suspended, where the timer does not run.
+void TstAdminRelay::biometricsReadDroppedByTheClock()
+{
+    BiometricFixture f;
+    f.bio.setHoldDelay(50);
+    f.holdWithoutSocket();
+    QTest::qSleep(120);
+    f.t.up = true;
+    f.relay.handleTransportUp();
+    f.screen.retry();
+    f.relay.handleReply("admin", f.t.frames.last().msgId,
+                        ok(QJsonObject{{ "progress", QJsonObject() }, { "job", QJsonValue::Null }}));
+    QCOMPARE(f.unlocks(), 0);
+}
+
+void TstAdminRelay::biometricsSuspensionDropsWhatIsHeld()
+{
+    for (Qt::ApplicationState state: { Qt::ApplicationSuspended, Qt::ApplicationHidden })
+    {
+        BiometricFixture read;
+        read.holdWithoutSocket();
+        emit qGuiApp->applicationStateChanged(state);
+        read.socketBack();
+        QCOMPARE(read.unlocks(), 0);
+
+        //waiting for the answer of the box
+        BiometricFixture typed;
+        typed.openLocked();
+        typed.bio.unlockAndKeep(AdminPass);
+        typed.bio.applicationStateChanged(state);
+        typed.answerUnlock();
+        QVERIFY(typed.hw.deferredKey.isEmpty());
+        QVERIFY(typed.hw.vault.isEmpty());
+
+        //behind the Android prompt
+        BiometricFixture storing;
+        storing.hw.deferStore = true;
+        storing.openLocked();
+        storing.bio.unlockAndKeep(AdminPass);
+        storing.answerUnlock();
+        storing.bio.applicationStateChanged(state);
+        QCOMPARE(storing.hw.canceledStores, 1);
+        storing.hw.answerStore(HardwareUtils::BiometricOk);
+        QVERIFY(storing.hw.vault.isEmpty());
+        QVERIFY(!storing.bio.get_stored());
+    }
+}
+
+void TstAdminRelay::biometricsReadAnsweredAfterLeavingIsDropped()
+{
+    for (Qt::ApplicationState state: { Qt::ApplicationSuspended, Qt::ApplicationHidden })
+    {
+        BiometricFixture f;
+        f.store();
+        f.reopen();
+        f.bio.applicationStateChanged(state);
+        f.relay.handleTransportLost();
+        f.t.up = false;
+        f.hw.answerRead();
+        f.socketBack();
+        QCOMPARE(f.unlocks(), 0);
+        //m_asked stays: the user is left with the field
+        QCOMPARE(f.hw.reads.size(), 1);
+    }
+}
+
+void TstAdminRelay::biometricsInactiveKeepsTheRead()
+{
+    BiometricFixture f;
+    f.holdWithoutSocket();
+    f.bio.applicationStateChanged(Qt::ApplicationInactive);
+    f.socketBack();
+    QCOMPARE(f.unlocks(), 1);
+}
+
+void TstAdminRelay::biometricsNeverSentToAnotherBox()
+{
+    BiometricFixture f;
+    f.holdWithoutSocket();
+    f.t.host = QStringLiteral("box-b.example:443");
+    f.socketBack();
+    QCOMPARE(f.unlocks(), 0);
+    QVERIFY(!f.bio.get_stored());
+    QCOMPARE(f.hw.reads.size(), 1);
+}
+
+void TstAdminRelay::biometricsCertificateQuestionDropsTheRead()
+{
+    BiometricFixture f;
+    f.store();
+    f.t.trustPending = true;
+    f.reopen();
+    QVERIFY(f.hw.reads.isEmpty());
+
+    f.t.trustPending = false;
+    f.relay.handleTransportLost();
+    f.relay.handleTransportUp();
+    f.screen.retry();
+    f.answerProbe();
+    QCOMPARE(f.hw.reads.size(), 1);
+
+    f.t.trustPending = true;
+    f.hw.answerRead();
+    QCOMPARE(f.unlocks(), 0);
+    f.t.trustPending = false;
+    f.relay.handleTransportLost();
+    f.socketBack();
+    QCOMPARE(f.unlocks(), 0);
+}
+
+//Through the signals of a real connection: nothing else proves the wiring.
+void TstAdminRelay::biometricsCertificateSignalsOfTheConnection()
+{
+    CalaosConnection con;
+    {
+        BiometricFixture f;
+        f.bio.bindConnection(&con);
+        f.holdWithoutSocket();
+        emit con.tlsTrustRequested(QVariantMap());
+        f.socketBack();
+        QCOMPARE(f.unlocks(), 0);
+        QCOMPARE(f.hw.vault.value(f.t.host), AdminPass);
+    }
+    {
+        BiometricFixture f;
+        f.bio.bindConnection(&con);
+        f.holdWithoutSocket();
+        emit con.tlsTrustAccepted(f.t.host);
+        QVERIFY(f.hw.vault.isEmpty());
+        QVERIFY(!f.bio.get_stored());
+        f.socketBack();
+        QCOMPARE(f.unlocks(), 0);
+    }
+}
+
+void TstAdminRelay::biometricsForgetDuringARead()
+{
+    BiometricFixture f;
+    f.store();
+    f.reopen();
+    const QString secret = f.hw.vault.value(f.t.host);
+    const int before = f.unlocks();
+    f.bio.forgetBox(f.t.host);
+    f.hw.emitBiometricReadDone(f.t.host, HardwareUtils::BiometricOk, secret);
+    QCOMPARE(f.unlocks(), before);
+
+    BiometricFixture g;
+    g.store();
+    g.reopen();
+    g.bio.forgetAll();
+    g.hw.emitBiometricReadDone(g.t.host, HardwareUtils::BiometricOk, secret);
+    QCOMPARE(g.unlocks(), 0);
+}
+
+//The store answers after the erase: it must not bring the secret back.
+void TstAdminRelay::biometricsForgetDuringAStore()
+{
+    BiometricFixture f;
+    f.hw.deferStore = true;
+    f.openLocked();
+    f.bio.unlockAndKeep(AdminPass);
+    f.answerUnlock();
+    f.bio.forgetAll();
+    f.hw.answerStore(HardwareUtils::BiometricOk);
+    QVERIFY(f.hw.vault.isEmpty());
+    QVERIFY(!f.bio.get_stored());
+}
+
+void TstAdminRelay::biometricsRowStaysWithoutEnrolment()
+{
+    BiometricFixture f;
+    f.store();
+    f.hw.enrolled = false;
+    f.relay.handleTransportUp();
+    QVERIFY(f.bio.get_stored());
+    QVERIFY(!f.bio.get_available());
+    f.bio.disable();
+    QVERIFY(f.hw.vault.isEmpty());
+    QVERIFY(!f.bio.get_stored());
+}
+
+void TstAdminRelay::biometricsDisable()
+{
+    BiometricFixture f;
+    f.store();
+    f.reopen();
+    f.hw.answerRead(HardwareUtils::BiometricCanceled);
+    QVERIFY(f.bio.get_stored());
+    f.bio.disable();
+    QVERIFY(f.hw.vault.isEmpty());
+    QVERIFY(!f.bio.get_stored());
+    QVERIFY(f.bio.get_available());
+}
+
+void TstAdminRelay::biometricsForgetAllAndForgetBox()
+{
+    BiometricFixture f;
+    f.store();
+    f.bio.forgetBox(f.t.host);
+    QVERIFY(f.hw.vault.isEmpty());
+    f.reopen();
+    QVERIFY(f.hw.reads.isEmpty());
+    QVERIFY(!f.bio.get_stored());
+
+    BiometricFixture g;
+    g.holdWithoutSocket();
+    g.hw.vault[QStringLiteral("box-b.example:443")] = QStringLiteral("other");
+    g.bio.forgetAll();
+    QVERIFY(g.hw.vault.isEmpty());
+    g.socketBack();
+    QCOMPARE(g.unlocks(), 0);
+    QVERIFY(!g.bio.get_stored());
+}
+
+//The same calls as Application; the automatic logout erases nothing.
+void TstAdminRelay::biometricsWipeOnUserActions()
+{
+    TlsPinStore pins(dir.filePath(QStringLiteral("pins_wipe.ini")));
+
+    BiometricFixture logout;
+    logout.store();
+    int logouts = 0;
+    SecretWipe::userLogout(&logout.hw, &logout.bio, [&]() { logouts++; });
+    QCOMPARE(logouts, 1);
+    QVERIFY(logout.hw.vault.isEmpty());
+
+    BiometricFixture reset;
+    reset.store();
+    SecretWipe::resetCredentials(&reset.hw, &reset.bio);
+    QVERIFY(reset.hw.vault.isEmpty());
+
+    BiometricFixture pin;
+    pin.store();
+    pins.setPin(pin.t.host, QStringLiteral("00"));
+    SecretWipe::forgetTlsPin(&pins, &pin.bio, pin.t.host);
+    QVERIFY(pin.hw.vault.isEmpty());
+    QVERIFY(pins.pin(pin.t.host).isEmpty());
+
+    CalaosConnection con;
+    BiometricFixture dropped;
+    dropped.bio.bindConnection(&con);
+    dropped.store();
+    con.logout();
+    dropped.relay.handleTransportLost();
+    QCOMPARE(dropped.hw.vault.value(dropped.t.host), AdminPass);
+}
+
+void TstAdminRelay::biometricsFirstLaunchEmptiesTheStore()
+{
+    BiometricFixture f;
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    settings.remove(QStringLiteral("admin_biometrics_seen"));
+    settings.sync();
+
+    f.hw.vault[f.t.host] = QStringLiteral("left by a removed install");
+    {
+        AdminBiometrics first(&f.hw, &f.relay, &f.screen, &f.t);
+        QVERIFY(f.hw.vault.isEmpty());
+    }
+    f.hw.vault[f.t.host] = AdminPass;
+    AdminBiometrics second(&f.hw, &f.relay, &f.screen, &f.t);
+    QCOMPARE(f.hw.vault.value(f.t.host), AdminPass);
+
+    //a purge that failed is not marked done
+    settings.remove(QStringLiteral("admin_biometrics_seen"));
+    settings.sync();
+    f.hw.removeAllFails = true;
+    {
+        AdminBiometrics failed(&f.hw, &f.relay, &f.screen, &f.t);
+    }
+    settings.sync();
+    QVERIFY(!settings.contains(QStringLiteral("admin_biometrics_seen")));
+    f.hw.removeAllFails = false;
+    AdminBiometrics retried(&f.hw, &f.relay, &f.screen, &f.t);
+    QVERIFY(f.hw.vault.isEmpty());
+}
+
+void TstAdminRelay::biometricsBusyUnlockKeepsNothing()
+{
+    BiometricFixture f;
+    f.openLocked();
+    f.screen.unlock(QStringLiteral("first"));
+    QVERIFY(!f.screen.get_busy().isEmpty());
+    f.bio.unlockAndKeep(AdminPass);
+    f.answerUnlock();
+    QVERIFY(f.hw.deferredKey.isEmpty());
+    QVERIFY(f.hw.vault.isEmpty());
+}
+
+void TstAdminRelay::biometricsEraseCancelsTheStore()
+{
+    BiometricFixture f;
+    f.hw.deferStore = true;
+    f.openLocked();
+    f.bio.unlockAndKeep(AdminPass);
+    f.answerUnlock();
+    f.bio.forgetAll();
+    QCOMPARE(f.hw.canceledStores, 1);
+
+    BiometricFixture g;
+    g.hw.deferStore = true;
+    g.openLocked();
+    g.bio.unlockAndKeep(AdminPass);
+    g.answerUnlock();
+    g.bio.forgetBox(g.t.host);
+    QCOMPARE(g.hw.canceledStores, 1);
+}
+
+//At exit the updates page goes first. Only red under ASan.
+void TstAdminRelay::biometricsOutlivesTheUpdatesPage()
+{
+    FakeTransport t;
+    AdminRelay relay(&t);
+    AdminRelayBackend backend(&relay);
+    FakeBiometricHw hw;
+    auto *screen = new AdminUpdates(&backend, &relay);
+    {
+        AdminBiometrics bio(&hw, &relay, screen, &t);
+        delete screen;
+    }
+    QVERIFY(true);
 }
 
 QTEST_MAIN(TstAdminRelay)

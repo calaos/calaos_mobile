@@ -17,6 +17,15 @@ SettingsPage {
             chevron: true
             onButtonClicked: calaosApp.userLogout()
         }
+        SettingsRow {
+            objectName: "biometricOffButton"
+            title: adminBiometrics.name !== "" ?
+                       qsTr("Turn off %1 for this box").arg(adminBiometrics.name) :
+                       qsTr("Turn off the fingerprint for this box")
+            glyph: "lock"
+            visible: adminBiometrics.stored
+            onButtonClicked: adminBiometrics.disable()
+        }
     }
 
     ListGroupHeader {

@@ -6,4 +6,5 @@
 <full-backup-content>
     <exclude domain="sharedpref" path="calaos_push.xml" />
     <exclude domain="sharedpref" path="calaos_credentials.xml" />
+    <exclude domain="sharedpref" path="calaos_admin_bio.xml" />
 </full-backup-content>

@@ -53,8 +53,18 @@ set_source_files_properties(ios/PrivacyInfo.xcprivacy PROPERTIES
     MACOSX_PACKAGE_LOCATION Resources)
 target_sources(CalaosHome PRIVATE ios/PrivacyInfo.xcprivacy)
 
+# ── Usage descriptions ────────────────────────────────────────────────────────
+# Translated usage descriptions: Info.plist itself holds the English ones.
+# Xcode keeps the .lproj folder of the source path.
+foreach(_lang fr de)
+    set_source_files_properties(ios/${_lang}.lproj/InfoPlist.strings PROPERTIES
+        MACOSX_PACKAGE_LOCATION Resources)
+    target_sources(CalaosHome PRIVATE ios/${_lang}.lproj/InfoPlist.strings)
+endforeach()
+
 # ── Frameworks ────────────────────────────────────────────────────────────────
 target_link_libraries(CalaosHome PRIVATE
+    "-framework LocalAuthentication"
     "-framework SystemConfiguration"
     "-framework UserNotifications"
 )

@@ -36,6 +36,7 @@
 #include "AdminRelay.h"
 #include "AdminRelayBackend.h"
 #include "AdminUpdates.h"
+#include "AdminBiometrics.h"
 #include "ResumePolicy.h"
 #include "BookmarkModel.h"
 
@@ -189,6 +190,7 @@ private:
     AdminRelay *adminRelay = nullptr;
     AdminRelayBackend *adminBackend = nullptr;
     AdminUpdates *boxUpdates = nullptr;
+    AdminBiometrics *adminBiometrics = nullptr;
 
     ResumePolicy resumePolicy;
     //Mirrors resumePolicy into keepPageOnResume, before any status change.

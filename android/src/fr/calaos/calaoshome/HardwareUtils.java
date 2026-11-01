@@ -3,6 +3,9 @@ package fr.calaos.calaoshome;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.KeyguardManager;
+import android.hardware.biometrics.BiometricManager;
+import android.hardware.biometrics.BiometricPrompt;
 import android.content.ClipData;
 import android.content.ClipDescription;
 import android.content.ClipboardManager;
@@ -17,15 +20,24 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CancellationSignal;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.PersistableBundle;
 import android.provider.Settings;
+import android.security.keystore.KeyPermanentlyInvalidatedException;
 import android.util.Log;
 import android.view.WindowManager;
 import android.view.WindowInsetsController;
 import android.widget.EditText;
 import com.google.firebase.messaging.FirebaseMessaging;
 import org.qtproject.qt.android.bindings.QtActivity;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.Locale;
+import java.util.concurrent.Executor;
+import javax.crypto.AEADBadTagException;
+import javax.crypto.Cipher;
 
 // Native callbacks implemented in android/HardwareUtils_Android.cpp. They are
 // registered by HardwareUtilsAndroid::platformInit() through
@@ -37,6 +49,8 @@ class HardwareUtilsNatives
     public static native void emitDeviceToken(String token);
     public static native void emitNotificationOpened(String eventUuid);
     public static native void emitAdminCodeNotified(String codeId);
+    public static native void emitBiometricStoreDone(String key, int result);
+    public static native void emitBiometricReadDone(String key, int result, String secret);
 }
 
 public class HardwareUtils extends QtActivity
@@ -406,6 +420,240 @@ public class HardwareUtils extends QtActivity
         });
 
         return true;
+    }
+
+    // Values of HardwareUtils::BiometricResult.
+    private static final int BIOMETRIC_OK = 0;
+    private static final int BIOMETRIC_CANCELED = 1;
+    private static final int BIOMETRIC_FAILED = 2;
+    private static final int BIOMETRIC_INVALIDATED = 3;
+
+    public static boolean biometricsAvailable()
+    {
+        HardwareUtils activity = _context;
+        if (activity == null)
+            return false;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+        {
+            BiometricManager bm = activity.getSystemService(BiometricManager.class);
+            return bm != null &&
+                   bm.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+        {
+            BiometricManager bm = activity.getSystemService(BiometricManager.class);
+            return bm != null && bm.canAuthenticate() == BiometricManager.BIOMETRIC_SUCCESS;
+        }
+        // API 28 has no way to ask without the deprecated fingerprint service.
+        KeyguardManager km = activity.getSystemService(KeyguardManager.class);
+        return km != null && km.isDeviceSecure() &&
+               activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_FINGERPRINT);
+    }
+
+    private static void authenticate(final Activity activity, Cipher cipher, String title, String cancelText,
+                                      CancellationSignal signal, BiometricPrompt.AuthenticationCallback callback,
+                                      final Runnable canceled)
+    {
+        Executor executor = activity.getMainExecutor();
+        BiometricPrompt prompt = new BiometricPrompt.Builder(activity)
+            .setTitle(title)
+            .setNegativeButton(cancelText, executor, new DialogInterface.OnClickListener()
+            {
+                public void onClick(DialogInterface dialog, int which)
+                {
+                    canceled.run();
+                }
+            })
+            .build();
+        prompt.authenticate(new BiometricPrompt.CryptoObject(cipher), signal, executor, callback);
+    }
+
+    private static boolean isCancel(int errorCode)
+    {
+        return errorCode == BiometricPrompt.BIOMETRIC_ERROR_CANCELED ||
+               errorCode == BiometricPrompt.BIOMETRIC_ERROR_USER_CANCELED;
+    }
+
+    // The password waits here for the prompt alone, and goes with the store.
+    private static String pendingStoreSecret;
+    private static CancellationSignal pendingStoreSignal;
+
+    public static void biometricStore(final String key, String secret, final String title, final String cancelText)
+    {
+        final HardwareUtils activity = _context;
+        if (!isUsable(activity))
+        {
+            notifyBiometricStoreDone(key, BIOMETRIC_FAILED);
+            return;
+        }
+        final String typed = secret;
+        activity.runOnUiThread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                pendingStoreSecret = typed;
+                pendingStoreSignal = new CancellationSignal();
+                try
+                {
+                    Cipher cipher = CredentialStore.biometricEncryptCipher();
+                    authenticate(activity, cipher, title, cancelText, pendingStoreSignal, new BiometricPrompt.AuthenticationCallback()
+                    {
+                        @Override
+                        public void onAuthenticationSucceeded(BiometricPrompt.AuthenticationResult result)
+                        {
+                            String secret = pendingStoreSecret;
+                            pendingStoreSecret = null;
+                            if (secret == null)
+                            {
+                                notifyBiometricStoreDone(key, BIOMETRIC_CANCELED);
+                                return;
+                            }
+                            try
+                            {
+                                CredentialStore.biometricSave(activity, key, result.getCryptoObject().getCipher(), secret);
+                                notifyBiometricStoreDone(key, BIOMETRIC_OK);
+                            }
+                            catch (GeneralSecurityException | RuntimeException e)
+                            {
+                                notifyBiometricStoreDone(key, BIOMETRIC_FAILED);
+                            }
+                        }
+
+                        @Override
+                        public void onAuthenticationError(int errorCode, CharSequence errString)
+                        {
+                            pendingStoreSecret = null;
+                            notifyBiometricStoreDone(key, isCancel(errorCode) ? BIOMETRIC_CANCELED : BIOMETRIC_FAILED);
+                        }
+                    }, new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            pendingStoreSecret = null;
+                            notifyBiometricStoreDone(key, BIOMETRIC_CANCELED);
+                        }
+                    });
+                }
+                catch (GeneralSecurityException | IOException | RuntimeException e)
+                {
+                    pendingStoreSecret = null;
+                    Log.w(TAG, "Biometric storage not available");
+                    notifyBiometricStoreDone(key, BIOMETRIC_FAILED);
+                }
+            }
+        });
+    }
+
+    // The main thread owns these two, and may have no activity left to post on.
+    public static void biometricCancelStore()
+    {
+        new Handler(Looper.getMainLooper()).post(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                pendingStoreSecret = null;
+                if (pendingStoreSignal != null)
+                    pendingStoreSignal.cancel();
+            }
+        });
+    }
+
+    public static void biometricRead(final String key, final String title, final String cancelText)
+    {
+        final HardwareUtils activity = _context;
+        if (!isUsable(activity))
+        {
+            notifyBiometricReadDone(key, BIOMETRIC_FAILED, "");
+            return;
+        }
+        activity.runOnUiThread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try
+                {
+                    Cipher cipher = CredentialStore.biometricDecryptCipher(activity, key);
+                    if (cipher == null)
+                    {
+                        notifyBiometricReadDone(key, BIOMETRIC_INVALIDATED, "");
+                        return;
+                    }
+                    authenticate(activity, cipher, title, cancelText, new CancellationSignal(), new BiometricPrompt.AuthenticationCallback()
+                    {
+                        @Override
+                        public void onAuthenticationSucceeded(BiometricPrompt.AuthenticationResult result)
+                        {
+                            try
+                            {
+                                String secret = CredentialStore.biometricOpen(activity, key, result.getCryptoObject().getCipher());
+                                if (secret == null)
+                                    notifyBiometricReadDone(key, BIOMETRIC_INVALIDATED, "");
+                                else
+                                    notifyBiometricReadDone(key, BIOMETRIC_OK, secret);
+                            }
+                            catch (AEADBadTagException e)
+                            {
+                                notifyBiometricReadDone(key, BIOMETRIC_INVALIDATED, "");
+                            }
+                            catch (GeneralSecurityException | RuntimeException e)
+                            {
+                                notifyBiometricReadDone(key, BIOMETRIC_FAILED, "");
+                            }
+                        }
+
+                        @Override
+                        public void onAuthenticationError(int errorCode, CharSequence errString)
+                        {
+                            notifyBiometricReadDone(key, isCancel(errorCode) ? BIOMETRIC_CANCELED : BIOMETRIC_FAILED, "");
+                        }
+                    }, new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            notifyBiometricReadDone(key, BIOMETRIC_CANCELED, "");
+                        }
+                    });
+                }
+                catch (KeyPermanentlyInvalidatedException e)
+                {
+                    notifyBiometricReadDone(key, BIOMETRIC_INVALIDATED, "");
+                }
+                catch (GeneralSecurityException | IOException | RuntimeException e)
+                {
+                    Log.w(TAG, "Biometric storage not available");
+                    notifyBiometricReadDone(key, BIOMETRIC_FAILED, "");
+                }
+            }
+        });
+    }
+
+    private static void notifyBiometricStoreDone(String key, int result)
+    {
+        try
+        {
+            HardwareUtilsNatives.emitBiometricStoreDone(key, result);
+        }
+        catch (UnsatisfiedLinkError e)
+        {
+            Log.e(TAG, "emitBiometricStoreDone: native method not registered", e);
+        }
+    }
+
+    private static void notifyBiometricReadDone(String key, int result, String secret)
+    {
+        try
+        {
+            HardwareUtilsNatives.emitBiometricReadDone(key, result, secret);
+        }
+        catch (UnsatisfiedLinkError e)
+        {
+            Log.e(TAG, "emitBiometricReadDone: native method not registered", e);
+        }
     }
 
     private static void notifyDialogTextValid(String text)

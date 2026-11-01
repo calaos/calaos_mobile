@@ -1,4 +1,5 @@
 #include "Application.h"
+#include "SecretWipe.h"
 #include <QtQml>
 #include <QQmlContext>
 #include <QQmlEngine>
@@ -400,6 +401,10 @@ void Application::createQmlApp()
     adminBackend = new AdminRelayBackend(adminRelay, this);
     boxUpdates = new AdminUpdates(adminBackend, adminRelay, this);
     engine.rootContext()->setContextProperty("boxUpdates", boxUpdates);
+    adminBiometrics = new AdminBiometrics(HardwareUtils::Instance(), adminRelay, boxUpdates,
+                                          calaosConnect, this);
+    adminBiometrics->bindConnection(calaosConnect);
+    engine.rootContext()->setContextProperty("adminBiometrics", adminBiometrics);
 #endif
 
     m_netAddresses = new QQmlObjectListModel<NetworkInfo>(this);
@@ -507,8 +512,7 @@ void Application::answerTlsTrust(bool accept)
 
 void Application::forgetTlsPin(const QString &host)
 {
-    if (TlsPinStore::instance()->forget(host))
-        qInfo() << "TLS: pin forgotten for" << host;
+    SecretWipe::forgetTlsPin(TlsPinStore::instance(), adminBiometrics, host);
 }
 
 void Application::updateTlsPins()
@@ -643,21 +647,12 @@ void Application::updateWaitingForNetwork()
 
 void Application::userLogout()
 {
-    //Persisted: the next launches stay logged out until a login succeeds
-    //(homeLoaded()), see LaunchLogin (FIX-11).
-    HardwareUtils::Instance()->setSessionActive(false);
-    //logout() first: it hands a tap taken but not opened yet back to
-    //HardwareUtils (DeferredNotifGate::loggedOut() also makes any armed delay
-    //stale), so the line below drops it too (FIX-7).
-    logout();
-    HardwareUtils::Instance()->forgetPendingUserActions();
+    SecretWipe::userLogout(HardwareUtils::Instance(), adminBiometrics, [this]() { logout(); });
 }
 
 void Application::resetAllData()
 {
-    //Also forgets a persisted logout (FIX-11): back to the state of a fresh
-    //install, where the demo account is not logged in automatically.
-    HardwareUtils::Instance()->resetAuthKeychain();
+    SecretWipe::resetCredentials(HardwareUtils::Instance(), adminBiometrics);
     //A pin is trust in one particular box: it goes with the host.
     TlsPinStore::instance()->clear();
     calaosConnect->forgetTlsRefusals();

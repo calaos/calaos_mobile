@@ -63,8 +63,10 @@ public:
     //+-20% jitter so a fleet of clients does not hammer a server that just
     //came back in lockstep.
     static constexpr int JitterPercent = 20;
-    //Wrong credentials will not fix themselves: after that many rejections we
-    //stop retrying and hand over to the login screen.
+    //Wrong credentials will not fix themselves: after that many rejections of
+    //a session that was up (a restarting box can refuse for a moment) we stop
+    //retrying and hand over to the login screen. Credentials never accepted
+    //yet get no retry at all, see m_credentialsUnproven.
     static constexpr int MaxAuthFailures = 3;
     //A single long-poll error is not a disconnection. Only a run of them is.
     static constexpr int MaxPollFailures = 3;
@@ -120,6 +122,7 @@ public:
             m_failures = 0;
             m_authFailures = 0;
             m_givenUp = false;
+            m_credentialsUnproven = true;
             //An explicit login reopens a deliberately closed session. It does
             //not lift a pause: only the app coming back to the foreground does.
             m_stopped = false;
@@ -132,6 +135,7 @@ public:
 
     void attemptSucceeded()
     {
+        m_credentialsUnproven = false;
         m_failures = 0;
         m_authFailures = 0;
         m_pollFailures = 0;
@@ -166,7 +170,7 @@ public:
         if (f == AuthFailure)
         {
             m_authFailures++;
-            if (m_authFailures >= MaxAuthFailures)
+            if (m_credentialsUnproven || m_authFailures >= MaxAuthFailures)
             {
                 //No infinite retry on a wrong password.
                 m_givenUp = true;
@@ -191,6 +195,7 @@ public:
     //app sent to the background and back) until an explicit login.
     void stop()
     {
+        m_credentialsUnproven = false;
         m_state = Disconnected;
         m_failures = 0;
         m_authFailures = 0;
@@ -235,6 +240,7 @@ public:
             m_authFailures = 0;
             m_givenUp = false;
             m_stopped = false;
+            m_credentialsUnproven = true;
         }
         m_pollFailures = 0;
         m_pendingDelayMs = 0;
@@ -299,6 +305,10 @@ private:
     int m_pollFailures = 0;
     int m_pendingDelayMs = 0;
     bool m_givenUp = false;
+    //The explicit login has not been accepted yet: a refusal is the server's
+    //answer to it, retrying would only delay the error and drop the login
+    //screen out of Loading between attempts.
+    bool m_credentialsUnproven = false;
     bool m_wantsConnection = false;
     bool m_stopped = false;
     bool m_paused = false;

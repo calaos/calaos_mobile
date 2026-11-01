@@ -2,11 +2,27 @@ import QtQuick
 import SharedComponents
 import QtQuick.Layouts
 import QuickFlux
+import Calaos
 import "../quickflux"
 
 MouseArea {
+    id: root
+
     property variant camModel
     property bool camConnected: false
+    property bool feedActive: false
+
+    readonly property real pixelRatio: Screen.devicePixelRatio
+
+    CameraFeed {
+        camera: root.camConnected ? root.camModel : null
+        active: root.feedActive
+        frameSize: Qt.size(cameraPic.width * root.pixelRatio,
+                           cameraPic.height * root.pixelRatio)
+        //Thumbnails: at the 200 ms of the single view, six cameras pull 20 MB/s
+        //from the box
+        interval: 500
+    }
 
     width: Units.dp(218)
     height: Units.dp(300)

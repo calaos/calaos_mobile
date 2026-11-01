@@ -159,6 +159,13 @@ Views in [qml/mobile/](../qml/mobile):
 - `FavoritesListView.qml`, `FavoritesAddView.qml`, `FavoritesEditView.qml` —
   per-user favorites.
 - `CameraListView.qml`, `CameraSingleView.qml`, `IconCamera.qml` — cameras.
+  Each view declares a `CameraFeed` per displayed camera (`active`, `frameSize`,
+  `interval`, [src/CameraModel.h](../src/CameraModel.h)); a camera without an
+  active feed sends no request, so nothing runs off screen or behind another
+  page. Frames are decoded on `CameraFrameDecoder`'s thread pool at the displayed
+  size, never on the GUI thread. A feed stays bound to the page status
+  (`StackView.status`), not to the application state: polling pauses on
+  `Suspended`/`Hidden` in `CameraModel`.
 - `MusicListView.qml`, `IconMusic.qml`, `IconMusicPlayer.qml` — audio.
 - `EventLogView.qml`, `PushEventView.qml` — event log + push notification deep
   link viewer.

@@ -45,8 +45,6 @@ Window {
     property variant roomModel
     property string currentRoomName
 
-    property bool isSingleCameraView: false
-
     //Load fonts
     Fonts { id: calaosFont }
 
@@ -82,14 +80,6 @@ Window {
     }
 
     function handleBack() {
-        //enable all cameras if going back to CameraListView
-        if (isSingleCameraView) {
-            cameraModel.cameraVisible = true
-            isSingleCameraView = false
-        }
-        else
-            cameraModel.cameraVisible = false
-
         if (stackView.depth > 2) {
             stackView.pop()
             if (stackView.depth === 2)

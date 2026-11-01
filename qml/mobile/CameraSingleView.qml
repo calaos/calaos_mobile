@@ -4,8 +4,20 @@ import QtQuick.Controls
 import SharedComponents
 
 Item {
+    id: page
 
     property variant modelData
+
+    readonly property bool onScreen: StackView.status === StackView.Active ||
+                                     StackView.status === StackView.Activating
+    readonly property real pixelRatio: Screen.devicePixelRatio
+
+    CameraFeed {
+        camera: page.modelData ? page.modelData : null
+        active: page.onScreen
+        frameSize: Qt.size(pictureArea.width * page.pixelRatio,
+                           pictureArea.height * page.pixelRatio)
+    }
 
     Rectangle {
         color: "black"
@@ -13,6 +25,8 @@ Item {
     }
 
     Item {
+        id: pictureArea
+
         width: parent.width
         height: parent.height - header.height
         y: header.height

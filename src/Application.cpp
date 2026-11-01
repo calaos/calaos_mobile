@@ -451,6 +451,7 @@ void Application::createQmlApp()
     //qmlRegisterSingletonType(QUrl("qrc:/qml/Units.qml"), "Units", 1, 0, "Units");
 
     qmlRegisterType<RoomFilterModel>("Calaos", 1, 0, "RoomFilterModel");
+    qmlRegisterType<CameraFeed>("Calaos", 1, 0, "CameraFeed");
     qmlRegisterUncreatableType<QQmlObjectListModelBase> ("Calaos", 1, 0, "ObjectListModel",  "QQmlObjectListModel not creatable");
     qmlRegisterUncreatableType<QQmlVariantListModel> ("Calaos", 1, 0, "VariantListModel",  "QQmlVariantListModel not creatable");
 

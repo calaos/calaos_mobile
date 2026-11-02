@@ -57,6 +57,7 @@ private slots:
     void ntpStates_data();
     void ntpStates();
     void clockInTheBoxZone();
+    void dateFollowsTheLanguage();
     void clockOfAnUnknownZoneSaysUtc();
     void readsAtEachOpening();
     void aReadThatFailsLeavesNoValue_data();
@@ -334,6 +335,18 @@ void TstBoxTime::clockInTheBoxZone()
     const QVariantMap now = m_mgr->localNow();
     QCOMPARE(now.value("hour").toInt(), 10);
     QCOMPARE(now.value("day").toInt(), 25);
+}
+
+void TstBoxTime::dateFollowsTheLanguage()
+{
+    readBox();
+    QVERIFY2(m_mgr->get_dateText().contains(QStringLiteral("October")), qPrintable(m_mgr->get_dateText()));
+
+    m_mgr->setLanguage(QStringLiteral("fr"));
+    QVERIFY2(m_mgr->get_dateText().contains(QStringLiteral("octobre")), qPrintable(m_mgr->get_dateText()));
+
+    m_mgr->setLanguage(QStringLiteral("en"));
+    QVERIFY2(m_mgr->get_dateText().contains(QStringLiteral("October")), qPrintable(m_mgr->get_dateText()));
 }
 
 void TstBoxTime::clockOfAnUnknownZoneSaysUtc()

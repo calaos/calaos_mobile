@@ -28,6 +28,9 @@ TestCase {
         function goToDesktop() {}
     }
 
+    //the backdrop of qml/desktop/Background.qml: the panel text is light on it
+    Rectangle { anchors.fill: parent; color: "#272727" }
+
     OverlayLayer {
         id: layer
         objectName: "dialogOverlayLayer"
@@ -483,6 +486,7 @@ TestCase {
         tc.height = 600
         openLoaded()
         compare(need("toggleNtp").text, data.toggle)
+        verify(need("date").text.indexOf("octobre") >= 0, need("date").text)
         wait(100)
         shot(data.file)
         tc.width = 1280

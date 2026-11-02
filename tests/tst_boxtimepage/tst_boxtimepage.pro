@@ -34,6 +34,7 @@ HEADERS += \
     $$SRC_DIR/qqmlhelpers.h \
     $$SRC_DIR/HardwareUtils.h \
     $$SRC_DIR/Common.h \
+    $$SRC_DIR/ControlPanelModel.h \
     $$SRC_DIR/IOTypeRegistry.h
 
 SOURCES += \
@@ -46,9 +47,11 @@ SOURCES += \
     $$SRC_DIR/AsyncJobs.cpp \
     $$SRC_DIR/HardwareUtils.cpp \
     $$SRC_DIR/Common.cpp \
+    $$SRC_DIR/ControlPanelModel.cpp \
     $$SRC_DIR/IOTypeRegistry.cpp \
     tst_boxtimepage.cpp
 
 OTHER_FILES += \
     tst_configtimeview.qml \
-    tst_configscreenview.qml
+    tst_configscreenview.qml \
+    tst_configview.qml

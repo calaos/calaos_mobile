@@ -12,6 +12,7 @@
 #include "BoxTimeManager.h"
 #include "CalaosOsAPI.h"
 #include "Common.h"
+#include "ControlPanelModel.h"
 #include "FakeTimeDaemon.h"
 
 //Before QGuiApplication, and before the engine for the style
@@ -101,6 +102,11 @@ public:
         manager = new BoxTimeManager(api);
         manager->setLanguage(QStringLiteral("en"));
         engine->rootContext()->setContextProperty(QStringLiteral("boxTime"), manager);
+        if (!panel)
+        {
+            panel = new ControlPanelModel(this);
+            engine->rootContext()->setContextProperty(QStringLiteral("controlPanelModel"), panel);
+        }
     }
 
     Q_INVOKABLE bool setLanguage(const QString &lang)
@@ -115,6 +121,10 @@ public:
                 return false;
         }
         engine->retranslate();
+        //what Application::setLanguage does: the date follows the language, and
+        //the panel entries are plain strings that retranslate() does not reach
+        manager->setLanguage(lang.isEmpty() ? QStringLiteral("en") : lang);
+        panel->retranslate();
         return true;
     }
 
@@ -155,6 +165,7 @@ private:
     FakeTimeDaemon *daemon = nullptr;
     CalaosOsAPI *api = nullptr;
     BoxTimeManager *manager = nullptr;
+    ControlPanelModel *panel = nullptr;
 };
 
 class Setup: public QObject

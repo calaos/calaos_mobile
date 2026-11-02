@@ -28,7 +28,7 @@ void ControlPanelModel::setOptions(bool hasInstall, bool isSnapshotBoot)
     load();
 }
 
-//QStandardItem texts are plain strings: engine.retranslate() cannot reach them
+// QStandardItem texts are plain strings: engine.retranslate() cannot reach them
 void ControlPanelModel::retranslate()
 {
     const QList<Entry> list = entries();

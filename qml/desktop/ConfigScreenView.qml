@@ -52,6 +52,8 @@ Item {
 
             CalaosCheck {
                 id: checkDpms
+                objectName: "checkDpms"
+                Layout.fillWidth: true
                 text: qsTr("Turn off screen after some time")
                 checked: screenManager.dpmsEnabled
                 onCheckedChanged: screenManager.updateDpmsEnabled(checked)

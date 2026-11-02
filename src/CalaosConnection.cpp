@@ -209,6 +209,11 @@ bool CalaosConnection::checkTls(const QUrl &url, const QSslCertificate &peer, co
     return false;
 }
 
+QString CalaosConnection::adminHostKey() const
+{
+    return wsocket ? TlsPinning::hostKey(wsocket->requestUrl()) : QString();
+}
+
 void CalaosConnection::answerTlsTrust(bool accept)
 {
     if (pendingTrust.isEmpty())

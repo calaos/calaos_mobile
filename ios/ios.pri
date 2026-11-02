@@ -23,7 +23,7 @@ QMAKE_MAC_XCODE_SETTINGS += Q_ENABLE_BITCODE
 QT += gui-private
 
 #Add framework for Reachability
-LIBS += -framework SystemConfiguration -framework UserNotifications
+LIBS += -framework LocalAuthentication -framework SystemConfiguration -framework UserNotifications
 
 HEADERS += $$PWD/HardwareUtils_iOS.h
 OBJECTIVE_SOURCES += $$PWD/HardwareUtils.mm \

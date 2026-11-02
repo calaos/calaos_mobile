@@ -16,6 +16,7 @@ DEFINES += QUICK_TEST_SOURCE_DIR=\\\"$$PWD\\\"
 DEFINES += CALAOS_STUB_QML_DIR=\\\"$$clean_path($$PWD/../tst_climatewidget/stubs)\\\"
 DEFINES += CALAOS_QML_DIR=\\\"$$clean_path($$PWD/../../qml)\\\"
 DEFINES += CALAOS_FONTS_DIR=\\\"$$clean_path($$PWD/../../fonts)\\\"
+DEFINES += CALAOS_LANG_DIR=\\\"$$clean_path($$PWD/../../lang)\\\"
 
 RESOURCES += $$PWD/../../img_desktop.qrc
 
@@ -49,4 +50,5 @@ SOURCES += \
     tst_boxtimepage.cpp
 
 OTHER_FILES += \
-    tst_configtimeview.qml
+    tst_configtimeview.qml \
+    tst_configscreenview.qml

@@ -33,6 +33,16 @@ TestCase {
         }
     }
     QtObject {
+        id: adminBiometrics
+        property bool available: false
+        property bool stored: false
+        property string name: "Face ID"
+        property var kept: []
+        property int disabled: 0
+        function unlockAndKeep(password) { kept.push(password) }
+        function disable() { disabled++ }
+    }
+    QtObject {
         id: calaosApp
         property var tlsPinList: []
         property int logouts: 0
@@ -274,6 +284,18 @@ TestCase {
         verify(item.visible)
     }
 
+    function test_biometricsTurnedOffFromConnection() {
+        adminBiometrics.stored = false
+        var page = openSubPage("settingsEntryConnection")
+        verify(!findChild(page, "biometricOffButton").visible)
+        adminBiometrics.stored = true
+        adminBiometrics.disabled = 0
+        waitForRendering(page)
+        clickOn(page, "biometricOffButton")
+        compare(adminBiometrics.disabled, 1)
+        adminBiometrics.stored = false
+    }
+
     function test_logout() {
         clickOn(openSubPage("settingsEntryConnection"), "logoutButton")
         compare(calaosApp.logouts, 1)
@@ -452,6 +474,21 @@ TestCase {
 
     function test_iconsAreInTheAppResources(data) {
         verify(harness.isResource("img/settings/" + data.name + ".svg"))
+    }
+
+    function test_captureBiometricOff_data() {
+        return [ { tag: "faceid", name: "Face ID" }, { tag: "fingerprint", name: "" } ]
+    }
+
+    function test_captureBiometricOff(data) {
+        if (shotsDir === "")
+            skip("SETTINGS_SHOTS_DIR not set")
+        adminBiometrics.stored = true
+        adminBiometrics.name = data.name
+        var page = openSubPage("settingsEntryConnection")
+        shot("connection-off-" + data.tag + ".png")
+        adminBiometrics.stored = false
+        adminBiometrics.name = "Face ID"
     }
 
     function test_captures() {

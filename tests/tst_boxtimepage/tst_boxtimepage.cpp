@@ -8,6 +8,7 @@
 #include <QQmlEngine>
 #include <QQmlPropertyMap>
 #include <QTemporaryDir>
+#include <QTranslator>
 #include "BoxTimeManager.h"
 #include "CalaosOsAPI.h"
 #include "Common.h"
@@ -102,6 +103,21 @@ public:
         engine->rootContext()->setContextProperty(QStringLiteral("boxTime"), manager);
     }
 
+    Q_INVOKABLE bool setLanguage(const QString &lang)
+    {
+        delete translator;
+        translator = nullptr;
+        if (!lang.isEmpty())
+        {
+            translator = new QTranslator;
+            if (!translator->load(QStringLiteral(CALAOS_LANG_DIR "/calaos_") + lang) ||
+                !QCoreApplication::installTranslator(translator))
+                return false;
+        }
+        engine->retranslate();
+        return true;
+    }
+
     Q_INVOKABLE void setBox(const QString &key, const QVariant &value)
     {
         daemon->box[key] = QJsonValue::fromVariant(value);
@@ -135,6 +151,7 @@ public:
 private:
     QQmlEngine *engine = nullptr;
     QTemporaryDir dir;
+    QTranslator *translator = nullptr;
     FakeTimeDaemon *daemon = nullptr;
     CalaosOsAPI *api = nullptr;
     BoxTimeManager *manager = nullptr;

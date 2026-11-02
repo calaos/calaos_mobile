@@ -44,9 +44,13 @@ Item {
         Qt.inputMethod.commit()
         // qmllint enable missing-property
         const pass = passwordField.text
+        const keep = keepPassword.visible && keepPassword.checked
         clearPassword()
         passwordField.focus = false
-        boxUpdates.unlock(pass)
+        if (keep)
+            adminBiometrics.unlockAndKeep(pass)
+        else
+            boxUpdates.unlock(pass)
     }
 
     QuickControls.StackView.onActivated: boxUpdates.activate()
@@ -444,6 +448,28 @@ Item {
                     enabled: boxUpdates.busy === ""
                     EnterKey.type: Qt.EnterKeyGo
                     onAccepted: page.submitPassword()
+                }
+
+                CalaosCheck {
+                    id: keepPassword
+                    objectName: "keepPassword"
+                    Layout.fillWidth: true
+                    visible: adminBiometrics.available && !adminBiometrics.stored
+                    enabled: boxUpdates.busy === ""
+                    text: adminBiometrics.name !== "" ?
+                              qsTr("Unlock with %1 next time").arg(adminBiometrics.name) :
+                              qsTr("Unlock with fingerprint next time")
+                    //Each new unlock is a new decision.
+                    onVisibleChanged: if (visible) checked = false
+                }
+
+                Hint {
+                    objectName: "keepPasswordHint"
+                    visible: keepPassword.visible
+                    text: adminBiometrics.name !== "" ?
+                              qsTr("The admin password then stays on this phone, protected by %1.")
+                                  .arg(adminBiometrics.name) :
+                              qsTr("The admin password then stays on this phone, protected by your fingerprint.")
                 }
 
                 ErrorLine {

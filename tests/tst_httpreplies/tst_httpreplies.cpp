@@ -124,6 +124,7 @@ private slots:
     void failedCameraPictureThenReconnect();
     void failedAudioCoverThenLogout();
     void failedCommandThenLogout();
+    void notifPictureUrlEncodesCredentials();
 
 private:
     void login();
@@ -224,6 +225,37 @@ void TstHttpReplies::failedCommandThenLogout()
 
     connection->logout();
     QCOMPARE(connection->connectionState(), ReconnectPolicy::Disconnected);
+    settle();
+}
+
+void TstHttpReplies::notifPictureUrlEncodesCredentials()
+{
+    //Synthetic password: every character that breaks an unencoded query.
+    const QString user = QStringLiteral("us er&1");
+    const QString pass = QStringLiteral("p&a#s+s%20 =x");
+    connection->login(user, pass, server->baseUrl());
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
+
+    const QUrl url(connection->getNotifPictureUrl(QStringLiteral("pic&1")));
+    QVERIFY(url.isValid());
+    QVERIFY(url.fragment().isEmpty());
+
+    //Read the query like the server: split on '&' in the raw form, decode each value once.
+    QMap<QString, QString> q;
+    const QStringList pairs = url.query(QUrl::FullyEncoded).split(QLatin1Char('&'));
+    for (const QString &pair: pairs)
+    {
+        const int eq = pair.indexOf(QLatin1Char('='));
+        QVERIFY(eq > 0);
+        q.insert(pair.left(eq), QUrl::fromPercentEncoding(pair.mid(eq + 1).toLatin1()));
+    }
+    QCOMPARE(pairs.size(), 4);
+    QCOMPARE(q.value(QStringLiteral("cn_user")), user);
+    QCOMPARE(q.value(QStringLiteral("cn_pass")), pass);
+    QCOMPARE(q.value(QStringLiteral("action")), QStringLiteral("event_picture"));
+    QCOMPARE(q.value(QStringLiteral("pic_uid")), QStringLiteral("pic&1"));
+
+    connection->logout();
     settle();
 }
 

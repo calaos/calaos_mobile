@@ -1715,9 +1715,9 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
 
 QString CalaosConnection::getNotifPictureUrl(const QString &pic_uid)
 {
-    return QStringLiteral("%1?cn_user=%2&cn_pass=%3&action=event_picture&pic_uid=%4")
-            .arg(httphost)
-            .arg(username)
-            .arg(password)
-            .arg(pic_uid);
+    //Concatenation, not arg(): an encoded "%20" would be taken for a placeholder.
+    auto enc = [](const QString &v) { return QString::fromLatin1(QUrl::toPercentEncoding(v)); };
+    return httphost + QStringLiteral("?cn_user=") + enc(username)
+            + QStringLiteral("&cn_pass=") + enc(password)
+            + QStringLiteral("&action=event_picture&pic_uid=") + enc(pic_uid);
 }

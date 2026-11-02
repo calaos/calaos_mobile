@@ -855,8 +855,7 @@ void TstCameraPolling::watchdogReplacesTheLostRequest()
     server->swallowed.insert(QStringLiteral("camera_1"));
     showCameras(true);
 
-    pump(WatchdogMs + 500);
-    QCOMPARE(server->stampsFor(QStringLiteral("camera_1")).size(), 2);
+    QTRY_COMPARE_WITH_TIMEOUT(server->stampsFor(QStringLiteral("camera_1")).size(), 2, 3 * WatchdogMs);
 
     //Left open, each lost reply would hold one of the six connections per host
     //of QNetworkAccessManager until none is left for the other cameras

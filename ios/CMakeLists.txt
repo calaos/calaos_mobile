@@ -5,6 +5,8 @@
 add_executable(PushNotif MACOSX_BUNDLE
     PushNotif/NotificationService.h
     PushNotif/NotificationService.m
+    PushNotif/CalaosQuery.h
+    PushNotif/CalaosQuery.m
     # SimpleKeychain sources — copies in ios/PushNotif/ mirror ios/SimpleKeychain/.
     PushNotif/A0SimpleKeychain.h
     PushNotif/A0SimpleKeychain.m
@@ -22,6 +24,7 @@ target_sources(PushNotif PRIVATE PushNotif/PrivacyInfo.xcprivacy)
 # global AUTOMOC can cause the Xcode generator to misidentify the language.
 set_source_files_properties(
     PushNotif/NotificationService.m
+    PushNotif/CalaosQuery.m
     PushNotif/A0SimpleKeychain.m
     "PushNotif/A0SimpleKeychain+KeyPair.m"
     PROPERTIES LANGUAGE OBJC

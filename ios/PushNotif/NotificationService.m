@@ -6,6 +6,7 @@
 //
 
 #import "NotificationService.h"
+#import "CalaosQuery.h"
 #import <CommonCrypto/CommonDigest.h>
 #import <Security/Security.h>
 #import <fcntl.h>
@@ -264,11 +265,10 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response newRequest:(NSURLReques
 
     A0SimpleKeychain *keychain = [A0SimpleKeychain keychainWithService:@"CalaosMobile" accessGroup:@"9WYC46992U.fr.calaos.CalaosMobile"];
     
-    NSString *urlString = [NSString stringWithFormat:@"%@?cn_user=%@&cn_pass=%@&action=eventlog&uuid=%@",
-                           [self getCalaosHost],
-                           [keychain stringForKey:@"calaos-cn-user"],
-                           [keychain stringForKey:@"calaos-cn-pass"],
-                           uuid];
+    NSString *urlString = CalaosQueryURL([self getCalaosHost],
+                                         [keychain stringForKey:@"calaos-cn-user"],
+                                         [keychain stringForKey:@"calaos-cn-pass"],
+                                         @"eventlog", @"uuid", uuid);
     NSURLRequest *eventURL = [NSURLRequest requestWithURL:[NSURL URLWithString:urlString]];
     
     NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]
@@ -307,11 +307,10 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response newRequest:(NSURLReques
                                                   return;
                                               }
                                               
-                                              NSString *picUrlString = [NSString stringWithFormat:@"%@?cn_user=%@&cn_pass=%@&action=event_picture&pic_uid=%@",
-                                                                        [self getCalaosHost],
-                                                                        [keychain stringForKey:@"calaos-cn-user"],
-                                                                        [keychain stringForKey:@"calaos-cn-pass"],
-                                                                        picUid];
+                                              NSString *picUrlString = CalaosQueryURL([self getCalaosHost],
+                                                                                      [keychain stringForKey:@"calaos-cn-user"],
+                                                                                      [keychain stringForKey:@"calaos-cn-pass"],
+                                                                                      @"event_picture", @"pic_uid", picUid);
 
                                               NSURL *picURL = [NSURL URLWithString:picUrlString];
                                               NSURLSessionDownloadTask *downloadTask = [session downloadTaskWithURL:picURL

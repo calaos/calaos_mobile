@@ -51,7 +51,8 @@ private slots:
         QTest::addColumn<QString>("subTitle");
         QTest::newRow("fr") << "fr" << "Date et heure"
                             << "Horloge, fuseau horaire et heure automatique";
-        QTest::newRow("de") << "de" << "Datum und Uhrzeit" << "";
+        QTest::newRow("de") << "de" << "Datum und Uhrzeit"
+                            << "Uhr, Zeitzone und automatische Uhrzeit";
     }
 
     void titlesAreTranslatedWhenModelIsBuiltAfterTheLanguage()
@@ -64,8 +65,7 @@ private slots:
         QVERIFY(installLang(t, lang));
         ControlPanelModel m;
         QCOMPARE(role(m, "config/time", ControlPanelModel::RoleTitle), title);
-        if (!subTitle.isEmpty())
-            QCOMPARE(role(m, "config/time", ControlPanelModel::RoleSubTitle), subTitle);
+        QCOMPARE(role(m, "config/time", ControlPanelModel::RoleSubTitle), subTitle);
         QCoreApplication::removeTranslator(&t);
     }
 

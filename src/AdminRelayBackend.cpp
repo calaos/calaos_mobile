@@ -24,9 +24,11 @@ CalaosOsReply AdminRelayBackend::toReply(const AdminRelay::Outcome &outcome)
     const bool answered = outcome.ok ||
                           (code != AdminRelay::ErrTimeout && code != AdminRelay::ErrDisconnected &&
                            code != AdminRelay::ErrWebsocketRequired && code != AdminRelay::ErrTlsPending &&
-                           code != AdminRelay::ErrNotReady && code != AdminRelay::ErrSessionLost);
+                           code != AdminRelay::ErrNotReady && code != AdminRelay::ErrSessionLost &&
+                           code != AdminRelay::ErrOldServer);
     r.httpStatus = answered ? 200 : 0;
-    r.requestStarted = code != AdminRelay::ErrWebsocketRequired && code != AdminRelay::ErrTlsPending;
+    r.requestStarted = code != AdminRelay::ErrWebsocketRequired && code != AdminRelay::ErrTlsPending &&
+                       code != AdminRelay::ErrOldServer;
     if (!outcome.ok)
     {
         r.code = code;

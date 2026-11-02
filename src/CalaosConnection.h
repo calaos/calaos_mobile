@@ -11,6 +11,8 @@
 #include "JsonKeys.h"
 #include "TlsPinning.h"
 #include "AdminTransport.h"
+#include "CameraToken.h"
+#include "ServerCapabilities.h"
 
 //Reconnection state machine and exponential backoff (T14).
 //
@@ -543,7 +545,15 @@ public:
                wsocket->requestUrl().scheme() == QLatin1String("wss");
     }
     bool isHttpFallback() const override { return constate == ConStateHttp; }
+    //The admin messages are sent only to a server that announced them; while
+    //get_server_info is out the answer is not known yet.
+    RelaySupport adminRelaySupport() const override;
     QString adminHostKey() const override;
+
+    const ServerCapabilities &serverCapabilities() const { return serverCaps; }
+    //Tests shorten the waits for get_server_info and camera_token.
+    void setServerInfoTimeout(int ms) { serverInfoTimeoutMs = ms; }
+    void setCameraTokenTimeout(int ms) { cameraTokenTimeoutMs = ms; }
     //A certificate refused in this run is refused silently afterwards (the
     //launch login, iOS become-active), so the prompt cannot come back in a
     //loop. An explicit login from the login screen asks again.
@@ -623,6 +633,28 @@ private:
     QList<QNetworkReply *> reqReplies;
     //Picture requests in flight, also listed in reqReplies.
     QHash<QString, QNetworkReply *> cameraReplies;
+
+    //What the server announced after this login (get_server_info), and the
+    //camera token it gave. Both are per connection: a new socket asks again.
+    ServerCapabilities serverCaps;
+    QTimer *serverInfoTimer = nullptr;
+    int serverInfoTimeoutMs = 5000;
+    CameraToken cameraToken;
+    QTimer *cameraTokenTimer = nullptr;
+    int cameraTokenTimeoutMs = 5000;
+    QString cameraTokenPending; //msg_id of the request in flight
+    quint64 cameraTokenSeq = 0;
+    //Pictures asked while the token (or the server's capabilities) is not
+    //there yet: camera id -> v1 url suffix. The latest request of a camera wins.
+    QHash<QString, QString> waitingCameras;
+    void requestServerInfo();
+    void finishServerInfo(const ServerCapabilities &caps);
+    void requestCameraToken();
+    void handleCameraTokenReply(const QString &msgId, const QJsonObject &data);
+    void dropCameraTokenRequest();
+    void flushWaitingCameras(bool failed);
+    void sendCameraPicture(const QString &camid, const QString &urlSuffix, const QString &token);
+    void resetServerSession();
 
     //Event log requests in flight, by request id (EVLOG-1).
     enum class EventLogKind { Page, Event };
@@ -737,6 +769,8 @@ signals:
     void homeLoaded(const QVariantMap &home);
     void disconnected();
     void loginFailed();
+    //get_server_info was answered, or given up on: serverCapabilities() changed.
+    void serverInfoChanged();
 
     //events signals
     void eventInputChange(QString id, QString state, QString value);

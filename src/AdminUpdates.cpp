@@ -335,6 +335,7 @@ bool AdminUpdates::isGateCode(const QString &code)
         QStringLiteral("admin_unavailable"), QStringLiteral("daemon_too_old"),
         QStringLiteral("daemon_unreachable"), QStringLiteral("bad_session"),
         AdminRelay::ErrWebsocketRequired, AdminRelay::ErrSessionLost,
+        AdminRelay::ErrOldServer,
     };
     return codes.contains(code);
 }

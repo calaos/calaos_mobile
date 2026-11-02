@@ -21,6 +21,12 @@ public:
     //host:port of the WebSocket, as the TLS pins name it, logged in or not;
     //empty without one. What is stored for a box is stored under this.
     virtual QString adminHostKey() const = 0;
+
+    //Did the server announce the admin messages (capability admin_relay)?
+    //Unknown while the question is out: callers wait. The default is Yes, a
+    //transport that does not ask behaves as before.
+    enum class RelaySupport { Unknown, Yes, No };
+    virtual RelaySupport adminRelaySupport() const { return RelaySupport::Yes; }
 };
 
 #endif // ADMINTRANSPORT_H

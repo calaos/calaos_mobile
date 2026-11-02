@@ -53,6 +53,8 @@ public:
     static inline const QString ErrUnknown = QStringLiteral("unknown");
     //unlock refused: no admin answer yet on this socket
     static inline const QString ErrNotReady = QStringLiteral("not_ready");
+    //the server did not announce admin_relay (or did not answer get_server_info)
+    static inline const QString ErrOldServer = QStringLiteral("old_server");
     //the session ended while a request made with it was out
     static inline const QString ErrSessionLost = QStringLiteral("session_lost");
 
@@ -115,6 +117,8 @@ public slots:
     void handleTransportLost();
     void handleTransportUp();
     void handleTlsTrustAccepted();
+    //get_server_info was answered or given up on: the requests held for it go out.
+    void replayDeferred();
     //Timers do not run in the background: the lifetime is checked again on
     //the way back.
     void checkExpiry();
@@ -141,6 +145,13 @@ private:
         QTimer *timer = nullptr;
     };
 
+    struct Deferred
+    {
+        QString action;
+        QJsonObject params;
+        Callback callback;
+    };
+
     QString send(const QString &msg, const QString &action, const QJsonObject &data,
                  int timeoutMs, bool withSession, Callback callback);
     void finish(const QString &msgId, const Outcome &outcome);
@@ -158,6 +169,7 @@ private:
     qint64 m_wallExpiry = 0;
     QTimer *m_sessionTimer = nullptr;
     QHash<QString, Pending> m_pending;
+    QList<Deferred> m_deferred;
     quint64 m_nextId = 0;
     bool m_spoken = false;
     //an admin answer came on the current socket: unlock may go out

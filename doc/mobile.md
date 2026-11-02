@@ -242,7 +242,8 @@ the phone: those stay in the webapp.
   store: `idle`, `probing`, `locked`, `unlocked`, `https_required`,
   `admin_not_set`, `unavailable` (`admin_unavailable`), `too_old`
   (`daemon_too_old`), `unreachable` (`daemon_unreachable`, or an unexpected
-  error on the probe), `old_server` (no answer at all on this socket).
+  error on the probe), `old_server` (the server does not announce `admin_relay`, or never answered
+  `get_server_info`: see 8.2).
 - Admin session: memory only, never persisted or logged; 15 min absolute at
   most (`expires_in`, monotonic and wall clock, checked again when the app
   comes back to the foreground); dropped with the socket (logout, lost link,
@@ -388,6 +389,27 @@ Shared rules (in [src/HardwareUtils.cpp](../src/HardwareUtils.cpp) and
   for another home) at the next manual login (FIX-7). A lost connection, the
   login cancel button (plain `logout()`) and the iOS resign-active pause keep
   them for the next login, as above.
+
+### 8.2 Server capabilities and camera token
+
+After the login succeeds on the WebSocket, `CalaosConnection` sends
+`get_server_info` (`ServerCapabilities.h`). An old server ignores it: no reply
+within 5 s, or an error, means "no capability" and the socket stays up. Shared
+by the kiosk and the mobile app (the kiosk simply never shows the admin part).
+
+- `camera_token`: the v2 camera picture asks `camera_token` once, then sends
+  `camera_token` instead of `cn_user`/`cn_pass` (`CameraToken.h`: renewal when
+  at most min(30 s, half of the life) is left, driven by the next picture, no
+  timer; backoff 1 s to 30 s after a failure; forgotten on an HTTP 400). A
+  picture asked while the capabilities are pending waits for them; if the token
+  cannot be had it fails, it never falls back to `cn_pass` on a server that
+  offers the token. Without the capability: `cn_pass`, as before.
+- The v1 camera url (`get_camera_pic`) and the notification picture url keep
+  the credentials in the query (the token only covers `camera` and
+  `get_picture`). They are assembled by concatenation: `QString::arg()` would
+  take an encoded `%2F` of the first value for its next placeholder.
+- `admin_relay` drives `AdminTransport::adminRelaySupport()`: `AdminRelay`
+  holds its requests while it is unknown and answers `old_server` when absent.
 
 ### 9.1 Encrypted admin code
 

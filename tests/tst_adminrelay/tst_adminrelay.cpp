@@ -2146,6 +2146,18 @@ void TstAdminRelay::biometricsFirstLaunchEmptiesTheStore()
     f.hw.removeAllFails = false;
     AdminBiometrics retried(&f.hw, &f.relay, &f.screen, &f.t);
     QVERIFY(f.hw.vault.isEmpty());
+
+    //forgetAll that failed: the next launch purges what is left
+    settings.setValue(QStringLiteral("admin_biometrics_seen"), true);
+    settings.sync();
+    f.hw.vault[f.t.host] = AdminPass;
+    f.hw.removeAllFails = true;
+    f.bio.forgetAll();
+    settings.sync();
+    QVERIFY(!settings.contains(QStringLiteral("admin_biometrics_seen")));
+    f.hw.removeAllFails = false;
+    AdminBiometrics next(&f.hw, &f.relay, &f.screen, &f.t);
+    QVERIFY(f.hw.vault.isEmpty());
 }
 
 void TstAdminRelay::biometricsBusyUnlockKeepsNothing()

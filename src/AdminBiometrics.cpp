@@ -331,9 +331,12 @@ void AdminBiometrics::forgetAll()
     m_reading = false;
     m_readKey.clear();
     cancelStore();
-    m_hw->biometricRemoveAll();
+    const bool removed = m_hw->biometricRemoveAll();
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
     settings.remove(SettingsGroup);
+    //Left over and no longer listed: the next launch purges again.
+    if (!removed)
+        settings.remove(SettingsSeen);
     settings.sync();
     refresh();
 }

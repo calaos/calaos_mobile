@@ -281,9 +281,10 @@ the phone: those stay in the webapp.
   TLS pin, so another box never reads it; QSettings only holds which box has
   one. It is asked for when the unlock card opens; cancelling leaves the QML
   field. `bad_password` on a stored password erases it, a typed refusal does
-  not. A change of enrolment, a user logout, a reset of all data, a forgotten
-  certificate and an accepted certificate change erase it too. The first launch
-  of an install empties the iOS keychain group, which survives uninstalling.
+  not. A user logout, a reset of all data, a forgotten certificate and an
+  accepted certificate change erase it too. A change of enrolment makes it
+  unreadable. The first launch of an install empties the iOS keychain group,
+  which survives uninstalling.
 - The password passes through memory: while the box answers a checked unlock,
   during the Android prompt that stores it, and up to 30 s after a read, as the
   iOS prompt resigns the app, which drops the socket: it waits for the box to

@@ -1005,9 +1005,8 @@ void CalaosConnection::requestCamFinished(QNetworkReply *reqReply, const QString
     {
         qDebug() << "Error in " << redactUrl(reqReply->url()) << ":" << reqReply->errorString();
         //The server refuses a token it revoked or never knew with a 400.
-        if (reqReply->property("usedCameraToken").toBool() &&
-            reqReply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 400)
-            cameraToken.clear();
+        if (reqReply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 400)
+            cameraToken.rejected(reqReply->property("usedCameraToken").toString());
         emit cameraPictureFailed(camid);
         return;
     }
@@ -1416,7 +1415,7 @@ void CalaosConnection::sendCameraPicture(const QString &camid, const QString &ur
     request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     QNetworkReply *reqReply = accessManagerCam->post(request, jdoc.toJson());
-    reqReply->setProperty("usedCameraToken", !token.isEmpty());
+    reqReply->setProperty("usedCameraToken", token);
 
     connect(reqReply, &QNetworkReply::finished, this, [=]() { requestCamFinished(reqReply, camid); });
     connect(reqReply, &QNetworkReply::downloadProgress, this, [=]() { emit cameraPictureProgress(camid); });

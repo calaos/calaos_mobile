@@ -119,6 +119,9 @@ public:
     //The server forgets every token: the next picture gets a 400.
     void revokeTokens() { validTokens.clear(); }
 
+    //Picture answers come late, so a token can be renewed in between.
+    int httpDelayMs = 0;
+
     //What a picture request carried, whatever the form.
     static bool carriesCredentials(const HttpRequest &r)
     {
@@ -200,9 +203,16 @@ private:
         QByteArray out = "HTTP/1.1 " + QByteArray::number(r.status) + " X\r\nContent-Type: image/jpeg";
         out += "\r\nContent-Length: " + QByteArray::number(body.size());
         out += "\r\nConnection: close\r\n\r\n" + body;
-        sock->write(out);
-        sock->flush();
-        sock->disconnectFromHost();
+        auto reply = [sock, out]()
+        {
+            sock->write(out);
+            sock->flush();
+            sock->disconnectFromHost();
+        };
+        if (httpDelayMs > 0)
+            QTimer::singleShot(httpDelayMs, sock, reply);
+        else
+            reply();
     }
 
     static void send(QWebSocket *c, const QJsonObject &frame, const QJsonObject &data)
@@ -281,6 +291,8 @@ private slots:
     void capabilityMissingKeepsCnPass();
     void refusedTokenNeverFallsBackToCnPass();
     void tokenRefusedByHttpIsForgotten();
+    void refusedTokenBacksOff();
+    void lateRefusalKeepsRenewedToken();
     void v1UrlIsAssembledWithoutArg();
     void notifPictureUrlKeepsCnPass();
 
@@ -484,11 +496,52 @@ void TstCameraToken::tokenRefusedByHttpIsForgotten()
     QTRY_COMPARE(failed->count(), 1);
     QCOMPARE(server->requests.last().status, 400);
 
+    QTest::qWait(1100); //past the backoff
     QVERIFY(picture(QStringLiteral("cam1")));
     QCOMPARE(server->count(QStringLiteral("camera_token")), 2);
     QCOMPARE(server->requests.last().status, 200);
     for (const HttpRequest &r: std::as_const(server->requests))
         QVERIFY2(!FakeCalaos::carriesCredentials(r), r.raw.constData());
+}
+
+void TstCameraToken::refusedTokenBacksOff()
+{
+    login();
+    QVERIFY(picture(QStringLiteral("cam1")));
+    server->revokeTokens();
+    connection->getCameraPicture(QStringLiteral("cam1"));
+    QTRY_COMPARE(failed->count(), 1);
+
+    //a 400 is a failure like any other: no token request per frame meanwhile
+    for (int i = 0; i < 3; ++i)
+    {
+        connection->getCameraPicture(QStringLiteral("cam1"));
+        QTRY_COMPARE(failed->count(), 2 + i);
+    }
+    QCOMPARE(server->count(QStringLiteral("camera_token")), 1);
+    QCOMPARE(server->requests.size(), 2);
+}
+
+void TstCameraToken::lateRefusalKeepsRenewedToken()
+{
+    server->expiresIn = QStringLiteral("2"); //renewal margin: 1s
+    login();
+    QVERIFY(picture(QStringLiteral("cam1")));
+    QCOMPARE(server->count(QStringLiteral("camera_token")), 1);
+
+    QTest::qWait(1100);
+    //sent with the old token, which is refused after the renewal came in
+    server->revokeTokens();
+    server->httpDelayMs = 400;
+    connection->getCameraPicture(QStringLiteral("cam1"));
+    QTRY_COMPARE(server->count(QStringLiteral("camera_token")), 2);
+    QTRY_COMPARE(failed->count(), 1);
+    QCOMPARE(server->requests.last().status, 400);
+
+    server->httpDelayMs = 0;
+    QVERIFY(picture(QStringLiteral("cam1")));
+    QCOMPARE(server->count(QStringLiteral("camera_token")), 2);
+    QCOMPARE(server->requests.last().status, 200);
 }
 
 void TstCameraToken::v1UrlIsAssembledWithoutArg()

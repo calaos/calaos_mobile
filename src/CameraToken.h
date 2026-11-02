@@ -54,6 +54,19 @@ public:
 
     bool inBackoff() const { return !m_retryAt.hasExpired(); }
 
+    //The server refused `used` (HTTP 400). A late answer about a token already
+    //replaced must not erase the new one; otherwise forget it and back off, or
+    //a server that keeps refusing gets a token request per frame.
+    void rejected(const QString &used)
+    {
+        if (used.isEmpty() || used != m_token)
+            return;
+        m_token.clear();
+        m_expiry = QDeadlineTimer(0);
+        m_marginMs = 0;
+        failed();
+    }
+
     //The server dropped it (socket closed, credentials changed): forget all.
     void clear()
     {

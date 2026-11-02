@@ -7,6 +7,9 @@ class TstNotifQuery: public QObject
     Q_OBJECT
 
 private slots:
+    void rawValueEncoding_data();
+    void rawValueEncoding();
+    void rawFullUrl();
     void credentialsReachTheServerIntact_data();
     void credentialsReachTheServerIntact();
     void numericPictureIdIsKept();
@@ -27,6 +30,38 @@ static QMap<QString, QString> serverQuery(NSString *urlString, int *pairCount)
     }
     *pairCount = int(pairs.size());
     return q;
+}
+
+//Checked on the raw string: QUrl would normalise the encoding before any check.
+void TstNotifQuery::rawValueEncoding_data()
+{
+    QTest::addColumn<QString>("value");
+    QTest::addColumn<QString>("encoded");
+
+    QTest::newRow("unreserved") << QStringLiteral("aZ09-._~") << QStringLiteral("aZ09-._~");
+    QTest::newRow("non-ascii") << QStringLiteral("rené") << QStringLiteral("ren%C3%A9");
+    QTest::newRow("reserved") << QStringLiteral("& + = % #") << QStringLiteral("%26%20%2B%20%3D%20%25%20%23");
+}
+
+void TstNotifQuery::rawValueEncoding()
+{
+    QFETCH(QString, value);
+    QFETCH(QString, encoded);
+
+    NSString *v = value.toNSString();
+    NSString *s = CalaosQueryURL(@"http://box/api.php", v, v, @"eventlog", @"uuid", v);
+    QCOMPARE(QString::fromNSString(s),
+             QStringLiteral("http://box/api.php?cn_user=") + encoded + QStringLiteral("&cn_pass=") + encoded
+             + QStringLiteral("&action=eventlog&uuid=") + encoded);
+}
+
+void TstNotifQuery::rawFullUrl()
+{
+    NSString *s = CalaosQueryURL(@"https://box.example:443/calaos/api.php", @"rené", @"p&a+s=s%#~",
+                                 @"event_picture", @"pic_uid", @"pic-1_a.b");
+    QCOMPARE(QString::fromNSString(s),
+             QStringLiteral("https://box.example:443/calaos/api.php?cn_user=ren%C3%A9"
+                            "&cn_pass=p%26a%2Bs%3Ds%25%23~&action=event_picture&pic_uid=pic-1_a.b"));
 }
 
 void TstNotifQuery::credentialsReachTheServerIntact_data()
@@ -57,9 +92,6 @@ void TstNotifQuery::credentialsReachTheServerIntact()
         QVERIFY(url.isValid());
         QVERIFY(url.fragment().isEmpty());
         QCOMPARE(url.host(), QStringLiteral("box.example"));
-        //Only unreserved ASCII is left unencoded in the query.
-        for (const QChar c: url.query(QUrl::FullyEncoded))
-            QVERIFY(c.unicode() < 0x80);
 
         int pairs = 0;
         const auto q = serverQuery(s, &pairs);

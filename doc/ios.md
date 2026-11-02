@@ -80,6 +80,8 @@ is wired in via `CODE_SIGN_ENTITLEMENTS` (see [ios/ios.pri](../ios/ios.pri)).
 
 ### 3.2 Notification Service Extension (PushNotif)
 
+The real build goes through CMake (target `PushNotif` in [ios/CMakeLists.txt](../ios/CMakeLists.txt)); `ios/PushNotif.xcodeproj` is not maintained and does not contain `CalaosQuery.{h,m}`.
+
 The repository ships [ios/PushNotif/](../ios/PushNotif) but the **target itself**
 must be created from Xcode each time the project is regenerated. Steps from
 [ios/readme.md](../ios/readme.md):

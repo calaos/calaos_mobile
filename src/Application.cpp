@@ -416,6 +416,12 @@ void Application::createQmlApp()
     engine.rootContext()->setContextProperty("userInfoModel", UserInfoModel::Instance());
 
     controlPanelModel = new ControlPanelModel(this);
+    auto syncPanelOptions = [this]() {
+        controlPanelModel->setOptions(get_hasInstall(), get_isSnapshotBoot());
+    };
+    connect(this, &Application::hasInstallChanged, controlPanelModel, syncPanelOptions);
+    connect(this, &Application::isSnapshotBootChanged, controlPanelModel, syncPanelOptions);
+    syncPanelOptions();
     engine.rootContext()->setContextProperty("controlPanelModel", controlPanelModel);
 
     updateManager = new UpdateManager(&engine, this);
@@ -1034,6 +1040,10 @@ void Application::setupLanguage()
     }
 
     engine.retranslate();
+#ifdef CALAOS_DESKTOP
+    if (controlPanelModel)
+        controlPanelModel->retranslate();
+#endif
 }
 
 void Application::setLanguage(QString code)

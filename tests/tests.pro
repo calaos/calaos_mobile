@@ -23,6 +23,7 @@ SUBDIRS += \
     tst_camerapolling \
     tst_climatewidget \
     tst_common \
+    tst_controlpanelmodel \
     tst_eventlogmodel \
     tst_eventlogsession \
     tst_favoritesmodel \

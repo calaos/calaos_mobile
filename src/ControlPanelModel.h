@@ -5,10 +5,11 @@
 #include "qqmlhelpers.h"
 
 class ControlPanelModelItem;
-class Application;
 
 class ControlPanelModel: public QStandardItemModel
 {
+    Q_OBJECT
+
 public:
     ControlPanelModel(QObject *parent = nullptr);
     virtual ~ControlPanelModel();
@@ -21,10 +22,20 @@ public:
         RoleClickId,
     };
 
-    void load();
+    void setOptions(bool hasInstall, bool isSnapshotBoot);
+    void retranslate();
 
 private:
-    Application *calaosApp;
+    struct Entry
+    {
+        QString title, subTitle, icon, clickId;
+    };
+
+    QList<Entry> entries() const;
+    void load();
+
+    bool m_hasInstall = false;
+    bool m_isSnapshotBoot = false;
 };
 
 class ControlPanelModelItem: public QObject, public QStandardItem

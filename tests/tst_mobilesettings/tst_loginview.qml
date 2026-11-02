@@ -150,10 +150,6 @@ TestCase {
         var clear = clearButtonOf(field)
         verify(clear)
         tryCompare(clear, "opacity", 1)
-        // Without the SVG image plugin (CI test job) the icon decodes to 0 px
-        // wide and a click at its centre misses the MouseArea.
-        if (clear.width <= 0)
-            clear.width = clear.height
         mouseClick(clear)
         compare(field.text, "")
         compare(calaosApp.loginEdited, true)

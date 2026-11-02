@@ -468,4 +468,25 @@ TestCase {
         tc.width = 1280
         tc.height = 1024
     }
+
+    function test_frenchMainPane_data() {
+        return [
+            { tag: "ntp on", ntp: true, toggle: "Ne plus utiliser NTP", file: "boxtime-fr-ntp-on.png" },
+            { tag: "ntp off", ntp: false, toggle: "Utiliser NTP", file: "boxtime-fr-ntp-off.png" },
+        ]
+    }
+
+    function test_frenchMainPane(data) {
+        verify(harness.setLanguage("fr"))
+        harness.setBox("ntp", data.ntp)
+        tc.width = 1024
+        tc.height = 600
+        openLoaded()
+        compare(need("toggleNtp").text, data.toggle)
+        wait(100)
+        shot(data.file)
+        tc.width = 1280
+        tc.height = 1024
+        harness.setLanguage("")
+    }
 }

@@ -76,6 +76,28 @@ void HardwareUtils::emitApplicationActiveChanged(bool active)
     }
 }
 
+void HardwareUtils::biometricStore(const QString &key, const QString &secret, const QString &reason)
+{
+    Q_UNUSED(secret) Q_UNUSED(reason)
+    emit biometricStoreDone(key, BiometricFailed);
+}
+
+void HardwareUtils::biometricRead(const QString &key, const QString &reason)
+{
+    Q_UNUSED(reason)
+    emit biometricReadDone(key, BiometricFailed, QString());
+}
+
+void HardwareUtils::emitBiometricStoreDone(const QString &key, int result)
+{
+    emit biometricStoreDone(key, result);
+}
+
+void HardwareUtils::emitBiometricReadDone(const QString &key, int result, const QString &secret)
+{
+    emit biometricReadDone(key, result, secret);
+}
+
 void HardwareUtils::emitDialogTextValid(const QString &s)
 {
     emit dialogTextValid(s);

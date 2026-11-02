@@ -89,6 +89,21 @@ public:
     //dialogTextValid()/dialogCanceled() signals below.
     Q_INVOKABLE virtual void inputTextDialog(const QString &title, const QString &message);
 
+    //Protected storage of a secret, under the biometrics enrolled now: a
+    //change of enrolment makes it unreadable. Asynchronous, answered by
+    //biometricStoreDone() and biometricReadDone(). reason is what the system
+    //prompt shows. biometricName(): proper name, empty for the generic word.
+    enum BiometricResult { BiometricOk, BiometricCanceled, BiometricFailed, BiometricInvalidated };
+    virtual bool hasBiometrics() const { return false; }
+    virtual QString biometricName() const { return QString(); }
+    virtual void biometricStore(const QString &key, const QString &secret, const QString &reason);
+    //Drops a store waiting for its prompt; nothing is stored.
+    virtual void biometricCancelStore() {}
+    virtual void biometricRead(const QString &key, const QString &reason);
+    virtual void biometricRemove(const QString &key) { Q_UNUSED(key) }
+    //False when something may be left.
+    virtual bool biometricRemoveAll() { return true; }
+
     //This is set by platform code if app was started with options
     //It is used by iOS when started with a QuickAction
     bool hasStartedWithOption() { return startedWithOpt; }
@@ -214,6 +229,8 @@ public:
     void emitApplicationActiveChanged(bool active);
     void emitDialogTextValid(const QString &s);
     void emitDialogCancel();
+    void emitBiometricStoreDone(const QString &key, int result);
+    void emitBiometricReadDone(const QString &key, int result, const QString &secret);
     void emitCalaosServerDetected();
     void emitPushNotifReceived(const QString &uuid);
 
@@ -224,6 +241,9 @@ signals:
 
     void dialogCanceled();
     void dialogTextValid(const QString &text);
+
+    void biometricStoreDone(const QString &key, int result);
+    void biometricReadDone(const QString &key, int result, const QString &secret);
 
     //emited when a calaos_server has been detected on the LAN
     void calaosServerDetected();

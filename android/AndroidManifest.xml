@@ -11,6 +11,7 @@
     <!-- %%INSERT_FEATURES -->
     <!-- Runtime permission on Android 13+ (requested by HardwareUtils.onCreate); ignored below. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <!-- Declared by androidx.work for its foreground-service and after-reboot
          paths; neither is used (PushPictureWorker is expedited on Android 12+
          only, never a foreground service, and a pending picture download is

@@ -11,6 +11,7 @@
 	<key>keychain-access-groups</key>
 	<array>
 		<string>$(AppIdentifierPrefix)fr.calaos.CalaosMobile</string>
+		<string>$(AppIdentifierPrefix)fr.calaos.CalaosMobile.admin</string>
 	</array>
 </dict>
 </plist>

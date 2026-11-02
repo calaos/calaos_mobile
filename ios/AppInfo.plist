@@ -26,6 +26,14 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>fr</string>
+		<string>de</string>
+	</array>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Calaos Home uses Face ID to unlock the administration of your box without typing its password.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Calaos Home does not use your photo library and never asks for access to it.</string>
 	<key>UIBackgroundModes</key>

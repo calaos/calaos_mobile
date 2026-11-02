@@ -10,9 +10,10 @@ The app has no account system, no advertising, no analytics and no tracking. It 
 
 - The address of your Calaos server, your Calaos user name and password, and your app settings (language, favourites).
 - The password is stored in the system's secure storage (Android Keystore-encrypted storage, iOS Keychain).
+- If you choose to unlock the administration of your box with biometrics, the admin password of that box is stored on this phone, in the same secure storage, behind your fingerprint or face. It stays on the device, is not included in backups, and becomes unreadable if your enrolled biometrics change. It is deleted when you turn this off, log out, reset the app's data, forget the certificate of the box, accept a changed certificate for the box, or when the box refuses it. It passes through the app's memory while the box answers or the system prompt is open, and for up to 30 seconds after it is read. On Android, uninstalling the app removes it. On iOS the system keeps it after the app is uninstalled, out of reach, and the app deletes it the next time it is installed and started. The app never receives your biometric data: the system only tells it whether the check succeeded.
 - To show notifications, the app keeps a push notification token and an unread counter for the iOS icon badge.
 
-You can erase all of this at any time with *Settings → Reset all data* in the app, or by uninstalling it.
+You can erase all of this at any time with *Settings → Reset all data* in the app. Uninstalling the app erases it on Android. On iOS the system keeps what is in the Keychain after the app is uninstalled, so use *Reset all data* first.
 
 ## Data sent to your Calaos server
 
@@ -56,9 +57,10 @@ L'application n'a pas de compte utilisateur, pas de publicité, pas d'outil de s
 
 - L'adresse de votre serveur Calaos, votre identifiant et votre mot de passe Calaos, et vos réglages (langue, favoris).
 - Le mot de passe est conservé dans le stockage sécurisé du système (stockage chiffré par l'Android Keystore, trousseau iOS).
+- Si vous choisissez de déverrouiller l'administration de votre box par biométrie, le mot de passe admin de cette box est conservé sur ce téléphone, dans le même stockage sécurisé, derrière votre empreinte ou votre visage. Il reste sur l'appareil, n'est pas inclus dans les sauvegardes et devient illisible si vos données biométriques enregistrées changent. Il est supprimé si vous désactivez cette option, si vous vous déconnectez, si vous réinitialisez les données de l'application, si vous oubliez le certificat de la box, si vous acceptez un certificat modifié pour la box, ou si la box le refuse. Il passe par la mémoire de l'application pendant que la box répond ou que l'invite du système est ouverte, et jusqu'à 30 secondes après sa lecture. Sur Android, désinstaller l'application le supprime. Sur iOS, le système le conserve après la désinstallation, inaccessible, et l'application le supprime au prochain lancement après réinstallation. L'application ne reçoit jamais vos données biométriques : le système lui dit seulement si le contrôle a réussi.
 - Pour afficher les notifications, l'application garde un jeton de notification et un compteur de notifications non lues pour la pastille de l'icône iOS.
 
-Vous pouvez tout effacer à tout moment avec *Réglages → Réinitialiser toutes les données* dans l'application, ou en la désinstallant.
+Vous pouvez tout effacer à tout moment avec *Réglages → Réinitialiser toutes les données* dans l'application. Désinstaller l'application l'efface sur Android. Sur iOS, le système conserve ce qui est dans le trousseau après la désinstallation : utilisez d'abord *Réinitialiser toutes les données*.
 
 ## Données envoyées à votre serveur Calaos
 

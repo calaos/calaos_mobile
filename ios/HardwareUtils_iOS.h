@@ -69,6 +69,13 @@ public:
 
     virtual void inputTextDialog(const QString &title, const QString &message);
 
+    bool hasBiometrics() const override;
+    QString biometricName() const override;
+    void biometricStore(const QString &key, const QString &secret, const QString &reason) override;
+    void biometricRead(const QString &key, const QString &reason) override;
+    void biometricRemove(const QString &key) override;
+    bool biometricRemoveAll() override;
+
     virtual QString getStartOption(const QString &key);
     virtual void setQuickLinks(QVariantList quicklinks);
 

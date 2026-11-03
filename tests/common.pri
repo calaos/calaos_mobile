@@ -16,6 +16,9 @@ CONFIG += no_testcase_installs
 SRC_DIR = $$PWD/../src
 
 INCLUDEPATH += $$SRC_DIR
+# Redundant with the INCLUDEPATH scan, kept so that header-only units
+# (LogRedact.h, NetworkLimits.h) are tracked explicitly.
+DEPENDPATH += $$SRC_DIR
 
 # Artefacts intermédiaires regroupés (garde les répertoires de build lisibles).
 MOC_DIR = $$OUT_PWD/.moc

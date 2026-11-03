@@ -941,14 +941,27 @@ void TstCameraToken::cameraPictureBoundsAreEnforced()
     //read(MaxPictureBytes) in the finish handler is the last guard: each way
     //past the limit must stop the transfer, and the limit itself must pass.
     login();
+    static QStringList *sink;
     for (auto mode: { FakeCalaos::Announced, FakeCalaos::NoLength, FakeCalaos::OverLimit })
     {
         server->big = mode;
         server->bigAborted = 0;
         const int before = failed->count();
+        QStringList lines;
+        sink = &lines;
+        const QtMessageHandler previous = qInstallMessageHandler([](QtMsgType, const QMessageLogContext &, const QString &m) {
+            sink->append(m);
+        });
         connection->getCameraPicture(QStringLiteral("cam1"), QStringLiteral("/cam/image?id=1"));
-        QTRY_COMPARE_WITH_TIMEOUT(failed->count(), before + 1, 5000);
+        const bool done = QTest::qWaitFor([&]() { return failed->count() == before + 1; }, 5000);
+        qInstallMessageHandler(previous);
+        QVERIFY(done);
         QCOMPARE(downloaded->count(), 0);
+        //The transfer timeout is 30 s: a failure within 5 s is the bound, and the
+        //error says so (a timeout would read "timed out").
+        const QString log = lines.join(QLatin1Char('\n'));
+        QVERIFY2(log.contains(QLatin1String("canceled"), Qt::CaseInsensitive), qPrintable(log));
+        QVERIFY2(!log.contains(QLatin1String("timed out"), Qt::CaseInsensitive), qPrintable(log));
         //OverLimit is sent in one write: the client can have read all of it before it
         //closes, and the server then has no abort left to see. Refusal is already proven above.
         if (mode != FakeCalaos::OverLimit)

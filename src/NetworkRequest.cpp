@@ -116,11 +116,12 @@ bool NetworkRequest::start()
 
     dataRead.clear();
 
-    //Files go to disk chunk by chunk and are not held in memory: no bound there.
     if (resType == TypeJson)
         NetworkLimits::limitDownload(reply, NetworkLimits::MaxJsonBytes);
     else if (resType == TypeRawData)
         NetworkLimits::limitDownload(reply, NetworkLimits::MaxPictureBytes);
+    else
+        NetworkLimits::limitDownload(reply, maxFileBytes);
 
     if (resType == TypeJson)
     {
@@ -128,6 +129,9 @@ bool NetworkRequest::start()
                 this, &NetworkRequest::nmFinishedJson);
         connect(reply, &QNetworkReply::readyRead, this, [this]()
                 {
+                    //The bound's abort() runs finished synchronously: reply is already null.
+                    if (!reply || reply->error() == QNetworkReply::OperationCanceledError)
+                        return;
                     auto d = reply->readAll();
                     emit dataReadyRead(d);
                     dataRead.append(d);
@@ -139,6 +143,9 @@ bool NetworkRequest::start()
                 this, &NetworkRequest::nmFinishedData);
         connect(reply, &QNetworkReply::readyRead, this, [this]()
                 {
+                    //The bound's abort() runs finished synchronously: reply is already null.
+                    if (!reply || reply->error() == QNetworkReply::OperationCanceledError)
+                        return;
                     auto d = reply->readAll();
                     emit dataReadyRead(d);
                     dataRead.append(d);
@@ -175,6 +182,8 @@ void NetworkRequest::cancel()
 
 void NetworkRequest::nmReadyRead()
 {
+    if (!reply || reply->error() == QNetworkReply::OperationCanceledError)
+        return;
     auto d = reply->readAll();
     dlFile->write(d);
     emit dataReadyRead(d);

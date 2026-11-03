@@ -119,6 +119,8 @@ void TstBoxTime::initTestCase()
     QVERIFY(f.open(QIODevice::WriteOnly));
     f.write(TOKEN + "\n");
     f.close();
+    //A distribution's qtlogging.ini can mask debug output the checks read.
+    QLoggingCategory::setFilterRules(QStringLiteral("calaos.*.debug=true"));
     s_previousHandler = qInstallMessageHandler(captureMessages);
 }
 

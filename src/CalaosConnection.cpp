@@ -582,6 +582,7 @@ void CalaosConnection::connectWebsocket(QString h)
     if (!wsocket)
     {
         wsocket = new QWebSocket();
+        NetworkLimits::limitWebSocket(wsocket);
         connect(wsocket, &QWebSocket::sslErrors,
                 this, &CalaosConnection::sslErrorsWebsocket);
         connect(wsocket, &QWebSocket::connected, this, &CalaosConnection::onWsConnected);

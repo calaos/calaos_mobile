@@ -302,16 +302,59 @@ QString CalaosConnection::redactUrl(const QUrl &url)
     return u.toString();
 }
 
+static QJsonValue redactValue(const QJsonValue &v)
+{
+    if (v.isObject())
+    {
+        QJsonObject o = v.toObject();
+        for (auto it = o.begin(); it != o.end(); ++it)
+            it.value() = credentialKeys().contains(it.key()) ? QJsonValue(QStringLiteral("***"))
+                                                              : redactValue(it.value());
+        return o;
+    }
+    if (v.isArray())
+    {
+        QJsonArray a = v.toArray();
+        for (auto it = a.begin(); it != a.end(); ++it)
+            *it = redactValue(*it);
+        return a;
+    }
+    return v;
+}
+
 QByteArray CalaosConnection::redactJson(const QJsonObject &obj)
 {
-    QJsonObject o = obj;
+    return QJsonDocument(redactValue(obj).toObject()).toJson();
+}
+
+QByteArray CalaosConnection::redactJson(const QJsonDocument &doc)
+{
+    if (doc.isObject())
+        return redactJson(doc.object());
+    return QJsonDocument(redactValue(doc.array()).toArray()).toJson();
+}
+
+QString CalaosConnection::redactError(QString err, const QUrl &url)
+{
+    //Qt copies the request url, credentials included, into its error texts.
+    const QString safe = redactUrl(url);
+    for (const QString &raw: { url.toString(), url.toString(QUrl::FullyEncoded) })
+    {
+        if (!raw.isEmpty())
+            err.replace(raw, safe);
+    }
+    //Whatever form the url took in the text, the values must not survive.
+    const QUrlQuery query(url);
     for (const QString &key: credentialKeys())
     {
-        if (o.contains(key))
-            o[key] = QStringLiteral("***");
+        for (auto fmt: { QUrl::FullyEncoded, QUrl::PrettyDecoded, QUrl::FullyDecoded })
+        {
+            const QString value = query.queryItemValue(key, fmt);
+            if (!value.isEmpty())
+                err.replace(value, QStringLiteral("***"));
+        }
     }
-
-    return QJsonDocument(o).toJson();
+    return err;
 }
 
 void CalaosConnection::emitStateChanged()
@@ -736,9 +779,9 @@ void CalaosConnection::onWsError()
 {
     if (!wsocket) return;
 
-    qDebug() << "Websocket error: " << wsocket->errorString();
+    qDebug() << "Websocket error: " << redactError(wsocket->errorString(), wsocket->requestUrl());
 
-    handleWebsocketFailure(wsocket->errorString());
+    handleWebsocketFailure(redactError(wsocket->errorString(), wsocket->requestUrl()));
 }
 
 void CalaosConnection::handleWebsocketFailure(const QString &reason)
@@ -802,11 +845,11 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
     reply->deleteLater();
     if (reply->error() != QNetworkReply::NoError)
     {
-        qDebug() << "Error in " << redactUrl(reply->url()) << ":" << reply->errorString();
+        qDebug() << "Error in " << redactUrl(reply->url()) << ":" << redactError(reply->errorString(), reply->url());
 
         if (tlsBlocked)
         {
-            connectionLost(reply->errorString(), ReconnectPolicy::TrustFailure);
+            connectionLost(redactError(reply->errorString(), reply->url()), ReconnectPolicy::TrustFailure);
             return;
         }
 
@@ -825,7 +868,7 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
                             reply->error() == QNetworkReply::ProtocolInvalidOperationError ||
                             httpCode == 400 || httpCode == 401 || httpCode == 403;
 
-        connectionLost(reply->errorString(),
+        connectionLost(redactError(reply->errorString(), reply->url()),
                        isAuth ? ReconnectPolicy::AuthFailure : ReconnectPolicy::TransientFailure);
         return;
     }
@@ -835,7 +878,7 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
     QJsonDocument jdoc = QJsonDocument::fromJson(bytes, &err);
 
 #ifdef QT_DEBUG
-    qDebug().noquote() << "RECV: " << jdoc.toJson();
+    qDebug().noquote() << "RECV: " << redactJson(jdoc);
 #endif
 
     if (err.error != QJsonParseError::NoError)
@@ -956,7 +999,7 @@ void CalaosConnection::requestFinished()
 
     if (reqReply->error() != QNetworkReply::NoError)
     {
-        qDebug() << "Error in " << redactUrl(reqReply->url()) << ":" << reqReply->errorString();
+        qDebug() << "Error in " << redactUrl(reqReply->url()) << ":" << redactError(reqReply->errorString(), reqReply->url());
         return;
     }
 
@@ -966,13 +1009,13 @@ void CalaosConnection::requestFinished()
 
     if (err.error != QJsonParseError::NoError)
     {
-        qDebug() << bytes;
+        qDebug() << "Answer of" << bytes.size() << "bytes is not JSON";
         qDebug() << "JSON parse error at " << err.offset << " : " << err.errorString();
         return;
     }
 
 #ifdef QT_DEBUG
-    qDebug().noquote() << "RECV: " << jdoc.toJson();
+    qDebug().noquote() << "RECV: " << redactJson(jdoc);
 #endif
 
     QVariantMap jroot = jdoc.object().toVariantMap();
@@ -1003,13 +1046,15 @@ void CalaosConnection::requestCamFinished(QNetworkReply *reqReply, const QString
 
     if (reqReply->error() != QNetworkReply::NoError)
     {
-        qDebug() << "Error in " << redactUrl(reqReply->url()) << ":" << reqReply->errorString();
+        qDebug() << "Error in " << redactUrl(reqReply->url()) << ":" << redactError(reqReply->errorString(), reqReply->url());
         //The server refuses a token it revoked or never knew with a 400.
         if (reqReply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 400)
             cameraToken.rejected(reqReply->property("usedCameraToken").toString());
         emit cameraPictureFailed(camid);
         return;
     }
+
+    cameraToken.accepted(reqReply->property("usedCameraToken").toString());
 
     QByteArray bytes = reqReply->readAll();
 
@@ -1033,9 +1078,11 @@ void CalaosConnection::requestAudioCoverFinished(QNetworkReply *reqReply, const 
 
     if (reqReply->error() != QNetworkReply::NoError)
     {
-        qDebug() << "Error in " << redactUrl(reqReply->url()) << ":" << reqReply->errorString();
+        qDebug() << "Error in " << redactUrl(reqReply->url()) << ":" << redactError(reqReply->errorString(), reqReply->url());
         return;
     }
+
+    cameraToken.accepted(reqReply->property("usedCameraToken").toString());
 
     QByteArray bytes = reqReply->readAll();
 
@@ -1248,7 +1295,7 @@ void CalaosConnection::eventLogReplyFinished(QNetworkReply *reply, const QString
 {
     if (reply->error() != QNetworkReply::NoError)
     {
-        qDebug() << "Error in " << redactUrl(reply->url()) << ":" << reply->errorString();
+        qDebug() << "Error in " << redactUrl(reply->url()) << ":" << redactError(reply->errorString(), reply->url());
         finishEventLogRequest(requestId, false, QVariantMap());
         return;
     }
@@ -1638,8 +1685,8 @@ void CalaosConnection::startJsonPolling()
 
         if (reply->error() != QNetworkReply::NoError)
         {
-            qDebug() << "Error in " << redactUrl(reply->url()) << ":" << reply->errorString();
-            handlePollFailure(reply->errorString());
+            qDebug() << "Error in " << redactUrl(reply->url()) << ":" << redactError(reply->errorString(), reply->url());
+            handlePollFailure(redactError(reply->errorString(), reply->url()));
             return;
         }
 
@@ -1648,12 +1695,12 @@ void CalaosConnection::startJsonPolling()
         QJsonParseError err;
         QJsonDocument jdoc = QJsonDocument::fromJson(bytes, &err);
 
-        //qDebug().noquote() << "RECV: " << jdoc.toJson();
+        //qDebug().noquote() << "RECV: " << redactJson(jdoc);
 
         if (err.error != QJsonParseError::NoError)
         {
             qDebug() << "JSON parse error " << err.errorString();
-            qDebug() << "Failing data: " << bytes;
+            qDebug() << "Poll answer of" << bytes.size() << "bytes is not JSON";
             handlePollFailure(QStringLiteral("invalid JSON in poll answer"));
             return;
         }

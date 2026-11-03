@@ -758,12 +758,18 @@ private:
     //CalaosEventDecoder and is unit tested without a server (T17).
     void dispatchEvents(const QList<DecodedEvent> &events);
 
+public:
     //Replaces the value of credential carrying query parameters (cn_user,
     //cn_pass, u, p) by "***" so URLs can be safely printed in logs.
     //Only used for logging, the URLs actually sent are left untouched.
     static QString redactUrl(const QUrl &url);
-    //Same idea for the JSON payloads that are dumped in debug builds.
+    //Same idea for the JSON payloads that are dumped in debug builds, at any depth.
     static QByteArray redactJson(const QJsonObject &obj);
+    static QByteArray redactJson(const QJsonDocument &doc);
+    //QNetworkReply::errorString() embeds the request url: print this instead.
+    static QString redactError(QString err, const QUrl &url);
+
+private:
 
 signals:
     void homeLoaded(const QVariantMap &home);

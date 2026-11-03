@@ -2,6 +2,7 @@
 
 #include <QtGlobal>
 #include <QDebug>
+#include "LogCategories.h"
 
 #ifdef Q_OS_LINUX
 #define HAVE_X_DMPS
@@ -76,7 +77,7 @@ void XUtils::UpdateDPMS(bool enable, int seconds)
 
 void XUtils::WakeUpScreen(bool enable)
 {
-    qDebug() << "XUtils::WakeUpScreen(" << enable << ")";
+    qCDebug(lcApp) << "XUtils::WakeUpScreen(" << enable << ")";
 #ifdef HAVE_X_DMPS
     //X11 display
     Display *x_display;

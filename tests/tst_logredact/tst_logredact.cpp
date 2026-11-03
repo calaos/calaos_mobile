@@ -12,6 +12,7 @@
 #include <QTcpSocket>
 
 #include "NetworkRequest.h"
+#include "LogRedact.h"
 #include "WeatherInfo.h"
 
 namespace {
@@ -76,6 +77,7 @@ private slots:
     }
 
     void weatherErrorNeverLogsAppid();
+    void freeTextHidesAddresses();
     void networkRequestErrorNeverLogsSecrets();
     void networkRequestSuccessNeverLogsSecrets();
 
@@ -101,6 +103,21 @@ void TstLogRedact::weatherErrorNeverLogsAppid()
     //The key is a constant of the program: a hex run after APPID= is it.
     QVERIFY2(!QRegularExpression(QStringLiteral("APPID=[0-9a-fA-F]{8,}")).match(l).hasMatch(), qPrintable(l));
     QVERIFY2(l.contains(QLatin1String("APPID=***")), qPrintable(l));
+}
+
+void TstLogRedact::freeTextHidesAddresses()
+{
+    const QString out = LogRedact::redactFreeText(QStringLiteral("no route to 192.0.2.10 from 00:00:5e:00:53:01 (p=1)"));
+    QVERIFY2(!out.contains(QLatin1String("192.0.2.10")), qPrintable(out));
+    QVERIFY2(!out.contains(QLatin1String("00:00:5e")), qPrintable(out));
+    QVERIFY(out.contains(QLatin1String("no route")));
+
+    const QString v6 = LogRedact::redactFreeText(
+        QStringLiteral("dial 2001:db8::1 failed, peer fe80::1ff:fe23:4567:890a, full 2001:0db8:85a3:0000:0000:8a2e:0370:7334, at 12:30:45"));
+    QVERIFY2(!v6.contains(QLatin1String("2001:db8")), qPrintable(v6));
+    QVERIFY2(!v6.contains(QLatin1String("fe80")), qPrintable(v6));
+    QVERIFY2(!v6.contains(QLatin1String("85a3")), qPrintable(v6));
+    QVERIFY2(v6.contains(QLatin1String("12:30:45")), qPrintable(v6)); //a clock time is not an address
 }
 
 void TstLogRedact::networkRequestErrorNeverLogsSecrets()

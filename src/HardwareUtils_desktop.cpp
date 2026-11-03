@@ -92,7 +92,7 @@ void HardwareUtilsDesktop::platformInit(QQmlApplicationEngine *e)
         QTimer::singleShot(10, [=]
         {
             calaosServerHost = h;
-            qInfo() << "Force calaos_server on " << h << " from config file";
+            qInfo() << "Force calaos_server address from config file";
 
             emitCalaosServerDetected();
         });
@@ -313,7 +313,7 @@ void HardwareUtilsDesktop::readPendingDatagrams()
         if (calaosServerHost != ip)
         {
             calaosServerHost = ip.trimmed();
-            qInfo() << "Found calaos_server on " << ip;
+            qInfo() << "Found calaos_server on the LAN";
         }
 
         emitCalaosServerDetected();

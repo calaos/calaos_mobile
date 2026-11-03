@@ -11,6 +11,7 @@
 #include <QTcpSocket>
 
 #include "NetworkRequest.h"
+#include "LogCategories.h"
 
 namespace {
 
@@ -71,6 +72,7 @@ private slots:
 
     void successfulRequestIsSilentByDefault();
     void failedRequestIsOneWarningLine();
+    void steadyStateTracesAreSilentByDefault();
 
 private:
     QString base() const { return QStringLiteral("http://127.0.0.1:%1/").arg(server->serverPort()); }
@@ -110,6 +112,19 @@ void TstNetQuiet::failedRequestIsOneWarningLine()
     QCOMPARE(lines.size(), 1);
     QVERIFY2(lines.first().contains(QLatin1String("status 500")), qPrintable(lines.first()));
     QVERIFY2(!lines.first().contains(QLatin1String("secret-dummy")), qPrintable(lines.first()));
+}
+
+void TstNetQuiet::steadyStateTracesAreSilentByDefault()
+{
+    //What the connection and the app emit while a kiosk is idle.
+    qCDebug(lcNet) << "RECV:" << 1234 << "bytes";
+    qCInfo(lcNet) << "Websocket failed, falling back to HTTP";
+    qCDebug(lcApp) << "Network status changed";
+    qCInfo(lcApp) << "Camera frame";
+    QVERIFY2(lines.isEmpty(), qPrintable(lines.join(QLatin1Char('\n'))));
+
+    qCWarning(lcNet) << "Error in request";
+    QCOMPARE(lines.size(), 1);
 }
 
 int main(int argc, char **argv)

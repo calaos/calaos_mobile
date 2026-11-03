@@ -2,12 +2,11 @@
 #include "TlsPinning.h"
 #include "LogRedact.h"
 #include "NetworkLimits.h"
-#include <QLoggingCategory>
+#include "LogCategories.h"
 
 //The kiosk polls the daemon every few seconds: request traces stay off the
 //journal unless asked for with QT_LOGGING_RULES="calaos.net.debug=true".
 //Errors are warnings and always shown.
-Q_LOGGING_CATEGORY(lcNet, "calaos.net", QtWarningMsg)
 
 //Abort a transfer that stops making progress. Set on the request and not on
 //the manager because setNetManager() can hand us a manager owned by someone

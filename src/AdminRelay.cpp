@@ -45,6 +45,7 @@ void AdminRelay::bindConnection(CalaosConnection *con)
     connect(con, &CalaosConnection::disconnected, this, &AdminRelay::handleTransportLost);
     connect(con, &CalaosConnection::loginFailed, this, &AdminRelay::handleTransportLost);
     connect(con, &CalaosConnection::tlsTrustAccepted, this, &AdminRelay::handleTlsTrustAccepted);
+    connect(con, &CalaosConnection::serverInfoChanged, this, &AdminRelay::replayDeferred);
     connect(con, &CalaosConnection::connectionStateChanged, this, [this](int state)
     {
         if (state == ReconnectPolicy::Connected)
@@ -108,6 +109,22 @@ void AdminRelay::request(const QString &action, const QJsonObject &params, Callb
     if (m_transport->hasPendingTlsTrust())
     {
         failLater(ErrTlsPending, callback);
+        return;
+    }
+
+    //The server says what it can do (get_server_info): an admin message sent
+    //to one that did not announce them is never answered.
+    const AdminTransport::RelaySupport support = m_transport->adminRelaySupport();
+    if (support == AdminTransport::RelaySupport::No)
+    {
+        failLater(ErrOldServer, callback);
+        return;
+    }
+    if (support == AdminTransport::RelaySupport::Unknown)
+    {
+        if (action == QLatin1String("update_status") && m_gate == GateIdle)
+            setGate(GateProbing);
+        m_deferred.append({ action, params, callback });
         return;
     }
 
@@ -280,6 +297,10 @@ void AdminRelay::applyOutcome(const QString &msg, const QString &action, Outcome
         else if (m_gate != GateUnlocked)
             setGate(GateUnreachable);
     }
+    else if (code == ErrOldServer)
+    {
+        setGate(GateOldServer);
+    }
     else if (code == ErrWebsocketRequired)
     {
         setGate(GateWebsocketRequired);
@@ -319,8 +340,21 @@ void AdminRelay::handleEvent(const QJsonObject &data)
     }
 }
 
+void AdminRelay::replayDeferred()
+{
+    const QList<Deferred> deferred = m_deferred;
+    m_deferred.clear();
+    for (const Deferred &d: deferred)
+        request(d.action, d.params, d.callback);
+}
+
 void AdminRelay::handleTransportLost()
 {
+    const QList<Deferred> deferred = m_deferred;
+    m_deferred.clear();
+    for (const Deferred &d: deferred)
+        failLater(ErrDisconnected, d.callback);
+
     const QHash<QString, Pending> pending = m_pending;
     m_pending.clear();
     m_spoken = false;

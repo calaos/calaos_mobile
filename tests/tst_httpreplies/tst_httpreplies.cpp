@@ -125,6 +125,7 @@ private slots:
     void failedAudioCoverThenLogout();
     void failedCommandThenLogout();
     void notifPictureUrlEncodesCredentials();
+    void notifPictureUrlEncodesCredentials_data();
 
 private:
     void login();
@@ -228,11 +229,21 @@ void TstHttpReplies::failedCommandThenLogout()
     settle();
 }
 
+void TstHttpReplies::notifPictureUrlEncodesCredentials_data()
+{
+    QTest::addColumn<QString>("user");
+    QTest::addColumn<QString>("pass");
+
+    //Synthetic: every character that breaks an unencoded query.
+    QTest::newRow("reserved") << QStringLiteral("us er&1") << QStringLiteral("p&a#s+s%20 =x");
+    QTest::newRow("non-ascii user") << QStringLiteral("us/er\u20ac\u00e9") << QStringLiteral("pass");
+    QTest::newRow("non-ascii pass") << QStringLiteral("user") << QStringLiteral("p\u00df\u4e2d%2F\u00e0&x");
+}
+
 void TstHttpReplies::notifPictureUrlEncodesCredentials()
 {
-    //Synthetic password: every character that breaks an unencoded query.
-    const QString user = QStringLiteral("us er&1");
-    const QString pass = QStringLiteral("p&a#s+s%20 =x");
+    QFETCH(QString, user);
+    QFETCH(QString, pass);
     connection->login(user, pass, server->baseUrl());
     QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
 

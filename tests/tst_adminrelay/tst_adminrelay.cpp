@@ -68,6 +68,7 @@ public:
     bool trustPending = false;
     bool secure = true;
     bool httpFallback = false;
+    RelaySupport support = RelaySupport::Yes;
     QString host = QStringLiteral("box-a.example:443");
     QList<Frame> frames;
 
@@ -83,6 +84,7 @@ public:
     bool isSecure() const override { return up && secure; }
     bool isHttpFallback() const override { return httpFallback; }
     QString adminHostKey() const override { return up ? host : QString(); }
+    RelaySupport adminRelaySupport() const override { return support; }
 
     //The last frame sent for that admin action (or message).
     int last(const QString &actionOrMsg) const
@@ -168,6 +170,9 @@ public:
     enum Mode { Normal, Silent, HttpsRequired };
     Mode mode = Normal;
     QList<QJsonObject> adminFrames; //every admin_* / admin frame received
+    //What get_server_info announces (not sent at all in Silent mode)
+    QJsonArray capabilities{ "camera_token", "admin_relay", "admin_events" };
+    int serverInfoFrames = 0;
 
     bool start(quint16 port = 0)
     {
@@ -248,6 +253,14 @@ private:
         if (msg == "get_home")
         {
             reply(QJsonObject{{ "home", QJsonArray() }});
+            return;
+        }
+        if (msg == "get_server_info")
+        {
+            serverInfoFrames++;
+            //an old calaos_server ignores the message without an error
+            if (mode != Silent)
+                reply(QJsonObject{{ "version", "test" }, { "protocol", "1" }, { "capabilities", capabilities }});
             return;
         }
         if (msg != "admin_unlock" && msg != "admin")
@@ -517,6 +530,8 @@ private slots:
     void realConnectionServerDropKillsSession();
     void realConnectionNoPasswordOverPlainWs();
     void realConnectionOldServer();
+    void realConnectionNoAdminRelayCapability();
+    void requestWaitsForServerInfo();
     void realConnectionHttpsRequired();
 
     void backendMapsReplies();
@@ -1047,15 +1062,73 @@ void TstAdminRelay::realConnectionOldServer()
     AdminRelay relay(&con);
     relay.bindConnection(&con);
     relay.setTimeouts(200, 400);
+    con.setServerInfoTimeout(200);
     QSignalSpy up(&relay, &AdminRelay::transportUp);
     con.login(TestUser, TestPass, ws.url());
     QTRY_VERIFY(up.count() >= 1);
 
+    //no answer to get_server_info: no capability, and no admin message is sent
     QString code;
     relay.request("update_status", QJsonObject(), [&](const AdminRelay::Outcome &o) { code = o.error.code; });
-    QTRY_COMPARE(code, AdminRelay::ErrTimeout);
+    QCOMPARE(relay.gate(), AdminRelay::GateProbing);
+    QTRY_COMPARE(code, AdminRelay::ErrOldServer);
     QCOMPARE(relay.gate(), AdminRelay::GateOldServer);
+    QCOMPARE(ws.serverInfoFrames, 1);
+    QVERIFY(ws.adminFrames.isEmpty());
+    QVERIFY(!con.serverCapabilities().has(ServerCapabilities::AdminRelay));
+    QVERIFY(con.isWebsocket()); //no disconnection either
     con.logout();
+}
+
+void TstAdminRelay::realConnectionNoAdminRelayCapability()
+{
+    FakeAdminWs ws;
+    ws.capabilities = QJsonArray{ "camera_token" };
+    QVERIFY(ws.start());
+    CalaosConnection con;
+    AdminRelay relay(&con);
+    relay.bindConnection(&con);
+    QSignalSpy up(&relay, &AdminRelay::transportUp);
+    con.login(TestUser, TestPass, ws.url());
+    QTRY_VERIFY(up.count() >= 1);
+
+    //answered, but admin_relay is not in the list: the gate is the same
+    //"too old" screen, at once
+    QString code;
+    relay.request("update_status", QJsonObject(), [&](const AdminRelay::Outcome &o) { code = o.error.code; });
+    QTRY_COMPARE(code, AdminRelay::ErrOldServer);
+    QCOMPARE(relay.gate(), AdminRelay::GateOldServer);
+    QVERIFY(ws.adminFrames.isEmpty());
+    QVERIFY(con.serverCapabilities().has(ServerCapabilities::CameraToken));
+    con.logout();
+}
+
+void TstAdminRelay::requestWaitsForServerInfo()
+{
+    FakeTransport t;
+    t.support = AdminTransport::RelaySupport::Unknown;
+    AdminRelay relay(&t);
+
+    bool done = false;
+    relay.request("update_status", QJsonObject(), [&](const AdminRelay::Outcome &) { done = true; });
+    QCOMPARE(relay.gate(), AdminRelay::GateProbing);
+    QTest::qWait(30);
+    QVERIFY(t.frames.isEmpty());
+    QVERIFY(!done);
+
+    t.support = AdminTransport::RelaySupport::Yes;
+    relay.replayDeferred();
+    QCOMPARE(t.frames.size(), 1);
+
+    //a held request does not survive its socket
+    t.support = AdminTransport::RelaySupport::Unknown;
+    QString code;
+    relay.request("update_status", QJsonObject(), [&](const AdminRelay::Outcome &o) { code = o.error.code; });
+    relay.handleTransportLost();
+    QTRY_COMPARE(code, AdminRelay::ErrDisconnected);
+    t.support = AdminTransport::RelaySupport::Yes;
+    relay.replayDeferred();
+    QCOMPARE(t.frames.size(), 1);
 }
 
 void TstAdminRelay::realConnectionHttpsRequired()

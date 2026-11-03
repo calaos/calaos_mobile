@@ -1,6 +1,8 @@
 #include "CalaosConnection.h"
 #include <QJsonDocument>
 #include <QUrlQuery>
+#include <QRegularExpression>
+#include <QTimer>
 #include <QDebug>
 #include "HardwareUtils.h"
 #include "Common.h"
@@ -17,6 +19,7 @@ static const QStringList &credentialKeys()
     static const QStringList keys = { JsonKeys::CnUser,
                                       JsonKeys::CnPass,
                                       JsonKeys::Token,
+                                      JsonKeys::CameraToken,
                                       JsonKeys::PushKey,
                                       QStringLiteral("u"),
                                       QStringLiteral("p"),
@@ -58,6 +61,23 @@ CalaosConnection::CalaosConnection(QObject *parent) :
     accessManager->setRedirectPolicy(QNetworkRequest::SameOriginRedirectPolicy);
     accessManagerCam->setRedirectPolicy(QNetworkRequest::SameOriginRedirectPolicy);
     pollReply = nullptr;
+
+    serverInfoTimer = new QTimer(this);
+    serverInfoTimer->setSingleShot(true);
+    connect(serverInfoTimer, &QTimer::timeout, this, [this]() {
+        //An old server ignores the message without an error: silence is the answer.
+        ServerCapabilities none;
+        none.state = ServerCapabilities::Unanswered;
+        finishServerInfo(none);
+    });
+    cameraTokenTimer = new QTimer(this);
+    cameraTokenTimer->setSingleShot(true);
+    connect(cameraTokenTimer, &QTimer::timeout, this, [this]() {
+        dropCameraTokenRequest();
+        cameraToken.failed();
+        flushWaitingCameras(true);
+    });
+
     connect(accessManager, &QNetworkAccessManager::sslErrors,
             this, &CalaosConnection::sslErrors);
     connect(accessManagerCam, &QNetworkAccessManager::sslErrors,
@@ -341,6 +361,7 @@ void CalaosConnection::resetTransport()
     demoMode = false;
     uuidPolling.clear();
     pushRegistration.sessionEnded();
+    resetServerSession();
 
     //The login handler is hooked on the manager, not on the reply: unhook it
     //before aborting anything, otherwise the abort of the *previous* attempt
@@ -983,6 +1004,9 @@ void CalaosConnection::requestCamFinished(QNetworkReply *reqReply, const QString
     if (reqReply->error() != QNetworkReply::NoError)
     {
         qDebug() << "Error in " << redactUrl(reqReply->url()) << ":" << reqReply->errorString();
+        //The server refuses a token it revoked or never knew with a 400.
+        if (reqReply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 400)
+            cameraToken.rejected(reqReply->property("usedCameraToken").toString());
         emit cameraPictureFailed(camid);
         return;
     }
@@ -1293,6 +1317,8 @@ void CalaosConnection::queryState(QStringList inputs, QStringList outputs, QStri
 
 void CalaosConnection::cancelCameraPicture(const QString &camid)
 {
+    waitingCameras.remove(camid);
+
     QNetworkReply *reply = cameraReplies.take(camid);
     if (!reply)
         return;
@@ -1308,19 +1334,72 @@ void CalaosConnection::getCameraPicture(const QString &camid, QString urlSuffix)
 {
     cancelCameraPicture(camid);
 
+    //The v1 camera api has no token: it keeps the credentials in its url.
+    if (!urlSuffix.isEmpty() || !isWebsocket() ||
+        serverCaps.state == ServerCapabilities::Unknown ||
+        serverCaps.state == ServerCapabilities::Unanswered ||
+        (serverCaps.state == ServerCapabilities::Answered &&
+         !serverCaps.has(ServerCapabilities::CameraToken)))
+    {
+        sendCameraPicture(camid, urlSuffix, QString());
+        return;
+    }
+
+    //Capabilities not known yet: sending cn_pass now would leak it to a server
+    //that may offer the token.
+    if (serverCaps.state == ServerCapabilities::Pending)
+    {
+        waitingCameras.insert(camid, urlSuffix);
+        return;
+    }
+
+    if (cameraToken.current().isEmpty() || cameraToken.renewDue())
+    {
+        if (cameraTokenPending.isEmpty() && !cameraToken.inBackoff())
+            requestCameraToken();
+    }
+
+    const QString token = cameraToken.current();
+    if (!token.isEmpty())
+    {
+        sendCameraPicture(camid, urlSuffix, token);
+        return;
+    }
+
+    if (cameraTokenPending.isEmpty())
+    {
+        //In backoff: no request in flight to wait for. Failed later so the
+        //caller is not re-entered from its own call.
+        QTimer::singleShot(0, this, [this, camid]() { emit cameraPictureFailed(camid); });
+        return;
+    }
+
+    waitingCameras.insert(camid, urlSuffix);
+}
+
+void CalaosConnection::sendCameraPicture(const QString &camid, const QString &urlSuffix, const QString &token)
+{
     QString u = httphost;
     QJsonObject jroot;
-    jroot[JsonKeys::CnUser] = username;
-    jroot[JsonKeys::CnPass] = password;
     jroot[JsonKeys::Action] = QString("camera");
+    if (!token.isEmpty())
+    {
+        jroot[JsonKeys::CameraToken] = token;
+    }
+    else
+    {
+        jroot[JsonKeys::CnUser] = username;
+        jroot[JsonKeys::CnPass] = password;
+    }
     if (!urlSuffix.isEmpty()) //v1 camera api
     {
         jroot[JsonKeys::Action] = QStringLiteral("get_camera_pic");
-        u = QStringLiteral("%1%2&u=%3&p=%4")
-            .arg(httphost.left(httphost.length() - 8)) // "/api.php" is 9
-            .arg(urlSuffix)
-            .arg(QString(QUrl::toPercentEncoding(username)))
-            .arg(QString(QUrl::toPercentEncoding(password)));
+        //Concatenation, not arg(): an encoded "%20" would be taken for a placeholder.
+        auto enc = [](const QString &v) { return QString::fromLatin1(QUrl::toPercentEncoding(v)); };
+        u = httphost.left(httphost.length() - 8) // "/api.php" is 8
+            + urlSuffix
+            + QStringLiteral("&u=") + enc(username)
+            + QStringLiteral("&p=") + enc(password);
     }
     jroot[JsonKeys::Type] = QString("get_picture");
     jroot[JsonKeys::Id] = camid;
@@ -1336,6 +1415,7 @@ void CalaosConnection::getCameraPicture(const QString &camid, QString urlSuffix)
     request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     QNetworkReply *reqReply = accessManagerCam->post(request, jdoc.toJson());
+    reqReply->setProperty("usedCameraToken", token);
 
     connect(reqReply, &QNetworkReply::finished, this, [=]() { requestCamFinished(reqReply, camid); });
     connect(reqReply, &QNetworkReply::downloadProgress, this, [=]() { emit cameraPictureProgress(camid); });
@@ -1343,6 +1423,101 @@ void CalaosConnection::getCameraPicture(const QString &camid, QString urlSuffix)
 
     reqReplies.append(reqReply);
     cameraReplies.insert(camid, reqReply);
+}
+
+void CalaosConnection::requestServerInfo()
+{
+    serverCaps = ServerCapabilities();
+    serverCaps.state = ServerCapabilities::Pending;
+    serverInfoTimer->start(serverInfoTimeoutMs);
+    sendWebsocket(QStringLiteral("get_server_info"), QJsonObject(), QStringLiteral("server_info"));
+}
+
+void CalaosConnection::finishServerInfo(const ServerCapabilities &caps)
+{
+    serverInfoTimer->stop();
+    serverCaps = caps;
+    qInfo() << "Server capabilities:" << (caps.state == ServerCapabilities::Answered
+                                            ? caps.capabilities.join(QLatin1Char(','))
+                                            : QStringLiteral("none (no answer)"));
+    emit serverInfoChanged();
+    flushWaitingCameras(false);
+}
+
+void CalaosConnection::requestCameraToken()
+{
+    const QString id = QStringLiteral("camera_token_%1").arg(++cameraTokenSeq);
+    cameraTokenPending = id;
+    cameraTokenTimer->start(cameraTokenTimeoutMs);
+    if (!sendWebsocket(QStringLiteral("camera_token"), QJsonObject(), id))
+    {
+        dropCameraTokenRequest();
+        cameraToken.failed();
+    }
+}
+
+void CalaosConnection::dropCameraTokenRequest()
+{
+    cameraTokenPending.clear();
+    cameraTokenTimer->stop();
+}
+
+void CalaosConnection::handleCameraTokenReply(const QString &msgId, const QJsonObject &data)
+{
+    //A late answer to a request that timed out must not be taken for the current one.
+    if (cameraTokenPending.isEmpty() || msgId != cameraTokenPending)
+        return;
+    dropCameraTokenRequest();
+
+    const QString token = data.value(JsonKeys::Token).toString();
+    static const QRegularExpression hex(QStringLiteral("^[0-9a-f]{64}$"));
+    if (!hex.match(token).hasMatch())
+    {
+        cameraToken.failed();
+        flushWaitingCameras(true);
+        return;
+    }
+
+    cameraToken.store(token, data.value(QStringLiteral("expires_in")).toVariant().toLongLong());
+    flushWaitingCameras(false);
+}
+
+void CalaosConnection::flushWaitingCameras(bool failed)
+{
+    const QHash<QString, QString> waiting = waitingCameras;
+    waitingCameras.clear();
+    for (auto it = waiting.constBegin(); it != waiting.constEnd(); ++it)
+    {
+        if (failed)
+            emit cameraPictureFailed(it.key());
+        else
+            getCameraPicture(it.key(), it.value());
+    }
+}
+
+void CalaosConnection::resetServerSession()
+{
+    serverInfoTimer->stop();
+    dropCameraTokenRequest();
+    serverCaps = ServerCapabilities();
+    cameraToken.clear();
+    flushWaitingCameras(true);
+}
+
+AdminTransport::RelaySupport CalaosConnection::adminRelaySupport() const
+{
+    if (constate != ConStateWebsocket)
+        return AdminTransport::RelaySupport::Yes;
+
+    switch (serverCaps.state)
+    {
+    case ServerCapabilities::Answered:
+        return serverCaps.has(ServerCapabilities::AdminRelay) ? AdminTransport::RelaySupport::Yes : AdminTransport::RelaySupport::No;
+    case ServerCapabilities::Unanswered:
+        return AdminTransport::RelaySupport::No;
+    default:
+        return AdminTransport::RelaySupport::Unknown;
+    }
 }
 
 void CalaosConnection::getAudioCover(const QString &playerid)
@@ -1644,6 +1819,8 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
                 //if known yet.
                 pushRegistration.sessionStarted();
                 registerPushToken();
+
+                requestServerInfo();
             }
         }
         else
@@ -1658,6 +1835,16 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
     else if (jroot[JsonKeys::Msg] == "get_home")
     {
         emitHomeLoaded(jroot[JsonKeys::Data].toObject().toVariantMap());
+    }
+    else if (jroot[JsonKeys::Msg] == "get_server_info")
+    {
+        //Only the first answer counts, and only while one is awaited.
+        if (serverCaps.state == ServerCapabilities::Pending)
+            finishServerInfo(ServerCapabilities::fromReply(jdata));
+    }
+    else if (jroot[JsonKeys::Msg] == "camera_token")
+    {
+        handleCameraTokenReply(jroot[JsonKeys::MsgId].toString(), jdata);
     }
     else if (jroot[JsonKeys::Msg] == "event")
     {

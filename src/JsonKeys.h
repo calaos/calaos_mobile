@@ -118,6 +118,7 @@ inline constexpr QLatin1StringView WifiSsid{"wifi_ssid"};
 
 //--- Cameras ----------------------------------------------------------------
 inline constexpr QLatin1StringView CameraId{"camera_id"};
+inline constexpr QLatin1StringView CameraToken{"camera_token"};
 inline constexpr QLatin1StringView Ptz{"ptz"};
 //Only sent by a v1 calaos-os, and the marker CameraItem detects it with.
 inline constexpr QLatin1StringView UrlLowres{"url_lowres"};

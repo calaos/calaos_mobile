@@ -22,14 +22,21 @@ Item {
     readonly property bool pictureLoading: picture ? picture.loading : false
     readonly property bool pictureFailed: picture ? picture.failed : false
 
+    //evPicUid and evHasPicture arrive in either order: open on both, once per uid.
+    property string openedUid: ""
+
     function openPicture() {
+        var uid = event_haspic ? event_picuid : ""
+        if (uid === openedUid)
+            return
         if (picture)
             picture.release()
-        picture = (event_haspic && event_picuid !== "")
-                ? eventLogModel.loadPicture(event_picuid) : null
+        openedUid = uid
+        picture = uid !== "" ? eventLogModel.loadPicture(uid) : null
     }
 
     onEvent_picuidChanged: openPicture()
+    onEvent_haspicChanged: openPicture()
     Component.onDestruction: {
         if (picture)
             picture.release()

@@ -46,7 +46,7 @@ public:
     virtual ~WeatherModel();
 
     Q_INVOKABLE void refreshWeather();
-    //Tests point it at a local server.
+    //Tests point it at a local server and shorten the timeout.
     void setApiBase(const QString &base) { apiBase = base; }
     QString getApiBase() const { return apiBase; }
     void setTransferTimeout(int ms) { transferTimeoutMs = ms; }

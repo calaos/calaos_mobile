@@ -53,6 +53,17 @@ WeatherModel::~WeatherModel()
     dataForecast.clear();
 }
 
+QNetworkReply *WeatherModel::boundedGet(const QUrl &url)
+{
+    QNetworkRequest req(url);
+    req.setTransferTimeout(transferTimeoutMs);
+    //The APPID and the position are in the query: never follow to another host.
+    req.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::SameOriginRedirectPolicy);
+    QNetworkReply *rep = accessManager->get(req);
+    NetworkLimits::limitDownload(rep, NetworkLimits::MaxWeatherBytes);
+    return rep;
+}
+
 void WeatherModel::refreshWeather()
 {
     QUrl url(apiBase + "weather");
@@ -63,8 +74,7 @@ void WeatherModel::refreshWeather()
     query.addQueryItem("APPID", OWM_KEY);
     url.setQuery(query);
 
-    QNetworkReply *rep = accessManager->get(QNetworkRequest(url));
-    NetworkLimits::limitDownload(rep, NetworkLimits::MaxWeatherBytes);
+    QNetworkReply *rep = boundedGet(url);
 
     connect(rep, &QNetworkReply::finished,
             this, &WeatherModel::handleWeatherNetworkData);
@@ -104,8 +114,7 @@ void WeatherModel::handleWeatherNetworkData()
     query.addQueryItem("APPID", OWM_KEY);
     url.setQuery(query);
 
-    QNetworkReply *rep = accessManager->get(QNetworkRequest(url));
-    NetworkLimits::limitDownload(rep, NetworkLimits::MaxWeatherBytes);
+    QNetworkReply *rep = boundedGet(url);
 
     connect(rep, &QNetworkReply::finished,
             this, &WeatherModel::handleForecastNetworkData);

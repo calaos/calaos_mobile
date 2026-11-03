@@ -46,9 +46,10 @@ public:
     virtual ~WeatherModel();
 
     Q_INVOKABLE void refreshWeather();
-    //Tests point it at a local server.
+    //Tests point it at a local server and shorten the timeout.
     void setApiBase(const QString &base) { apiBase = base; }
     QString getApiBase() const { return apiBase; }
+    void setTransferTimeout(int ms) { transferTimeoutMs = ms; }
 
     QQmlListProperty<WeatherData> getForecast();
     WeatherData *getForecastData(int i);
@@ -65,7 +66,10 @@ private slots:
     void handleForecastNetworkData();
 
 private:
+    QNetworkReply *boundedGet(const QUrl &url);
+
     QNetworkAccessManager *accessManager;
+    int transferTimeoutMs = 30000;
     QString apiBase = QStringLiteral("https://api.openweathermap.org/data/2.5/");
 
     WeatherData dataNow;

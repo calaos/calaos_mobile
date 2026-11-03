@@ -20,7 +20,7 @@
 
 namespace {
 
-enum Mode { Announced, NoLength, OverLimit, Chunked, Deflate, DeflateModerate, Burst, Small };
+enum Mode { Announced, NoLength, OverLimit, Chunked, Deflate, DeflateModerate, Burst, Small, Redirect, Mute };
 
 //Deflate stream (no size prefix) of about `inflated` bytes, ratio ~30: under
 //the ratio 40 above which Qt refuses an archive bomb before any readyRead.
@@ -44,6 +44,7 @@ public:
     //Bound of the code under test.
     qint64 limit = 0;
     int released = 0;
+    QString location;
 
 protected:
     void incomingConnection(qintptr handle) override
@@ -137,6 +138,12 @@ protected:
                 sock->write(head + "Content-Length: 5\r\n\r\nhello");
                 sock->disconnectFromHost();
                 break;
+            case Redirect:
+                sock->write("HTTP/1.1 302 Found\r\nLocation: " + location.toUtf8() + "\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+                sock->disconnectFromHost();
+                break;
+            case Mute:
+                break;
             case DeflateModerate:
             {
                 const QByteArray body = moderateDeflate(limit + 1024);
@@ -200,6 +207,8 @@ private slots:
     void webSocketFrameHeaderIsRefusedBeforeItsBody();
     void weatherRepliesAreFreed();
     void weatherDefaultsToHttps();
+    void weatherRefusesRedirectToAnotherHost();
+    void weatherSilentServerIsCutByTimeout();
 
 private:
     static void modes()
@@ -530,6 +539,34 @@ void TstNetworkBounds::weatherDefaultsToHttps()
 {
     WeatherModel model;
     QVERIFY2(model.getApiBase().startsWith(QLatin1String("https://")), qPrintable(model.getApiBase()));
+}
+
+void TstNetworkBounds::weatherRefusesRedirectToAnotherHost()
+{
+    //Another port is another origin; this one must never be contacted.
+    QTcpServer other;
+    QVERIFY(other.listen(QHostAddress::LocalHost, 0));
+    QSignalSpy contacted(&other, &QTcpServer::pendingConnectionAvailable);
+    server->mode = Redirect;
+    server->location = QStringLiteral("http://127.0.0.1:%1/stolen").arg(other.serverPort());
+
+    WeatherModel model;
+    model.setApiBase(base());
+    model.refreshWeather();
+    QTRY_VERIFY2_WITH_TIMEOUT(log().count(QLatin1String("Error in weather request")) >= 2, qPrintable(log()), 8000);
+    QTest::qWait(100);
+    QCOMPARE(contacted.count(), 0);
+}
+
+void TstNetworkBounds::weatherSilentServerIsCutByTimeout()
+{
+    server->mode = Mute;
+
+    WeatherModel model;
+    model.setApiBase(base());
+    model.setTransferTimeout(300);
+    model.refreshWeather();
+    QTRY_VERIFY2_WITH_TIMEOUT(log().count(QLatin1String("Error in weather request")) >= 2, qPrintable(log()), 8000);
 }
 
 QTEST_MAIN(TstNetworkBounds)

@@ -33,6 +33,9 @@ inline const QStringList &credentialKeys()
                                       QStringLiteral("u"),
                                       QStringLiteral("p"),
                                       QStringLiteral("APPID"),
+                                      //weather query: the position of the home
+                                      QStringLiteral("lat"),
+                                      QStringLiteral("lon"),
                                       QStringLiteral("admin_pass"),
                                       QStringLiteral("admin_session"),
                                       QStringLiteral("session"),

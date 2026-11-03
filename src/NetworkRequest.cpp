@@ -71,7 +71,27 @@ bool NetworkRequest::start()
     //follow a redirect to another host.
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::SameOriginRedirectPolicy);
     lastError.clear();
+    failure.clear();
+    bound = bodyLimit();
     request.setSslConfiguration(sslConfiguration);
+
+    //Checked before anything is sent: a failure here is reported by the return
+    //value only, never by a signal as well.
+    if (resType == TypeFile)
+    {
+        if (!dlFile)
+        {
+            lastError = QStringLiteral("dlFile is invalid!, aborting request.");
+            qCWarning(lcNet) << lastError;
+            return false;
+        }
+        if (!dlFile->isOpen() && !dlFile->open(QFile::WriteOnly | QIODevice::Truncate))
+        {
+            lastError = QStringLiteral("Cannot open the download file for write: ") + dlFile->errorString();
+            qCWarning(lcNet) << "Error opening file '" << dlFile->fileName() << "' for write";
+            return false;
+        }
+    }
 
     qCDebug(lcNet) << "New request to" << LogRedact::redactUrl(QUrl(url));
 
@@ -115,41 +135,39 @@ bool NetworkRequest::start()
     });
 
     dataRead.clear();
+    written = 0;
 
-    if (resType == TypeJson)
-        NetworkLimits::limitDownload(reply, NetworkLimits::MaxJsonBytes);
-    else if (resType == TypeRawData)
-        NetworkLimits::limitDownload(reply, NetworkLimits::MaxPictureBytes);
-    else
-        NetworkLimits::limitDownload(reply, maxFileBytes);
+    NetworkLimits::limitDownload(reply, bound);
+
+    //The reader drains the reply at every readyRead, so the reply's own check
+    //never sees the sum: the total is counted here.
+    auto accumulate = [this]()
+    {
+        //The bound's abort() runs finished synchronously: reply is already null.
+        if (!reply || reply->error() == QNetworkReply::OperationCanceledError)
+            return;
+        auto d = reply->readAll();
+        if (dataRead.size() + d.size() > bound)
+        {
+            failure = QStringLiteral("Response larger than the allowed size");
+            reply->abort();
+            return;
+        }
+        emit dataReadyRead(d);
+        dataRead.append(d);
+    };
 
     if (resType == TypeJson)
     {
         connect(reply, &QNetworkReply::finished,
                 this, &NetworkRequest::nmFinishedJson);
-        connect(reply, &QNetworkReply::readyRead, this, [this]()
-                {
-                    //The bound's abort() runs finished synchronously: reply is already null.
-                    if (!reply || reply->error() == QNetworkReply::OperationCanceledError)
-                        return;
-                    auto d = reply->readAll();
-                    emit dataReadyRead(d);
-                    dataRead.append(d);
-                });
+        connect(reply, &QNetworkReply::readyRead, this, accumulate);
     }
     else if (resType == TypeRawData)
     {
         connect(reply, &QNetworkReply::finished,
                 this, &NetworkRequest::nmFinishedData);
-        connect(reply, &QNetworkReply::readyRead, this, [this]()
-                {
-                    //The bound's abort() runs finished synchronously: reply is already null.
-                    if (!reply || reply->error() == QNetworkReply::OperationCanceledError)
-                        return;
-                    auto d = reply->readAll();
-                    emit dataReadyRead(d);
-                    dataRead.append(d);
-                });
+        connect(reply, &QNetworkReply::readyRead, this, accumulate);
     }
     else if (resType == TypeFile)
     {
@@ -157,21 +175,20 @@ bool NetworkRequest::start()
                 this, &NetworkRequest::nmFinished);
         connect(reply, &QNetworkReply::readyRead,
                 this, &NetworkRequest::nmReadyRead);
-        if (!dlFile)
-        {
-            lastError = "dlFile is invalid!, aborting request.";
-            qWarning() << "dlFile is invalid!, aborting request.";
-            reply->abort();
-            return false;
-        }
-        if (!dlFile->isOpen())
-        {
-            if (!dlFile->open(QFile::WriteOnly | QIODevice::Truncate))
-                qWarning() << "Error opening file '" << dlFile->fileName() << "' for write";
-        }
     }
 
     return true;
+}
+
+qint64 NetworkRequest::bodyLimit() const
+{
+    if (maxBytes > 0)
+        return maxBytes;
+    if (resType == TypeJson)
+        return NetworkLimits::MaxJsonBytes;
+    if (resType == TypeRawData)
+        return NetworkLimits::MaxPictureBytes;
+    return NetworkLimits::MaxFileBytes;
 }
 
 void NetworkRequest::cancel()
@@ -185,8 +202,39 @@ void NetworkRequest::nmReadyRead()
     if (!reply || reply->error() == QNetworkReply::OperationCanceledError)
         return;
     auto d = reply->readAll();
-    dlFile->write(d);
+    if (!writeChunk(d))
+        return;
     emit dataReadyRead(d);
+}
+
+bool NetworkRequest::storeChunk(const QByteArray &d)
+{
+    if (written + d.size() > bound)
+        failure = QStringLiteral("Download larger than the allowed size");
+    //QFile buffers: a full disk only shows at flush.
+    else if (dlFile->write(d) != d.size() || !dlFile->flush())
+        failure = QStringLiteral("Cannot write the download file: ") + dlFile->errorString();
+    else
+    {
+        written += d.size();
+        return true;
+    }
+    return false;
+}
+
+bool NetworkRequest::writeChunk(const QByteArray &d)
+{
+    if (storeChunk(d))
+        return true;
+    reply->abort();
+    return false;
+}
+
+//A retry with the same QFile must not append to what a failed attempt left.
+void NetworkRequest::discardPartialFile()
+{
+    dlFile->resize(0);
+    dlFile->close();
 }
 
 void NetworkRequest::nmFinished()
@@ -196,9 +244,11 @@ void NetworkRequest::nmFinished()
 
     if (reply->error() != QNetworkReply::NoError)
     {
-        lastError = LogRedact::redactError(reply->errorString(), reply->url());
+        //Our own abort (write error, size) reads as a bare "canceled".
+        lastError = failure.isEmpty() ? LogRedact::redactError(reply->errorString(), reply->url()) : failure;
         qCWarning(lcNet) << "Error in" << LogRedact::redactUrl(reply->url()) << ":" << lastError
                          << "(status" << httpStatusCode << ")";
+        discardPartialFile();
         emit finished(RequestHttpError);
 
         reply->deleteLater();
@@ -207,14 +257,21 @@ void NetworkRequest::nmFinished()
         return;
     }
 
-    if (reply->bytesAvailable() > 0)
-        dlFile->write(reply->readAll());
-    dlFile->close();
+    int status = RequestSuccess;
+    //Finished: abort() would be ignored, the error is reported here.
+    if (reply->bytesAvailable() > 0 && !storeChunk(reply->readAll()))
+    {
+        lastError = failure;
+        status = RequestHttpError;
+        discardPartialFile();
+    }
+    else
+        dlFile->close();
 
     reply->deleteLater();
     reply = nullptr;
 
-    emit finished(RequestSuccess);
+    emit finished(status);
 }
 
 void NetworkRequest::nmFinishedJson()
@@ -227,7 +284,7 @@ void NetworkRequest::nmFinishedJson()
 
     if (reply->error() != QNetworkReply::NoError)
     {
-        lastError = LogRedact::redactError(reply->errorString(), reply->url());
+        lastError = failure.isEmpty() ? LogRedact::redactError(reply->errorString(), reply->url()) : failure;
         qCWarning(lcNet) << "Error in" << LogRedact::redactUrl(reply->url()) << ":" << lastError
                          << "(status" << httpStatusCode << ")";
         jdoc = QJsonDocument::fromJson(dataRead, &err);
@@ -270,7 +327,7 @@ void NetworkRequest::nmFinishedData()
 
     if (reply->error() != QNetworkReply::NoError)
     {
-        lastError = LogRedact::redactError(reply->errorString(), reply->url());
+        lastError = failure.isEmpty() ? LogRedact::redactError(reply->errorString(), reply->url()) : failure;
         qCWarning(lcNet) << "Error in" << LogRedact::redactUrl(reply->url()) << ":" << lastError
                          << "(status" << httpStatusCode << ")";
         emit finishedData(RequestHttpError, QByteArray());

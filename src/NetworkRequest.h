@@ -55,8 +55,9 @@ public:
 
     void setFile(QFile *f) { dlFile = f; }
     QFile *getFile() const { return dlFile; }
-    //Disk bound of a TypeFile download, NetworkLimits::MaxFileBytes by default.
-    void setMaxFileBytes(qint64 max) { maxFileBytes = max; }
+    //Bound on the body, counted as the reader consumes it. By default the one
+    //of the result type (NetworkLimits).
+    void setMaxBytes(qint64 max) { maxBytes = max; }
 
     void setCustomHeader(QString header, QString value);
 
@@ -96,7 +97,15 @@ private:
     QMap<QString, QString> headers;
 
     QFile *dlFile = nullptr;
-    qint64 maxFileBytes = NetworkLimits::MaxFileBytes;
+    qint64 maxBytes = 0;
+    //Fixed at start(), for every result type.
+    qint64 bound = 0;
+    qint64 written = 0;
+    QString failure;
+    qint64 bodyLimit() const;
+    bool writeChunk(const QByteArray &d);
+    bool storeChunk(const QByteArray &d);
+    void discardPartialFile();
     QByteArray dataRead;
 
     bool delNm = false;

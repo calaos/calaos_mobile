@@ -20,7 +20,7 @@
 
 namespace {
 
-enum Mode { Announced, NoLength, OverLimit, Chunked, Deflate, DeflateModerate };
+enum Mode { Announced, NoLength, OverLimit, Chunked, Deflate, DeflateModerate, Burst, Small };
 
 //Deflate stream (no size prefix) of about `inflated` bytes, ratio ~30: under
 //the ratio 40 above which Qt refuses an archive bomb before any readyRead.
@@ -108,6 +108,35 @@ protected:
                 sock->disconnectFromHost();
                 break;
             }
+            case Burst:
+            {
+                //Chunks of limit/4 each, the whole under two limits: no batch
+                //is over the bound, only their sum is. Ends by itself.
+                sock->write(head + "Transfer-Encoding: chunked\r\n\r\n");
+                auto left = std::make_shared<int>(8);
+                const QByteArray piece = QByteArray::number(limit / 4, 16) + "\r\n" + QByteArray(limit / 4, 'x') + "\r\n";
+                QTimer *t = new QTimer(sock);
+                t->setInterval(2);
+                connect(t, &QTimer::timeout, sock, [sock, t, left, piece]() {
+                    if (*left > 0)
+                    {
+                        sock->write(piece);
+                        --*left;
+                    }
+                    else
+                    {
+                        sock->write("0\r\n\r\n");
+                        sock->disconnectFromHost();
+                        t->stop();
+                    }
+                });
+                t->start();
+                break;
+            }
+            case Small:
+                sock->write(head + "Content-Length: 5\r\n\r\nhello");
+                sock->disconnectFromHost();
+                break;
             case DeflateModerate:
             {
                 const QByteArray body = moderateDeflate(limit + 1024);
@@ -161,6 +190,12 @@ private slots:
     void fileRequestIsBounded_data() { modes(); }
     void fileRequestIsBounded();
     void moderateDeflateStaysUnderQtArchiveCheck();
+    void cumulativeBoundCountsWhatTheReaderTook_data();
+    void cumulativeBoundCountsWhatTheReaderTook();
+    void fileThatCannotBeOpenedFailsTheRequest();
+    void missingFileFailsOnceWithItsMessage();
+    void retryAfterFailureDoesNotAppend();
+    void fileThatCannotBeWrittenFailsTheRequest();
     void webSocketFrameIsBounded();
     void webSocketFrameHeaderIsRefusedBeforeItsBody();
     void weatherRepliesAreFreed();
@@ -176,7 +211,7 @@ private:
         QTest::newRow("chunked, no length") << int(Chunked);
         //Ratio ~1000: Qt refuses it itself, before the readyRead hook.
         QTest::newRow("small on the wire, over once inflated") << int(Deflate);
-        //Ratio ~30: passes Qt's check, only the hook cuts it.
+        //Ratio ~30: passes Qt's check, only the reader's sum cuts it.
         QTest::newRow("moderate ratio, over once inflated") << int(DeflateModerate);
     }
     QString base() const { return QStringLiteral("http://127.0.0.1:%1/").arg(server->serverPort()); }
@@ -219,10 +254,10 @@ void TstNetworkBounds::runRequest(NetworkRequest::ResulType type, qint64 limit)
     QCOMPARE(chunks, atFinish);
     //An empty chunk is what a readyRead handler reads from an already aborted reply.
     QCOMPARE(emptyChunks, 0);
-    //Streamed bodies are read as they come, so up to a few chunks pass before the
-    //cut; a refused answer (announced, whole, or inflated) hands over nothing.
-    const bool streamed = (mode == NoLength || mode == Chunked);
-    QVERIFY2(handedOver <= (streamed ? limit + 4 * 1024 * 1024 : 0), qPrintable(QString::number(handedOver)));
+    //The sum is strict whatever the batches. Only what Qt or the headers refuse
+    //before any readyRead hands over nothing.
+    const bool refusedUpFront = (mode == Announced || mode == OverLimit || mode == Deflate);
+    QVERIFY2(handedOver <= (refusedUpFront ? 0 : limit), qPrintable(QString::number(handedOver)));
 
     if (type == NetworkRequest::TypeJson)
         QCOMPARE(json.first().value(0).toInt(), int(NetworkRequest::RequestHttpError));
@@ -247,7 +282,7 @@ void TstNetworkBounds::fileRequestIsBounded()
     req.setNetManager(&nam);
     req.setResultType(NetworkRequest::TypeFile);
     req.setFile(&file);
-    req.setMaxFileBytes(bound);
+    req.setMaxBytes(bound);
     QSignalSpy done(&req, &NetworkRequest::finished);
     QSignalSpy chunks(&req, &NetworkRequest::dataReadyRead);
     QVERIFY(req.start());
@@ -261,8 +296,10 @@ void TstNetworkBounds::fileRequestIsBounded()
     QCOMPARE(file.size(), sizeAtFinish);
 
     QCOMPARE(done.first().value(0).toInt(), int(NetworkRequest::RequestHttpError));
-    //The overrun is cut within a few chunks of the bound, not after the whole body.
-    QVERIFY2(file.size() <= bound + 4 * 1024 * 1024, qPrintable(QString::number(file.size())));
+    QVERIFY2(file.size() <= bound, qPrintable(QString::number(file.size())));
+    //The partial file is not left open for a retry to append to.
+    QVERIFY(!file.isOpen());
+    QCOMPARE(file.size(), qint64(0));
 }
 
 void TstNetworkBounds::moderateDeflateStaysUnderQtArchiveCheck()
@@ -271,6 +308,124 @@ void TstNetworkBounds::moderateDeflateStaysUnderQtArchiveCheck()
     const qint64 inflated = 4 * 1024 * 1024;
     const double ratio = double(inflated) / moderateDeflate(inflated).size();
     QVERIFY2(ratio > 15 && ratio < 39, qPrintable(QString::number(ratio)));
+}
+
+void TstNetworkBounds::cumulativeBoundCountsWhatTheReaderTook_data()
+{
+    QTest::addColumn<int>("type");
+    QTest::newRow("json") << int(NetworkRequest::TypeJson);
+    QTest::newRow("raw") << int(NetworkRequest::TypeRawData);
+    QTest::newRow("file") << int(NetworkRequest::TypeFile);
+}
+
+void TstNetworkBounds::cumulativeBoundCountsWhatTheReaderTook()
+{
+    QFETCH(int, type);
+    const qint64 bound = 64 * 1024;
+    server->mode = Burst;
+    server->limit = bound;
+
+    QTemporaryFile file;
+    QVERIFY(file.open());
+    QNetworkAccessManager nam;
+    NetworkRequest req(base() + QStringLiteral("api"));
+    req.setNetManager(&nam);
+    req.setResultType(NetworkRequest::ResulType(type));
+    req.setFile(&file);
+    req.setMaxBytes(bound);
+    QSignalSpy json(&req, &NetworkRequest::finishedJson);
+    QSignalSpy data(&req, &NetworkRequest::finishedData);
+    QSignalSpy done(&req, &NetworkRequest::finished);
+    qint64 handedOver = 0;
+    connect(&req, &NetworkRequest::dataReadyRead, this, [&](const QByteArray &d) { handedOver += d.size(); });
+    QVERIFY(req.start());
+    QTRY_VERIFY_WITH_TIMEOUT(json.count() + data.count() + done.count() == 1, 8000);
+
+    const int status = json.count() ? json.first().value(0).toInt()
+                     : data.count() ? data.first().value(0).toInt() : done.first().value(0).toInt();
+    QCOMPARE(status, int(NetworkRequest::RequestHttpError));
+    //Our own cut says why, not a bare "Operation canceled".
+    QVERIFY2(req.getLastError().contains(QLatin1String("larger")), qPrintable(req.getLastError()));
+    QVERIFY2(handedOver <= bound, qPrintable(QString::number(handedOver)));
+    if (type == NetworkRequest::TypeFile)
+        QVERIFY2(file.size() <= bound, qPrintable(QString::number(file.size())));
+}
+
+void TstNetworkBounds::fileThatCannotBeOpenedFailsTheRequest()
+{
+    server->mode = Small;
+    QFile file(QStringLiteral("/nonexistent-dir/calaos-download"));
+    QNetworkAccessManager nam;
+    NetworkRequest req(base() + QStringLiteral("api"));
+    req.setNetManager(&nam);
+    req.setResultType(NetworkRequest::TypeFile);
+    req.setFile(&file);
+    QSignalSpy done(&req, &NetworkRequest::finished);
+    QVERIFY(!req.start());
+    QVERIFY2(req.getLastError().contains(QLatin1String("open")), qPrintable(req.getLastError()));
+    //Reported by the return value only, and no request leaves.
+    QTest::qWait(300);
+    QCOMPARE(done.count(), 0);
+    QCOMPARE(server->released, 0);
+}
+
+void TstNetworkBounds::missingFileFailsOnceWithItsMessage()
+{
+    server->mode = Small;
+    QNetworkAccessManager nam;
+    NetworkRequest req(base() + QStringLiteral("api"));
+    req.setNetManager(&nam);
+    req.setResultType(NetworkRequest::TypeFile);
+    QSignalSpy done(&req, &NetworkRequest::finished);
+    QVERIFY(!req.start());
+    QVERIFY2(req.getLastError().contains(QLatin1String("dlFile")), qPrintable(req.getLastError()));
+    QTest::qWait(300);
+    QCOMPARE(done.count(), 0);
+    QCOMPARE(server->released, 0);
+}
+
+void TstNetworkBounds::retryAfterFailureDoesNotAppend()
+{
+    const qint64 bound = 64 * 1024;
+    server->mode = Burst;
+    server->limit = bound;
+    QTemporaryFile file;
+    QVERIFY(file.open());
+    QNetworkAccessManager nam;
+    NetworkRequest req(base() + QStringLiteral("api"));
+    req.setNetManager(&nam);
+    req.setResultType(NetworkRequest::TypeFile);
+    req.setFile(&file);
+    req.setMaxBytes(bound);
+    QSignalSpy done(&req, &NetworkRequest::finished);
+    QVERIFY(req.start());
+    QTRY_COMPARE_WITH_TIMEOUT(done.count(), 1, 8000);
+    QCOMPARE(done.first().value(0).toInt(), int(NetworkRequest::RequestHttpError));
+
+    server->mode = Small;
+    QVERIFY(req.start());
+    QTRY_COMPARE_WITH_TIMEOUT(done.count(), 2, 8000);
+    QCOMPARE(done.last().value(0).toInt(), int(NetworkRequest::RequestSuccess));
+    QCOMPARE(file.size(), qint64(5));
+}
+
+void TstNetworkBounds::fileThatCannotBeWrittenFailsTheRequest()
+{
+    //The device /dev/full opens fine and refuses every write (ENOSPC).
+    QFile file(QStringLiteral("/dev/full"));
+    if (!file.exists())
+        QSKIP("no /dev/full");
+    server->mode = Small;
+    QNetworkAccessManager nam;
+    NetworkRequest req(base() + QStringLiteral("api"));
+    req.setNetManager(&nam);
+    req.setResultType(NetworkRequest::TypeFile);
+    req.setFile(&file);
+    QSignalSpy done(&req, &NetworkRequest::finished);
+    QVERIFY(req.start());
+    QTRY_COMPARE_WITH_TIMEOUT(done.count(), 1, 8000);
+    QCOMPARE(done.first().value(0).toInt(), int(NetworkRequest::RequestHttpError));
+    QVERIFY2(req.getLastError().contains(QLatin1String("write")), qPrintable(req.getLastError()));
 }
 
 void TstNetworkBounds::webSocketFrameIsBounded()

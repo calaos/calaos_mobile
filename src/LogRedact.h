@@ -155,13 +155,20 @@ inline QString redactError(QString err, const QUrl &url)
     return err;
 }
 
-//Free text written by a daemon or a host: it may name an address.
+//Free text written by a daemon or a host: it may name an address. Hides IPv4,
+//IPv6 (8 groups or "::" forms, not IPv4-mapped) and separated MACs; host names,
+//tokens and bare-hex MACs are not recognised.
 inline QString redactFreeText(QString text)
 {
+    static const QRegularExpression ipv6(QStringLiteral(
+        R"re((?<![\w:])(?:(?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}|)re"
+        R"re([0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4}){0,6}::(?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4}){0,6})?|)re"
+        R"re(::[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4}){0,6})(?![\w:]))re"));
     static const QRegularExpression ipv4(QStringLiteral(R"(\b\d{1,3}(?:\.\d{1,3}){3}\b)"));
     static const QRegularExpression mac(QStringLiteral(R"(\b[0-9A-Fa-f]{2}(?:[:-][0-9A-Fa-f]{2}){5}\b)"));
     text = redactError(text, QUrl());
     text.replace(mac, QStringLiteral("<mac>"));
+    text.replace(ipv6, QStringLiteral("<ip>"));
     text.replace(ipv4, QStringLiteral("<ip>"));
     return text;
 }

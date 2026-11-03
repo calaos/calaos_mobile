@@ -2,6 +2,7 @@
 #define LOGREDACT_H
 
 #include <QString>
+#include <QRegularExpression>
 #include <QStringList>
 #include <QUrl>
 #include <QUrlQuery>
@@ -152,6 +153,17 @@ inline QString redactError(QString err, const QUrl &url)
         }
     }
     return err;
+}
+
+//Free text written by a daemon or a host: it may name an address.
+inline QString redactFreeText(QString text)
+{
+    static const QRegularExpression ipv4(QStringLiteral(R"(\b\d{1,3}(?:\.\d{1,3}){3}\b)"));
+    static const QRegularExpression mac(QStringLiteral(R"(\b[0-9A-Fa-f]{2}(?:[:-][0-9A-Fa-f]{2}){5}\b)"));
+    text = redactError(text, QUrl());
+    text.replace(mac, QStringLiteral("<mac>"));
+    text.replace(ipv4, QStringLiteral("<ip>"));
+    return text;
 }
 
 }

@@ -2,6 +2,7 @@
 #include "CameraFrameDecoder.h"
 #include "ScreenManager.h"
 #include "JsonKeys.h"
+#include "LogCategories.h"
 #include <QGuiApplication>
 #include <limits>
 #include <qfappdispatcher.h>
@@ -144,7 +145,7 @@ void CameraModel::load(const QVariantMap &homeData)
 
     if (!homeData.contains(JsonKeys::Cameras))
     {
-        qDebug() << "no camera entry";
+        qCDebug(lcApp) << "no camera entry";
         return;
     }
 
@@ -251,7 +252,7 @@ void CameraItem::load(QVariantMap &d, int countId)
                       .arg(get_cameraId())
                       .arg(QRandomGenerator::global()->generate()));
 
-    qDebug() << "New camera loaded: " << get_name();
+    qCDebug(lcApp) << "New camera loaded: " << get_name();
 }
 
 void CameraItem::addFeed(CameraFeed *feed)
@@ -329,7 +330,7 @@ void CameraItem::frameDecoded(quint64 ticket, const QImage &image)
     //A broken frame keeps the last good picture on screen
     if (image.isNull())
     {
-        qDebug() << "Camera frame could not be decoded" << get_cameraId();
+        qCDebug(lcApp) << "Camera frame could not be decoded" << get_cameraId();
     }
     else
     {
@@ -347,7 +348,7 @@ void CameraItem::cameraPictureFailed(const QString &camid)
     if (camid != get_cameraId() || !pollInFlight)
         return;
 
-    qDebug() << "Camera picture download failed " << camid;
+    qCDebug(lcApp) << "Camera picture download failed " << camid;
 
     pictureDone();
 }
@@ -371,7 +372,7 @@ void CameraItem::pictureDone()
 
 void CameraItem::cameraMoveUp()
 {
-    qDebug() << "Move camera up " << get_cameraId();
+    qCDebug(lcApp) << "Move camera up " << get_cameraId();
     if (get_cameraVisible())
     {
         connection->sendCommand(get_cameraId(),
@@ -383,7 +384,7 @@ void CameraItem::cameraMoveUp()
 
 void CameraItem::cameraMoveDown()
 {
-    qDebug() << "Move camera down " << get_cameraId();
+    qCDebug(lcApp) << "Move camera down " << get_cameraId();
     if (get_cameraVisible())
     {
         connection->sendCommand(get_cameraId(),
@@ -395,7 +396,7 @@ void CameraItem::cameraMoveDown()
 
 void CameraItem::cameraMoveLeft()
 {
-    qDebug() << "Move camera left " << get_cameraId();
+    qCDebug(lcApp) << "Move camera left " << get_cameraId();
     if (get_cameraVisible())
     {
         connection->sendCommand(get_cameraId(),
@@ -407,7 +408,7 @@ void CameraItem::cameraMoveLeft()
 
 void CameraItem::cameraMoveRight()
 {
-    qDebug() << "Move camera right " << get_cameraId();
+    qCDebug(lcApp) << "Move camera right " << get_cameraId();
     if (get_cameraVisible())
     {
         connection->sendCommand(get_cameraId(),
@@ -419,7 +420,7 @@ void CameraItem::cameraMoveRight()
 
 void CameraItem::cameraMoveStop()
 {
-    qDebug() << "Stop moving Camera" << get_cameraId();
+    qCDebug(lcApp) << "Stop moving Camera" << get_cameraId();
     if (get_cameraVisible())
     {
         connection->sendCommand(get_cameraId(),
@@ -431,7 +432,7 @@ void CameraItem::cameraMoveStop()
 
 void CameraItem::cameraZoomIn()
 {
-    qDebug() << "Zoom in camera" << get_cameraId();
+    qCDebug(lcApp) << "Zoom in camera" << get_cameraId();
     if (get_cameraVisible())
     {
             connection->sendCommand(get_cameraId(),
@@ -443,7 +444,7 @@ void CameraItem::cameraZoomIn()
 
 void CameraItem::cameraZoomOut()
 {
-    qDebug() << "Zoom out camera" << get_cameraId();
+    qCDebug(lcApp) << "Zoom out camera" << get_cameraId();
     if (get_cameraVisible())
     {
         connection->sendCommand(get_cameraId(),
@@ -455,7 +456,7 @@ void CameraItem::cameraZoomOut()
 
 void CameraItem::cameraZoomStop()
 {
-    qDebug() << "Stop zooming camera" << get_cameraId();
+    qCDebug(lcApp) << "Stop zooming camera" << get_cameraId();
     if (get_cameraVisible())
     {
         connection->sendCommand(get_cameraId(),
@@ -501,7 +502,7 @@ void CameraItem::startCamera()
         }
     }
 
-    qDebug() << "Start camera " << get_cameraId();
+    qCDebug(lcApp) << "Start camera" << get_cameraId();
     sendPictureRequest();
 }
 

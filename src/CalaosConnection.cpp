@@ -10,6 +10,7 @@
 #include "Common.h"
 #include "JsonKeys.h"
 #include "LogRedact.h"
+#include "LogCategories.h"
 #include "NetworkLimits.h"
 
 //Default transfer timeout for every "short" HTTP request (login, commands,
@@ -577,7 +578,7 @@ void CalaosConnection::connectHttp(QString h)
 
 void CalaosConnection::connectWebsocket(QString h)
 {
-    qDebug() << "Trying to connect with websocket to: " << redactUrl(QUrl(h));
+    qCDebug(lcNet) << "Trying to connect with websocket to: " << redactUrl(QUrl(h));
 
     if (!wsocket)
     {
@@ -642,7 +643,7 @@ void CalaosConnection::onWsConnected()
         return;
     }
 
-    qDebug() << "Websocket connected";
+    qCDebug(lcNet) << "Websocket connected";
     connect(wsocket, &QWebSocket::textMessageReceived, this, &CalaosConnection::onWsTextMessageReceived);
 
     QJsonObject jroot, jdata;
@@ -691,7 +692,7 @@ void CalaosConnection::onWsConnected()
 
 void CalaosConnection::onWsDisconnected()
 {
-    qDebug() << "Websocket disconnected";
+    qCDebug(lcNet) << "Websocket disconnected";
 
     handleWebsocketFailure(QStringLiteral("websocket disconnected"));
 }
@@ -700,7 +701,7 @@ void CalaosConnection::onWsError()
 {
     if (!wsocket) return;
 
-    qDebug() << "Websocket error: " << redactError(wsocket->errorString(), wsocket->requestUrl());
+    qCDebug(lcNet) << "Websocket error: " << redactError(wsocket->errorString(), wsocket->requestUrl());
 
     handleWebsocketFailure(redactError(wsocket->errorString(), wsocket->requestUrl()));
 }
@@ -725,7 +726,7 @@ void CalaosConnection::handleWebsocketFailure(const QString &reason)
     if (engageFallback)
     {
         wsFallbackDone = true;
-        qDebug() << "Websocket failed, falling back to HTTP";
+        qCInfo(lcNet) << "Websocket failed, falling back to HTTP";
         connectHttp(httphost);
         return;
     }
@@ -766,7 +767,7 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
     reply->deleteLater();
     if (reply->error() != QNetworkReply::NoError)
     {
-        qDebug() << "Error in " << redactUrl(reply->url()) << ":" << redactError(reply->errorString(), reply->url());
+        qCWarning(lcNet) << "Error in " << redactUrl(reply->url()) << ":" << redactError(reply->errorString(), reply->url());
 
         if (tlsBlocked)
         {
@@ -798,13 +799,11 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
     QJsonParseError err;
     QJsonDocument jdoc = QJsonDocument::fromJson(bytes, &err);
 
-#ifdef QT_DEBUG
-    qDebug().noquote() << "RECV: " << redactJson(jdoc);
-#endif
+    qCDebug(lcNet) << "RECV:" << bytes.size() << "bytes";
 
     if (err.error != QJsonParseError::NoError)
     {
-        qDebug() << "JSON parse error " << err.errorString();
+        qCWarning(lcNet) << "JSON parse error " << err.errorString();
         connectionLost(QStringLiteral("login answer is not valid JSON"));
         return;
     }
@@ -856,7 +855,7 @@ void CalaosConnection::registerPushToken()
     const QString hw;
 #endif
 
-    qDebug() << "Registering push token" << HardwareUtils::describeToken(token)
+    qCDebug(lcNet) << "Registering push token" << HardwareUtils::describeToken(token)
              << "for" << (hw.isEmpty() ? QStringLiteral("<unknown>") : hw)
              << (pushKey.isEmpty() ? "without push key" : "with push key");
 
@@ -920,7 +919,7 @@ void CalaosConnection::requestFinished()
 
     if (reqReply->error() != QNetworkReply::NoError)
     {
-        qDebug() << "Error in " << redactUrl(reqReply->url()) << ":" << redactError(reqReply->errorString(), reqReply->url());
+        qCWarning(lcNet) << "Error in " << redactUrl(reqReply->url()) << ":" << redactError(reqReply->errorString(), reqReply->url());
         return;
     }
 
@@ -930,14 +929,12 @@ void CalaosConnection::requestFinished()
 
     if (err.error != QJsonParseError::NoError)
     {
-        qDebug() << "Answer of" << bytes.size() << "bytes is not JSON";
-        qDebug() << "JSON parse error at " << err.offset << " : " << err.errorString();
+        qCWarning(lcNet) << "Answer of" << bytes.size() << "bytes is not JSON";
+        qCWarning(lcNet) << "JSON parse error at " << err.offset << " : " << err.errorString();
         return;
     }
 
-#ifdef QT_DEBUG
-    qDebug().noquote() << "RECV: " << redactJson(jdoc);
-#endif
+    qCDebug(lcNet) << "RECV:" << bytes.size() << "bytes";
 
     QVariantMap jroot = jdoc.object().toVariantMap();
 
@@ -967,7 +964,7 @@ void CalaosConnection::requestCamFinished(QNetworkReply *reqReply, const QString
 
     if (reqReply->error() != QNetworkReply::NoError)
     {
-        qDebug() << "Error in " << redactUrl(reqReply->url()) << ":"
+        qCWarning(lcNet) << "Error in " << redactUrl(reqReply->url()) << ":"
                  << reqReply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt()
                  << redactError(reqReply->errorString(), reqReply->url());
         //The server refuses a token it revoked or never knew with a 400.
@@ -1004,7 +1001,7 @@ void CalaosConnection::requestAudioCoverFinished(QNetworkReply *reqReply, const 
 
     if (reqReply->error() != QNetworkReply::NoError)
     {
-        qDebug() << "Error in " << redactUrl(reqReply->url()) << ":" << redactError(reqReply->errorString(), reqReply->url());
+        qCWarning(lcNet) << "Error in " << redactUrl(reqReply->url()) << ":" << redactError(reqReply->errorString(), reqReply->url());
         return;
     }
 
@@ -1049,9 +1046,7 @@ QNetworkReply *CalaosConnection::sendHttp(const QString &msg, QJsonObject &data,
         data[JsonKeys::Action] = msg;
 
     QJsonDocument doc(data);
-#ifdef QT_DEBUG
-    qDebug().noquote() << "SEND: " << redactJson(data);
-#endif
+    qCDebug(lcNet) << "SEND:" << doc.toJson(QJsonDocument::Compact).size() << "bytes";
 
     QUrl url(httphost);
     QNetworkRequest request(url);
@@ -1159,7 +1154,7 @@ QString CalaosConnection::requestEventLog(EventLogKind kind, QJsonObject data)
     }
     else
     {
-        qDebug() << "Event log request not sent: no session up";
+        qCDebug(lcNet) << "Event log request not sent: no session up";
         return QString();
     }
 
@@ -1181,7 +1176,7 @@ void CalaosConnection::finishEventLogRequest(const QString &requestId, bool tran
     {
         //Finished already, cancelled after a timeout, or sent by an older
         //session: nobody waits for it any more.
-        qDebug() << "Event log answer dropped, no request waits for" << requestId;
+        qCDebug(lcNet) << "Event log answer dropped, no request waits for" << requestId;
         return;
     }
 
@@ -1230,7 +1225,7 @@ void CalaosConnection::eventLogReplyFinished(QNetworkReply *reply, const QString
 {
     if (reply->error() != QNetworkReply::NoError)
     {
-        qDebug() << "Error in " << redactUrl(reply->url()) << ":" << redactError(reply->errorString(), reply->url());
+        qCWarning(lcNet) << "Error in " << redactUrl(reply->url()) << ":" << redactError(reply->errorString(), reply->url());
         finishEventLogRequest(requestId, false, QVariantMap());
         return;
     }
@@ -1240,7 +1235,7 @@ void CalaosConnection::eventLogReplyFinished(QNetworkReply *reply, const QString
     const QJsonDocument jdoc = QJsonDocument::fromJson(bytes, &err);
     if (err.error != QJsonParseError::NoError || !jdoc.isObject())
     {
-        qDebug() << "Event log answer: JSON parse error at " << err.offset << " : " << err.errorString();
+        qCWarning(lcNet) << "Event log answer: JSON parse error at " << err.offset << " : " << err.errorString();
         finishEventLogRequest(requestId, false, QVariantMap());
         return;
     }
@@ -1580,7 +1575,7 @@ void CalaosConnection::startJsonPolling()
         return;
 
     if (uuidPolling.isEmpty())
-        qDebug() << "Start polling...";
+        qCDebug(lcNet) << "Start polling...";
 
     QJsonObject jroot;
     jroot[JsonKeys::CnUser] = username;
@@ -1626,7 +1621,7 @@ void CalaosConnection::startJsonPolling()
 
         if (reply->error() != QNetworkReply::NoError)
         {
-            qDebug() << "Error in " << redactUrl(reply->url()) << ":" << redactError(reply->errorString(), reply->url());
+            qCWarning(lcNet) << "Error in " << redactUrl(reply->url()) << ":" << redactError(reply->errorString(), reply->url());
             handlePollFailure(redactError(reply->errorString(), reply->url()));
             return;
         }
@@ -1640,8 +1635,8 @@ void CalaosConnection::startJsonPolling()
 
         if (err.error != QJsonParseError::NoError)
         {
-            qDebug() << "JSON parse error " << err.errorString();
-            qDebug() << "Poll answer of" << bytes.size() << "bytes is not JSON";
+            qCWarning(lcNet) << "JSON parse error " << err.errorString();
+            qCWarning(lcNet) << "Poll answer of" << bytes.size() << "bytes is not JSON";
             handlePollFailure(QStringLiteral("invalid JSON in poll answer"));
             return;
         }
@@ -1657,7 +1652,7 @@ void CalaosConnection::startJsonPolling()
 
         if (jroot[JsonKeys::Success].toString() != "true")
         {
-            qDebug() << "Failed to get events";
+            qCWarning(lcNet) << "Failed to get events";
             handlePollFailure(QStringLiteral("poll answer reports a failure"));
             return;
         }
@@ -1742,15 +1737,7 @@ void CalaosConnection::processEventsV2(QString msg)
 {
     if (msg == "") return;
 
-#ifdef QT_DEBUG
-    {
-        const QJsonDocument doc = QJsonDocument::fromJson(msg.toUtf8());
-        if (doc.isNull())
-            qDebug() << "Received" << msg.size() << "chars, not JSON";
-        else
-            qDebug().noquote() << "Received: " << redactJson(doc);
-    }
-#endif
+    qCDebug(lcNet) << "Received" << msg.size() << "chars";
 
     dispatchEvents(CalaosEventDecoder::decodeEventV2(msg));
 }
@@ -1928,7 +1915,7 @@ void CalaosConnection::requestEventPictureFinished(QNetworkReply *reply, const Q
 
     if (reply->error() != QNetworkReply::NoError)
     {
-        qDebug() << "Error in" << redactUrl(reply->url()) << ":"
+        qCWarning(lcNet) << "Error in" << redactUrl(reply->url()) << ":"
                  << reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt()
                  << redactError(reply->errorString(), reply->url());
         emit eventPictureFailed(picUid);
@@ -1938,7 +1925,7 @@ void CalaosConnection::requestEventPictureFinished(QNetworkReply *reply, const Q
     const QByteArray data = reply->read(MaxEventPictureBytes + 1);
     if (data.size() > MaxEventPictureBytes)
     {
-        qDebug() << "Event picture larger than" << MaxEventPictureBytes << "bytes, dropped";
+        qCWarning(lcNet) << "Event picture larger than" << MaxEventPictureBytes << "bytes, dropped";
         emit eventPictureFailed(picUid);
         return;
     }

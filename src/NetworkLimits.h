@@ -14,8 +14,6 @@ constexpr qint64 MaxPictureBytes = 16 * 1024 * 1024;
 constexpr qint64 MaxJsonBytes = 16 * 1024 * 1024;
 //OpenWeatherMap answers are a few KiB.
 constexpr qint64 MaxWeatherBytes = 1024 * 1024;
-//Body of an error answer, logged redacted: no need for more.
-constexpr qint64 MaxErrorBodyBytes = 64 * 1024;
 
 //The announced length is refused up front, and the bytes actually received
 //stay bounded when the server lies or sends none. Aborting ends the reply with

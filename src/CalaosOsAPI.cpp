@@ -1,5 +1,6 @@
 #include "CalaosOsAPI.h"
 #include "LogRedact.h"
+#include "LogCategories.h"
 #include <QStringBuilder>
 #include <QUrlQuery>
 #include <memory>
@@ -263,7 +264,7 @@ void CalaosOsAPI::getSystemInfo(std::function<void (bool, const QJsonValue &)> c
 void CalaosOsAPI::configureNetwork(const QJsonObject &networkConfig, std::function<void (bool)> callback)
 {
     QByteArray data = QJsonDocument(networkConfig).toJson(QJsonDocument::Compact);
-    qDebug() << "Configure network:" << QString::fromUtf8(LogRedact::redactJson(networkConfig));
+    qCDebug(lcApp) << "Configure network for" << networkConfig["name"].toString();
 
     const QString intf = networkConfig["name"].toString();
     Route r;

@@ -324,7 +324,10 @@ private:
             }
             break;
         case OverLimit:
-            sock->write(head + "Content-Length: " + QByteArray::number(Limit + 1) + "\r\n\r\n" + QByteArray(Limit + 1, 'x'));
+            //Connection: close, or the client may pool this socket after reading it all and send
+            //its next request on it, which this server no longer parses.
+            sock->write(head + "Content-Length: " + QByteArray::number(Limit + 1) + "\r\nConnection: close\r\n\r\n"
+                        + QByteArray(Limit + 1, 'x'));
             break;
         case ExactLimit:
             sock->write(head + "Content-Length: " + QByteArray::number(Limit) + "\r\nConnection: close\r\n\r\n"
@@ -946,7 +949,8 @@ void TstCameraToken::cameraPictureBoundsAreEnforced()
         connection->getCameraPicture(QStringLiteral("cam1"), QStringLiteral("/cam/image?id=1"));
         QTRY_COMPARE_WITH_TIMEOUT(failed->count(), before + 1, 5000);
         QCOMPARE(downloaded->count(), 0);
-        //an OverLimit burst: the server does not always see the client close
+        //OverLimit is sent in one write: the client can have read all of it before it
+        //closes, and the server then has no abort left to see. Refusal is already proven above.
         if (mode != FakeCalaos::OverLimit)
             QTRY_COMPARE(server->bigAborted, 1);
     }

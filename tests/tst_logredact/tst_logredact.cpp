@@ -120,7 +120,9 @@ void TstLogRedact::networkRequestErrorNeverLogsSecrets()
 
     const QString l = log();
     QVERIFY2(l.contains(QLatin1String("Error in")), qPrintable(l));
-    QVERIFY2(l.contains(QLatin1String("denied")), qPrintable(l)); //still useful
+    QVERIFY2(l.contains(QLatin1String("status 403")), qPrintable(l)); //still useful
+    //The error body is never dumped, redacted or not.
+    QVERIFY2(!l.contains(QLatin1String("denied")), qPrintable(l));
     for (const QString &secret: { Appid, Secret })
         QVERIFY2(!l.contains(secret), qPrintable(secret + QLatin1String(" in: ") + l));
 }
@@ -138,10 +140,11 @@ void TstLogRedact::networkRequestSuccessNeverLogsSecrets()
     QTRY_COMPARE_WITH_TIMEOUT(done.count(), 1, 3000);
 
     const QString l = log();
-    QVERIFY2(l.contains(QLatin1String("success")), qPrintable(l));
+    QVERIFY2(l.contains(QLatin1String("New request to")), qPrintable(l));
+    //Not even redacted: the body is never dumped.
+    QVERIFY2(!l.contains(QLatin1String("camera_token")), qPrintable(l));
     for (const QString &secret: { Appid, Secret })
         QVERIFY2(!l.contains(secret), qPrintable(secret + QLatin1String(" in: ") + l));
 }
-
 QTEST_MAIN(TstLogRedact)
 #include "tst_logredact.moc"

@@ -61,11 +61,23 @@ QNetworkReply *WeatherModel::boundedGet(const QUrl &url)
     req.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::SameOriginRedirectPolicy);
     QNetworkReply *rep = accessManager->get(req);
     NetworkLimits::limitDownload(rep, NetworkLimits::MaxWeatherBytes);
+    //The transfer timeout restarts on every byte: a server dripping data would hold the reply forever.
+    QTimer::singleShot(totalTimeoutMs, rep, [rep]() { rep->abort(); });
+    inflight = rep;
     return rep;
 }
 
 void WeatherModel::refreshWeather()
 {
+    //Drop the previous request (and its forecast follow-up) rather than stack a second one.
+    if (inflight)
+    {
+        inflight->disconnect(this);
+        inflight->abort();
+        inflight->deleteLater();
+        inflight = nullptr;
+    }
+
     QUrl url(apiBase + "weather");
     QUrlQuery query;
     query.addQueryItem("lat", HardwareUtils::Instance()->getConfigOption("latitude"));

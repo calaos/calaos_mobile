@@ -4,6 +4,8 @@
 #include <QtCore>
 #include <QtNetwork>
 
+#include "NetworkLimits.h"
+
 class NetworkRequest: public QObject
 {
     Q_OBJECT
@@ -53,6 +55,8 @@ public:
 
     void setFile(QFile *f) { dlFile = f; }
     QFile *getFile() const { return dlFile; }
+    //Disk bound of a TypeFile download, NetworkLimits::MaxFileBytes by default.
+    void setMaxFileBytes(qint64 max) { maxFileBytes = max; }
 
     void setCustomHeader(QString header, QString value);
 
@@ -92,6 +96,7 @@ private:
     QMap<QString, QString> headers;
 
     QFile *dlFile = nullptr;
+    qint64 maxFileBytes = NetworkLimits::MaxFileBytes;
     QByteArray dataRead;
 
     bool delNm = false;

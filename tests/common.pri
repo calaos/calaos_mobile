@@ -16,6 +16,9 @@ CONFIG += no_testcase_installs
 SRC_DIR = $$PWD/../src
 
 INCLUDEPATH += $$SRC_DIR
+# qmake only tracks the headers it finds on DEPENDPATH: without it, a change to
+# a header-only unit (LogRedact.h, NetworkLimits.h) rebuilds no test object.
+DEPENDPATH += $$SRC_DIR
 
 # Artefacts intermédiaires regroupés (garde les répertoires de build lisibles).
 MOC_DIR = $$OUT_PWD/.moc

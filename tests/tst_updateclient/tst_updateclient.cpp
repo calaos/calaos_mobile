@@ -42,6 +42,7 @@
 #include <qfappdispatcher.h>
 
 #include "CalaosOsAPI.h"
+#include "NetworkLimits.h"
 #include "UpdateManager.h"
 
 static QStringList s_logLines;
@@ -645,6 +646,7 @@ private slots:
 
     void bearerHeaderEverywhereAndNoTokenInUrls();
     void v2UpgradeAllEndsOnlyOnTerminalJob();
+    void v2OversizedEventMessageClosesTheWebSocket();
     void v2JobErrorIsAFailure();
     void v2LostTerminalEventIsCaughtByStatusPoll();
     void v2RebootRequiredComesFromTheJob();
@@ -704,6 +706,8 @@ void TstUpdateClient::initTestCase()
 {
     QVERIFY(m_dir.isValid());
     m_tokenPath = m_dir.filePath(QStringLiteral("calaos-ct.token"));
+    //A distribution's qtlogging.ini can mask debug output the checks read.
+    QLoggingCategory::setFilterRules(QStringLiteral("*.debug=true"));
     s_previousHandler = qInstallMessageHandler(captureMessages);
 }
 
@@ -788,6 +792,23 @@ void TstUpdateClient::bearerHeaderEverywhereAndNoTokenInUrls()
     QCOMPARE(daemon.wsHandshakes.first().path, QStringLiteral("/api/v2/events"));
     QCOMPARE(daemon.wsHandshakes.first().query, QString());
     QCOMPARE(daemon.wsHandshakes.first().authorization, QByteArray("Bearer ") + daemon.token.toUtf8());
+}
+
+void TstUpdateClient::v2OversizedEventMessageClosesTheWebSocket()
+{
+    FakeDaemon daemon;
+    daemon.token = makeToken('c');
+    writeToken(daemon.token);
+    QVERIFY(daemon.start());
+    startClient(daemon);
+    QTRY_COMPARE(daemon.clients.size(), 1);
+
+    QWebSocket *ws = daemon.clients.first();
+    int closeCode = -1;
+    connect(ws, &QWebSocket::disconnected, this, [&closeCode, ws]() { closeCode = ws->closeCode(); });
+    ws->sendTextMessage(QString(NetworkLimits::MaxJsonBytes + 1024, QLatin1Char('x')));
+    QTRY_VERIFY_WITH_TIMEOUT(closeCode != -1, 10000);
+    QCOMPARE(closeCode, int(QWebSocketProtocol::CloseCodeTooMuchData));
 }
 
 void TstUpdateClient::v2UpgradeAllEndsOnlyOnTerminalJob()

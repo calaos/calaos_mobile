@@ -75,6 +75,7 @@ void WeatherModel::handleWeatherNetworkData()
     QNetworkReply *reply = qobject_cast<QNetworkReply *>(sender());
     if (!reply)
         return;
+    reply->deleteLater();
 
     if (!reply->error())
     {
@@ -115,6 +116,7 @@ void WeatherModel::handleForecastNetworkData()
     QNetworkReply *reply = qobject_cast<QNetworkReply *>(sender());
     if (!reply)
         return;
+    reply->deleteLater();
 
     if (!reply->error())
     {

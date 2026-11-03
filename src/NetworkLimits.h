@@ -14,6 +14,8 @@ constexpr qint64 MaxPictureBytes = 16 * 1024 * 1024;
 constexpr qint64 MaxJsonBytes = 16 * 1024 * 1024;
 //OpenWeatherMap answers are a few KiB.
 constexpr qint64 MaxWeatherBytes = 1024 * 1024;
+//Downloads that go straight to disk: bounded by the storage, not by memory.
+constexpr qint64 MaxFileBytes = 512LL * 1024 * 1024;
 
 //The announced length is refused up front, and the bytes actually received
 //stay bounded when the server lies or sends none. Aborting ends the reply with
@@ -26,6 +28,13 @@ inline void limitDownload(QNetworkReply *reply, qint64 max = MaxPictureBytes)
     QObject::connect(reply, &QNetworkReply::metaDataChanged, reply, [reply, max]()
     {
         if (reply->header(QNetworkRequest::ContentLengthHeader).toLongLong() > max)
+            reply->abort();
+    });
+    //downloadProgress counts wire bytes: a small deflate body inflating past
+    //the bound is only visible in what is buffered for the reader.
+    QObject::connect(reply, &QNetworkReply::readyRead, reply, [reply, max]()
+    {
+        if (reply->bytesAvailable() > max)
             reply->abort();
     });
     QObject::connect(reply, &QNetworkReply::downloadProgress, reply, [reply, max](qint64 received, qint64 total)

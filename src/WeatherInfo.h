@@ -48,6 +48,7 @@ public:
     Q_INVOKABLE void refreshWeather();
     //Tests point it at a local server.
     void setApiBase(const QString &base) { apiBase = base; }
+    QString getApiBase() const { return apiBase; }
 
     QQmlListProperty<WeatherData> getForecast();
     WeatherData *getForecastData(int i);
@@ -65,7 +66,7 @@ private slots:
 
 private:
     QNetworkAccessManager *accessManager;
-    QString apiBase = QStringLiteral("http://api.openweathermap.org/data/2.5/");
+    QString apiBase = QStringLiteral("https://api.openweathermap.org/data/2.5/");
 
     WeatherData dataNow;
     QList<WeatherData *> dataForecast;

@@ -71,7 +71,27 @@ bool NetworkRequest::start()
     //follow a redirect to another host.
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::SameOriginRedirectPolicy);
     lastError.clear();
+    failure.clear();
+    bound = bodyLimit();
     request.setSslConfiguration(sslConfiguration);
+
+    //Checked before anything is sent: a failure here is reported by the return
+    //value only, never by a signal as well.
+    if (resType == TypeFile)
+    {
+        if (!dlFile)
+        {
+            lastError = QStringLiteral("dlFile is invalid!, aborting request.");
+            qCWarning(lcNet) << lastError;
+            return false;
+        }
+        if (!dlFile->isOpen() && !dlFile->open(QFile::WriteOnly | QIODevice::Truncate))
+        {
+            lastError = QStringLiteral("Cannot open the download file for write: ") + dlFile->errorString();
+            qCWarning(lcNet) << "Error opening file '" << dlFile->fileName() << "' for write";
+            return false;
+        }
+    }
 
     qCDebug(lcNet) << "New request to" << LogRedact::redactUrl(QUrl(url));
 
@@ -116,14 +136,12 @@ bool NetworkRequest::start()
 
     dataRead.clear();
     written = 0;
-    failure.clear();
 
-    const qint64 bound = bodyLimit();
     NetworkLimits::limitDownload(reply, bound);
 
     //The reader drains the reply at every readyRead, so the reply's own check
     //never sees the sum: the total is counted here.
-    auto accumulate = [this, bound]()
+    auto accumulate = [this]()
     {
         //The bound's abort() runs finished synchronously: reply is already null.
         if (!reply || reply->error() == QNetworkReply::OperationCanceledError)
@@ -131,6 +149,7 @@ bool NetworkRequest::start()
         auto d = reply->readAll();
         if (dataRead.size() + d.size() > bound)
         {
+            failure = QStringLiteral("Response larger than the allowed size");
             reply->abort();
             return;
         }
@@ -156,24 +175,6 @@ bool NetworkRequest::start()
                 this, &NetworkRequest::nmFinished);
         connect(reply, &QNetworkReply::readyRead,
                 this, &NetworkRequest::nmReadyRead);
-        if (!dlFile)
-        {
-            lastError = "dlFile is invalid!, aborting request.";
-            qWarning() << "dlFile is invalid!, aborting request.";
-            reply->abort();
-            return false;
-        }
-        if (!dlFile->isOpen())
-        {
-            if (!dlFile->open(QFile::WriteOnly | QIODevice::Truncate))
-            {
-                failure = QStringLiteral("Cannot open the download file for write: ") + dlFile->errorString();
-                lastError = failure;
-                qWarning() << "Error opening file '" << dlFile->fileName() << "' for write";
-                reply->abort();
-                return false;
-            }
-        }
     }
 
     return true;
@@ -206,9 +207,9 @@ void NetworkRequest::nmReadyRead()
     emit dataReadyRead(d);
 }
 
-bool NetworkRequest::writeChunk(const QByteArray &d)
+bool NetworkRequest::storeChunk(const QByteArray &d)
 {
-    if (written + d.size() > bodyLimit())
+    if (written + d.size() > bound)
         failure = QStringLiteral("Download larger than the allowed size");
     //QFile buffers: a full disk only shows at flush.
     else if (dlFile->write(d) != d.size() || !dlFile->flush())
@@ -218,8 +219,22 @@ bool NetworkRequest::writeChunk(const QByteArray &d)
         written += d.size();
         return true;
     }
+    return false;
+}
+
+bool NetworkRequest::writeChunk(const QByteArray &d)
+{
+    if (storeChunk(d))
+        return true;
     reply->abort();
     return false;
+}
+
+//A retry with the same QFile must not append to what a failed attempt left.
+void NetworkRequest::discardPartialFile()
+{
+    dlFile->resize(0);
+    dlFile->close();
 }
 
 void NetworkRequest::nmFinished()
@@ -233,6 +248,7 @@ void NetworkRequest::nmFinished()
         lastError = failure.isEmpty() ? LogRedact::redactError(reply->errorString(), reply->url()) : failure;
         qCWarning(lcNet) << "Error in" << LogRedact::redactUrl(reply->url()) << ":" << lastError
                          << "(status" << httpStatusCode << ")";
+        discardPartialFile();
         emit finished(RequestHttpError);
 
         reply->deleteLater();
@@ -242,23 +258,15 @@ void NetworkRequest::nmFinished()
     }
 
     int status = RequestSuccess;
-    if (reply->bytesAvailable() > 0)
+    //Finished: abort() would be ignored, the error is reported here.
+    if (reply->bytesAvailable() > 0 && !storeChunk(reply->readAll()))
     {
-        //Finished: abort() would be ignored, the error is reported here.
-        const QByteArray d = reply->readAll();
-        if (written + d.size() > bodyLimit())
-            failure = QStringLiteral("Download larger than the allowed size");
-        else if (dlFile->write(d) != d.size() || !dlFile->flush())
-            failure = QStringLiteral("Cannot write the download file: ") + dlFile->errorString();
-        else
-            written += d.size();
-        if (!failure.isEmpty())
-        {
-            lastError = failure;
-            status = RequestHttpError;
-        }
+        lastError = failure;
+        status = RequestHttpError;
+        discardPartialFile();
     }
-    dlFile->close();
+    else
+        dlFile->close();
 
     reply->deleteLater();
     reply = nullptr;
@@ -276,7 +284,7 @@ void NetworkRequest::nmFinishedJson()
 
     if (reply->error() != QNetworkReply::NoError)
     {
-        lastError = LogRedact::redactError(reply->errorString(), reply->url());
+        lastError = failure.isEmpty() ? LogRedact::redactError(reply->errorString(), reply->url()) : failure;
         qCWarning(lcNet) << "Error in" << LogRedact::redactUrl(reply->url()) << ":" << lastError
                          << "(status" << httpStatusCode << ")";
         jdoc = QJsonDocument::fromJson(dataRead, &err);
@@ -319,7 +327,7 @@ void NetworkRequest::nmFinishedData()
 
     if (reply->error() != QNetworkReply::NoError)
     {
-        lastError = LogRedact::redactError(reply->errorString(), reply->url());
+        lastError = failure.isEmpty() ? LogRedact::redactError(reply->errorString(), reply->url()) : failure;
         qCWarning(lcNet) << "Error in" << LogRedact::redactUrl(reply->url()) << ":" << lastError
                          << "(status" << httpStatusCode << ")";
         emit finishedData(RequestHttpError, QByteArray());

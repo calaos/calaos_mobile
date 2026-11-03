@@ -6,6 +6,9 @@
  */
 
 #include <QtTest>
+#include <QSettings>
+#include <QStandardPaths>
+#include "HardwareUtils.h"
 #include <QApplication>
 #include <QHostAddress>
 #include <QTcpServer>
@@ -19,6 +22,8 @@ namespace {
 
 const QString Appid = QStringLiteral("dummyappid0123456789abcdef");
 const QString Secret = QStringLiteral("hunter2-dummy");
+const QString Latitude = QStringLiteral("48.8566123");
+const QString Longitude = QStringLiteral("2.3522456");
 
 class HttpServer: public QTcpServer
 {
@@ -60,6 +65,21 @@ class TstLogRedact: public QObject
     Q_OBJECT
 
 private slots:
+    void initTestCase()
+    {
+        //Config options live in QSettings: keep the test position out of the user's.
+        QStandardPaths::setTestModeEnabled(true);
+        QCoreApplication::setOrganizationName(QStringLiteral("calaos-test"));
+        QCoreApplication::setApplicationName(QStringLiteral("tst_logredact"));
+        HardwareUtils::Instance()->setConfigOption(QStringLiteral("latitude"), Latitude);
+        HardwareUtils::Instance()->setConfigOption(QStringLiteral("longitude"), Longitude);
+    }
+
+    void cleanupTestCase()
+    {
+        QSettings(QCoreApplication::organizationName(), QCoreApplication::applicationName()).clear();
+    }
+
     void init()
     {
         QLoggingCategory::setFilterRules(QStringLiteral("*.debug=true"));
@@ -106,7 +126,7 @@ void TstLogRedact::weatherErrorNeverLogsAppid()
     //The home's position is personal data as well.
     QVERIFY2(l.contains(QLatin1String("lat=***")), qPrintable(l));
     QVERIFY2(l.contains(QLatin1String("lon=***")), qPrintable(l));
-    QVERIFY2(!l.contains(QRegularExpression(QStringLiteral("l(at|on)=[^*&\\s]"))), qPrintable(l));
+    QVERIFY2(!l.contains(Latitude) && !l.contains(Longitude), qPrintable(l));
 }
 
 void TstLogRedact::freeTextHidesAddresses()

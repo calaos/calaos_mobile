@@ -98,10 +98,14 @@ private:
 
     QFile *dlFile = nullptr;
     qint64 maxBytes = 0;
+    //Fixed at start(), for every result type.
+    qint64 bound = 0;
     qint64 written = 0;
     QString failure;
     qint64 bodyLimit() const;
     bool writeChunk(const QByteArray &d);
+    bool storeChunk(const QByteArray &d);
+    void discardPartialFile();
     QByteArray dataRead;
 
     bool delNm = false;

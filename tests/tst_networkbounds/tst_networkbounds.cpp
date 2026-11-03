@@ -20,7 +20,22 @@
 
 namespace {
 
-enum Mode { Announced, NoLength, OverLimit, Chunked, Deflate };
+enum Mode { Announced, NoLength, OverLimit, Chunked, Deflate, DeflateModerate };
+
+//Deflate stream (no size prefix) of about `inflated` bytes, ratio ~30: under
+//the ratio 40 above which Qt refuses an archive bomb before any readyRead.
+QByteArray moderateDeflate(qint64 inflated)
+{
+    QRandomGenerator rng(1);
+    QByteArray raw;
+    raw.reserve(inflated);
+    while (raw.size() < inflated)
+    {
+        raw.append(char(rng.bounded(256)));
+        raw.append(QByteArray(60, 'x'));
+    }
+    return qCompress(raw).mid(4);
+}
 
 class HttpServer: public QTcpServer
 {
@@ -93,6 +108,14 @@ protected:
                 sock->disconnectFromHost();
                 break;
             }
+            case DeflateModerate:
+            {
+                const QByteArray body = moderateDeflate(limit + 1024);
+                sock->write(head + "Content-Encoding: deflate\r\nContent-Length: " + QByteArray::number(body.size())
+                            + "\r\n\r\n" + body);
+                sock->disconnectFromHost();
+                break;
+            }
             }
         });
         connect(sock, &QTcpSocket::disconnected, sock, &QObject::deleteLater);
@@ -137,6 +160,7 @@ private slots:
     void weatherIsBounded();
     void fileRequestIsBounded_data() { modes(); }
     void fileRequestIsBounded();
+    void moderateDeflateStaysUnderQtArchiveCheck();
     void webSocketFrameIsBounded();
     void webSocketFrameHeaderIsRefusedBeforeItsBody();
     void weatherRepliesAreFreed();
@@ -150,7 +174,10 @@ private:
         QTest::newRow("no length") << int(NoLength);
         QTest::newRow("over the limit") << int(OverLimit);
         QTest::newRow("chunked, no length") << int(Chunked);
+        //Ratio ~1000: Qt refuses it itself, before the readyRead hook.
         QTest::newRow("small on the wire, over once inflated") << int(Deflate);
+        //Ratio ~30: passes Qt's check, only the hook cuts it.
+        QTest::newRow("moderate ratio, over once inflated") << int(DeflateModerate);
     }
     QString base() const { return QStringLiteral("http://127.0.0.1:%1/").arg(server->serverPort()); }
     QString log() const { return lines.join(QLatin1Char('\n')); }
@@ -202,7 +229,7 @@ void TstNetworkBounds::runRequest(NetworkRequest::ResulType type, qint64 limit)
     else
         QCOMPARE(data.first().value(0).toInt(), int(NetworkRequest::RequestHttpError));
     QVERIFY2(log().contains(QLatin1String("Error in")), qPrintable(log()));
-    if (mode != OverLimit && mode != Deflate)
+    if (mode != OverLimit && mode != Deflate && mode != DeflateModerate)
         QTRY_COMPARE_WITH_TIMEOUT(server->released, 1, 5000);
 }
 
@@ -236,6 +263,14 @@ void TstNetworkBounds::fileRequestIsBounded()
     QCOMPARE(done.first().value(0).toInt(), int(NetworkRequest::RequestHttpError));
     //The overrun is cut within a few chunks of the bound, not after the whole body.
     QVERIFY2(file.size() <= bound + 4 * 1024 * 1024, qPrintable(QString::number(file.size())));
+}
+
+void TstNetworkBounds::moderateDeflateStaysUnderQtArchiveCheck()
+{
+    //The DeflateModerate rows prove the readyRead hook only while Qt lets them through.
+    const qint64 inflated = 4 * 1024 * 1024;
+    const double ratio = double(inflated) / moderateDeflate(inflated).size();
+    QVERIFY2(ratio > 15 && ratio < 39, qPrintable(QString::number(ratio)));
 }
 
 void TstNetworkBounds::webSocketFrameIsBounded()

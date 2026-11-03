@@ -707,7 +707,7 @@ void TstUpdateClient::initTestCase()
     QVERIFY(m_dir.isValid());
     m_tokenPath = m_dir.filePath(QStringLiteral("calaos-ct.token"));
     //A distribution's qtlogging.ini can mask debug output the checks read.
-    QLoggingCategory::setFilterRules(QStringLiteral("*.debug=true"));
+    QLoggingCategory::setFilterRules(QStringLiteral("calaos.*.debug=true"));
     s_previousHandler = qInstallMessageHandler(captureMessages);
 }
 

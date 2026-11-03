@@ -480,7 +480,7 @@ private slots:
     void initTestCase()
     {
         //A distribution's qtlogging.ini can mask debug output the checks read.
-        QLoggingCategory::setFilterRules(QStringLiteral("*.debug=true"));
+        QLoggingCategory::setFilterRules(QStringLiteral("calaos.*.debug=true"));
         previousHandler = qInstallMessageHandler(captureHandler);
         QVERIFY(dir.isValid());
         if (QSslSocket::availableBackends().contains(QStringLiteral("openssl")))

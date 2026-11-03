@@ -129,8 +129,8 @@ bool NetworkRequest::start()
                 this, &NetworkRequest::nmFinishedJson);
         connect(reply, &QNetworkReply::readyRead, this, [this]()
                 {
-                    //Nothing is handed over once the bound has aborted the reply.
-                    if (reply->error() == QNetworkReply::OperationCanceledError)
+                    //The bound's abort() runs finished synchronously: reply is already null.
+                    if (!reply || reply->error() == QNetworkReply::OperationCanceledError)
                         return;
                     auto d = reply->readAll();
                     emit dataReadyRead(d);
@@ -143,8 +143,8 @@ bool NetworkRequest::start()
                 this, &NetworkRequest::nmFinishedData);
         connect(reply, &QNetworkReply::readyRead, this, [this]()
                 {
-                    //Nothing is handed over once the bound has aborted the reply.
-                    if (reply->error() == QNetworkReply::OperationCanceledError)
+                    //The bound's abort() runs finished synchronously: reply is already null.
+                    if (!reply || reply->error() == QNetworkReply::OperationCanceledError)
                         return;
                     auto d = reply->readAll();
                     emit dataReadyRead(d);

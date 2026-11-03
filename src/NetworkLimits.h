@@ -30,8 +30,10 @@ inline void limitDownload(QNetworkReply *reply, qint64 max = MaxPictureBytes)
         if (reply->header(QNetworkRequest::ContentLengthHeader).toLongLong() > max)
             reply->abort();
     });
-    //downloadProgress counts wire bytes: a small deflate body inflating past
-    //the bound is only visible in what is buffered for the reader.
+    //downloadProgress is throttled (~100 ms) and a last one can follow Finished,
+    //where abort() is ignored: what is buffered for the reader is checked per
+    //batch. Several batches under the bound drained by the reader in between
+    //are not summed.
     QObject::connect(reply, &QNetworkReply::readyRead, reply, [reply, max]()
     {
         if (reply->bytesAvailable() > max)

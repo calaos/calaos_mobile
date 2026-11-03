@@ -16,8 +16,8 @@ CONFIG += no_testcase_installs
 SRC_DIR = $$PWD/../src
 
 INCLUDEPATH += $$SRC_DIR
-# Explicit rather than relying on the INCLUDEPATH scan: a change to a header-only
-# unit (LogRedact.h, NetworkLimits.h) must rebuild the test objects.
+# Redundant with the INCLUDEPATH scan, kept so that header-only units
+# (LogRedact.h, NetworkLimits.h) are tracked explicitly.
 DEPENDPATH += $$SRC_DIR
 
 # Artefacts intermédiaires regroupés (garde les répertoires de build lisibles).

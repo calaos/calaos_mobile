@@ -161,7 +161,7 @@ private:
 void TstAdminCode::initTestCase()
 {
     //A distribution's qtlogging.ini can mask debug output the checks read.
-    QLoggingCategory::setFilterRules(QStringLiteral("*.debug=true"));
+    QLoggingCategory::setFilterRules(QStringLiteral("calaos.*.debug=true"));
     s_previousHandler = qInstallMessageHandler(captureMessages);
     QCoreApplication::setOrganizationName(QStringLiteral("CalaosTests"));
     QCoreApplication::setApplicationName(QStringLiteral("tst_admincode"));

@@ -136,6 +136,8 @@ public:
     //Any picture or cover request: how the body is sent, see sendBig().
     enum Big { NoBig, Announced, NoLength, Drip, ExactLimit, OverLimit };
     Big big = NoBig;
+    //Apply `big` to every HTTP action (JSON answers), not only to pictures.
+    bool bigAnyAction = false;
     //Connections the client closed before the body ended.
     int bigAborted = 0;
     //eventlog answers with an error that echoes the password it was sent.
@@ -240,10 +242,20 @@ private:
             r.status = v1Status;
         requests << r;
 
-        if (big != NoBig && (action == QLatin1String("event_picture") || action == QLatin1String("camera") ||
+        if (big != NoBig && (bigAnyAction || action == QLatin1String("event_picture") || action == QLatin1String("camera") ||
                              action == QLatin1String("get_camera_pic") || action == QLatin1String("audio")))
         {
             sendBig(sock);
+            return;
+        }
+        if (action == QLatin1String("get_home"))
+        {
+            //HTTP login
+            const QByteArray body = R"({"success":"true","home":[],"cameras":[],"audio":[]})";
+            sock->write("HTTP/1.1 200 X\r\nContent-Type: application/json\r\nContent-Length: " +
+                        QByteArray::number(body.size()) + "\r\nConnection: close\r\n\r\n" + body);
+            sock->flush();
+            sock->disconnectFromHost();
             return;
         }
         if (action == QLatin1String("event_picture") && (eventPicHuge || eventPicSilent))
@@ -444,6 +456,7 @@ private slots:
     void eventPictureDrippedIsCutByTheTotalTimeout();
     void cameraPictureBoundsAreEnforced();
     void audioCoverBoundsAreEnforced();
+    void jsonAnswerBoundsAreEnforced();
     void v1SuffixWithoutQueryKeepsCredentialsOutOfThePath();
     void eventLogServerErrorNeverLogsPassword();
     void redactionKeepsDiagnosticAndCoversEdgeCases();
@@ -480,6 +493,8 @@ void TstCameraToken::init()
 
 void TstCameraToken::cleanup()
 {
+    //Process-wide: the debug rules some tests turn on would leak into the next ones.
+    QLoggingCategory::setFilterRules(QString());
     delete downloaded;
     delete failed;
     delete connection;
@@ -945,6 +960,30 @@ void TstCameraToken::audioCoverBoundsAreEnforced()
         else
             QTRY_COMPARE_WITH_TIMEOUT(server->bigAborted, 1, 5000);
         QCOMPARE(cover.count(), 1);
+    }
+}
+
+void TstCameraToken::jsonAnswerBoundsAreEnforced()
+{
+    //Over HTTP the event log answer goes through sendHttp(), the same path
+    //as every other JSON request of CalaosConnection.
+    connection->login(TestUser, TestPass, server->url().replace(QLatin1String("ws://"), QLatin1String("http://")));
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
+    QVERIFY(connection->isHttp());
+    server->bigAnyAction = true;
+    QSignalSpy done(connection, &CalaosConnection::eventLogPageFinished);
+
+    for (auto mode: { FakeCalaos::Announced, FakeCalaos::NoLength, FakeCalaos::OverLimit })
+    {
+        server->big = mode;
+        server->bigAborted = 0;
+        const int before = done.count();
+        connection->requestEventLogPage(1, 10);
+        QTRY_COMPARE_WITH_TIMEOUT(done.count(), before + 1, 5000);
+        QCOMPARE(done.last().value(1).toBool(), false);
+        if (mode != FakeCalaos::OverLimit)
+            //the long-poll is answered big too and retried: several aborts is fine
+            QTRY_VERIFY_WITH_TIMEOUT(server->bigAborted >= 1, 5000);
     }
 }
 

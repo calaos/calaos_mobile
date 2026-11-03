@@ -10,31 +10,15 @@
 #include "Common.h"
 #include "JsonKeys.h"
 #include "LogRedact.h"
+#include "NetworkLimits.h"
 
 //Default transfer timeout for every "short" HTTP request (login, commands,
 //state queries, camera pictures, audio covers). Those are all request/reply
 //exchanges the server answers immediately, so 30s without a single byte
 //moving means the link is dead, not slow.
 static const int HTTP_TRANSFER_TIMEOUT = 30000;
-static constexpr qint64 MaxPictureBytes = 16 * 1024 * 1024;
-
-//A hostile server must not make the app buffer an unbounded body: the announced
-//length is refused up front, and the bytes actually received stay bounded when
-//it lies or sends none.
-static void limitDownload(QNetworkReply *reply)
-{
-    //Qt reports no progress for a short first chunk: the headers settle it.
-    QObject::connect(reply, &QNetworkReply::metaDataChanged, reply, [reply]()
-    {
-        if (reply->header(QNetworkRequest::ContentLengthHeader).toLongLong() > MaxPictureBytes)
-            reply->abort();
-    });
-    QObject::connect(reply, &QNetworkReply::downloadProgress, reply, [reply](qint64 received, qint64 total)
-    {
-        if (received > MaxPictureBytes || total > MaxPictureBytes)
-            reply->abort();
-    });
-}
+using NetworkLimits::MaxPictureBytes;
+using NetworkLimits::limitDownload;
 
 //The long-poll (action "poll_listen") is the one exception: the server keeps
 //the request deliberately open until an event happens, so a calm installation
@@ -588,7 +572,7 @@ void CalaosConnection::connectHttp(QString h)
     QNetworkRequest request(url);
     request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    accessManager->post(request, jdoc.toJson());
+    limitDownload(accessManager->post(request, jdoc.toJson()), NetworkLimits::MaxJsonBytes);
 }
 
 void CalaosConnection::connectWebsocket(QString h)
@@ -809,7 +793,7 @@ void CalaosConnection::loginFinished(QNetworkReply *reply)
         return;
     }
 
-    QByteArray bytes = reply->readAll();
+    QByteArray bytes = reply->read(NetworkLimits::MaxJsonBytes);
     QJsonParseError err;
     QJsonDocument jdoc = QJsonDocument::fromJson(bytes, &err);
 
@@ -939,7 +923,7 @@ void CalaosConnection::requestFinished()
         return;
     }
 
-    QByteArray bytes = reqReply->readAll();
+    QByteArray bytes = reqReply->read(NetworkLimits::MaxJsonBytes);
     QJsonParseError err;
     QJsonDocument jdoc = QJsonDocument::fromJson(bytes, &err);
 
@@ -1073,6 +1057,7 @@ QNetworkReply *CalaosConnection::sendHttp(const QString &msg, QJsonObject &data,
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
     QNetworkReply *reqReply = accessManager->post(request, doc.toJson());
+    limitDownload(reqReply, NetworkLimits::MaxJsonBytes);
 
     connect(reqReply, &QNetworkReply::finished, this, &CalaosConnection::requestFinished);
     if (!ignoreErrors)
@@ -1249,7 +1234,7 @@ void CalaosConnection::eventLogReplyFinished(QNetworkReply *reply, const QString
         return;
     }
 
-    const QByteArray bytes = reply->readAll();
+    const QByteArray bytes = reply->read(NetworkLimits::MaxJsonBytes);
     QJsonParseError err;
     const QJsonDocument jdoc = QJsonDocument::fromJson(bytes, &err);
     if (err.error != QJsonParseError::NoError || !jdoc.isObject())
@@ -1619,6 +1604,7 @@ void CalaosConnection::startJsonPolling()
     //poll on a quiet installation and trigger a logout/login loop.
     request.setTransferTimeout(HTTP_POLL_TRANSFER_TIMEOUT);
     QNetworkReply *reply = accessManager->post(request, jdoc.toJson());
+    limitDownload(reply, NetworkLimits::MaxJsonBytes);
     pollReply = reply;
 
     //The error is handled in finished() only. It used to be wired to
@@ -1644,7 +1630,7 @@ void CalaosConnection::startJsonPolling()
             return;
         }
 
-        QByteArray bytes = reply->readAll();
+        QByteArray bytes = reply->read(NetworkLimits::MaxJsonBytes);
 
         QJsonParseError err;
         QJsonDocument jdoc = QJsonDocument::fromJson(bytes, &err);

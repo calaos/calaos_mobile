@@ -2,6 +2,7 @@
 #include "HardwareUtils.h"
 #include "Common.h"
 #include "LogRedact.h"
+#include "NetworkLimits.h"
 #include <QQmlEngine>
 #include <QtQml>
 
@@ -63,6 +64,7 @@ void WeatherModel::refreshWeather()
     url.setQuery(query);
 
     QNetworkReply *rep = accessManager->get(QNetworkRequest(url));
+    NetworkLimits::limitDownload(rep, NetworkLimits::MaxWeatherBytes);
 
     connect(rep, &QNetworkReply::finished,
             this, &WeatherModel::handleWeatherNetworkData);
@@ -76,7 +78,7 @@ void WeatherModel::handleWeatherNetworkData()
 
     if (!reply->error())
     {
-        QJsonDocument jdoc = QJsonDocument::fromJson(reply->readAll());
+        QJsonDocument jdoc = QJsonDocument::fromJson(reply->read(NetworkLimits::MaxWeatherBytes));
 
         //qDebug().noquote() << "RECV: " << jdoc.toJson();
 
@@ -102,6 +104,7 @@ void WeatherModel::handleWeatherNetworkData()
     url.setQuery(query);
 
     QNetworkReply *rep = accessManager->get(QNetworkRequest(url));
+    NetworkLimits::limitDownload(rep, NetworkLimits::MaxWeatherBytes);
 
     connect(rep, &QNetworkReply::finished,
             this, &WeatherModel::handleForecastNetworkData);
@@ -115,7 +118,7 @@ void WeatherModel::handleForecastNetworkData()
 
     if (!reply->error())
     {
-        QJsonDocument jdoc = QJsonDocument::fromJson(reply->readAll());
+        QJsonDocument jdoc = QJsonDocument::fromJson(reply->read(NetworkLimits::MaxWeatherBytes));
 
         //qDebug().noquote() << "RECV: " << jdoc.toJson();
 

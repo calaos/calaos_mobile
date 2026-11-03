@@ -101,17 +101,19 @@ TestCase {
         compare(view.picture, null)
     }
 
-    //Opened from the event list: no uuid lookup, event_picuid is set directly.
+    //Opened from the event list: main.qml declares event_picuid in the
+    //Component, so the view is created with the value already set.
+    Component {
+        id: listViewComponent
+        PushEventView { anchors.fill: parent; event_picuid: "list-1" }
+    }
+
     function test_list_path_picuid_set_directly() {
-        var view = createTemporaryObject(viewComponent, tc)
+        var view = createTemporaryObject(listViewComponent, tc)
         verify(view)
-        compare(pictureCalls, 0)
-        view.event_picuid = "list-1"
         compare(pictureCalls, 1)
         compare(eventLogModel.requested[0], "list-1")
         verify(view.picture !== null)
-        view.event_picuid = "list-1"
-        compare(pictureCalls, 1)
     }
 
     function test_list_path_without_picture_stays_closed() {

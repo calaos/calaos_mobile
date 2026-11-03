@@ -239,10 +239,6 @@ void NetworkRequest::nmFinishedJson()
         if (start < 0) start = 0;
         //Not the body itself: it may hold a secret and free text cannot be masked.
         qWarning() << "Body of" << dataRead.size() << "bytes";
-        QString s;
-        for (int i = start;i < err.offset + maxlen;i++)
-            s += (i == err.offset?"^":"-");
-        qWarning() << s;
     }
     else
         qDebug().noquote() << QString::fromUtf8(LogRedact::redactJson(jdoc));

@@ -34,6 +34,8 @@ inline const QStringList &credentialKeys()
                                       QStringLiteral("APPID"),
                                       QStringLiteral("admin_pass"),
                                       QStringLiteral("admin_session"),
+                                      QStringLiteral("session"),
+                                      QStringLiteral("password"),
                                       QStringLiteral("new_pass"),
                                       JsonKeys::OldPw,
                                       JsonKeys::NewPw };

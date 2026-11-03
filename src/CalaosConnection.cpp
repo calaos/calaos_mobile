@@ -1223,7 +1223,8 @@ void CalaosConnection::finishEventLogRequest(const QString &requestId, bool tran
 //The server's own words: it may echo what it was sent, the password included.
 QString CalaosConnection::serverErrorText(const QVariantMap &answer) const
 {
-    QString text = redactError(answer.value(JsonKeys::Error).toString(), QUrl(httphost));
+    QString text = answer.value(JsonKeys::Error).toString();
+    //Even a short password goes: a mangled message is better than a leaked secret.
     if (!password.isEmpty())
         text.replace(password, QStringLiteral("***"));
     return text;
@@ -1392,9 +1393,11 @@ void CalaosConnection::sendCameraPicture(const QString &camid, const QString &ur
         //Concatenation, not arg(): an encoded "%20" would be taken for a placeholder.
         auto enc = [](const QString &v) { return QString::fromLatin1(QUrl::toPercentEncoding(v)); };
         //A fragment would swallow the credentials and is never sent anyway.
+        //Without a "?" the pairs would land in the path, out of reach of the log redaction.
+        const QString suffix = urlSuffix.section(QLatin1Char('#'), 0, 0);
         u = httphost.left(httphost.length() - 8) // "/api.php" is 8
-            + urlSuffix.section(QLatin1Char('#'), 0, 0)
-            + QStringLiteral("&u=") + enc(username)
+            + suffix
+            + (suffix.contains(QLatin1Char('?')) ? QStringLiteral("&u=") : QStringLiteral("?u=")) + enc(username)
             + QStringLiteral("&p=") + enc(password);
     }
     jroot[JsonKeys::Type] = QString("get_picture");
@@ -1924,6 +1927,9 @@ void CalaosConnection::getEventPicture(const QString &picUid)
     request.setTransferTimeout(eventPictureTimeoutMs);
     QNetworkReply *reply = accessManagerCam->post(request, QJsonDocument(jroot).toJson());
     limitDownload(reply);
+    //The transfer timeout only counts idle time: a server dripping a byte
+    //every few seconds would hold the request open forever.
+    QTimer::singleShot(eventPictureTotalMs, reply, [reply]() { reply->abort(); });
     connect(reply, &QNetworkReply::finished, this, [=]() { requestEventPictureFinished(reply, picUid); });
     reqReplies.append(reply);
 }

@@ -133,6 +133,11 @@ public:
     //event_picture: announce more than a picture may weigh, or never answer.
     bool eventPicHuge = false;
     bool eventPicSilent = false;
+    //Any picture or cover request: how the body is sent, see sendBig().
+    enum Big { NoBig, Announced, NoLength, Drip, ExactLimit, OverLimit };
+    Big big = NoBig;
+    //Connections the client closed before the body ended.
+    int bigAborted = 0;
     //eventlog answers with an error that echoes the password it was sent.
     bool eventLogEchoesPassword = false;
     //Pictures of this camera are held until releaseHeld(), and judged then:
@@ -235,6 +240,12 @@ private:
             r.status = v1Status;
         requests << r;
 
+        if (big != NoBig && (action == QLatin1String("event_picture") || action == QLatin1String("camera") ||
+                             action == QLatin1String("get_camera_pic") || action == QLatin1String("audio")))
+        {
+            sendBig(sock);
+            return;
+        }
         if (action == QLatin1String("event_picture") && (eventPicHuge || eventPicSilent))
         {
             //the socket stays open: the client must give up by itself
@@ -255,6 +266,62 @@ private:
             QTimer::singleShot(httpDelayMs, sock, [this, sock, status = r.status]() { writeAnswer(sock, status); });
         else
             writeAnswer(sock, r.status);
+    }
+
+    //The sockets stay open (but ExactLimit): the client has to give up by itself.
+    void sendBig(QTcpSocket *sock)
+    {
+        constexpr qint64 Limit = 16 * 1024 * 1024;
+        const QByteArray head = "HTTP/1.1 200 X\r\nContent-Type: image/jpeg\r\n";
+        if (big != ExactLimit)
+        {
+            auto counted = std::make_shared<bool>(false);
+            auto count = [this, counted]() { if (!*counted) { *counted = true; ++bigAborted; } };
+            connect(sock, &QTcpSocket::disconnected, this, count);
+            connect(sock, &QTcpSocket::errorOccurred, this, count);
+        }
+        switch (big)
+        {
+        case Announced:
+            //only 1 KiB ever arrives: the announced length alone must refuse it
+            sock->write(head + "Content-Length: 17825792\r\n\r\n" + QByteArray(1024, 'x'));
+            break;
+        case NoLength:
+            //no Content-Length, the end of the body is the end of the connection
+            sock->write(head + "Connection: close\r\n\r\n");
+            {
+                //fed in the test's own event loop: a paced stream leaves the client room to react
+                QTimer *t = new QTimer(sock);
+                t->setInterval(1);
+                connect(t, &QTimer::timeout, sock, [sock]() {
+                    if (sock->bytesToWrite() < 1024 * 1024)
+                        sock->write(QByteArray(256 * 1024, 'x'));
+                });
+                t->start();
+            }
+            break;
+        case OverLimit:
+            sock->write(head + "Content-Length: " + QByteArray::number(Limit + 1) + "\r\n\r\n" + QByteArray(Limit + 1, 'x'));
+            break;
+        case ExactLimit:
+            sock->write(head + "Content-Length: " + QByteArray::number(Limit) + "\r\nConnection: close\r\n\r\n"
+                        + QByteArray(Limit, 'x'));
+            sock->disconnectFromHost();
+            break;
+        case Drip:
+        {
+            //one byte every 100 ms, far below the transfer timeout
+            sock->write(head + "Content-Length: 200\r\n\r\n");
+            QTimer *t = new QTimer(sock);
+            t->setInterval(100);
+            connect(t, &QTimer::timeout, sock, [sock]() { sock->write("x", 1); sock->flush(); });
+            t->start();
+            break;
+        }
+        default:
+            break;
+        }
+        sock->flush();
     }
 
     static void writeAnswer(QTcpSocket *sock, int status)
@@ -373,6 +440,11 @@ private slots:
     void eventPictureIsFetchedWithBodyCredentials();
     void eventPictureAnnouncingTooMuchIsRefused();
     void eventPictureWithoutAnswerTimesOut();
+    void eventPictureWithoutLengthIsAbortedAtTheLimit();
+    void eventPictureDrippedIsCutByTheTotalTimeout();
+    void cameraPictureBoundsAreEnforced();
+    void audioCoverBoundsAreEnforced();
+    void v1SuffixWithoutQueryKeepsCredentialsOutOfThePath();
     void eventLogServerErrorNeverLogsPassword();
     void redactionKeepsDiagnosticAndCoversEdgeCases();
     void v1SuffixFragmentDoesNotHideCredentials();
@@ -801,6 +873,109 @@ void TstCameraToken::eventPictureWithoutAnswerTimesOut()
     connection->setEventPictureTimeout(300);
     connection->getEventPicture(QStringLiteral("pic1"));
     QTRY_COMPARE_WITH_TIMEOUT(bad.count(), 1, 3000);
+}
+
+void TstCameraToken::eventPictureWithoutLengthIsAbortedAtTheLimit()
+{
+    //Neither Content-Length nor chunks to count on: only the bytes received
+    //can stop it. The transfer timeout is long, so it cannot be that.
+    server->big = FakeCalaos::NoLength;
+    login();
+    QSignalSpy bad(connection, &CalaosConnection::eventPictureFailed);
+    QSignalSpy ok(connection, &CalaosConnection::eventPictureDownloaded);
+    connection->setEventPictureTimeout(60000);
+    connection->getEventPicture(QStringLiteral("pic1"));
+    QTRY_COMPARE_WITH_TIMEOUT(bad.count(), 1, 5000);
+    QCOMPARE(ok.count(), 0);
+    QTRY_COMPARE(server->bigAborted, 1);
+}
+
+void TstCameraToken::eventPictureDrippedIsCutByTheTotalTimeout()
+{
+    server->big = FakeCalaos::Drip;
+    login();
+    QSignalSpy bad(connection, &CalaosConnection::eventPictureFailed);
+    connection->setEventPictureTimeout(1000);
+    connection->setEventPictureTotalTimeout(600);
+    connection->getEventPicture(QStringLiteral("pic1"));
+    //the 200 bytes would take 20 s to arrive
+    QTRY_COMPARE_WITH_TIMEOUT(bad.count(), 1, 3000);
+}
+
+void TstCameraToken::cameraPictureBoundsAreEnforced()
+{
+    //read(MaxPictureBytes) in the finish handler is the last guard: each way
+    //past the limit must stop the transfer, and the limit itself must pass.
+    login();
+    for (auto mode: { FakeCalaos::Announced, FakeCalaos::NoLength, FakeCalaos::OverLimit })
+    {
+        server->big = mode;
+        server->bigAborted = 0;
+        const int before = failed->count();
+        connection->getCameraPicture(QStringLiteral("cam1"), QStringLiteral("/cam/image?id=1"));
+        QTRY_COMPARE_WITH_TIMEOUT(failed->count(), before + 1, 5000);
+        QCOMPARE(downloaded->count(), 0);
+        QTRY_COMPARE(server->bigAborted, 1);
+    }
+
+    server->big = FakeCalaos::ExactLimit;
+    connection->getCameraPicture(QStringLiteral("cam1"), QStringLiteral("/cam/image?id=1"));
+    QTRY_COMPARE_WITH_TIMEOUT(downloaded->count(), 1, 5000);
+    QCOMPARE(downloaded->first().value(1).toByteArray().size(), 16 * 1024 * 1024);
+}
+
+void TstCameraToken::audioCoverBoundsAreEnforced()
+{
+    login();
+    QSignalSpy cover(connection, &CalaosConnection::audioCoverDownloaded);
+
+    //First: an aborted transfer leaves its connection in a state a later request can trip on.
+    server->big = FakeCalaos::ExactLimit;
+    connection->getAudioCover(QStringLiteral("p1"));
+    QTRY_COMPARE_WITH_TIMEOUT(cover.count(), 1, 5000);
+    QCOMPARE(cover.first().value(1).toByteArray().size(), 16 * 1024 * 1024);
+
+    for (auto mode: { FakeCalaos::Announced, FakeCalaos::NoLength, FakeCalaos::OverLimit })
+    {
+        server->big = mode;
+        server->bigAborted = 0;
+        connection->getAudioCover(QStringLiteral("p1"));
+        if (mode == FakeCalaos::OverLimit)
+            QTest::qWait(1500);   //the server does not always notice the client closing after a burst
+        else
+            QTRY_COMPARE_WITH_TIMEOUT(server->bigAborted, 1, 5000);
+        QCOMPARE(cover.count(), 1);
+    }
+}
+
+void TstCameraToken::v1SuffixWithoutQueryKeepsCredentialsOutOfThePath()
+{
+    QLoggingCategory::setFilterRules(QStringLiteral("*.debug=true"));
+    server->v1Status = 400;
+    login();
+
+    QStringList lines;
+    static QStringList *sink;
+    sink = &lines;
+    const QtMessageHandler previous = qInstallMessageHandler([](QtMsgType, const QMessageLogContext &, const QString &m) {
+        sink->append(m);
+    });
+    connection->getCameraPicture(QStringLiteral("cam7"), QStringLiteral("/cam/image"));
+    const bool done = QTest::qWaitFor([&]() { return failed->count() == 1; }, 3000);
+    qInstallMessageHandler(previous);
+    QVERIFY(done);
+
+    //the server still gets them as a query
+    const QByteArray target = server->requests.last().target;
+    QVERIFY2(target.startsWith("/cam/image?u="), target.constData());
+    QCOMPARE(queryOf(target).value(QStringLiteral("p")), TestPass);
+
+    const QString log = lines.join(QLatin1Char('\n'));
+    QVERIFY2(log.contains(QLatin1String("/cam/image")), qPrintable(log));
+    QVERIFY2(log.contains(QLatin1String("p=***")), qPrintable(log));
+    for (const QString &secret: { TestPass, QString::fromLatin1(QUrl::toPercentEncoding(TestPass)),
+                                  QString::fromLatin1(QUrl::toPercentEncoding(TestUser)), TestUser })
+        QVERIFY2(!log.contains(secret), qPrintable(secret + QLatin1String(" in: ") + log));
 }
 
 void TstCameraToken::eventLogServerErrorNeverLogsPassword()

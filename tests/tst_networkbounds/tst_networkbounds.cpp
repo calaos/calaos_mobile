@@ -7,6 +7,7 @@
 
 #include <QtTest>
 #include <QApplication>
+#include <QCryptographicHash>
 #include <QHostAddress>
 #include <QTcpServer>
 #include <QTcpSocket>
@@ -137,6 +138,7 @@ private slots:
     void fileRequestIsBounded_data() { modes(); }
     void fileRequestIsBounded();
     void webSocketFrameIsBounded();
+    void webSocketFrameHeaderIsRefusedBeforeItsBody();
     void weatherRepliesAreFreed();
     void weatherDefaultsToHttps();
 
@@ -172,7 +174,15 @@ void TstNetworkBounds::runRequest(NetworkRequest::ResulType type, qint64 limit)
     QSignalSpy json(&req, &NetworkRequest::finishedJson);
     QSignalSpy data(&req, &NetworkRequest::finishedData);
     int chunks = 0;
-    connect(&req, &NetworkRequest::dataReadyRead, this, [&chunks]() { ++chunks; });
+    int emptyChunks = 0;
+    qint64 handedOver = 0;
+    connect(&req, &NetworkRequest::dataReadyRead, this, [&](const QByteArray &d)
+    {
+        ++chunks;
+        handedOver += d.size();
+        if (d.isEmpty())
+            ++emptyChunks;
+    });
     QVERIFY(req.start());
     QTRY_VERIFY_WITH_TIMEOUT(json.count() + data.count() == 1, 8000);
 
@@ -180,6 +190,12 @@ void TstNetworkBounds::runRequest(NetworkRequest::ResulType type, qint64 limit)
     const int atFinish = chunks;
     QTest::qWait(150);
     QCOMPARE(chunks, atFinish);
+    //An empty chunk is what a readyRead handler reads from an already aborted reply.
+    QCOMPARE(emptyChunks, 0);
+    //Streamed bodies are read as they come, so up to a few chunks pass before the
+    //cut; a refused answer (announced, whole, or inflated) hands over nothing.
+    const bool streamed = (mode == NoLength || mode == Chunked);
+    QVERIFY2(handedOver <= (streamed ? limit + 4 * 1024 * 1024 : 0), qPrintable(QString::number(handedOver)));
 
     if (type == NetworkRequest::TypeJson)
         QCOMPARE(json.first().value(0).toInt(), int(NetworkRequest::RequestHttpError));
@@ -206,8 +222,16 @@ void TstNetworkBounds::fileRequestIsBounded()
     req.setFile(&file);
     req.setMaxFileBytes(bound);
     QSignalSpy done(&req, &NetworkRequest::finished);
+    QSignalSpy chunks(&req, &NetworkRequest::dataReadyRead);
     QVERIFY(req.start());
     QTRY_COMPARE_WITH_TIMEOUT(done.count(), 1, 8000);
+
+    //Once the bound has aborted the reply, nothing more is written or handed over.
+    const int chunksAtFinish = chunks.count();
+    const qint64 sizeAtFinish = file.size();
+    QTest::qWait(150);
+    QCOMPARE(chunks.count(), chunksAtFinish);
+    QCOMPARE(file.size(), sizeAtFinish);
 
     QCOMPARE(done.first().value(0).toInt(), int(NetworkRequest::RequestHttpError));
     //The overrun is cut within a few chunks of the bound, not after the whole body.
@@ -232,6 +256,48 @@ void TstNetworkBounds::webSocketFrameIsBounded()
     QTRY_COMPARE_WITH_TIMEOUT(closed.count(), 1, 10000);
     QCOMPARE(got.count(), 0);
     QCOMPARE(ws.closeCode(), QWebSocketProtocol::CloseCodeTooMuchData);
+}
+
+void TstNetworkBounds::webSocketFrameHeaderIsRefusedBeforeItsBody()
+{
+    //A frame header announcing more than the bound, followed by a few bytes only: the
+    //message bound cannot act before the frame is complete, the frame bound must.
+    QTcpServer raw;
+    QVERIFY(raw.listen(QHostAddress::LocalHost, 0));
+    QByteArray request;
+    connect(&raw, &QTcpServer::newConnection, this, [&]()
+    {
+        QTcpSocket *peer = raw.nextPendingConnection();
+        connect(peer, &QTcpSocket::readyRead, this, [&request, peer]()
+        {
+            request += peer->readAll();
+            if (!request.contains("\r\n\r\n") || peer->property("upgraded").toBool())
+                return;
+            peer->setProperty("upgraded", true);
+            QByteArray key;
+            for (const QByteArray &line: request.split('\n'))
+                if (line.toLower().startsWith("sec-websocket-key:"))
+                    key = line.mid(line.indexOf(':') + 1).trimmed();
+            const QByteArray accept = QCryptographicHash::hash(key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11",
+                                                               QCryptographicHash::Sha1).toBase64();
+            QByteArray frame;
+            frame.append(char(0x81));
+            frame.append(char(127));
+            const quint64 announced = NetworkLimits::MaxJsonBytes + 1;
+            for (int shift = 56; shift >= 0; shift -= 8)
+                frame.append(char((announced >> shift) & 0xff));
+            frame.append(QByteArray(16, 'x'));
+            peer->write("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n"
+                        "Sec-WebSocket-Accept: " + accept + "\r\n\r\n" + frame);
+        });
+    });
+
+    QWebSocket ws;
+    NetworkLimits::limitWebSocket(&ws);
+    QSignalSpy got(&ws, &QWebSocket::textMessageReceived);
+    ws.open(QUrl(QStringLiteral("ws://127.0.0.1:%1/").arg(raw.serverPort())));
+    QTRY_COMPARE_WITH_TIMEOUT(ws.closeCode(), QWebSocketProtocol::CloseCodeTooMuchData, 5000);
+    QCOMPARE(got.count(), 0);
 }
 
 void TstNetworkBounds::jsonRequestIsBounded()

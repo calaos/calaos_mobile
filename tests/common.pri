@@ -16,8 +16,8 @@ CONFIG += no_testcase_installs
 SRC_DIR = $$PWD/../src
 
 INCLUDEPATH += $$SRC_DIR
-# qmake only tracks the headers it finds on DEPENDPATH: without it, a change to
-# a header-only unit (LogRedact.h, NetworkLimits.h) rebuilds no test object.
+# Explicit rather than relying on the INCLUDEPATH scan: a change to a header-only
+# unit (LogRedact.h, NetworkLimits.h) must rebuild the test objects.
 DEPENDPATH += $$SRC_DIR
 
 # Artefacts intermédiaires regroupés (garde les répertoires de build lisibles).

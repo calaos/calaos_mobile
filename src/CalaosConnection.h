@@ -556,6 +556,9 @@ public:
     //Tests shorten the waits for get_server_info and camera_token.
     void setServerInfoTimeout(int ms) { serverInfoTimeoutMs = ms; }
     void setCameraTokenTimeout(int ms) { cameraTokenTimeoutMs = ms; }
+    void setCameraTokenClock(CameraToken::Clock clock) { cameraToken.setClock(std::move(clock)); }
+    void setEventPictureTimeout(int ms) { eventPictureTimeoutMs = ms; }
+    void setEventPictureTotalTimeout(int ms) { eventPictureTotalMs = ms; }
     //A certificate refused in this run is refused silently afterwards (the
     //launch login, iOS become-active), so the prompt cannot come back in a
     //loop. An explicit login from the login screen asks again.
@@ -644,6 +647,9 @@ private:
     CameraToken cameraToken;
     QTimer *cameraTokenTimer = nullptr;
     int cameraTokenTimeoutMs = 5000;
+    QString serverErrorText(const QVariantMap &answer) const;
+    int eventPictureTimeoutMs = 30000;
+    int eventPictureTotalMs = 120000;
     QString cameraTokenPending; //msg_id of the request in flight
     quint64 cameraTokenSeq = 0;
     //Pictures asked while the token (or the server's capabilities) is not

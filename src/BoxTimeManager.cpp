@@ -1,6 +1,7 @@
 #include "BoxTimeManager.h"
 #include <QDateTime>
 #include <QDebug>
+#include "LogRedact.h"
 #include <QJsonArray>
 #include <QPointer>
 #include <QTimeZone>
@@ -109,7 +110,7 @@ void BoxTimeManager::readFailed(const CalaosOsReply &reply)
         return;
     }
 
-    qWarning() << "system/time read failed:" << reply.httpStatus << reply.error;
+    qWarning() << "system/time read failed:" << reply.httpStatus << LogRedact::redactError(reply.error, QUrl());
     update_loadError(tr("The date and time of the box could not be read."));
 }
 
@@ -189,7 +190,7 @@ void BoxTimeManager::loadZones()
 
         if (!reply.ok || zones.isEmpty())
         {
-            qWarning() << "system/timezones failed:" << reply.httpStatus << reply.error;
+            qWarning() << "system/timezones failed:" << reply.httpStatus << LogRedact::redactError(reply.error, QUrl());
             self->update_zonesError(tr("The list of time zones could not be read."));
             return;
         }
@@ -261,7 +262,7 @@ void BoxTimeManager::writeAnswered(const QJsonObject &change, const QString &zon
     else
     {
         //the raw daemon text is English and transport errors are Qt internals
-        qWarning() << "system/time write failed:" << reply.httpStatus << reply.error;
+        qWarning() << "system/time write failed:" << reply.httpStatus << LogRedact::redactError(reply.error, QUrl());
 
         const QJsonValue applied = data.value(QStringLiteral("applied"));
         if (reply.httpStatus == 404)
@@ -459,7 +460,7 @@ void BoxTimeManager::restartServer()
             return;
         }
 
-        qWarning() << "services/restart refused:" << reply.httpStatus << reply.error;
+        qWarning() << "services/restart refused:" << reply.httpStatus << LogRedact::redactError(reply.error, QUrl());
         if (reply.httpStatus == 404)
             self->setMessage(tr("This box must be updated to restart the Calaos server from here."), true);
         else if (reply.upgradeInProgress)

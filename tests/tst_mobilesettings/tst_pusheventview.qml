@@ -100,4 +100,27 @@ TestCase {
         compare(pictureCalls, 0)
         compare(view.picture, null)
     }
+
+    //Opened from the event list: main.qml declares event_picuid in the
+    //Component, so the view is created with the value already set.
+    Component {
+        id: listViewComponent
+        PushEventView { anchors.fill: parent; event_picuid: "list-1" }
+    }
+
+    function test_list_path_picuid_set_directly() {
+        var view = createTemporaryObject(listViewComponent, tc)
+        verify(view)
+        compare(pictureCalls, 1)
+        compare(eventLogModel.requested[0], "list-1")
+        verify(view.picture !== null)
+    }
+
+    function test_list_path_without_picture_stays_closed() {
+        var view = createTemporaryObject(viewComponent, tc)
+        view.event_haspic = false
+        view.event_picuid = "list-2"
+        compare(pictureCalls, 0)
+        compare(view.picture, null)
+    }
 }

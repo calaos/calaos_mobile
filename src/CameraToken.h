@@ -1,7 +1,8 @@
 #ifndef CAMERATOKEN_H
 #define CAMERATOKEN_H
 
-#include <QDeadlineTimer>
+#include <chrono>
+#include <functional>
 #include <QString>
 #include <algorithm>
 
@@ -18,10 +19,14 @@ public:
     static constexpr int RetryMinMs = 1000;
     static constexpr int RetryMaxMs = 30000;
 
+    //Milliseconds on a monotonic clock; tests replace it to move time at will.
+    using Clock = std::function<qint64()>;
+    void setClock(Clock clock) { m_clock = std::move(clock); }
+
     //Empty once expired: a caller must then send nothing.
     QString current() const
     {
-        return (m_token.isEmpty() || m_expiry.hasExpired()) ? QString() : m_token;
+        return (m_token.isEmpty() || m_expiry <= now()) ? QString() : m_token;
     }
 
     //The token is valid but close enough to its end that the next frame
@@ -29,7 +34,7 @@ public:
     //camera is on screen.
     bool renewDue() const
     {
-        return !current().isEmpty() && m_expiry.remainingTime() <= m_marginMs;
+        return !current().isEmpty() && m_expiry - now() <= m_marginMs;
     }
 
     //A server-given lifetime is clamped: a hostile or buggy value must not
@@ -38,10 +43,10 @@ public:
     {
         const qint64 life = std::clamp<qint64>(expiresInS, MinLifetimeS, MaxLifetimeS) * 1000;
         m_token = token;
-        m_expiry = QDeadlineTimer(life);
+        m_expiry = now() + life;
         //short lifetimes still renew halfway, never right on top of expiry
         m_marginMs = std::min<qint64>(RenewMarginS * 1000, life / 2);
-        m_retryAt = QDeadlineTimer(0);
+        m_retryAt = 0;
     }
 
     //A picture was accepted with a token: the server works again. A token
@@ -56,11 +61,11 @@ public:
     //No token came back: no new request before the backoff is over.
     void failed()
     {
-        m_retryAt = QDeadlineTimer(m_retryMs);
+        m_retryAt = now() + m_retryMs;
         m_retryMs = std::min(m_retryMs * 2, int(RetryMaxMs));
     }
 
-    bool inBackoff() const { return !m_retryAt.hasExpired(); }
+    bool inBackoff() const { return m_retryAt > now(); }
 
     //The server refused `used` (HTTP 400). A late answer about a token already
     //replaced must not erase the new one; otherwise forget it and back off, or
@@ -70,7 +75,7 @@ public:
         if (used.isEmpty() || used != m_token)
             return;
         m_token.clear();
-        m_expiry = QDeadlineTimer(0);
+        m_expiry = 0;
         m_marginMs = 0;
         failed();
     }
@@ -79,18 +84,24 @@ public:
     void clear()
     {
         m_token.clear();
-        m_expiry = QDeadlineTimer(0);
+        m_expiry = 0;
         m_marginMs = 0;
         m_retryMs = RetryMinMs;
-        m_retryAt = QDeadlineTimer(0);
+        m_retryAt = 0;
     }
 
 private:
+    qint64 now() const
+    {
+        return m_clock ? m_clock() : std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+    }
+
+    Clock m_clock;
     QString m_token;
-    QDeadlineTimer m_expiry{0};
+    qint64 m_expiry = 0;
     qint64 m_marginMs = 0;
     int m_retryMs = RetryMinMs;
-    QDeadlineTimer m_retryAt{0};
+    qint64 m_retryAt = 0;
 };
 
 #endif // CAMERATOKEN_H

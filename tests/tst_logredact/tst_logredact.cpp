@@ -103,6 +103,10 @@ void TstLogRedact::weatherErrorNeverLogsAppid()
     //The key is a constant of the program: a hex run after APPID= is it.
     QVERIFY2(!QRegularExpression(QStringLiteral("APPID=[0-9a-fA-F]{8,}")).match(l).hasMatch(), qPrintable(l));
     QVERIFY2(l.contains(QLatin1String("APPID=***")), qPrintable(l));
+    //The home's position is personal data as well.
+    QVERIFY2(l.contains(QLatin1String("lat=***")), qPrintable(l));
+    QVERIFY2(l.contains(QLatin1String("lon=***")), qPrintable(l));
+    QVERIFY2(!l.contains(QRegularExpression(QStringLiteral("l(at|on)=[^*&\\s]"))), qPrintable(l));
 }
 
 void TstLogRedact::freeTextHidesAddresses()

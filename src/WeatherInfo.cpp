@@ -1,6 +1,7 @@
 #include "WeatherInfo.h"
 #include "HardwareUtils.h"
 #include "Common.h"
+#include "LogRedact.h"
 #include <QQmlEngine>
 #include <QtQml>
 
@@ -53,7 +54,7 @@ WeatherModel::~WeatherModel()
 
 void WeatherModel::refreshWeather()
 {
-    QUrl url("http://api.openweathermap.org/data/2.5/weather");
+    QUrl url(apiBase + "weather");
     QUrlQuery query;
     query.addQueryItem("lat", HardwareUtils::Instance()->getConfigOption("latitude"));
     query.addQueryItem("lon", HardwareUtils::Instance()->getConfigOption("longitude"));
@@ -87,10 +88,11 @@ void WeatherModel::handleWeatherNetworkData()
     }
     else
     {
-        qWarning() << "Error in weather request " << reply->url() << ": " << reply->errorString();
+        qWarning() << "Error in weather request " << LogRedact::redactUrl(reply->url()) << ": "
+                   << LogRedact::redactError(reply->errorString(), reply->url());
     }
 
-    QUrl url("http://api.openweathermap.org/data/2.5/forecast/daily");
+    QUrl url(apiBase + "forecast/daily");
     QUrlQuery query;
     query.addQueryItem("lat", HardwareUtils::Instance()->getConfigOption("latitude"));
     query.addQueryItem("lon", HardwareUtils::Instance()->getConfigOption("longitude"));
@@ -135,7 +137,8 @@ void WeatherModel::handleForecastNetworkData()
     }
     else
     {
-        qWarning() << "Error in weather request " << reply->url() << ": " << reply->errorString();
+        qWarning() << "Error in weather request " << LogRedact::redactUrl(reply->url()) << ": "
+                   << LogRedact::redactError(reply->errorString(), reply->url());
     }
 }
 

@@ -100,4 +100,25 @@ TestCase {
         compare(pictureCalls, 0)
         compare(view.picture, null)
     }
+
+    //Opened from the event list: no uuid lookup, event_picuid is set directly.
+    function test_list_path_picuid_set_directly() {
+        var view = createTemporaryObject(viewComponent, tc)
+        verify(view)
+        compare(pictureCalls, 0)
+        view.event_picuid = "list-1"
+        compare(pictureCalls, 1)
+        compare(eventLogModel.requested[0], "list-1")
+        verify(view.picture !== null)
+        view.event_picuid = "list-1"
+        compare(pictureCalls, 1)
+    }
+
+    function test_list_path_without_picture_stays_closed() {
+        var view = createTemporaryObject(viewComponent, tc)
+        view.event_haspic = false
+        view.event_picuid = "list-2"
+        compare(pictureCalls, 0)
+        compare(view.picture, null)
+    }
 }

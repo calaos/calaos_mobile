@@ -9,35 +9,32 @@
 #include "HardwareUtils.h"
 #include "Common.h"
 #include "JsonKeys.h"
-
-//Query parameters and JSON keys that carry credentials and must never be logged
-static const QStringList &credentialKeys()
-{
-    //"u" and "p" are not JSON keys but the short query parameters of the
-    //legacy v1 camera url, so they stay literals here (see JsonKeys.h).
-    //JsonKeys::Token is the push token sent by register_push: a per-device
-    //credential as well (FIX-3), and JsonKeys::PushKey the key admin codes
-    //are sealed with. The admin keys belong to the admin relay.
-    static const QStringList keys = { JsonKeys::CnUser,
-                                      JsonKeys::CnPass,
-                                      JsonKeys::Token,
-                                      JsonKeys::CameraToken,
-                                      JsonKeys::PushKey,
-                                      QStringLiteral("u"),
-                                      QStringLiteral("p"),
-                                      QStringLiteral("admin_pass"),
-                                      QStringLiteral("admin_session"),
-                                      QStringLiteral("new_pass"),
-                                      JsonKeys::OldPw,
-                                      JsonKeys::NewPw };
-    return keys;
-}
+#include "LogRedact.h"
 
 //Default transfer timeout for every "short" HTTP request (login, commands,
 //state queries, camera pictures, audio covers). Those are all request/reply
 //exchanges the server answers immediately, so 30s without a single byte
 //moving means the link is dead, not slow.
 static const int HTTP_TRANSFER_TIMEOUT = 30000;
+static constexpr qint64 MaxPictureBytes = 16 * 1024 * 1024;
+
+//A hostile server must not make the app buffer an unbounded body: the announced
+//length is refused up front, and the bytes actually received stay bounded when
+//it lies or sends none.
+static void limitDownload(QNetworkReply *reply)
+{
+    //Qt reports no progress for a short first chunk: the headers settle it.
+    QObject::connect(reply, &QNetworkReply::metaDataChanged, reply, [reply]()
+    {
+        if (reply->header(QNetworkRequest::ContentLengthHeader).toLongLong() > MaxPictureBytes)
+            reply->abort();
+    });
+    QObject::connect(reply, &QNetworkReply::downloadProgress, reply, [reply](qint64 received, qint64 total)
+    {
+        if (received > MaxPictureBytes || total > MaxPictureBytes)
+            reply->abort();
+    });
+}
 
 //The long-poll (action "poll_listen") is the one exception: the server keeps
 //the request deliberately open until an event happens, so a calm installation
@@ -276,106 +273,24 @@ void CalaosConnection::answerTlsTrust(bool accept)
     startConnection(username, password, lasthost, ReconnectPolicy::UserRequest);
 }
 
-//Masks the credential pairs of a query string. changed tells whether any was found.
-static QUrlQuery maskQuery(const QUrlQuery &query, bool &changed)
-{
-    QUrlQuery redacted;
-    for (const auto &item: query.queryItems(QUrl::FullyEncoded))
-    {
-        if (credentialKeys().contains(item.first))
-        {
-            redacted.addQueryItem(item.first, QStringLiteral("***"));
-            changed = true;
-        }
-        else
-        {
-            redacted.addQueryItem(item.first, item.second);
-        }
-    }
-    return redacted;
-}
-
 QString CalaosConnection::redactUrl(const QUrl &url)
 {
-    //A server-supplied suffix can push "&u=..&p=.." into the fragment.
-    bool changed = false;
-    QUrl u(url);
-    if (url.hasQuery())
-        u.setQuery(maskQuery(QUrlQuery(url), changed));
-    if (url.hasFragment())
-    {
-        bool fragChanged = false;
-        const QUrlQuery frag = maskQuery(QUrlQuery(url.fragment(QUrl::FullyEncoded)), fragChanged);
-        if (fragChanged)
-        {
-            u.setFragment(frag.toString(QUrl::FullyEncoded), QUrl::StrictMode);
-            changed = true;
-        }
-    }
-    return changed ? u.toString() : url.toString();
-}
-
-static QJsonValue redactValue(const QJsonValue &v)
-{
-    if (v.isObject())
-    {
-        QJsonObject o = v.toObject();
-        for (auto it = o.begin(); it != o.end(); ++it)
-            it.value() = credentialKeys().contains(it.key()) ? QJsonValue(QStringLiteral("***"))
-                                                              : redactValue(it.value());
-        return o;
-    }
-    if (v.isArray())
-    {
-        QJsonArray a = v.toArray();
-        for (auto it = a.begin(); it != a.end(); ++it)
-            *it = redactValue(*it);
-        return a;
-    }
-    return v;
+    return LogRedact::redactUrl(url);
 }
 
 QByteArray CalaosConnection::redactJson(const QJsonObject &obj)
 {
-    return QJsonDocument(redactValue(obj).toObject()).toJson();
+    return LogRedact::redactJson(obj);
 }
 
 QByteArray CalaosConnection::redactJson(const QJsonDocument &doc)
 {
-    if (doc.isObject())
-        return redactJson(doc.object());
-    return QJsonDocument(redactValue(doc.array()).toArray()).toJson();
+    return LogRedact::redactJson(doc);
 }
 
 QString CalaosConnection::redactError(QString err, const QUrl &url)
 {
-    //Qt copies the request url, credentials included, into its error texts.
-    const QString safe = redactUrl(url);
-    for (const QString &raw: { url.toString(), url.toString(QUrl::FullyEncoded) })
-    {
-        if (!raw.isEmpty() && err.contains(raw))
-            err.replace(raw, safe);
-    }
-
-    //Always, even once the url is replaced: the text may repeat the pairs
-    //elsewhere. Only "key=value" pairs, a short value (p=1) would otherwise
-    //eat pieces of the host or the path.
-    QList<QUrlQuery> queries = { QUrlQuery(url), QUrlQuery(url.fragment(QUrl::FullyEncoded)) };
-    for (const QUrlQuery &query: queries)
-    {
-        for (const QString &key: credentialKeys())
-        {
-            for (auto fmt: { QUrl::FullyEncoded, QUrl::PrettyDecoded, QUrl::FullyDecoded })
-            {
-                for (const QString &value: query.allQueryItemValues(key, fmt))
-                {
-                    if (!value.isEmpty())
-                        err.replace(key + QLatin1Char('=') + value, key + QStringLiteral("=***"));
-                }
-            }
-        }
-    }
-    return err;
+    return LogRedact::redactError(err, url);
 }
 
 void CalaosConnection::emitStateChanged()
@@ -1077,7 +992,7 @@ void CalaosConnection::requestCamFinished(QNetworkReply *reqReply, const QString
         return;
     }
 
-    QByteArray bytes = reqReply->readAll();
+    QByteArray bytes = reqReply->read(MaxPictureBytes);
 
     //A 200 with a body that is not an image proves nothing about the token.
     QBuffer buf(&bytes);
@@ -1108,7 +1023,7 @@ void CalaosConnection::requestAudioCoverFinished(QNetworkReply *reqReply, const 
         return;
     }
 
-    QByteArray bytes = reqReply->readAll();
+    QByteArray bytes = reqReply->read(MaxPictureBytes);
 
     //we have a new picture
     emit audioCoverDownloaded(playerid, bytes);
@@ -1295,7 +1210,7 @@ void CalaosConnection::finishEventLogRequest(const QString &requestId, bool tran
         const bool ok = transportOk && !serverError && answer.contains(JsonKeys::Events);
         if (!ok)
             qWarning() << "Event log page request" << requestId << "failed:"
-                       << (transportOk ? answer.value(JsonKeys::Error).toString() : QStringLiteral("transport"));
+                       << (transportOk ? serverErrorText(answer) : QStringLiteral("transport"));
         emit eventLogPageFinished(requestId, ok, answer);
     }
     else
@@ -1303,6 +1218,15 @@ void CalaosConnection::finishEventLogRequest(const QString &requestId, bool tran
         const bool ok = transportOk && !serverError && !answer.isEmpty();
         emit eventLogEventFinished(requestId, ok, answer);
     }
+}
+
+//The server's own words: it may echo what it was sent, the password included.
+QString CalaosConnection::serverErrorText(const QVariantMap &answer) const
+{
+    QString text = redactError(answer.value(JsonKeys::Error).toString(), QUrl(httphost));
+    if (!password.isEmpty())
+        text.replace(password, QStringLiteral("***"));
+    return text;
 }
 
 void CalaosConnection::failPendingEventLogRequests()
@@ -1488,6 +1412,7 @@ void CalaosConnection::sendCameraPicture(const QString &camid, const QString &ur
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     QNetworkReply *reqReply = accessManagerCam->post(request, jdoc.toJson());
     reqReply->setProperty("usedCameraToken", token);
+    limitDownload(reqReply);
 
     connect(reqReply, &QNetworkReply::finished, this, [=]() { requestCamFinished(reqReply, camid); });
     connect(reqReply, &QNetworkReply::downloadProgress, this, [=]() { emit cameraPictureProgress(camid); });
@@ -1612,6 +1537,7 @@ void CalaosConnection::getAudioCover(const QString &playerid)
     request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     QNetworkReply *reqReply = accessManagerCam->post(request, jdoc.toJson());
+    limitDownload(reqReply);
 
     connect(reqReply, &QNetworkReply::finished, this, [=]() { requestAudioCoverFinished(reqReply, playerid); });
 
@@ -1978,7 +1904,7 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
     }
 }
 
-static constexpr qint64 MaxEventPictureBytes = 16 * 1024 * 1024;
+static constexpr qint64 MaxEventPictureBytes = MaxPictureBytes;
 
 void CalaosConnection::getEventPicture(const QString &picUid)
 {
@@ -1993,14 +1919,11 @@ void CalaosConnection::getEventPicture(const QString &picUid)
     QNetworkRequest request{QUrl(httphost)};
     request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    //Set on the request: the manager's value is only a fallback, and a test
+    //cannot shorten it.
+    request.setTransferTimeout(eventPictureTimeoutMs);
     QNetworkReply *reply = accessManagerCam->post(request, QJsonDocument(jroot).toJson());
-
-    //A hostile server must not make the app buffer an unbounded body.
-    connect(reply, &QNetworkReply::downloadProgress, reply, [reply](qint64 received, qint64)
-    {
-        if (received > MaxEventPictureBytes)
-            reply->abort();
-    });
+    limitDownload(reply);
     connect(reply, &QNetworkReply::finished, this, [=]() { requestEventPictureFinished(reply, picUid); });
     reqReplies.append(reply);
 }

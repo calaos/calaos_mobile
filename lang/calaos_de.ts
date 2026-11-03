@@ -2962,12 +2962,17 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
 <context>
     <name>PushEventView</name>
     <message>
-        <location filename="../qml/mobile/PushEventView.qml" line="120"/>
+        <location filename="../qml/mobile/PushEventView.qml" line="118"/>
         <source>The picture could not be loaded.</source>
         <translation>Das Bild konnte nicht geladen werden.</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/PushEventView.qml" line="102"/>
+        <location filename="../qml/mobile/PushEventView.qml" line="127"/>
+        <source>Retry</source>
+        <translation>Erneut versuchen</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/PushEventView.qml" line="145"/>
         <source>Push Notification</source>
         <translation>Push-Benachrichtigung</translation>
     </message>

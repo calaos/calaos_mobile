@@ -1,5 +1,6 @@
 #include "NetworkRequest.h"
 #include "TlsPinning.h"
+#include "LogRedact.h"
 
 //Abort a transfer that stops making progress. Set on the request and not on
 //the manager because setNetManager() can hand us a manager owned by someone
@@ -66,7 +67,7 @@ bool NetworkRequest::start()
     lastError.clear();
     request.setSslConfiguration(sslConfiguration);
 
-    qDebug() << "[*] New request to " << url;
+    qDebug() << "[*] New request to " << LogRedact::redactUrl(QUrl(url));
 
     //set ssl config
     QSslConfiguration sslConfig(QSslConfiguration::defaultConfiguration());
@@ -174,11 +175,11 @@ void NetworkRequest::nmFinished()
 
     if (reply->error() != QNetworkReply::NoError)
     {
-        lastError = reply->errorString();
-        qDebug() << "Error in" << reply->url() << ":" << reply->errorString();
-        QString data(reply->readAll());
+        lastError = LogRedact::redactError(reply->errorString(), reply->url());
+        qDebug() << "Error in" << LogRedact::redactUrl(reply->url()) << ":" << lastError;
+        const QByteArray data = reply->readAll();
         if (!data.isEmpty())
-            qDebug().noquote() << "Request body: " << data;
+            qDebug().noquote() << "Request body: " << LogRedact::redactBody(data);
         emit finished(RequestHttpError);
 
         reply->deleteLater();
@@ -207,12 +208,12 @@ void NetworkRequest::nmFinishedJson()
 
     if (reply->error() != QNetworkReply::NoError)
     {
-        lastError = reply->errorString();
-        qDebug() << "Error in" << reply->url() << ":" << reply->errorString();
-        QString data(dataRead);
+        lastError = LogRedact::redactError(reply->errorString(), reply->url());
+        qDebug() << "Error in" << LogRedact::redactUrl(reply->url()) << ":" << lastError;
+        const QByteArray data = dataRead;
         if (!data.isEmpty())
-            qDebug().noquote() << "Request body: " << data;
-        jdoc = QJsonDocument::fromJson(data.toUtf8(), &err);
+            qDebug().noquote() << "Request body: " << LogRedact::redactBody(data);
+        jdoc = QJsonDocument::fromJson(data, &err);
         emit finishedJson(RequestHttpError, jdoc);
 
         reply->deleteLater();
@@ -236,14 +237,15 @@ void NetworkRequest::nmFinishedJson()
         const int maxlen = 100;
         int start = err.offset - maxlen;
         if (start < 0) start = 0;
-        qWarning() << dataRead.mid(start, err.offset + maxlen);
+        //Not the body itself: it may hold a secret and free text cannot be masked.
+        qWarning() << "Body of" << dataRead.size() << "bytes";
         QString s;
         for (int i = start;i < err.offset + maxlen;i++)
             s += (i == err.offset?"^":"-");
         qWarning() << s;
     }
     else
-        qDebug().noquote() << QString(jdoc.toJson());
+        qDebug().noquote() << QString::fromUtf8(LogRedact::redactJson(jdoc));
 
     reply->deleteLater();
     reply = nullptr;
@@ -258,11 +260,11 @@ void NetworkRequest::nmFinishedData()
 
     if (reply->error() != QNetworkReply::NoError)
     {
-        lastError = reply->errorString();
-        qDebug() << "Error in" << reply->url() << ":" << reply->errorString();
-        QString data(dataRead);
+        lastError = LogRedact::redactError(reply->errorString(), reply->url());
+        qDebug() << "Error in" << LogRedact::redactUrl(reply->url()) << ":" << lastError;
+        const QByteArray data = dataRead;
         if (!data.isEmpty())
-            qDebug().noquote() << "Request body: " << data;
+            qDebug().noquote() << "Request body: " << LogRedact::redactBody(data);
         emit finishedData(RequestHttpError, QByteArray());
 
         reply->deleteLater();

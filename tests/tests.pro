@@ -32,6 +32,7 @@ SUBDIRS += \
     tst_httpapiversion \
     tst_httpreplies \
     tst_iobase \
+    tst_logredact \
     tst_mobilesettings \
     tst_pushnotif \
     tst_qqmlhelpers \

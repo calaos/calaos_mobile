@@ -650,6 +650,7 @@ private slots:
     void v2JobErrorIsAFailure();
     void v2LostTerminalEventIsCaughtByStatusPoll();
     void v2RebootRequiredComesFromTheJob();
+    void calaosHomeUpgradeWithoutRebootOpensNoDialog();
     void v2GroupQueueRunsOneJobPerPackage();
     void v2DaemonRestartDuringJobReconnectsAndRereadsToken();
     void v2JobStartedElsewhereIsAdopted();
@@ -679,7 +680,7 @@ private slots:
     void upgradeInProgressWithoutJobIdFails();
     void upgradeInProgressDoesNotClaimOurPackages();
     void upgradeInProgressMidQueueIsReported();
-    void severedMidQueueKeepsTheRestartPrompt();
+    void severedMidQueueOpensNoRestartPrompt();
     void severedMidQueueDoesNotClaimSuccess();
     void severedPostIgnoresAJobStartedLongAfterTheCut();
     void checkDuringUpgradeKeepsDaemonAvailable();
@@ -889,6 +890,28 @@ void TstUpdateClient::v2LostTerminalEventIsCaughtByStatusPoll()
     QTRY_VERIFY(!m_mgr->get_isUpgrading());
     QVERIFY(daemon.count("GET", "/api/v2/update/status") > statusReads);
     QCOMPARE(m_mgr->get_updateState(), QStringLiteral("idle"));
+}
+
+void TstUpdateClient::calaosHomeUpgradeWithoutRebootOpensNoDialog()
+{
+    FakeDaemon daemon;
+    daemon.token = makeToken('d');
+    daemon.available["calaos-home"] = QJsonObject{{ "name", "calaos-home" }, { "version", "5" }, { "current_version", "4" }};
+    writeToken(daemon.token);
+    QVERIFY(daemon.start());
+    startClient(daemon);
+    QTRY_COMPARE(daemon.clients.size(), 1);
+    QTRY_COMPARE(m_mgr->get_updatesCount(), 2);
+
+    //its container already restarted with the update: nothing left to restart
+    m_mgr->upgradePackage(QStringLiteral("calaos-home"));
+    QTRY_COMPARE(daemon.count("POST", "/api/v2/update/upgrade"), 1);
+    QCOMPARE(daemon.upgradedPackage(0), QStringLiteral("calaos-home"));
+    daemon.finishJob(QStringLiteral("done"), false);
+
+    QTRY_VERIFY(!m_mgr->get_isUpgrading());
+    QVERIFY(!m_mgr->get_rebootRequired());
+    QVERIFY(dispatchedOf("showRebootDialog").isEmpty());
 }
 
 void TstUpdateClient::v2RebootRequiredComesFromTheJob()
@@ -1681,7 +1704,7 @@ void TstUpdateClient::upgradeInProgressMidQueueIsReported()
     QCOMPARE(daemon.count("POST", "/api/v2/update/upgrade"), 2);
     const QList<Dispatched> dialogs = dispatchedOf("showRebootDialog");
     QCOMPARE(dialogs.size(), 1);
-    QCOMPARE(dialogs.first().message.value("showApp").toBool(), true);
+    QCOMPARE(dialogs.first().message.value("showApp").toBool(), false);
     QCOMPARE(dialogs.first().message.value("showMachine").toBool(), true);
     const QList<Dispatched> msgs = dispatchedOf("showNotificationMsg");
     QCOMPARE(msgs.size(), 1);
@@ -1767,7 +1790,7 @@ static QJsonObject package(const QString &name)
     return QJsonObject{{ "name", name }, { "version", "5" }, { "current_version", "4" }};
 }
 
-void TstUpdateClient::severedMidQueueKeepsTheRestartPrompt()
+void TstUpdateClient::severedMidQueueOpensNoRestartPrompt()
 {
     FakeDaemon daemon;
     daemon.token = makeToken('b');
@@ -1799,11 +1822,8 @@ void TstUpdateClient::severedMidQueueKeepsTheRestartPrompt()
     QCOMPARE(daemon.count("POST", "/api/v2/update/upgrade"), 2);
     QCOMPARE(m_mgr->get_updateState(), QStringLiteral("idle"));
 
-    //calaos-home was installed: the kiosk still offers its restart
-    const QList<Dispatched> dialogs = dispatchedOf("showRebootDialog");
-    QCOMPARE(dialogs.size(), 1);
-    QCOMPARE(dialogs.first().message.value("showApp").toBool(), true);
-    QCOMPARE(dialogs.first().message.value("showMachine").toBool(), false);
+    //calaos-home's container already restarted with the update: no dialog
+    QVERIFY(dispatchedOf("showRebootDialog").isEmpty());
     const QList<Dispatched> msgs = dispatchedOf("showNotificationMsg");
     QCOMPARE(msgs.size(), 1);
     QVERIFY(msgs.first().message.value("message").toString().contains(QStringLiteral("unknown")));

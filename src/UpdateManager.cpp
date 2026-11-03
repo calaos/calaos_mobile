@@ -159,7 +159,7 @@ void UpdateManager::doCheck(bool automatic)
             }
             else
             {
-                qWarning() << "UpdateManager: automatic update check failed:" << LogRedact::redactError(err, QUrl());
+                qWarning() << "UpdateManager: automatic update check failed:" << err;
                 update_daemonAvailable(false);
             }
             if (get_updateState() == QStringLiteral("checking"))
@@ -937,7 +937,7 @@ void UpdateManager::restartApp()
             return;
 
         //the raw daemon text is English and transport errors are Qt internals
-        qWarning() << "system/restart refused:" << reply.httpStatus << LogRedact::redactError(reply.error, QUrl());
+        qWarning() << "system/restart refused:" << reply.httpStatus << reply.error;
         QString msg = reply.upgradeInProgress
                 ? tr("An update is being installed. Restart once it has finished.")
                 : tr("The application could not be restarted.");

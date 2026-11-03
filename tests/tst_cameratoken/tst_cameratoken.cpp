@@ -771,6 +771,11 @@ void TstCameraToken::redactionKeepsDiagnosticAndCoversEdgeCases()
         QStringLiteral("failed at 127.0.0.1 with p=1&u=cam"), url);
     QVERIFY2(out2.contains(QLatin1String("127.0.0.1")) && !out2.contains(QLatin1String("p=1")), qPrintable(out2));
 
+    //the url is replaced and the text repeats the pairs elsewhere
+    const QString out3 = CalaosConnection::redactError(
+        QStringLiteral("Error transferring %1 (retry with p=1&u=cam)").arg(url.toString()), url);
+    QVERIFY2(!out3.contains(QLatin1String("p=1")) && out3.contains(QLatin1String("p=***")), qPrintable(out3));
+
     //credentials pushed into a fragment
     const QUrl frag(QStringLiteral("http://h:1/cam?id=7#x&u=bob&p=s3cret"));
     const QString fo = CalaosConnection::redactError(

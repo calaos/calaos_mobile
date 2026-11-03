@@ -351,20 +351,15 @@ QString CalaosConnection::redactError(QString err, const QUrl &url)
 {
     //Qt copies the request url, credentials included, into its error texts.
     const QString safe = redactUrl(url);
-    bool found = false;
     for (const QString &raw: { url.toString(), url.toString(QUrl::FullyEncoded) })
     {
         if (!raw.isEmpty() && err.contains(raw))
-        {
             err.replace(raw, safe);
-            found = true;
-        }
     }
-    if (found)
-        return err;
 
-    //The url took another form in the text: mask "key=value" pairs only, a
-    //short value (p=1) would otherwise eat pieces of the host or the path.
+    //Always, even once the url is replaced: the text may repeat the pairs
+    //elsewhere. Only "key=value" pairs, a short value (p=1) would otherwise
+    //eat pieces of the host or the path.
     QList<QUrlQuery> queries = { QUrlQuery(url), QUrlQuery(url.fragment(QUrl::FullyEncoded)) };
     for (const QUrlQuery &query: queries)
     {
@@ -1983,6 +1978,8 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
     }
 }
 
+static constexpr qint64 MaxEventPictureBytes = 16 * 1024 * 1024;
+
 void CalaosConnection::getEventPicture(const QString &picUid)
 {
     //The credentials go in the body: an url handed to QML is logged by Qt Quick
@@ -1998,6 +1995,12 @@ void CalaosConnection::getEventPicture(const QString &picUid)
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     QNetworkReply *reply = accessManagerCam->post(request, QJsonDocument(jroot).toJson());
 
+    //A hostile server must not make the app buffer an unbounded body.
+    connect(reply, &QNetworkReply::downloadProgress, reply, [reply](qint64 received, qint64)
+    {
+        if (received > MaxEventPictureBytes)
+            reply->abort();
+    });
     connect(reply, &QNetworkReply::finished, this, [=]() { requestEventPictureFinished(reply, picUid); });
     reqReplies.append(reply);
 }
@@ -2016,5 +2019,12 @@ void CalaosConnection::requestEventPictureFinished(QNetworkReply *reply, const Q
         return;
     }
 
-    emit eventPictureDownloaded(picUid, reply->readAll());
+    const QByteArray data = reply->read(MaxEventPictureBytes + 1);
+    if (data.size() > MaxEventPictureBytes)
+    {
+        qDebug() << "Event picture larger than" << MaxEventPictureBytes << "bytes, dropped";
+        emit eventPictureFailed(picUid);
+        return;
+    }
+    emit eventPictureDownloaded(picUid, data);
 }

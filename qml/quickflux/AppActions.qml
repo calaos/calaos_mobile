@@ -46,10 +46,10 @@ QtObject {
         AppDispatcher.dispatch(ActionTypes.openEventLog);
     }
 
-    function openEventPushViewer(text, picurl) {
+    function openEventPushViewer(text, picuid) {
         AppDispatcher.dispatch(ActionTypes.openEventPushViewer,
                                { notifText: text,
-                                 notifUrl: picurl });
+                                 notifPicUid: picuid });
     }
 
     function openEventPushViewerUuid(uuid) {

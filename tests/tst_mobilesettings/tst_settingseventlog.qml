@@ -45,7 +45,7 @@ TestCase {
         var ev = {
             evDate: "1 November", evTime: "18:42:07", evTitle: title, evCount: count,
             evType: Common.EventIoChanged, evRoomName: "Kitchen", evActionText: "On",
-            evNotifText: "", evHasPicture: false, evPictureUrl: "", evIconSource: ""
+            evNotifText: "", evHasPicture: false, evPicUid: "", evIconSource: ""
         }
         for (var key in extra)
             ev[key] = extra[key]

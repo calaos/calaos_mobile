@@ -20,7 +20,7 @@ EventLogModel::EventLogModel(QQmlApplicationEngine *eng, CalaosConnection *con, 
     roles[RoleRoomName] = "evRoomName";
     roles[RoleNotifText] = "evNotifText";
     roles[RoleNotifHasPic] = "evHasPicture";
-    roles[RoleNotifPicUrl] = "evPictureUrl";
+    roles[RoleNotifPicUid] = "evPicUid";
     roles[RoleActionText] = "evActionText";
     roles[RoleCount] = "evCount";
     setItemRoleNames(roles);
@@ -179,7 +179,7 @@ void EventLogModel::appendEvents(const QVariantList &events)
             shownIds.insert(id);
         }
 
-        EventLogItem *it = new EventLogItem(engine, connection, imageCache);
+        EventLogItem *it = new EventLogItem(engine, connection);
         it->load(e);
 
         //Pages come newest first: the row keeps the time of the latest one.
@@ -219,16 +219,15 @@ void EventLogModel::requestTimedOut()
 
 QObject *EventLogModel::loadEvent(QString uuid)
 {
-    EventLogItem *it = new EventLogItem(engine, connection, imageCache);
+    EventLogItem *it = new EventLogItem(engine, connection);
     it->load(uuid, requestTimeoutMs);
     return it;
 }
 
-EventLogItem::EventLogItem(QQmlApplicationEngine *eng, CalaosConnection *con, const ImageCachePtr &cache):
+EventLogItem::EventLogItem(QQmlApplicationEngine *eng, CalaosConnection *con):
     QObject(nullptr),
     engine(eng),
-    connection(con),
-    imageCache(cache)
+    connection(con)
 {
     update_loading(false);
     update_evCount(1);
@@ -236,31 +235,92 @@ EventLogItem::EventLogItem(QQmlApplicationEngine *eng, CalaosConnection *con, co
 
 EventLogItem::~EventLogItem()
 {
-    if (imageCache && !pictureKey.isEmpty())
-        imageCache->removeImage(pictureKey);
 }
 
-void EventLogItem::fetchPicture(const QString &picUid)
+QObject *EventLogModel::loadPicture(QString picUid)
+{
+    return new EventPicture(connection, imageCache, picUid);
+}
+
+EventPicture::EventPicture(CalaosConnection *con, const ImageCachePtr &cache, const QString &uid, QObject *parent):
+    QObject(parent),
+    connection(con),
+    imageCache(cache),
+    picUid(uid)
 {
     static quint64 seq = 0;
-    if (pictureKey.isEmpty())
-        pictureKey = QString::number(++seq);
+    //Never derived from the server's pic_uid: it ends up in an url.
+    pictureKey = QString::number(++seq);
+    fetch();
+}
 
-    //The url only appears once the bytes are in the cache.
-    connect(connection, &CalaosConnection::eventPictureDownloaded, this,
-            [this, picUid](const QString &uid, const QByteArray &bytes)
+EventPicture::~EventPicture()
+{
+    release();
+}
+
+void EventPicture::retry()
+{
+    if (!isLoading() && !released)
+        fetch();
+}
+
+void EventPicture::release()
+{
+    released = true;
+    disconnectConnection();
+    if (imageCache)
+        imageCache->removeImage(pictureKey);
+    url.clear();
+    state = Idle;
+    emit changed();
+}
+
+void EventPicture::disconnectConnection()
+{
+    QObject::disconnect(okConnection);
+    QObject::disconnect(failConnection);
+}
+
+void EventPicture::fetch()
+{
+    disconnectConnection();
+    imageCache->removeImage(pictureKey);
+    url.clear();
+    state = Loading;
+
+    okConnection = connect(connection, &CalaosConnection::eventPictureDownloaded, this,
+            [this](const QString &uid, const QByteArray &bytes)
     {
         if (uid != picUid)
             return;
+        disconnectConnection();
         const QImage img = QImage::fromData(bytes);
         if (img.isNull())
+        {
+            state = Failed;
+        }
+        else
+        {
+            imageCache->setImage(pictureKey, img);
+            //The suffix makes QML read the image again after a retry.
+            url = QStringLiteral("image://eventpic/%1/%2")
+                    .arg(pictureKey).arg(QRandomGenerator::global()->generate());
+            state = Ready;
+        }
+        emit changed();
+    });
+    failConnection = connect(connection, &CalaosConnection::eventPictureFailed, this,
+            [this](const QString &uid)
+    {
+        if (uid != picUid)
             return;
-        imageCache->setImage(pictureKey, img);
-        update_evPictureUrl(QStringLiteral("image://eventpic/%1/%2")
-                            .arg(pictureKey)
-                            .arg(QRandomGenerator::global()->generate()));
+        disconnectConnection();
+        state = Failed;
+        emit changed();
     });
     connection->getEventPicture(picUid);
+    emit changed();
 }
 
 bool EventLogItem::isSameEvent(const EventLogItem &other) const
@@ -299,17 +359,10 @@ void EventLogItem::load(const QVariantMap &data)
         QVariantMap e = data[JsonKeys::EventRaw].toMap();
         update_evNotifText(e[JsonKeys::Message].toString());
 
-        if (e[JsonKeys::PicUid].toString() == "")
-        {
-            update_evPictureUrl(QString());
-            update_evHasPicture(false);
-        }
-        else
-        {
-            update_evPictureUrl(QString());
-            update_evHasPicture(true);
-            fetchPicture(e[JsonKeys::PicUid].toString());
-        }
+        //The picture is only downloaded when the viewer opens (loadPicture).
+        const QString picUid = e[JsonKeys::PicUid].toString();
+        update_evPicUid(picUid);
+        update_evHasPicture(!picUid.isEmpty());
     }
     else
     {

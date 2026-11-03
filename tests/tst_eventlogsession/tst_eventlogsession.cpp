@@ -43,6 +43,8 @@
 
 #include <QtTest>
 #include <QApplication>
+#include <QBuffer>
+#include <QImage>
 #include <QHostAddress>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -278,6 +280,9 @@ class FakeApiPhp: public QTcpServer
 public:
     FakeLog log;
     QList<QJsonObject> eventlogRequests;
+    //event_picture: the status sent back and the number of requests seen.
+    int picStatus = 200;
+    QList<QJsonObject> pictureRequests;
 
     QString url() const { return QStringLiteral("http://127.0.0.1:%1/api.php").arg(serverPort()); }
 
@@ -317,6 +322,21 @@ private:
     {
         const QString action = req["action"].toString();
         QJsonObject out{{ "success", "true" }};
+
+        if (action == "event_picture")
+        {
+            pictureRequests << req;
+            QByteArray png;
+            QBuffer buf(&png);
+            buf.open(QIODevice::WriteOnly);
+            QImage(8, 6, QImage::Format_RGB32).save(&buf, "PNG");
+            const QByteArray body = picStatus == 200 ? png : QByteArray("nope");
+            sock->write("HTTP/1.1 " + QByteArray::number(picStatus) + " X\r\nConnection: close\r\n"
+                        "Content-Length: " + QByteArray::number(body.size()) + "\r\n\r\n" + body);
+            sock->flush();
+            sock->disconnectFromHost();
+            return;
+        }
 
         if (action == "get_home")
             out = QJsonObject{{ "success", "true" }, { "home", QJsonArray() }};
@@ -437,6 +457,8 @@ private slots:
     void noSessionDoesNotBlock();
     void silentServerReleasedByTimeout();
     void httpTransportLoadsTopLevelPage();
+    void rowsDoNotDownloadPictures();
+    void viewerPictureFailsRetriesAndReleases();
     void lateAnswerOfAbandonedRequestIgnored();
     void singleEventAndPageAnswersKeptApart();
     void singleEventReleasedByTimeout();
@@ -644,6 +666,85 @@ void TstEventLogSession::httpTransportLoadsTopLevelPage()
     model->refresh();
     QTRY_VERIFY(rowsAre(DEFAULT_PER_PAGE, http.log.label));
     QCOMPARE(con->pendingEventLogRequests(), 0);
+}
+
+//A row only knows the pic_uid: the list of 50 events must not send 50 POSTs
+//nor keep 50 decoded images.
+void TstEventLogSession::rowsDoNotDownloadPictures()
+{
+    FakeApiPhp http;
+    QVERIFY(http.listen(QHostAddress::LocalHost));
+    http.log.shape = [](int i, QJsonObject &e)
+    {
+        FakeLog::setRaw(e, QStringLiteral("a #%1").arg(i), QStringLiteral("p%1").arg(i));
+    };
+
+    con->login(TestUser, TestPass, http.url());
+    QTRY_COMPARE(homes, 1);
+    QTRY_VERIFY(rowsAre(DEFAULT_PER_PAGE, http.log.label));
+    QTest::qWait(200);
+    QCOMPARE(http.pictureRequests.size(), 0);
+    const auto *row = dynamic_cast<EventLogItem *>(model->item(3));
+    QVERIFY(row->get_evHasPicture());
+    QCOMPARE(row->get_evPicUid(), QStringLiteral("p3"));
+}
+
+//The viewer path, from the picture object to the image://eventpic provider:
+//loading, then a failure that does not leave a black view and can be retried,
+//then the image, then nothing once the viewer is closed.
+void TstEventLogSession::viewerPictureFailsRetriesAndReleases()
+{
+    FakeApiPhp http;
+    QVERIFY(http.listen(QHostAddress::LocalHost));
+    con->login(TestUser, TestPass, http.url());
+    QTRY_COMPARE(homes, 1);
+
+    ModelImageProvider provider(model->pictureCache());
+    const QString scheme = QStringLiteral("image://eventpic/");
+    const auto providerImage = [&](const QString &url)
+    {
+        QSize size;
+        return provider.requestImage(url.mid(scheme.size()), &size, QSize());
+    };
+
+    http.picStatus = 500;
+    QScopedPointer<QObject> obj(model->loadPicture(QStringLiteral("p1")));
+    EventPicture *pic = qobject_cast<EventPicture *>(obj.data());
+    QVERIFY(pic);
+    //Asked for at once, nothing to show yet.
+    QVERIFY(pic->isLoading());
+    QVERIFY(pic->getUrl().isEmpty());
+    QTRY_VERIFY(pic->hasFailed());
+    QVERIFY(!pic->isLoading());
+    QVERIFY(pic->getUrl().isEmpty());
+    QCOMPARE(http.pictureRequests.size(), 1);
+
+    http.picStatus = 200;
+    pic->retry();
+    QVERIFY(pic->isLoading());
+    QVERIFY(!pic->hasFailed());
+    QTRY_VERIFY(!pic->isLoading());
+    QCOMPARE(http.pictureRequests.size(), 2);
+    QCOMPARE(http.pictureRequests.at(1)["pic_uid"].toString(), QStringLiteral("p1"));
+    const QString url = pic->getUrl();
+    QVERIFY(!pic->hasFailed());
+    QVERIFY2(url.startsWith(scheme), qPrintable(url));
+    QVERIFY(!url.contains('?') && !url.contains(QLatin1String("cn_")) && !url.contains(TestPass));
+    QVERIFY(!providerImage(url).isNull());
+
+    //Nothing stays in the cache once the viewer is closed.
+    pic->release();
+    QVERIFY(pic->getUrl().isEmpty());
+    QVERIFY(providerImage(url).isNull());
+
+    //Destroying it without release() drops the image too.
+    QScopedPointer<QObject> obj2(model->loadPicture(QStringLiteral("p2")));
+    EventPicture *pic2 = qobject_cast<EventPicture *>(obj2.data());
+    QTRY_VERIFY(!pic2->isLoading());
+    const QString url2 = pic2->getUrl();
+    QVERIFY(!providerImage(url2).isNull());
+    obj2.reset();
+    QVERIFY(providerImage(url2).isNull());
 }
 
 //refresh() starts over even when a page is in flight; the late answer to the
@@ -1236,9 +1337,8 @@ void TstEventLogSession::sameEventComparesWhatTheRowShows()
         e.update_evTime("12:00:00");
         e.update_evHasPicture(false);
     };
-    ImageCachePtr cache(new ImageCache);
-    EventLogItem a(nullptr, con, cache);
-    EventLogItem b(nullptr, con, cache);
+    EventLogItem a(nullptr, con);
+    EventLogItem b(nullptr, con);
     fill(a);
     fill(b);
     change(b);

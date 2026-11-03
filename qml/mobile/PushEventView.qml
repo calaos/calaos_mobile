@@ -11,11 +11,29 @@ Item {
 
     property string event_uuid
     property string event_message
-    property string event_picurl
+    property string event_picuid
     property bool event_haspic: true
 
     property bool loading: false
     property QtObject eventModel
+    //Downloaded while the view is open, dropped with it.
+    property QtObject picture: null
+    readonly property string pictureUrl: picture ? picture.url : ""
+    readonly property bool pictureLoading: picture ? picture.loading : false
+    readonly property bool pictureFailed: picture ? picture.failed : false
+
+    function openPicture() {
+        if (picture)
+            picture.release()
+        picture = (event_haspic && event_picuid !== "")
+                ? eventLogModel.loadPicture(event_picuid) : null
+    }
+
+    onEvent_picuidChanged: openPicture()
+    Component.onDestruction: {
+        if (picture)
+            picture.release()
+    }
 
     onEvent_uuidChanged: {
         if (event_uuid == "") {
@@ -28,7 +46,7 @@ Item {
         event_haspic = false
         eventModel = eventLogModel.loadEvent(event_uuid)
         event_message = Qt.binding(function() { return eventModel.evNotifText })
-        event_picurl = Qt.binding(function() { return eventModel.evPictureUrl })
+        event_picuid = Qt.binding(function() { return eventModel.evPicUid })
         event_haspic = Qt.binding(function() { return eventModel.evHasPicture })
         loading = Qt.binding(function() { return eventModel.loading })
     }
@@ -40,7 +58,7 @@ Item {
 
     BusyIndicator {
         id: busy
-        opacity: loading || pic.status === Image.Loading? 1:0
+        opacity: loading || pictureLoading || pic.status === Image.Loading? 1:0
         running: visible
         visible: opacity > 0
         Behavior on opacity { PropertyAnimation { } }
@@ -79,11 +97,29 @@ Item {
             Image {
                 id: pic
                 Layout.maximumWidth: rootitem.width
-                source: event_picurl
+                source: pictureUrl
 
                 property double ratio: sourceSize.height > 0 ? sourceSize.width / sourceSize.height : 1
                 width: parent.width
                 Layout.preferredHeight: ratio > 0 ? width / ratio : 0
+            }
+
+            Text {
+                visible: pictureFailed
+                color: "#e7e7e7"
+                font { family: calaosFont.fontFamily; pointSize: 12 }
+                text: qsTr("The picture could not be loaded.")
+                wrapMode: Text.Wrap
+                Layout.alignment: Qt.AlignHCenter
+                Layout.maximumWidth: rootitem.width
+            }
+
+            Button {
+                id: retryButton
+                visible: pictureFailed
+                text: qsTr("Retry")
+                Layout.alignment: Qt.AlignHCenter
+                onClicked: picture.retry()
             }
 
             Text {

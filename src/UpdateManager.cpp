@@ -846,13 +846,7 @@ void UpdateManager::showPostUpgradeDialog(const QSet<QString> &pkgs, bool notify
     const bool needsReboot = m_jobRebootKnown ? m_jobRebootRequired : hasKernel;
     QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(engine);
 
-    if (pkgs.contains(QStringLiteral("calaos-home")))
-    {
-        QVariantMap m = {{ "showMachine", needsReboot },
-                         { "showApp", true }};
-        appDispatcher->dispatch("showRebootDialog", m);
-    }
-    else if (needsReboot)
+    if (needsReboot)
     {
         QVariantMap m = {{ "showMachine", true },
                          { "showApp", false }};

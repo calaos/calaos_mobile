@@ -85,12 +85,16 @@ bool NetworkRequest::start()
             qCWarning(lcNet) << lastError;
             return false;
         }
-        if (!dlFile->isOpen() && !dlFile->open(QFile::WriteOnly | QIODevice::Truncate))
+        const bool wasOpen = dlFile->isOpen();
+        if (!wasOpen && !dlFile->open(QFile::WriteOnly | QIODevice::Truncate))
         {
             lastError = QStringLiteral("Cannot open the download file for write: ") + dlFile->errorString();
             qCWarning(lcNet) << "Error opening file '" << dlFile->fileName() << "' for write";
             return false;
         }
+        //Only a file opened here may be deleted: the caller's open file, or a
+        //content:// URI, stays theirs.
+        ownsOpen = !wasOpen;
     }
 
     qCDebug(lcNet) << "New request to" << LogRedact::redactUrl(QUrl(url));
@@ -137,6 +141,8 @@ bool NetworkRequest::start()
     dataRead.clear();
     written = 0;
 
+    //No setReadBufferSize(bound + 1): a chunked body without length would stall
+    //until the transfer timeout. The sum is counted below instead.
     NetworkLimits::limitDownload(reply, bound);
 
     //The reader drains the reply at every readyRead, so the reply's own check
@@ -209,7 +215,9 @@ void NetworkRequest::nmReadyRead()
 
 bool NetworkRequest::storeChunk(const QByteArray &d)
 {
-    if (written + d.size() > bound)
+    if (!dlFile)
+        failure = QStringLiteral("The download file no longer exists");
+    else if (written + d.size() > bound)
         failure = QStringLiteral("Download larger than the allowed size");
     //QFile buffers: a full disk only shows at flush.
     else if (dlFile->write(d) != d.size() || !dlFile->flush())
@@ -233,8 +241,14 @@ bool NetworkRequest::writeChunk(const QByteArray &d)
 //A retry with the same QFile must not append to what a failed attempt left.
 void NetworkRequest::discardPartialFile()
 {
-    dlFile->resize(0);
+    if (!dlFile)
+        return;
+    //A full disk makes resize(0) fail too: the partial body would stay on disk.
+    const bool emptied = dlFile->resize(0);
+    const QString name = dlFile->fileName();
     dlFile->close();
+    if (!emptied && ownsOpen && QFileInfo(name).isFile() && !QFile::remove(name))
+        qCWarning(lcNet) << "Cannot remove the partial download file";
 }
 
 void NetworkRequest::nmFinished()
@@ -249,17 +263,25 @@ void NetworkRequest::nmFinished()
         qCWarning(lcNet) << "Error in" << LogRedact::redactUrl(reply->url()) << ":" << lastError
                          << "(status" << httpStatusCode << ")";
         discardPartialFile();
-        emit finished(RequestHttpError);
-
+        //State is reset before the signal: a slot may restart or destroy the request.
         reply->deleteLater();
         reply = nullptr;
+        emit finished(RequestHttpError);
 
         return;
     }
 
     int status = RequestSuccess;
     //Finished: abort() would be ignored, the error is reported here.
-    if (reply->bytesAvailable() > 0 && !storeChunk(reply->readAll()))
+    bool stored = true;
+    if (!dlFile)
+    {
+        failure = QStringLiteral("The download file no longer exists");
+        stored = false;
+    }
+    else if (reply->bytesAvailable() > 0)
+        stored = storeChunk(reply->readAll());
+    if (!stored)
     {
         lastError = failure;
         status = RequestHttpError;
@@ -288,10 +310,9 @@ void NetworkRequest::nmFinishedJson()
         qCWarning(lcNet) << "Error in" << LogRedact::redactUrl(reply->url()) << ":" << lastError
                          << "(status" << httpStatusCode << ")";
         jdoc = QJsonDocument::fromJson(dataRead, &err);
-        emit finishedJson(RequestHttpError, jdoc);
-
         reply->deleteLater();
         reply = nullptr;
+        emit finishedJson(RequestHttpError, jdoc);
 
         return;
     }
@@ -330,18 +351,16 @@ void NetworkRequest::nmFinishedData()
         lastError = failure.isEmpty() ? LogRedact::redactError(reply->errorString(), reply->url()) : failure;
         qCWarning(lcNet) << "Error in" << LogRedact::redactUrl(reply->url()) << ":" << lastError
                          << "(status" << httpStatusCode << ")";
-        emit finishedData(RequestHttpError, QByteArray());
-
         reply->deleteLater();
         reply = nullptr;
+        emit finishedData(RequestHttpError, QByteArray());
 
         return;
     }
 
     reply->deleteLater();
-    emit finishedData(RequestSuccess, dataRead);
-
     reply = nullptr;
+    emit finishedData(RequestSuccess, dataRead);
 }
 
 void NetworkRequest::nmSslErrors(const QList<QSslError> &errors)

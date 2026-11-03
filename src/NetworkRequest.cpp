@@ -1,6 +1,7 @@
 #include "NetworkRequest.h"
 #include "TlsPinning.h"
 #include "LogRedact.h"
+#include "NetworkLimits.h"
 #include <QLoggingCategory>
 
 //The kiosk polls the daemon every few seconds: request traces stay off the
@@ -115,6 +116,12 @@ bool NetworkRequest::start()
     });
 
     dataRead.clear();
+
+    //Files go to disk chunk by chunk and are not held in memory: no bound there.
+    if (resType == TypeJson)
+        NetworkLimits::limitDownload(reply, NetworkLimits::MaxJsonBytes);
+    else if (resType == TypeRawData)
+        NetworkLimits::limitDownload(reply, NetworkLimits::MaxPictureBytes);
 
     if (resType == TypeJson)
     {

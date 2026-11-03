@@ -8,6 +8,7 @@
 #include <QUrl>
 #include <QDebug>
 #include "LogRedact.h"
+#include "NetworkLimits.h"
 #include <QScopedValueRollback>
 
 using namespace CalaosOsProtocol;
@@ -56,6 +57,7 @@ UpdateManager::UpdateManager(QQmlApplicationEngine *eng, QObject *parent, Calaos
     m_wsReconnectTimer->setSingleShot(true);
     connect(m_wsReconnectTimer, &QTimer::timeout, this, &UpdateManager::connectWs);
 
+    NetworkLimits::limitWebSocket(&m_ws);
     connect(&m_ws, &QWebSocket::connected, this, &UpdateManager::wsConnected);
     connect(&m_ws, &QWebSocket::disconnected, this, &UpdateManager::wsClosed);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)

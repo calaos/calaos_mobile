@@ -2,6 +2,7 @@
 #include "RoomModel.h"
 #include "IOTypeRegistry.h"
 #include "JsonKeys.h"
+#include "LogCategories.h"
 #include <QRandomGenerator>
 #include <QImage>
 
@@ -52,7 +53,7 @@ void EventLogModel::requestPage(int page, bool replace)
     {
         //No session up: nothing was sent, so nothing is waited for. The next
         //login refreshes (Application::homeLoaded()).
-        qDebug() << "Event log: no session, page" << page << "not requested";
+        qCDebug(lcApp) << "Event log: no session, page" << page << "not requested";
         setLoadFailed(true);
         return;
     }
@@ -93,7 +94,7 @@ void EventLogModel::publishLoading()
 
 void EventLogModel::loadMore()
 {
-    qDebug() << "Load more... rowCount:" << rowCount();
+    qCDebug(lcApp) << "Load more... rowCount:" << rowCount();
     if (isLoading() || atEnd) return;
 
     requestPage(nextPage, false);
@@ -102,7 +103,7 @@ void EventLogModel::loadMore()
 
 void EventLogModel::refresh()
 {
-    qDebug() << "refresh...";
+    qCDebug(lcApp) << "refresh...";
 
     //Whatever is in flight is superseded: an answer to it is ignored.
     abandonRequest();

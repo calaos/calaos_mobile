@@ -1,5 +1,6 @@
 #include "Application.h"
 #include "SecretWipe.h"
+#include "LogCategories.h"
 #include <QtQml>
 #include <QQmlContext>
 #include <QQmlEngine>
@@ -110,7 +111,7 @@ void Application::createQmlApp()
                               get_loginEdited());
         syncKeepPage();
 
-        qDebug() << "Application is in background, drop the session"
+        qCDebug(lcApp) << "Application is in background, drop the session"
                  << (resumePolicy.keepPage() ? "(page kept)" : "");
         startedWithOptHandled = false;
         stopPushNotifRouting();
@@ -127,12 +128,12 @@ void Application::createQmlApp()
             syncKeepPage();
             if (!autoLogin)
             {
-                qDebug() << "Application is in foreground, no automatic login:"
+                qCDebug(lcApp) << "Application is in foreground, no automatic login:"
                          << "logged out, credentials refused or login fields edited";
                 return;
             }
 
-            qDebug() << "Application is in foreground, login again";
+            qCDebug(lcApp) << "Application is in foreground, login again";
             startLogin(get_username(), get_password(), get_hostname(), false);
         });
     });
@@ -573,7 +574,7 @@ void Application::startLogin(QString user, QString pass, QString host, bool user
         return;
     }
 
-    qDebug() << "Try to login to host: " << host;
+    qCDebug(lcApp) << "Try to login";
 
     //T14: no applicationStatus guard here any more. There is exactly one
     //anti double-login guard and it lives in CalaosConnection/ReconnectPolicy;
@@ -899,7 +900,7 @@ void Application::moveFavorite(int idx, int newidx)
 
 void Application::networkStatusChanged()
 {
-    qDebug() << "Network status changed, " << HardwareUtils::Instance()->getNetworkStatus();
+    qCDebug(lcApp) << "Network status changed, " << HardwareUtils::Instance()->getNetworkStatus();
 
     if (HardwareUtils::Instance()->getNetworkStatus() == HardwareUtils::NotConnected)
     {

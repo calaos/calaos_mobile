@@ -28,6 +28,7 @@
 #include <QWebSocketServer>
 
 #include "CalaosConnection.h"
+#include "NetworkLimits.h"
 
 namespace {
 
@@ -96,6 +97,7 @@ public:
             });
             connect(c, &QWebSocket::disconnected, this, [this, c]()
             {
+                wsCloseCodes << c->closeCode();
                 if (client == c)
                     client = nullptr;
                 c->deleteLater();
@@ -136,6 +138,13 @@ public:
     //Any picture or cover request: how the body is sent, see sendBig().
     enum Big { NoBig, Announced, NoLength, Drip, ExactLimit, OverLimit };
     Big big = NoBig;
+    //Apply `big` to this HTTP action (a JSON answer) too, not only to pictures.
+    QString bigAction;
+    //The long-poll is never answered, like a server with nothing to say.
+    bool holdPoll = false;
+    //eventlog over WebSocket is answered with a message over the bound.
+    bool wsOversize = false;
+    QList<QWebSocketProtocol::CloseCode> wsCloseCodes;
     //Connections the client closed before the body ended.
     int bigAborted = 0;
     //eventlog answers with an error that echoes the password it was sent.
@@ -240,10 +249,22 @@ private:
             r.status = v1Status;
         requests << r;
 
-        if (big != NoBig && (action == QLatin1String("event_picture") || action == QLatin1String("camera") ||
+        if (holdPoll && action == QLatin1String("poll_listen"))
+            return;
+        if (big != NoBig && ((!bigAction.isEmpty() && action == bigAction) || action == QLatin1String("event_picture") || action == QLatin1String("camera") ||
                              action == QLatin1String("get_camera_pic") || action == QLatin1String("audio")))
         {
             sendBig(sock);
+            return;
+        }
+        if (action == QLatin1String("get_home"))
+        {
+            //HTTP login
+            const QByteArray body = R"({"success":"true","home":[],"cameras":[],"audio":[]})";
+            sock->write("HTTP/1.1 200 X\r\nContent-Type: application/json\r\nContent-Length: " +
+                        QByteArray::number(body.size()) + "\r\nConnection: close\r\n\r\n" + body);
+            sock->flush();
+            sock->disconnectFromHost();
             return;
         }
         if (action == QLatin1String("event_picture") && (eventPicHuge || eventPicSilent))
@@ -251,7 +272,8 @@ private:
             //the socket stays open: the client must give up by itself
             if (eventPicHuge)
             {
-                sock->write("HTTP/1.1 200 X\r\nContent-Type: image/jpeg\r\nContent-Length: 17825792\r\n\r\n" +
+                sock->write("HTTP/1.1 200 X\r\nContent-Type: image/jpeg\r\nContent-Length: " +
+                            QByteArray::number(NetworkLimits::MaxPictureBytes + 1024 * 1024) + "\r\n\r\n" +
                             QByteArray(1024, 'x'));
                 sock->flush();
             }
@@ -271,7 +293,7 @@ private:
     //The sockets stay open (but ExactLimit): the client has to give up by itself.
     void sendBig(QTcpSocket *sock)
     {
-        constexpr qint64 Limit = 16 * 1024 * 1024;
+        constexpr qint64 Limit = NetworkLimits::MaxPictureBytes;
         const QByteArray head = "HTTP/1.1 200 X\r\nContent-Type: image/jpeg\r\n";
         if (big != ExactLimit)
         {
@@ -284,7 +306,8 @@ private:
         {
         case Announced:
             //only 1 KiB ever arrives: the announced length alone must refuse it
-            sock->write(head + "Content-Length: 17825792\r\n\r\n" + QByteArray(1024, 'x'));
+            sock->write(head + "Content-Length: " + QByteArray::number(NetworkLimits::MaxPictureBytes + 1024 * 1024)
+                       + "\r\n\r\n" + QByteArray(1024, 'x'));
             break;
         case NoLength:
             //no Content-Length, the end of the body is the end of the connection
@@ -386,6 +409,10 @@ private:
             else
                 send(c, head, data);
         }
+        else if (msg == QLatin1String("eventlog") && wsOversize)
+        {
+            c->sendTextMessage(QString(int(NetworkLimits::MaxJsonBytes + 1), QLatin1Char('x')));
+        }
         else if (msg == QLatin1String("eventlog") && eventLogEchoesPassword)
         {
             send(c, head, QJsonObject{{ QStringLiteral("error"), QStringLiteral("bad request, got cn_pass ") + TestPass }});
@@ -447,6 +474,8 @@ private slots:
     void eventPictureDrippedIsCutByTheTotalTimeout();
     void cameraPictureBoundsAreEnforced();
     void audioCoverBoundsAreEnforced();
+    void jsonAnswerBoundsAreEnforced();
+    void webSocketMessageOverTheBoundIsRefused();
     void v1SuffixWithoutQueryKeepsCredentialsOutOfThePath();
     void eventLogServerErrorNeverLogsPassword();
     void redactionKeepsDiagnosticAndCoversEdgeCases();
@@ -483,6 +512,8 @@ void TstCameraToken::init()
 
 void TstCameraToken::cleanup()
 {
+    //Process-wide: the debug rules some tests turn on would leak into the next ones.
+    QLoggingCategory::setFilterRules(QString());
     delete downloaded;
     delete failed;
     delete connection;
@@ -927,7 +958,7 @@ void TstCameraToken::cameraPictureBoundsAreEnforced()
     server->big = FakeCalaos::ExactLimit;
     connection->getCameraPicture(QStringLiteral("cam1"), QStringLiteral("/cam/image?id=1"));
     QTRY_COMPARE_WITH_TIMEOUT(downloaded->count(), 1, 5000);
-    QCOMPARE(downloaded->first().value(1).toByteArray().size(), 16 * 1024 * 1024);
+    QCOMPARE(qint64(downloaded->first().value(1).toByteArray().size()), NetworkLimits::MaxPictureBytes);
 }
 
 void TstCameraToken::audioCoverBoundsAreEnforced()
@@ -939,7 +970,7 @@ void TstCameraToken::audioCoverBoundsAreEnforced()
     server->big = FakeCalaos::ExactLimit;
     connection->getAudioCover(QStringLiteral("p1"));
     QTRY_COMPARE_WITH_TIMEOUT(cover.count(), 1, 5000);
-    QCOMPARE(cover.first().value(1).toByteArray().size(), 16 * 1024 * 1024);
+    QCOMPARE(qint64(cover.first().value(1).toByteArray().size()), NetworkLimits::MaxPictureBytes);
 
     for (auto mode: { FakeCalaos::Announced, FakeCalaos::NoLength, FakeCalaos::OverLimit })
     {
@@ -952,6 +983,62 @@ void TstCameraToken::audioCoverBoundsAreEnforced()
             QTRY_COMPARE_WITH_TIMEOUT(server->bigAborted, 1, 5000);
         QCOMPARE(cover.count(), 1);
     }
+}
+
+void TstCameraToken::jsonAnswerBoundsAreEnforced()
+{
+    //Over HTTP the event log answer goes through sendHttp(), the same path
+    //as every other JSON request of CalaosConnection.
+    connection->login(TestUser, TestPass, server->url().replace(QLatin1String("ws://"), QLatin1String("http://")));
+    QTRY_COMPARE(connection->connectionState(), ReconnectPolicy::Connected);
+    QVERIFY(connection->isHttp());
+    //only the event log is answered big, and the long-poll hangs: the one
+    //abort comes from the limit of sendHttp(), nothing else can fail the request
+    server->bigAction = QStringLiteral("eventlog");
+    server->holdPoll = true;
+    QLoggingCategory::setFilterRules(QStringLiteral("*.debug=true"));
+    QSignalSpy done(connection, &CalaosConnection::eventLogPageFinished);
+
+    for (auto mode: { FakeCalaos::Announced, FakeCalaos::NoLength, FakeCalaos::OverLimit })
+    {
+        server->big = mode;
+        server->bigAborted = 0;
+        const int before = done.count();
+
+        QStringList lines;
+        static QStringList *sink;
+        sink = &lines;
+        const QtMessageHandler previous = qInstallMessageHandler([](QtMsgType, const QMessageLogContext &, const QString &m) {
+            sink->append(m);
+        });
+        connection->requestEventLogPage(1, 10);
+        const bool finished = QTest::qWaitFor([&]() { return done.count() == before + 1; }, 5000);
+        qInstallMessageHandler(previous);
+        QVERIFY(finished);
+
+        QCOMPARE(done.last().value(1).toBool(), false);
+        //the refusal is the network error path (redactError), not a parse error
+        const QString log = lines.join(QLatin1Char('\n'));
+        QVERIFY2(log.contains(QLatin1String("Error in ")), qPrintable(log));
+        QVERIFY2(!log.contains(QLatin1String("parse error")), qPrintable(log));
+        QCOMPARE(connection->connectionState(), ReconnectPolicy::Connected);
+        //an OverLimit burst: the server does not always see the client close
+        if (mode != FakeCalaos::OverLimit)
+            QTRY_COMPARE_WITH_TIMEOUT(server->bigAborted, 1, 5000);
+    }
+}
+
+void TstCameraToken::webSocketMessageOverTheBoundIsRefused()
+{
+    login();
+    server->wsOversize = true;
+    QSignalSpy done(connection, &CalaosConnection::eventLogPageFinished);
+
+    connection->requestEventLogPage(1, 10);
+    //Qt closes the socket itself; the pending request then fails
+    QTRY_VERIFY_WITH_TIMEOUT(server->wsCloseCodes.contains(QWebSocketProtocol::CloseCodeTooMuchData), 5000);
+    QTRY_COMPARE_WITH_TIMEOUT(done.count(), 1, 5000);
+    QCOMPARE(done.last().value(1).toBool(), false);
 }
 
 void TstCameraToken::v1SuffixWithoutQueryKeepsCredentialsOutOfThePath()

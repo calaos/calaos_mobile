@@ -12,6 +12,7 @@
 #include <QTcpSocket>
 
 #include "NetworkRequest.h"
+#include "LogRedact.h"
 #include "WeatherInfo.h"
 
 namespace {
@@ -76,6 +77,7 @@ private slots:
     }
 
     void weatherErrorNeverLogsAppid();
+    void freeTextHidesAddresses();
     void networkRequestErrorNeverLogsSecrets();
     void networkRequestSuccessNeverLogsSecrets();
 
@@ -103,6 +105,21 @@ void TstLogRedact::weatherErrorNeverLogsAppid()
     QVERIFY2(l.contains(QLatin1String("APPID=***")), qPrintable(l));
 }
 
+void TstLogRedact::freeTextHidesAddresses()
+{
+    const QString out = LogRedact::redactFreeText(QStringLiteral("no route to 192.0.2.10 from 00:00:5e:00:53:01 (p=1)"));
+    QVERIFY2(!out.contains(QLatin1String("192.0.2.10")), qPrintable(out));
+    QVERIFY2(!out.contains(QLatin1String("00:00:5e")), qPrintable(out));
+    QVERIFY(out.contains(QLatin1String("no route")));
+
+    const QString v6 = LogRedact::redactFreeText(
+        QStringLiteral("dial 2001:db8::1 failed, peer fe80::1ff:fe23:4567:890a, full 2001:0db8:85a3:0000:0000:8a2e:0370:7334, at 12:30:45"));
+    QVERIFY2(!v6.contains(QLatin1String("2001:db8")), qPrintable(v6));
+    QVERIFY2(!v6.contains(QLatin1String("fe80")), qPrintable(v6));
+    QVERIFY2(!v6.contains(QLatin1String("85a3")), qPrintable(v6));
+    QVERIFY2(v6.contains(QLatin1String("12:30:45")), qPrintable(v6)); //a clock time is not an address
+}
+
 void TstLogRedact::networkRequestErrorNeverLogsSecrets()
 {
     server->status = 403;
@@ -120,7 +137,9 @@ void TstLogRedact::networkRequestErrorNeverLogsSecrets()
 
     const QString l = log();
     QVERIFY2(l.contains(QLatin1String("Error in")), qPrintable(l));
-    QVERIFY2(l.contains(QLatin1String("denied")), qPrintable(l)); //still useful
+    QVERIFY2(l.contains(QLatin1String("status 403")), qPrintable(l)); //still useful
+    //The error body is never dumped, redacted or not.
+    QVERIFY2(!l.contains(QLatin1String("denied")), qPrintable(l));
     for (const QString &secret: { Appid, Secret })
         QVERIFY2(!l.contains(secret), qPrintable(secret + QLatin1String(" in: ") + l));
 }
@@ -138,10 +157,11 @@ void TstLogRedact::networkRequestSuccessNeverLogsSecrets()
     QTRY_COMPARE_WITH_TIMEOUT(done.count(), 1, 3000);
 
     const QString l = log();
-    QVERIFY2(l.contains(QLatin1String("success")), qPrintable(l));
+    QVERIFY2(l.contains(QLatin1String("New request to")), qPrintable(l));
+    //Not even redacted: the body is never dumped.
+    QVERIFY2(!l.contains(QLatin1String("camera_token")), qPrintable(l));
     for (const QString &secret: { Appid, Secret })
         QVERIFY2(!l.contains(secret), qPrintable(secret + QLatin1String(" in: ") + l));
 }
-
 QTEST_MAIN(TstLogRedact)
 #include "tst_logredact.moc"

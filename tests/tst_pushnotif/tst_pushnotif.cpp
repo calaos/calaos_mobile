@@ -64,8 +64,6 @@ static QStringList s_logLines;
 static QtMessageHandler s_previousHandler = nullptr;
 //register_push accepted by an HTTP fake during the run (any test).
 static int s_httpRegistrations = 0;
-//Those carrying a push key.
-static int s_httpKeyedRegistrations = 0;
 
 static void captureMessages(QtMsgType type, const QMessageLogContext &ctx, const QString &msg)
 {
@@ -189,8 +187,6 @@ private:
         {
             registrations << j;
             s_httpRegistrations++;
-            if (j.contains(QStringLiteral("push_key")))
-                s_httpKeyedRegistrations++;
             reply(sock, 200, "application/json", "{\"success\":\"true\"}");
             return;
         }
@@ -1719,6 +1715,8 @@ void TstPushNotif::cleanupTestCase()
     clearStore();
 
     //Whatever subset of the functions ran: no token and no password in clear.
+    //Guard against a vacuous pass: some register_push must have gone through.
+    QVERIFY(s_httpRegistrations > 0);
     for (const QString &line: std::as_const(s_logLines))
     {
         for (const QString &t: std::as_const(usedTokens()))
@@ -1729,31 +1727,9 @@ void TstPushNotif::cleanupTestCase()
             QVERIFY2(!line.contains(QString::fromLatin1(k.toHex())), "push key in clear in a log line");
     }
 
-#ifdef QT_DEBUG
-    //When the HTTP fallback really sent register_push, its debug dump is
-    //there, redacted (the push key too, when one was sent).
-    if (s_httpRegistrations > 0)
-    {
-        bool sawRedactedKey = false;
-        for (const QString &line: std::as_const(s_logLines))
-        {
-            if (line.startsWith(QLatin1String("SEND:")) &&
-                line.contains(QLatin1String("\"push_key\": \"***\"")))
-                sawRedactedKey = true;
-        }
-        QCOMPARE(sawRedactedKey, s_httpKeyedRegistrations > 0);
-        bool sawRedactedRegister = false;
-        for (const QString &line: std::as_const(s_logLines))
-        {
-            if (line.startsWith(QLatin1String("SEND:")) &&
-                line.contains(QLatin1String("register_push")) &&
-                line.contains(QLatin1String("\"token\": \"***\"")) &&
-                line.contains(QLatin1String("\"cn_pass\": \"***\"")))
-                sawRedactedRegister = true;
-        }
-        QVERIFY(sawRedactedRegister);
-    }
-#endif
+    //The HTTP fallback logs the size of register_push, never its body.
+    for (const QString &line: std::as_const(s_logLines))
+        QVERIFY2(!line.contains(QLatin1String("register_push")), "request body in a log line");
 }
 
 QTEST_MAIN(TstPushNotif)

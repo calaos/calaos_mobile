@@ -110,10 +110,12 @@ QStringList allIoIds()
 
 //Capture des qWarning() le temps d'un test (et les empêche de polluer la sortie).
 QStringList g_warnings;
+QStringList g_allMessages;
 QtMessageHandler g_previousHandler = nullptr;
 
 void captureMessageHandler(QtMsgType type, const QMessageLogContext &, const QString &msg)
 {
+    g_allMessages << msg;
     if (type == QtWarningMsg)
         g_warnings << msg;
 }
@@ -124,6 +126,7 @@ public:
     WarningCapture()
     {
         g_warnings.clear();
+        g_allMessages.clear();
         g_previousHandler = qInstallMessageHandler(captureMessageHandler);
     }
 
@@ -134,6 +137,7 @@ public:
     }
 
     QStringList messages() const { return g_warnings; }
+    QStringList everything() const { return g_allMessages; }
 };
 
 } //namespace
@@ -159,6 +163,7 @@ private slots:
     void climateWeighsTwoRows();
     void nonIOBaseItemIsSkipped();
     void sortingWithNonIOBaseItemDoesNotCrash();
+    void sortingLogsNothing();
 
 private:
     RoomModel *rmodel = nullptr;
@@ -167,9 +172,6 @@ private:
 
 void TstRoomFilterModel::initTestCase()
 {
-    /* lessThan() trace chaque comparaison via qDebug() : inexploitable dans la
-     * sortie du test. */
-    QLoggingCategory::setFilterRules(QStringLiteral("default.debug=false"));
 }
 
 void TstRoomFilterModel::init()
@@ -459,6 +461,19 @@ void TstRoomFilterModel::sortingWithNonIOBaseItemDoesNotCrash()
     }
     seen.sort();
     QCOMPARE(seen, allIoIds());
+}
+
+//Sorting runs on every IO change: it must not write a line, IO names included.
+void TstRoomFilterModel::sortingLogsNothing()
+{
+    WarningCapture capture;
+
+    proxy->set_filter(Common::FilterAll);
+    proxy->invalidate();
+    proxy->sort(0);
+
+    QVERIFY(proxy->rowCount() > 1);
+    QVERIFY2(capture.everything().isEmpty(), qPrintable(capture.everything().join(QLatin1Char('\n'))));
 }
 
 QTEST_GUILESS_MAIN(TstRoomFilterModel)

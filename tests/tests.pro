@@ -34,6 +34,8 @@ SUBDIRS += \
     tst_iobase \
     tst_logredact \
     tst_mobilesettings \
+    tst_netquiet \
+    tst_networkbounds \
     tst_pushnotif \
     tst_qqmlhelpers \
     tst_reconnectpolicy \

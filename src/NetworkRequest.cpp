@@ -1,6 +1,12 @@
 #include "NetworkRequest.h"
 #include "TlsPinning.h"
 #include "LogRedact.h"
+#include "NetworkLimits.h"
+#include "LogCategories.h"
+
+//The kiosk polls the daemon every few seconds: request traces stay off the
+//journal unless asked for with QT_LOGGING_RULES="calaos.net.debug=true".
+//Errors are warnings and always shown.
 
 //Abort a transfer that stops making progress. Set on the request and not on
 //the manager because setNetManager() can hand us a manager owned by someone
@@ -48,7 +54,7 @@ bool NetworkRequest::start()
 {
     if (reply)
     {
-        qDebug() << "Request already in progress";
+        qCDebug(lcNet) << "Request already in progress";
         return false;
     }
 
@@ -67,7 +73,7 @@ bool NetworkRequest::start()
     lastError.clear();
     request.setSslConfiguration(sslConfiguration);
 
-    qDebug() << "[*] New request to " << LogRedact::redactUrl(QUrl(url));
+    qCDebug(lcNet) << "New request to" << LogRedact::redactUrl(QUrl(url));
 
     //set ssl config
     QSslConfiguration sslConfig(QSslConfiguration::defaultConfiguration());
@@ -94,7 +100,7 @@ bool NetworkRequest::start()
 
     if (!reply)
     {
-        qDebug() << "Failed to create request";
+        qCWarning(lcNet) << "Failed to create request";
         return false;
     }
 
@@ -109,6 +115,12 @@ bool NetworkRequest::start()
     });
 
     dataRead.clear();
+
+    //Files go to disk chunk by chunk and are not held in memory: no bound there.
+    if (resType == TypeJson)
+        NetworkLimits::limitDownload(reply, NetworkLimits::MaxJsonBytes);
+    else if (resType == TypeRawData)
+        NetworkLimits::limitDownload(reply, NetworkLimits::MaxPictureBytes);
 
     if (resType == TypeJson)
     {
@@ -176,10 +188,8 @@ void NetworkRequest::nmFinished()
     if (reply->error() != QNetworkReply::NoError)
     {
         lastError = LogRedact::redactError(reply->errorString(), reply->url());
-        qDebug() << "Error in" << LogRedact::redactUrl(reply->url()) << ":" << lastError;
-        const QByteArray data = reply->readAll();
-        if (!data.isEmpty())
-            qDebug().noquote() << "Request body: " << LogRedact::redactBody(data);
+        qCWarning(lcNet) << "Error in" << LogRedact::redactUrl(reply->url()) << ":" << lastError
+                         << "(status" << httpStatusCode << ")";
         emit finished(RequestHttpError);
 
         reply->deleteLater();
@@ -209,11 +219,9 @@ void NetworkRequest::nmFinishedJson()
     if (reply->error() != QNetworkReply::NoError)
     {
         lastError = LogRedact::redactError(reply->errorString(), reply->url());
-        qDebug() << "Error in" << LogRedact::redactUrl(reply->url()) << ":" << lastError;
-        const QByteArray data = dataRead;
-        if (!data.isEmpty())
-            qDebug().noquote() << "Request body: " << LogRedact::redactBody(data);
-        jdoc = QJsonDocument::fromJson(data, &err);
+        qCWarning(lcNet) << "Error in" << LogRedact::redactUrl(reply->url()) << ":" << lastError
+                         << "(status" << httpStatusCode << ")";
+        jdoc = QJsonDocument::fromJson(dataRead, &err);
         emit finishedJson(RequestHttpError, jdoc);
 
         reply->deleteLater();
@@ -233,15 +241,12 @@ void NetworkRequest::nmFinishedJson()
     if (err.error != QJsonParseError::NoError)
     {
         lastError = "JSON parse error " + err.errorString() + " at offset: " + QString::number(err.offset);
-        qWarning() << "JSON parse error " << err.errorString() << " at offset: " << err.offset;
-        const int maxlen = 100;
-        int start = err.offset - maxlen;
-        if (start < 0) start = 0;
         //Not the body itself: it may hold a secret and free text cannot be masked.
-        qWarning() << "Body of" << dataRead.size() << "bytes";
+        qCWarning(lcNet) << "JSON parse error " << err.errorString() << " at offset: " << err.offset
+                         << "(body of" << dataRead.size() << "bytes)";
     }
     else
-        qDebug().noquote() << QString::fromUtf8(LogRedact::redactJson(jdoc));
+        qCDebug(lcNet) << "Response status" << httpStatusCode << "," << dataRead.size() << "bytes";
 
     reply->deleteLater();
     reply = nullptr;
@@ -257,10 +262,8 @@ void NetworkRequest::nmFinishedData()
     if (reply->error() != QNetworkReply::NoError)
     {
         lastError = LogRedact::redactError(reply->errorString(), reply->url());
-        qDebug() << "Error in" << LogRedact::redactUrl(reply->url()) << ":" << lastError;
-        const QByteArray data = dataRead;
-        if (!data.isEmpty())
-            qDebug().noquote() << "Request body: " << LogRedact::redactBody(data);
+        qCWarning(lcNet) << "Error in" << LogRedact::redactUrl(reply->url()) << ":" << lastError
+                         << "(status" << httpStatusCode << ")";
         emit finishedData(RequestHttpError, QByteArray());
 
         reply->deleteLater();

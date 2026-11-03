@@ -262,8 +262,6 @@ bool RoomFilterModel::lessThan(const QModelIndex &left, const QModelIndex &right
     if (!lobj || !robj)
         return lobj && !robj;
 
-    qDebug() << "sort '" << lobj->get_ioName() << "' < '" << robj->get_ioName() << "'";
-
     //* first sort by io type if they are different
     // scenarios < shutter < temps < light < other
     if (lobj->get_ioType() != robj->get_ioType())

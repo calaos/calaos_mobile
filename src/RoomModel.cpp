@@ -3,6 +3,7 @@
 #include <QDateTime>
 #include "IOTypeRegistry.h"
 #include "JsonKeys.h"
+#include "LogCategories.h"
 
 IOBase *IOCache::searchInput(QString id)
 {
@@ -549,7 +550,7 @@ void IOBase::sendRGB(int r, int g, int b)
 {
     if (connection->isHttpApiV2())
     {
-        qDebug() << "Send rgb value: " << r << "," << g << "," << b;
+        qCDebug(lcApp) << "Send rgb value: " << r << "," << g << "," << b;
         quint32 val = (((quint32)(r)) << 16) +
                   (((quint32)(g)) << 8) +
                   ((quint32)(b));

@@ -21,7 +21,7 @@ QMAKE_SANITIZE_UNDEFINED_CXXFLAGS += -fno-sanitize=vptr
 DEFINES += CALAOS_MOBILE
 
 # HardwareUtils.cpp includes <QInputDialog> outside iOS/Android.
-QT += widgets
+QT += widgets quick
 
 # EventLogModel.cpp resolves the io of an event through IOCache (RoomModel.cpp,
 # which drags quickflux in): the test defines the two lookups itself and
@@ -39,6 +39,7 @@ SOURCES += \
     $$SRC_DIR/CalaosConnection.cpp \
     $$SRC_DIR/TlsPinning.cpp \
     $$SRC_DIR/CalaosEventDecoder.cpp \
+    $$SRC_DIR/ModelImageProvider.cpp \
     $$SRC_DIR/EventLogModel.cpp \
     $$SRC_DIR/HardwareUtils.cpp \
     $$SRC_DIR/Common.cpp \

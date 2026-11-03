@@ -171,7 +171,7 @@ Item {
                 rightMargin: Units.dp(10)
             }
 
-            //onButtonClicked: AppActions.openEventPushViewer(evNotifText, evPictureUrl)
+            //onButtonClicked: AppActions.openEventPushViewer(evNotifText, evPicUid)
 
 //            visible: listViewLog.count > 0
             visible: false
@@ -310,7 +310,7 @@ Item {
                     ItemButtonAction {
                         iconSource: "icon_camera_title"
                         visible: evHasPicture
-                        onButtonClicked: AppActions.openEventPushViewer(evNotifText, evPictureUrl)
+                        onButtonClicked: AppActions.openEventPushViewer(evNotifText, evPicUid)
                     }
                 }
             }

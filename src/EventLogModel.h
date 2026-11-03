@@ -8,6 +8,7 @@
 #include <QQmlApplicationEngine>
 #include "CalaosConnection.h"
 #include "Common.h"
+#include "ModelImageProvider.h"
 
 namespace EventLogIO
 {
@@ -66,12 +67,16 @@ public:
         RoleRoomName,
         RoleNotifText,
         RoleNotifHasPic,
-        RoleNotifPicUrl,
+        RoleNotifPicUid,
         RoleActionText,
         RoleCount,
     };
 
     Q_INVOKABLE QObject *getEventModel(int idx) const;
+    //Downloads the picture of a push event for the viewer. The caller owns
+    //the result and calls release() when the viewer closes.
+    Q_INVOKABLE QObject *loadPicture(QString picUid);
+    ImageCachePtr pictureCache() const { return imageCache; }
 
     //Appends the next page. Nothing while a page is in flight or once the
     //last page is shown.
@@ -120,6 +125,9 @@ private:
 
     QQmlApplicationEngine *engine;
     CalaosConnection *connection;
+    //Pictures of the push events, served to QML as image://eventpic/<key>
+    //so that no credential ever shows in an url Qt Quick may log.
+    ImageCachePtr imageCache;
 
     bool loadFailed = false;
     bool shownLoading = false;
@@ -144,6 +152,47 @@ private:
     QSet<QString> shownIds;
 };
 
+//One downloaded picture, alive only while the viewer shows it: the image is
+//served as image://eventpic/<key>/<n> and dropped by release().
+class EventPicture: public QObject
+{
+    Q_OBJECT
+    Q_PROPERTY(QString url READ getUrl NOTIFY changed)
+    Q_PROPERTY(bool loading READ isLoading NOTIFY changed)
+    Q_PROPERTY(bool failed READ hasFailed NOTIFY changed)
+
+public:
+    EventPicture(CalaosConnection *con, const ImageCachePtr &cache, const QString &picUid,
+                 QObject *parent = nullptr);
+    ~EventPicture();
+
+    QString getUrl() const { return url; }
+    bool isLoading() const { return state == Loading; }
+    bool hasFailed() const { return state == Failed; }
+
+    //After a failure; ignored while loading.
+    Q_INVOKABLE void retry();
+    Q_INVOKABLE void release();
+
+signals:
+    void changed();
+
+private:
+    enum State { Idle, Loading, Ready, Failed };
+    void fetch();
+    void disconnectConnection();
+
+    CalaosConnection *connection;
+    ImageCachePtr imageCache;
+    QString picUid;
+    QString pictureKey;
+    QString url;
+    State state = Idle;
+    bool released = false;
+    QMetaObject::Connection okConnection;
+    QMetaObject::Connection failConnection;
+};
+
 class EventLogItem: public QObject, public QStandardItem
 {
     Q_OBJECT
@@ -156,7 +205,7 @@ class EventLogItem: public QObject, public QStandardItem
     QML_READONLY_PROPERTY_MODEL(QString, evRoomName, EventLogModel::RoleRoomName)
     QML_READONLY_PROPERTY_MODEL(QString, evNotifText, EventLogModel::RoleNotifText)
     QML_READONLY_PROPERTY_MODEL(bool, evHasPicture, EventLogModel::RoleNotifHasPic)
-    QML_READONLY_PROPERTY_MODEL(QString, evPictureUrl, EventLogModel::RoleNotifPicUrl)
+    QML_READONLY_PROPERTY_MODEL(QString, evPicUid, EventLogModel::RoleNotifPicUid)
     QML_READONLY_PROPERTY_MODEL(QString, evActionText, EventLogModel::RoleActionText)
     QML_READONLY_PROPERTY_MODEL(int, evCount, EventLogModel::RoleCount)
 
@@ -164,7 +213,7 @@ class EventLogItem: public QObject, public QStandardItem
 
 public:
     EventLogItem(QQmlApplicationEngine *engine, CalaosConnection *con);
-    virtual ~EventLogItem() {}
+    virtual ~EventLogItem();
 
     void load(const QVariantMap &data);
     //Whether the two read the same in the list, whatever their time. A

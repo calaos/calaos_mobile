@@ -2986,6 +2986,11 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>PushEventView</name>
     <message>
+        <location filename="../qml/mobile/PushEventView.qml" line="120"/>
+        <source>The picture could not be loaded.</source>
+        <translation>L’image n’a pas pu être chargée.</translation>
+    </message>
+    <message>
         <location filename="../qml/mobile/PushEventView.qml" line="102"/>
         <source>Push Notification</source>
         <translation>Notification Push</translation>

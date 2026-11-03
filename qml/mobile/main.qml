@@ -305,14 +305,14 @@ Window {
     }
 
     property string pushEventText
-    property string pushEventPicUrl
+    property string pushEventPicUid
     property string pushEventUuid
     Component {
         id: pushEventView
 
         PushEventView {
             event_message: pushEventText
-            event_picurl: pushEventPicUrl
+            event_picuid: pushEventPicUid
             event_uuid: pushEventUuid
         }
     }
@@ -471,7 +471,7 @@ Window {
             type: ActionTypes.openEventPushViewer
             onDispatched: (filtertype, message) => {
                 pushEventText = message.notifText
-                pushEventPicUrl = message.notifUrl
+                pushEventPicUid = message.notifPicUid
                 pushEventUuid = ""
                 stackView.push(pushEventView)
             }
@@ -481,7 +481,7 @@ Window {
             type: ActionTypes.openEventPushViewerUuid
             onDispatched: (filtertype, message) => {
                 pushEventText = ""
-                pushEventPicUrl = ""
+                pushEventPicUid = ""
                 pushEventUuid = message.notifUuid
                 stackView.push(pushEventView)
                 menuBar.menuType = Common.MenuBack

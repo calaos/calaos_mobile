@@ -40,4 +40,5 @@ OTHER_FILES += \
     tst_settingseventlog.qml \
     tst_admincodesheet.qml \
     tst_updatesview.qml \
-    tst_loginview.qml
+    tst_loginview.qml \
+    tst_pusheventview.qml

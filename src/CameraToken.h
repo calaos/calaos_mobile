@@ -41,8 +41,16 @@ public:
         m_expiry = QDeadlineTimer(life);
         //short lifetimes still renew halfway, never right on top of expiry
         m_marginMs = std::min<qint64>(RenewMarginS * 1000, life / 2);
-        m_retryMs = RetryMinMs;
         m_retryAt = QDeadlineTimer(0);
+    }
+
+    //A picture was accepted with a token: the server works again. A token
+    //merely issued proves nothing, a server that refuses every picture
+    //issues one per request.
+    void accepted(const QString &used)
+    {
+        if (!used.isEmpty())
+            m_retryMs = RetryMinMs;
     }
 
     //No token came back: no new request before the backoff is over.

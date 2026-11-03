@@ -1,6 +1,7 @@
 #include "NetworkRequest.h"
 #include "TlsPinning.h"
 #include "LogRedact.h"
+#include "NetworkLimits.h"
 
 //Abort a transfer that stops making progress. Set on the request and not on
 //the manager because setNetManager() can hand us a manager owned by someone
@@ -110,6 +111,12 @@ bool NetworkRequest::start()
 
     dataRead.clear();
 
+    //Files go to disk chunk by chunk and are not held in memory: no bound there.
+    if (resType == TypeJson)
+        NetworkLimits::limitDownload(reply, NetworkLimits::MaxJsonBytes);
+    else if (resType == TypeRawData)
+        NetworkLimits::limitDownload(reply, NetworkLimits::MaxPictureBytes);
+
     if (resType == TypeJson)
     {
         connect(reply, &QNetworkReply::finished,
@@ -177,7 +184,7 @@ void NetworkRequest::nmFinished()
     {
         lastError = LogRedact::redactError(reply->errorString(), reply->url());
         qDebug() << "Error in" << LogRedact::redactUrl(reply->url()) << ":" << lastError;
-        const QByteArray data = reply->readAll();
+        const QByteArray data = reply->read(NetworkLimits::MaxErrorBodyBytes);
         if (!data.isEmpty())
             qDebug().noquote() << "Request body: " << LogRedact::redactBody(data);
         emit finished(RequestHttpError);

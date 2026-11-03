@@ -162,7 +162,8 @@ bool NetworkRequest::start()
             reply->abort();
             return;
         }
-        //Before the signal: a slot may delete the request.
+        //Before the signal: a slot may delete the request (only with deleteLater()
+        //if it owns its manager: the reply is a child of it).
         dataRead.append(d);
         emit dataReadyRead(d);
     };
@@ -209,7 +210,7 @@ void NetworkRequest::cancel()
 
 void NetworkRequest::nmReadyRead()
 {
-    if (!reply || sender() != reply || reply->error() == QNetworkReply::OperationCanceledError)
+    if (sender() != reply || reply->error() == QNetworkReply::OperationCanceledError)
         return;
     auto d = reply->readAll();
     if (!writeChunk(d))
@@ -271,7 +272,7 @@ void NetworkRequest::nmFinished()
                          << "(status" << httpStatusCode << ")";
         discardPartialFile();
         //State is reset before the signal: a slot may restart the request, or
-        //destroy it with deleteLater(): a synchronous delete would free the reply being emitted.
+        //destroy it with deleteLater(): with its own manager, a synchronous delete would free the reply being emitted.
         reply->deleteLater();
         reply = nullptr;
         emit finished(RequestHttpError);

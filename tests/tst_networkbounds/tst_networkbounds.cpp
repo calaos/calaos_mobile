@@ -216,6 +216,7 @@ private slots:
     void slotMayRestartTheRequestAfterAnError_data();
     void slotMayRestartTheRequestAfterAnError();
     void slotMayDeleteTheRequestWhileItReads();
+    void staleReplyIsIgnoredAfterARestart_data();
     void staleReplyIsIgnoredAfterARestart();
     void slotMayDeleteLaterTheRequestWithItsOwnManager();
     void boundStartsOverAfterTheFileWasTruncated();
@@ -557,8 +558,16 @@ void TstNetworkBounds::slotMayDeleteTheRequestWhileItReads()
     QCOMPARE(chunks, 1);
 }
 
+void TstNetworkBounds::staleReplyIsIgnoredAfterARestart_data()
+{
+    QTest::addColumn<bool>("toFile");
+    QTest::newRow("data") << false;
+    QTest::newRow("file") << true;
+}
+
 void TstNetworkBounds::staleReplyIsIgnoredAfterARestart()
 {
+    QFETCH(bool, toFile);
     //A batch over the bound aborts the reply from limitDownload, which runs
     //finished and so the slot below before the reader's own readyRead slot.
     server->mode = NoLength;
@@ -566,7 +575,15 @@ void TstNetworkBounds::staleReplyIsIgnoredAfterARestart()
     QNetworkAccessManager nam;
     NetworkRequest req(base() + QStringLiteral("api"));
     req.setNetManager(&nam);
-    req.setResultType(NetworkRequest::TypeRawData);
+    QTemporaryFile file;
+    if (toFile)
+    {
+        QVERIFY(file.open());
+        req.setResultType(NetworkRequest::TypeFile);
+        req.setFile(&file);
+    }
+    else
+        req.setResultType(NetworkRequest::TypeRawData);
     req.setMaxBytes(64 * 1024);
     int emptyChunks = 0;
     int finishedCalls = 0;
@@ -576,11 +593,13 @@ void TstNetworkBounds::staleReplyIsIgnoredAfterARestart()
         if (d.isEmpty())
             ++emptyChunks;
     });
-    connect(&req, &NetworkRequest::finishedData, this, [&]()
+    auto restartOnce = [&]()
     {
         if (finishedCalls++ == 0)
             restarted = req.start();
-    });
+    };
+    connect(&req, &NetworkRequest::finishedData, this, restartOnce);
+    connect(&req, &NetworkRequest::finished, this, restartOnce);
     QVERIFY(req.start());
     QTRY_VERIFY_WITH_TIMEOUT(finishedCalls >= 2, 8000);
     QVERIFY(restarted);

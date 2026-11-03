@@ -2,6 +2,8 @@
 #include <QJsonDocument>
 #include <QUrlQuery>
 #include <QRegularExpression>
+#include <QImageReader>
+#include <QBuffer>
 #include <QTimer>
 #include <QDebug>
 #include "HardwareUtils.h"
@@ -25,7 +27,9 @@ static const QStringList &credentialKeys()
                                       QStringLiteral("p"),
                                       QStringLiteral("admin_pass"),
                                       QStringLiteral("admin_session"),
-                                      QStringLiteral("new_pass") };
+                                      QStringLiteral("new_pass"),
+                                      JsonKeys::OldPw,
+                                      JsonKeys::NewPw };
     return keys;
 }
 
@@ -272,16 +276,11 @@ void CalaosConnection::answerTlsTrust(bool accept)
     startConnection(username, password, lasthost, ReconnectPolicy::UserRequest);
 }
 
-QString CalaosConnection::redactUrl(const QUrl &url)
+//Masks the credential pairs of a query string. changed tells whether any was found.
+static QUrlQuery maskQuery(const QUrlQuery &query, bool &changed)
 {
-    if (!url.hasQuery())
-        return url.toString();
-
-    const QList<QPair<QString, QString>> items = QUrlQuery(url).queryItems(QUrl::FullyEncoded);
     QUrlQuery redacted;
-    bool changed = false;
-
-    for (const auto &item: items)
+    for (const auto &item: query.queryItems(QUrl::FullyEncoded))
     {
         if (credentialKeys().contains(item.first))
         {
@@ -293,13 +292,27 @@ QString CalaosConnection::redactUrl(const QUrl &url)
             redacted.addQueryItem(item.first, item.second);
         }
     }
+    return redacted;
+}
 
-    if (!changed)
-        return url.toString();
-
+QString CalaosConnection::redactUrl(const QUrl &url)
+{
+    //A server-supplied suffix can push "&u=..&p=.." into the fragment.
+    bool changed = false;
     QUrl u(url);
-    u.setQuery(redacted);
-    return u.toString();
+    if (url.hasQuery())
+        u.setQuery(maskQuery(QUrlQuery(url), changed));
+    if (url.hasFragment())
+    {
+        bool fragChanged = false;
+        const QUrlQuery frag = maskQuery(QUrlQuery(url.fragment(QUrl::FullyEncoded)), fragChanged);
+        if (fragChanged)
+        {
+            u.setFragment(frag.toString(QUrl::FullyEncoded), QUrl::StrictMode);
+            changed = true;
+        }
+    }
+    return changed ? u.toString() : url.toString();
 }
 
 static QJsonValue redactValue(const QJsonValue &v)
@@ -338,20 +351,33 @@ QString CalaosConnection::redactError(QString err, const QUrl &url)
 {
     //Qt copies the request url, credentials included, into its error texts.
     const QString safe = redactUrl(url);
+    bool found = false;
     for (const QString &raw: { url.toString(), url.toString(QUrl::FullyEncoded) })
     {
-        if (!raw.isEmpty())
-            err.replace(raw, safe);
-    }
-    //Whatever form the url took in the text, the values must not survive.
-    const QUrlQuery query(url);
-    for (const QString &key: credentialKeys())
-    {
-        for (auto fmt: { QUrl::FullyEncoded, QUrl::PrettyDecoded, QUrl::FullyDecoded })
+        if (!raw.isEmpty() && err.contains(raw))
         {
-            const QString value = query.queryItemValue(key, fmt);
-            if (!value.isEmpty())
-                err.replace(value, QStringLiteral("***"));
+            err.replace(raw, safe);
+            found = true;
+        }
+    }
+    if (found)
+        return err;
+
+    //The url took another form in the text: mask "key=value" pairs only, a
+    //short value (p=1) would otherwise eat pieces of the host or the path.
+    QList<QUrlQuery> queries = { QUrlQuery(url), QUrlQuery(url.fragment(QUrl::FullyEncoded)) };
+    for (const QUrlQuery &query: queries)
+    {
+        for (const QString &key: credentialKeys())
+        {
+            for (auto fmt: { QUrl::FullyEncoded, QUrl::PrettyDecoded, QUrl::FullyDecoded })
+            {
+                for (const QString &value: query.allQueryItemValues(key, fmt))
+                {
+                    if (!value.isEmpty())
+                        err.replace(key + QLatin1Char('=') + value, key + QStringLiteral("=***"));
+                }
+            }
         }
     }
     return err;
@@ -1046,7 +1072,9 @@ void CalaosConnection::requestCamFinished(QNetworkReply *reqReply, const QString
 
     if (reqReply->error() != QNetworkReply::NoError)
     {
-        qDebug() << "Error in " << redactUrl(reqReply->url()) << ":" << redactError(reqReply->errorString(), reqReply->url());
+        qDebug() << "Error in " << redactUrl(reqReply->url()) << ":"
+                 << reqReply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt()
+                 << redactError(reqReply->errorString(), reqReply->url());
         //The server refuses a token it revoked or never knew with a 400.
         if (reqReply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 400)
             cameraToken.rejected(reqReply->property("usedCameraToken").toString());
@@ -1054,9 +1082,12 @@ void CalaosConnection::requestCamFinished(QNetworkReply *reqReply, const QString
         return;
     }
 
-    cameraToken.accepted(reqReply->property("usedCameraToken").toString());
-
     QByteArray bytes = reqReply->readAll();
+
+    //A 200 with a body that is not an image proves nothing about the token.
+    QBuffer buf(&bytes);
+    if (QImageReader(&buf).canRead())
+        cameraToken.accepted(reqReply->property("usedCameraToken").toString());
 
     //we have a new picture
     emit cameraPictureDownloaded(camid, bytes);
@@ -1081,8 +1112,6 @@ void CalaosConnection::requestAudioCoverFinished(QNetworkReply *reqReply, const 
         qDebug() << "Error in " << redactUrl(reqReply->url()) << ":" << redactError(reqReply->errorString(), reqReply->url());
         return;
     }
-
-    cameraToken.accepted(reqReply->property("usedCameraToken").toString());
 
     QByteArray bytes = reqReply->readAll();
 
@@ -1443,8 +1472,9 @@ void CalaosConnection::sendCameraPicture(const QString &camid, const QString &ur
         jroot[JsonKeys::Action] = QStringLiteral("get_camera_pic");
         //Concatenation, not arg(): an encoded "%20" would be taken for a placeholder.
         auto enc = [](const QString &v) { return QString::fromLatin1(QUrl::toPercentEncoding(v)); };
+        //A fragment would swallow the credentials and is never sent anyway.
         u = httphost.left(httphost.length() - 8) // "/api.php" is 8
-            + urlSuffix
+            + urlSuffix.section(QLatin1Char('#'), 0, 0)
             + QStringLiteral("&u=") + enc(username)
             + QStringLiteral("&p=") + enc(password);
     }
@@ -1802,7 +1832,13 @@ void CalaosConnection::processEventsV2(QString msg)
     if (msg == "") return;
 
 #ifdef QT_DEBUG
-    qDebug().noquote() << "Received: " << msg;
+    {
+        const QJsonDocument doc = QJsonDocument::fromJson(msg.toUtf8());
+        if (doc.isNull())
+            qDebug() << "Received" << msg.size() << "chars, not JSON";
+        else
+            qDebug().noquote() << "Received: " << redactJson(doc);
+    }
 #endif
 
     dispatchEvents(CalaosEventDecoder::decodeEventV2(msg));
@@ -1947,11 +1983,38 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
     }
 }
 
-QString CalaosConnection::getNotifPictureUrl(const QString &pic_uid)
+void CalaosConnection::getEventPicture(const QString &picUid)
 {
-    //Concatenation, not arg(): an encoded "%20" would be taken for a placeholder.
-    auto enc = [](const QString &v) { return QString::fromLatin1(QUrl::toPercentEncoding(v)); };
-    return httphost + QStringLiteral("?cn_user=") + enc(username)
-            + QStringLiteral("&cn_pass=") + enc(password)
-            + QStringLiteral("&action=event_picture&pic_uid=") + enc(pic_uid);
+    //The credentials go in the body: an url handed to QML is logged by Qt Quick
+    //when its image fails to load.
+    QJsonObject jroot;
+    jroot[JsonKeys::Action] = QStringLiteral("event_picture");
+    jroot[JsonKeys::CnUser] = username;
+    jroot[JsonKeys::CnPass] = password;
+    jroot[JsonKeys::PicUid] = picUid;
+
+    QNetworkRequest request{QUrl(httphost)};
+    request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    QNetworkReply *reply = accessManagerCam->post(request, QJsonDocument(jroot).toJson());
+
+    connect(reply, &QNetworkReply::finished, this, [=]() { requestEventPictureFinished(reply, picUid); });
+    reqReplies.append(reply);
+}
+
+void CalaosConnection::requestEventPictureFinished(QNetworkReply *reply, const QString &picUid)
+{
+    reply->deleteLater();
+    reqReplies.removeAll(reply);
+
+    if (reply->error() != QNetworkReply::NoError)
+    {
+        qDebug() << "Error in" << redactUrl(reply->url()) << ":"
+                 << reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt()
+                 << redactError(reply->errorString(), reply->url());
+        emit eventPictureFailed(picUid);
+        return;
+    }
+
+    emit eventPictureDownloaded(picUid, reply->readAll());
 }

@@ -15,6 +15,9 @@
 
 #include <QtTest>
 #include <QApplication>
+#include <QBuffer>
+#include <QImage>
+#include <QLoggingCategory>
 #include <QHostAddress>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -125,6 +128,8 @@ public:
     bool refuseAll = false;
     //Status of the v1 picture (get_camera_pic) answers.
     int v1Status = 200;
+    //Status of the event_picture answers.
+    int eventPicStatus = 200;
     //Pictures of this camera are held until releaseHeld(), and judged then:
     //a late refusal without any clock involved.
     QString holdCam;
@@ -213,6 +218,10 @@ private:
                 r.status = 401;
             }
         }
+        else if (action == QLatin1String("event_picture"))
+        {
+            r.status = eventPicStatus;
+        }
         else
         {
             r.status = 400;
@@ -234,7 +243,16 @@ private:
 
     static void writeAnswer(QTcpSocket *sock, int status)
     {
-        const QByteArray body = status != 200 ? QByteArray("refused") : QByteArray("JPEG");
+        QByteArray body("refused");
+        if (status == 200)
+        {
+            //a real (1x1) image: only a decodable body counts as an accepted picture
+            QImage img(1, 1, QImage::Format_RGB32);
+            img.fill(Qt::red);
+            QBuffer buf(&body);
+            buf.open(QIODevice::WriteOnly);
+            img.save(&buf, "PNG");
+        }
         QByteArray out = "HTTP/1.1 " + QByteArray::number(status) + " X\r\nContent-Type: image/jpeg";
         out += "\r\nContent-Length: " + QByteArray::number(body.size());
         out += "\r\nConnection: close\r\n\r\n" + body;
@@ -331,9 +349,12 @@ private slots:
     void acceptedPictureResetsBackoff();
     void lateRefusalKeepsRenewedToken();
     void v1ErrorNeverLogsCredentials();
+    void eventPictureNeverLogsCredentials();
+    void eventPictureIsFetchedWithBodyCredentials();
+    void redactionKeepsDiagnosticAndCoversEdgeCases();
+    void v1SuffixFragmentDoesNotHideCredentials();
     void redactErrorAndJson();
     void v1UrlIsAssembledWithoutArg();
-    void notifPictureUrlKeepsCnPass();
 
 private:
     void login();
@@ -377,10 +398,12 @@ void TstCameraToken::login()
 
 bool TstCameraToken::picture(const QString &camid)
 {
-    const int before = downloaded->count() + failed->count();
+    const int before = downloaded->count();
+    const int failedBefore = failed->count();
     connection->getCameraPicture(camid);
-    return QTest::qWaitFor([&]() { return downloaded->count() + failed->count() > before; }, 3000)
-           && downloaded->count() + failed->count() == before + 1
+    return QTest::qWaitFor([&]() { return downloaded->count() + failed->count() > before + failedBefore; }, 3000)
+           && failed->count() == failedBefore
+           && downloaded->count() == before + 1
            && downloaded->last().value(0).toString() == camid;
 }
 
@@ -657,6 +680,7 @@ void TstCameraToken::lateRefusalKeepsRenewedToken()
 
 void TstCameraToken::v1ErrorNeverLogsCredentials()
 {
+    QLoggingCategory::setFilterRules(QStringLiteral("*.debug=true"));
     //QNetworkReply::errorString() copies the url, u= and p= included
     server->v1Status = 400;
     login();
@@ -677,13 +701,92 @@ void TstCameraToken::v1ErrorNeverLogsCredentials()
     QVERIFY2(log.contains(QLatin1String("Error in")), qPrintable(log));
     //still useful: path, and what happened
     QVERIFY2(log.contains(QLatin1String("/cam/image?id=7")), qPrintable(log));
-    QVERIFY2(log.contains(QLatin1String("400")) || log.contains(QLatin1String("Bad Request"))
-             || log.contains(QLatin1String("replied")), qPrintable(log));
+    QVERIFY2(log.contains(QLatin1String(": 400 ")), qPrintable(log));
     QVERIFY2(log.contains(QLatin1String("p=***")), qPrintable(log));
     for (const QString &secret: { TestPass, QString::fromLatin1(QUrl::toPercentEncoding(TestPass)),
                                   QString::fromLatin1(QUrl::toPercentEncoding(TestUser)), TestUser,
                                   QStringLiteral("x%231"), QStringLiteral("%252F") })
         QVERIFY2(!log.contains(secret), qPrintable(secret + QLatin1String(" in: ") + log));
+}
+
+void TstCameraToken::eventPictureNeverLogsCredentials()
+{
+    QLoggingCategory::setFilterRules(QStringLiteral("*.debug=true"));
+    //The picture of a push event used to be an url with cn_user and cn_pass
+    //handed to a QML Image, which Qt Quick logs when the load fails. The url
+    //QML sees now carries nothing: this is the failing load.
+    server->eventPicStatus = 404;
+    login();
+    QSignalSpy bad(connection, &CalaosConnection::eventPictureFailed);
+
+    QStringList lines;
+    static QStringList *sink;
+    sink = &lines;
+    const QtMessageHandler previous = qInstallMessageHandler([](QtMsgType, const QMessageLogContext &, const QString &m) {
+        sink->append(m);
+    });
+    connection->getEventPicture(QStringLiteral("pic1"));
+    const bool done = QTest::qWaitFor([&]() { return bad.count() == 1; }, 3000);
+    qInstallMessageHandler(previous);
+    QVERIFY(done);
+
+    const QString log = lines.join(QLatin1Char('\n'));
+    QVERIFY2(log.contains(QLatin1String("Error in")) && log.contains(QLatin1String("404")), qPrintable(log));
+    for (const QString &secret: { TestPass, QString::fromLatin1(QUrl::toPercentEncoding(TestPass)),
+                                  TestUser, QString::fromLatin1(QUrl::toPercentEncoding(TestUser)) })
+        QVERIFY2(!log.contains(secret), qPrintable(secret + QLatin1String(" in: ") + log));
+}
+
+void TstCameraToken::eventPictureIsFetchedWithBodyCredentials()
+{
+    login();
+    QSignalSpy ok(connection, &CalaosConnection::eventPictureDownloaded);
+    connection->getEventPicture(QStringLiteral("pic1"));
+    QTRY_COMPARE(ok.count(), 1);
+    QCOMPARE(ok.first().value(0).toString(), QStringLiteral("pic1"));
+    QVERIFY(!QImage::fromData(ok.first().value(1).toByteArray()).isNull());
+
+    const HttpRequest &r = server->requests.last();
+    QCOMPARE(r.json.value(QStringLiteral("action")).toString(), QStringLiteral("event_picture"));
+    QCOMPARE(r.json.value(QStringLiteral("pic_uid")).toString(), QStringLiteral("pic1"));
+    QCOMPARE(r.json.value(QStringLiteral("cn_pass")).toString(), TestPass);
+    QVERIFY2(!r.target.contains("cn_p") && !r.target.contains("cn_u") && !r.target.contains('?'), r.target.constData());
+}
+
+void TstCameraToken::redactionKeepsDiagnosticAndCoversEdgeCases()
+{
+    //change_cred keys
+    const QByteArray j = CalaosConnection::redactJson(QJsonDocument::fromJson(
+        R"({"old_pw":"oldsecret","new_pw":"newsecret","kept":"v"})").object());
+    QVERIFY2(!j.contains("oldsecret") && !j.contains("newsecret") && j.contains("kept"), j.constData());
+
+    //a short value must not eat the host, the port or the path
+    const QUrl url(QStringLiteral("http://127.0.0.1:8000/cam/image?id=1&u=cam&p=1"));
+    const QString out = CalaosConnection::redactError(
+        QStringLiteral("Error transferring %1 - server replied: Bad Request").arg(url.toString()), url);
+    QVERIFY2(out.contains(QLatin1String("127.0.0.1:8000/cam/image?id=1")), qPrintable(out));
+    QVERIFY2(out.contains(QLatin1String("p=***")) && !out.contains(QLatin1String("p=1")), qPrintable(out));
+    //url absent from the text in that form: only key=value pairs go
+    const QString out2 = CalaosConnection::redactError(
+        QStringLiteral("failed at 127.0.0.1 with p=1&u=cam"), url);
+    QVERIFY2(out2.contains(QLatin1String("127.0.0.1")) && !out2.contains(QLatin1String("p=1")), qPrintable(out2));
+
+    //credentials pushed into a fragment
+    const QUrl frag(QStringLiteral("http://h:1/cam?id=7#x&u=bob&p=s3cret"));
+    const QString fo = CalaosConnection::redactError(
+        QStringLiteral("Error in %1").arg(frag.toString()), frag);
+    QVERIFY2(!fo.contains(QLatin1String("s3cret")) && !fo.contains(QLatin1String("bob")), qPrintable(fo));
+}
+
+void TstCameraToken::v1SuffixFragmentDoesNotHideCredentials()
+{
+    server->v1Status = 400;
+    login();
+    connection->getCameraPicture(QStringLiteral("cam7"), QStringLiteral("/cam/image?id=7#frag"));
+    QTRY_COMPARE(failed->count(), 1);
+    //the credentials went into the query, where the server (and the filter) read them
+    QVERIFY2(server->requests.last().target.contains("&u="), server->requests.last().target.constData());
+    QVERIFY2(!server->requests.last().target.contains('#'), server->requests.last().target.constData());
 }
 
 void TstCameraToken::redactErrorAndJson()
@@ -722,20 +825,6 @@ void TstCameraToken::v1UrlIsAssembledWithoutArg()
     QCOMPARE(q.value(QStringLiteral("u")), TestUser);
     QCOMPARE(q.value(QStringLiteral("p")), TestPass);
     QCOMPARE(q.size(), 3);
-}
-
-void TstCameraToken::notifPictureUrlKeepsCnPass()
-{
-    //notification images are out of the token's reach: cn_pass, encoded as UTF-8
-    login();
-    const QUrl url(connection->getNotifPictureUrl(QStringLiteral("pic&1")));
-    QVERIFY(url.isValid());
-    const QMap<QString, QString> q = queryOf(url.toEncoded());
-    QCOMPARE(q.value(QStringLiteral("cn_user")), TestUser);
-    QCOMPARE(q.value(QStringLiteral("cn_pass")), TestPass);
-    QCOMPARE(q.value(QStringLiteral("pic_uid")), QStringLiteral("pic&1"));
-    QCOMPARE(q.size(), 4);
-    QVERIFY(!url.toEncoded().contains("camera_token"));
 }
 
 QTEST_MAIN(TstCameraToken)

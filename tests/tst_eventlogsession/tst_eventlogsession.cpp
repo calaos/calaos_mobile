@@ -1236,8 +1236,9 @@ void TstEventLogSession::sameEventComparesWhatTheRowShows()
         e.update_evTime("12:00:00");
         e.update_evHasPicture(false);
     };
-    EventLogItem a(nullptr, con);
-    EventLogItem b(nullptr, con);
+    ImageCachePtr cache(new ImageCache);
+    EventLogItem a(nullptr, con, cache);
+    EventLogItem b(nullptr, con, cache);
     fill(a);
     fill(b);
     change(b);

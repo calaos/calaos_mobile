@@ -8,6 +8,7 @@
 #include <QQmlApplicationEngine>
 #include "CalaosConnection.h"
 #include "Common.h"
+#include "ModelImageProvider.h"
 
 namespace EventLogIO
 {
@@ -120,6 +121,9 @@ private:
 
     QQmlApplicationEngine *engine;
     CalaosConnection *connection;
+    //Pictures of the push events, served to QML as image://eventpic/<key>
+    //so that no credential ever shows in an url Qt Quick may log.
+    ImageCachePtr imageCache;
 
     bool loadFailed = false;
     bool shownLoading = false;
@@ -163,8 +167,8 @@ class EventLogItem: public QObject, public QStandardItem
     QML_READONLY_PROPERTY(bool, loading)
 
 public:
-    EventLogItem(QQmlApplicationEngine *engine, CalaosConnection *con);
-    virtual ~EventLogItem() {}
+    EventLogItem(QQmlApplicationEngine *engine, CalaosConnection *con, const ImageCachePtr &cache);
+    virtual ~EventLogItem();
 
     void load(const QVariantMap &data);
     //Whether the two read the same in the list, whatever their time. A
@@ -180,9 +184,13 @@ private slots:
 
 private:
     void endRequest();
+    void fetchPicture(const QString &picUid);
 
     QQmlApplicationEngine *engine;
     CalaosConnection *connection;
+    ImageCachePtr imageCache;
+    //Cache key of this item's picture, never derived from the server's pic_uid.
+    QString pictureKey;
     QString requestId;
     //Only created for the items that load an event themselves, not for the
     //rows of the model.

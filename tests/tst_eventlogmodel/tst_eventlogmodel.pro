@@ -1,5 +1,6 @@
 TEMPLATE = app
 TARGET = tst_eventlogmodel
+QT += quick
 
 include(../common.pri)
 

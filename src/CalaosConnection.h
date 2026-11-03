@@ -509,7 +509,9 @@ public:
     //Requests sent and not finished yet (tests).
     int pendingEventLogRequests() const { return pendingEventLog.size(); }
 
-    QString getNotifPictureUrl(const QString &pic_uid);
+    //Asks for the picture of a push event; the answer comes by
+    //eventPictureDownloaded / eventPictureFailed.
+    void getEventPicture(const QString &picUid);
 
     void changeCredentials(QString user, QString pass);
 
@@ -800,6 +802,8 @@ signals:
     void eventScenarioChange();
     void cameraPictureDownloaded(const QString &camid, const QByteArray &data);
     void cameraPictureFailed(const QString &camid);
+    void eventPictureDownloaded(const QString &picUid, const QByteArray &data);
+    void eventPictureFailed(const QString &picUid);
     //Bytes of this camera's picture are arriving
     void cameraPictureProgress(const QString &camid);
     void eventTouchscreenCamera(QString camid);
@@ -868,6 +872,7 @@ private slots:
     void requestCamFinished(QNetworkReply *reqReply, const QString &camid);
     void requestError(QNetworkReply::NetworkError code);
     void requestAudioCoverFinished(QNetworkReply *reqReply, const QString &camid);
+    void requestEventPictureFinished(QNetworkReply *reply, const QString &picUid);
 
     void startJsonPolling();
 

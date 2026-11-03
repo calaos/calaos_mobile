@@ -2,6 +2,8 @@
 #include "RoomModel.h"
 #include "IOTypeRegistry.h"
 #include "JsonKeys.h"
+#include <QRandomGenerator>
+#include <QImage>
 
 
 EventLogModel::EventLogModel(QQmlApplicationEngine *eng, CalaosConnection *con, QObject *parent):
@@ -22,6 +24,10 @@ EventLogModel::EventLogModel(QQmlApplicationEngine *eng, CalaosConnection *con, 
     roles[RoleActionText] = "evActionText";
     roles[RoleCount] = "evCount";
     setItemRoleNames(roles);
+
+    imageCache = ImageCachePtr::create();
+    if (engine)
+        engine->addImageProvider(QLatin1String("eventpic"), new ModelImageProvider(imageCache));
 
     connect(connection, &CalaosConnection::eventLogPageFinished,
             this, &EventLogModel::pageFinished);
@@ -173,7 +179,7 @@ void EventLogModel::appendEvents(const QVariantList &events)
             shownIds.insert(id);
         }
 
-        EventLogItem *it = new EventLogItem(engine, connection);
+        EventLogItem *it = new EventLogItem(engine, connection, imageCache);
         it->load(e);
 
         //Pages come newest first: the row keeps the time of the latest one.
@@ -213,18 +219,48 @@ void EventLogModel::requestTimedOut()
 
 QObject *EventLogModel::loadEvent(QString uuid)
 {
-    EventLogItem *it = new EventLogItem(engine, connection);
+    EventLogItem *it = new EventLogItem(engine, connection, imageCache);
     it->load(uuid, requestTimeoutMs);
     return it;
 }
 
-EventLogItem::EventLogItem(QQmlApplicationEngine *eng, CalaosConnection *con):
+EventLogItem::EventLogItem(QQmlApplicationEngine *eng, CalaosConnection *con, const ImageCachePtr &cache):
     QObject(nullptr),
     engine(eng),
-    connection(con)
+    connection(con),
+    imageCache(cache)
 {
     update_loading(false);
     update_evCount(1);
+}
+
+EventLogItem::~EventLogItem()
+{
+    if (imageCache && !pictureKey.isEmpty())
+        imageCache->removeImage(pictureKey);
+}
+
+void EventLogItem::fetchPicture(const QString &picUid)
+{
+    static quint64 seq = 0;
+    if (pictureKey.isEmpty())
+        pictureKey = QString::number(++seq);
+
+    //The url only appears once the bytes are in the cache.
+    connect(connection, &CalaosConnection::eventPictureDownloaded, this,
+            [this, picUid](const QString &uid, const QByteArray &bytes)
+    {
+        if (uid != picUid)
+            return;
+        const QImage img = QImage::fromData(bytes);
+        if (img.isNull())
+            return;
+        imageCache->setImage(pictureKey, img);
+        update_evPictureUrl(QStringLiteral("image://eventpic/%1/%2")
+                            .arg(pictureKey)
+                            .arg(QRandomGenerator::global()->generate()));
+    });
+    connection->getEventPicture(picUid);
 }
 
 bool EventLogItem::isSameEvent(const EventLogItem &other) const
@@ -270,8 +306,9 @@ void EventLogItem::load(const QVariantMap &data)
         }
         else
         {
-            update_evPictureUrl(connection->getNotifPictureUrl(e[JsonKeys::PicUid].toString()));
+            update_evPictureUrl(QString());
             update_evHasPicture(true);
+            fetchPicture(e[JsonKeys::PicUid].toString());
         }
     }
     else

@@ -53,6 +53,9 @@ public:
     void setPostData(const QByteArray &data) { postData = data; }
     const QByteArray &getPostData() const { return postData; }
 
+    //Not owned, and may be destroyed before the request: the transfer then fails.
+    //On a failure the file is closed and emptied; if it cannot be emptied
+    //(disk full) a regular file is removed, so a partial body is never left.
     void setFile(QFile *f) { dlFile = f; }
     QFile *getFile() const { return dlFile; }
     //Bound on the body, counted as the reader consumes it. By default the one
@@ -96,7 +99,7 @@ private:
 
     QMap<QString, QString> headers;
 
-    QFile *dlFile = nullptr;
+    QPointer<QFile> dlFile;
     qint64 maxBytes = 0;
     //Fixed at start(), for every result type.
     qint64 bound = 0;

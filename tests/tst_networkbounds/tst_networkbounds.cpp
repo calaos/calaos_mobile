@@ -20,7 +20,7 @@
 
 namespace {
 
-enum Mode { Announced, NoLength, OverLimit, Chunked, Deflate, DeflateModerate, Burst, Small };
+enum Mode { Announced, NoLength, OverLimit, Chunked, Deflate, DeflateModerate, Burst, Small, Exact };
 
 //Deflate stream (no size prefix) of about `inflated` bytes, ratio ~30: under
 //the ratio 40 above which Qt refuses an archive bomb before any readyRead.
@@ -137,6 +137,10 @@ protected:
                 sock->write(head + "Content-Length: 5\r\n\r\nhello");
                 sock->disconnectFromHost();
                 break;
+            case Exact:
+                sock->write(head + "Content-Length: " + QByteArray::number(limit) + "\r\n\r\n" + QByteArray(limit, 'x'));
+                sock->disconnectFromHost();
+                break;
             case DeflateModerate:
             {
                 const QByteArray body = moderateDeflate(limit + 1024);
@@ -149,6 +153,17 @@ protected:
         });
         connect(sock, &QTcpSocket::disconnected, sock, &QObject::deleteLater);
     }
+};
+
+//A file that refuses every write and cannot be emptied, as on a full disk.
+class FullDiskFile: public QFile
+{
+public:
+    using QFile::QFile;
+    bool resize(qint64) override { return false; }
+
+protected:
+    qint64 writeData(const char *, qint64) override { return -1; }
 };
 
 QStringList *sink = nullptr;
@@ -196,6 +211,10 @@ private slots:
     void missingFileFailsOnceWithItsMessage();
     void retryAfterFailureDoesNotAppend();
     void fileThatCannotBeWrittenFailsTheRequest();
+    void partialFileIsRemovedWhenItCannotBeEmptied();
+    void boundStartsOverAfterTheFileWasTruncated();
+    void fileDestroyedMidTransferFailsTheRequest();
+    void fileDestroyedBeforeTheRequestIsSafe();
     void webSocketFrameIsBounded();
     void webSocketFrameHeaderIsRefusedBeforeItsBody();
     void weatherRepliesAreFreed();
@@ -285,6 +304,10 @@ void TstNetworkBounds::fileRequestIsBounded()
     req.setMaxBytes(bound);
     QSignalSpy done(&req, &NetworkRequest::finished);
     QSignalSpy chunks(&req, &NetworkRequest::dataReadyRead);
+    //The failed file is truncated before finished: what was written is counted
+    //from what the reader was handed, after the write.
+    qint64 handedOver = 0;
+    connect(&req, &NetworkRequest::dataReadyRead, this, [&](const QByteArray &d) { handedOver += d.size(); });
     QVERIFY(req.start());
     QTRY_COMPARE_WITH_TIMEOUT(done.count(), 1, 8000);
 
@@ -296,7 +319,7 @@ void TstNetworkBounds::fileRequestIsBounded()
     QCOMPARE(file.size(), sizeAtFinish);
 
     QCOMPARE(done.first().value(0).toInt(), int(NetworkRequest::RequestHttpError));
-    QVERIFY2(file.size() <= bound, qPrintable(QString::number(file.size())));
+    QVERIFY2(handedOver <= bound, qPrintable(QString::number(handedOver)));
     //The partial file is not left open for a retry to append to.
     QVERIFY(!file.isOpen());
     QCOMPARE(file.size(), qint64(0));
@@ -347,8 +370,6 @@ void TstNetworkBounds::cumulativeBoundCountsWhatTheReaderTook()
     //Our own cut says why, not a bare "Operation canceled".
     QVERIFY2(req.getLastError().contains(QLatin1String("larger")), qPrintable(req.getLastError()));
     QVERIFY2(handedOver <= bound, qPrintable(QString::number(handedOver)));
-    if (type == NetworkRequest::TypeFile)
-        QVERIFY2(file.size() <= bound, qPrintable(QString::number(file.size())));
 }
 
 void TstNetworkBounds::fileThatCannotBeOpenedFailsTheRequest()
@@ -426,6 +447,106 @@ void TstNetworkBounds::fileThatCannotBeWrittenFailsTheRequest()
     QTRY_COMPARE_WITH_TIMEOUT(done.count(), 1, 8000);
     QCOMPARE(done.first().value(0).toInt(), int(NetworkRequest::RequestHttpError));
     QVERIFY2(req.getLastError().contains(QLatin1String("write")), qPrintable(req.getLastError()));
+}
+
+void TstNetworkBounds::partialFileIsRemovedWhenItCannotBeEmptied()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    FullDiskFile file(dir.filePath(QStringLiteral("download")));
+    server->mode = Small;
+    QNetworkAccessManager nam;
+    NetworkRequest req(base() + QStringLiteral("api"));
+    req.setNetManager(&nam);
+    req.setResultType(NetworkRequest::TypeFile);
+    req.setFile(&file);
+    QSignalSpy done(&req, &NetworkRequest::finished);
+    QVERIFY(req.start());
+    QTRY_COMPARE_WITH_TIMEOUT(done.count(), 1, 8000);
+    QCOMPARE(done.first().value(0).toInt(), int(NetworkRequest::RequestHttpError));
+    QVERIFY2(req.getLastError().contains(QLatin1String("write")), qPrintable(req.getLastError()));
+    QVERIFY(!file.isOpen());
+    QVERIFY(!QFileInfo::exists(file.fileName()));
+}
+
+void TstNetworkBounds::boundStartsOverAfterTheFileWasTruncated()
+{
+    //After a failed attempt the file is empty again: a retry may receive up to
+    //the bound, counted from zero.
+    const qint64 bound = 64 * 1024;
+    server->mode = Burst;
+    server->limit = bound;
+    QTemporaryFile file;
+    QVERIFY(file.open());
+    QNetworkAccessManager nam;
+    NetworkRequest req(base() + QStringLiteral("api"));
+    req.setNetManager(&nam);
+    req.setResultType(NetworkRequest::TypeFile);
+    req.setFile(&file);
+    req.setMaxBytes(bound);
+    QSignalSpy done(&req, &NetworkRequest::finished);
+    QVERIFY(req.start());
+    QTRY_COMPARE_WITH_TIMEOUT(done.count(), 1, 8000);
+    QCOMPARE(done.first().value(0).toInt(), int(NetworkRequest::RequestHttpError));
+
+    server->mode = Exact;
+    QVERIFY(req.start());
+    QTRY_COMPARE_WITH_TIMEOUT(done.count(), 2, 8000);
+    QCOMPARE(done.last().value(0).toInt(), int(NetworkRequest::RequestSuccess));
+    QCOMPARE(file.size(), bound);
+
+    //and the bound still holds on that second attempt
+    server->mode = Burst;
+    QVERIFY(req.start());
+    QTRY_COMPARE_WITH_TIMEOUT(done.count(), 3, 8000);
+    QCOMPARE(done.last().value(0).toInt(), int(NetworkRequest::RequestHttpError));
+    QCOMPARE(file.size(), qint64(0));
+}
+
+void TstNetworkBounds::fileDestroyedMidTransferFailsTheRequest()
+{
+    server->mode = NoLength;
+    server->limit = NetworkLimits::MaxFileBytes;
+    auto *file = new QTemporaryFile();
+    QVERIFY(file->open());
+    QNetworkAccessManager nam;
+    NetworkRequest req(base() + QStringLiteral("api"));
+    req.setNetManager(&nam);
+    req.setResultType(NetworkRequest::TypeFile);
+    req.setFile(file);
+    QSignalSpy done(&req, &NetworkRequest::finished);
+    bool destroyed = false;
+    connect(&req, &NetworkRequest::dataReadyRead, this, [&]()
+    {
+        if (!destroyed)
+            delete file;
+        destroyed = true;
+    });
+    QVERIFY(req.start());
+    QTRY_COMPARE_WITH_TIMEOUT(done.count(), 1, 8000);
+    QCOMPARE(done.first().value(0).toInt(), int(NetworkRequest::RequestHttpError));
+    QVERIFY(!req.getFile());
+    QVERIFY2(req.getLastError().contains(QLatin1String("file")), qPrintable(req.getLastError()));
+}
+
+void TstNetworkBounds::fileDestroyedBeforeTheRequestIsSafe()
+{
+    server->mode = NoLength;
+    server->limit = NetworkLimits::MaxFileBytes;
+    auto *file = new QTemporaryFile();
+    QVERIFY(file->open());
+    QNetworkAccessManager nam;
+    auto *req = new NetworkRequest(base() + QStringLiteral("api"));
+    req->setNetManager(&nam);
+    req->setResultType(NetworkRequest::TypeFile);
+    req->setFile(file);
+    QSignalSpy chunks(req, &NetworkRequest::dataReadyRead);
+    QVERIFY(req->start());
+    QTRY_VERIFY_WITH_TIMEOUT(chunks.count() > 0, 8000);
+    //the destructor aborts the transfer, which reaches the finished handler
+    delete file;
+    delete req;
+    QTest::qWait(100);
 }
 
 void TstNetworkBounds::webSocketFrameIsBounded()

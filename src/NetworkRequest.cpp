@@ -137,6 +137,8 @@ bool NetworkRequest::start()
     dataRead.clear();
     written = 0;
 
+    //No setReadBufferSize(bound + 1) here: tried, a chunked body without length
+    //then stalls until the transfer timeout. The sum is counted below instead.
     NetworkLimits::limitDownload(reply, bound);
 
     //The reader drains the reply at every readyRead, so the reply's own check
@@ -209,7 +211,9 @@ void NetworkRequest::nmReadyRead()
 
 bool NetworkRequest::storeChunk(const QByteArray &d)
 {
-    if (written + d.size() > bound)
+    if (!dlFile)
+        failure = QStringLiteral("The download file no longer exists");
+    else if (written + d.size() > bound)
         failure = QStringLiteral("Download larger than the allowed size");
     //QFile buffers: a full disk only shows at flush.
     else if (dlFile->write(d) != d.size() || !dlFile->flush())
@@ -233,8 +237,14 @@ bool NetworkRequest::writeChunk(const QByteArray &d)
 //A retry with the same QFile must not append to what a failed attempt left.
 void NetworkRequest::discardPartialFile()
 {
-    dlFile->resize(0);
+    if (!dlFile)
+        return;
+    //A full disk makes resize(0) fail too: the partial body would stay on disk.
+    const bool emptied = dlFile->resize(0);
+    const QString name = dlFile->fileName();
     dlFile->close();
+    if (!emptied && QFileInfo(name).isFile())
+        QFile::remove(name);
 }
 
 void NetworkRequest::nmFinished()
@@ -259,7 +269,9 @@ void NetworkRequest::nmFinished()
 
     int status = RequestSuccess;
     //Finished: abort() would be ignored, the error is reported here.
-    if (reply->bytesAvailable() > 0 && !storeChunk(reply->readAll()))
+    if (!dlFile)
+        failure = QStringLiteral("The download file no longer exists");
+    if (!dlFile || (reply->bytesAvailable() > 0 && !storeChunk(reply->readAll())))
     {
         lastError = failure;
         status = RequestHttpError;

@@ -54,8 +54,10 @@ public:
     const QByteArray &getPostData() const { return postData; }
 
     //Not owned, and may be destroyed before the request: the transfer then fails.
-    //On a failure the file is closed and emptied; if it cannot be emptied
-    //(disk full) a regular file is removed, so a partial body is never left.
+    //On a failure the file is closed and emptied. If it cannot be emptied (disk
+    //full) and start() opened it, the path is removed (a symlink itself, not its
+    //target); a failed removal is only logged. A file the caller opened is never
+    //removed, nor one destroyed during the transfer.
     void setFile(QFile *f) { dlFile = f; }
     QFile *getFile() const { return dlFile; }
     //Bound on the body, counted as the reader consumes it. By default the one
@@ -100,6 +102,7 @@ private:
     QMap<QString, QString> headers;
 
     QPointer<QFile> dlFile;
+    bool ownsOpen = false;
     qint64 maxBytes = 0;
     //Fixed at start(), for every result type.
     qint64 bound = 0;

@@ -212,6 +212,8 @@ private slots:
     void retryAfterFailureDoesNotAppend();
     void fileThatCannotBeWrittenFailsTheRequest();
     void partialFileIsRemovedWhenItCannotBeEmptied();
+    void fileOpenedByTheCallerIsNotRemoved();
+    void slotMayRestartTheRequestAfterAnError();
     void boundStartsOverAfterTheFileWasTruncated();
     void fileDestroyedMidTransferFailsTheRequest();
     void fileDestroyedBeforeTheRequestIsSafe();
@@ -469,6 +471,53 @@ void TstNetworkBounds::partialFileIsRemovedWhenItCannotBeEmptied()
     QVERIFY(!QFileInfo::exists(file.fileName()));
 }
 
+void TstNetworkBounds::fileOpenedByTheCallerIsNotRemoved()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    FullDiskFile file(dir.filePath(QStringLiteral("download")));
+    QVERIFY(file.open(QFile::WriteOnly));
+    server->mode = Small;
+    QNetworkAccessManager nam;
+    NetworkRequest req(base() + QStringLiteral("api"));
+    req.setNetManager(&nam);
+    req.setResultType(NetworkRequest::TypeFile);
+    req.setFile(&file);
+    QSignalSpy done(&req, &NetworkRequest::finished);
+    QVERIFY(req.start());
+    QTRY_COMPARE_WITH_TIMEOUT(done.count(), 1, 8000);
+    QCOMPARE(done.first().value(0).toInt(), int(NetworkRequest::RequestHttpError));
+    QVERIFY(QFileInfo::exists(file.fileName()));
+}
+
+void TstNetworkBounds::slotMayRestartTheRequestAfterAnError()
+{
+    server->mode = Burst;
+    server->limit = 64 * 1024;
+    QTemporaryFile file;
+    QVERIFY(file.open());
+    QNetworkAccessManager nam;
+    NetworkRequest req(base() + QStringLiteral("api"));
+    req.setNetManager(&nam);
+    req.setResultType(NetworkRequest::TypeFile);
+    req.setFile(&file);
+    req.setMaxBytes(64 * 1024);
+    int calls = 0;
+    bool restarted = false;
+    connect(&req, &NetworkRequest::finished, this, [&]()
+    {
+        if (calls++ == 0)
+        {
+            server->mode = Small;
+            restarted = req.start();
+        }
+    });
+    QVERIFY(req.start());
+    QTRY_COMPARE_WITH_TIMEOUT(calls, 2, 8000);
+    QVERIFY(restarted);
+    QCOMPARE(file.size(), qint64(5));
+}
+
 void TstNetworkBounds::boundStartsOverAfterTheFileWasTruncated()
 {
     //After a failed attempt the file is empty again: a retry may receive up to
@@ -501,6 +550,8 @@ void TstNetworkBounds::boundStartsOverAfterTheFileWasTruncated()
     QTRY_COMPARE_WITH_TIMEOUT(done.count(), 3, 8000);
     QCOMPARE(done.last().value(0).toInt(), int(NetworkRequest::RequestHttpError));
     QCOMPARE(file.size(), qint64(0));
+    //Cut by the file sum, not by limitDownload.
+    QVERIFY2(req.getLastError().contains(QLatin1String("larger")), qPrintable(req.getLastError()));
 }
 
 void TstNetworkBounds::fileDestroyedMidTransferFailsTheRequest()
@@ -526,7 +577,7 @@ void TstNetworkBounds::fileDestroyedMidTransferFailsTheRequest()
     QTRY_COMPARE_WITH_TIMEOUT(done.count(), 1, 8000);
     QCOMPARE(done.first().value(0).toInt(), int(NetworkRequest::RequestHttpError));
     QVERIFY(!req.getFile());
-    QVERIFY2(req.getLastError().contains(QLatin1String("file")), qPrintable(req.getLastError()));
+    QVERIFY2(req.getLastError().contains(QLatin1String("no longer exists")), qPrintable(req.getLastError()));
 }
 
 void TstNetworkBounds::fileDestroyedBeforeTheRequestIsSafe()

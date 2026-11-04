@@ -62,6 +62,7 @@ QNetworkReply *WeatherModel::boundedGet(const QUrl &url)
     QNetworkReply *rep = accessManager->get(req);
     NetworkLimits::limitDownload(rep, NetworkLimits::MaxWeatherBytes);
     //The transfer timeout restarts on every byte: a server dripping data would hold the reply forever.
+    //The deadline is per request, so a cycle (weather + forecast) can last up to twice totalTimeoutMs.
     QTimer::singleShot(totalTimeoutMs, rep, [rep]() { rep->abort(); });
     inflight = rep;
     return rep;

@@ -247,6 +247,7 @@ private slots:
     void weatherSilentServerIsCutByTimeout();
     void weatherDrippingServerIsCutByDeadline();
     void weatherRefreshReplacesRequestInFlight();
+    void weatherRefreshAbandonsForecastInFlight();
 
 private:
     static void modes()
@@ -593,10 +594,10 @@ void TstNetworkBounds::staleReplyIsIgnoredAfterARestart()
     //finished and so the slot below before the reader's own readyRead slot.
     server->mode = NoLength;
     server->limit = NetworkLimits::MaxPictureBytes;
+    QTemporaryFile file;
     QNetworkAccessManager nam;
     NetworkRequest req(base() + QStringLiteral("api"));
     req.setNetManager(&nam);
-    QTemporaryFile file;
     if (toFile)
     {
         QVERIFY(file.open());
@@ -890,6 +891,28 @@ void TstNetworkBounds::weatherRefreshReplacesRequestInFlight()
     QTest::qWait(200);
     QCOMPARE(running(), 1);
     QVERIFY2(!log().contains(QLatin1String("Error in weather request")), qPrintable(log()));
+}
+
+void TstNetworkBounds::weatherRefreshAbandonsForecastInFlight()
+{
+    server->mode = Mute;
+
+    WeatherModel model;
+    model.setApiBase(base());
+    model.setTransferTimeout(1000);
+    model.refreshWeather();
+    //weather has timed out, the forecast request is now in flight
+    QTRY_COMPARE_WITH_TIMEOUT(log().count(QLatin1String("Error in weather request")), 1, 10000);
+
+    model.refreshWeather();
+    int running = 0;
+    for (QNetworkReply *r : model.findChildren<QNetworkReply *>())
+        if (r->isRunning())
+            ++running;
+    QCOMPARE(running, 1);
+    //the abandoned forecast must not report; the new weather request is still within its 1 s
+    QTest::qWait(150);
+    QCOMPARE(log().count(QLatin1String("Error in weather request")), 1);
 }
 
 QTEST_MAIN(TstNetworkBounds)

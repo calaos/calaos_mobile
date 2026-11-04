@@ -29,12 +29,41 @@ PageScaffold {
     Component.onCompleted: eventLogModel.refresh()
     Component.onDestruction: if (picture) picture.release()
 
+    //The kiosk keeps the page open across a reconnection, and nothing else
+    //reloads the log after reset().
+    Connections {
+        target: calaosApp
+        function onApplicationStatusChanged() {
+            if (calaosApp.applicationStatus === Common.LoggedIn)
+                eventLogModel.refresh()
+        }
+    }
+
+    //A page merged into the last rows leaves the list at its end: atYEnd does
+    //not change and nothing else would ask for the next one.
+    Connections {
+        target: eventLogModel
+        function onLoadingChanged() {
+            if (eventLogModel.loading || eventLogModel.error)
+                return
+            logList.forceLayout()
+            if (logList.atYEnd)
+                eventLogModel.loadMore()
+        }
+    }
+
     footerButtons: [
         FooterButton {
             label: qsTr("Back")
             icon: "qrc:/img/button_action_back.png"
             Layout.minimumWidth: width
-            onBtClicked: rootWindow.handleBack()
+            objectName: "eventBack"
+            onBtClicked: {
+                if (page.photoOpen)
+                    page.photoOpen = false
+                else
+                    rootWindow.handleBack()
+            }
         },
 
         FooterButton {
@@ -192,22 +221,18 @@ PageScaffold {
                 textFormat: Text.RichText
                 color: Theme.whiteColor
                 font { family: calaosFont.fontFamily; pixelSize: Units.dp(20) }
-                text: eventLogModel.loading ? qsTr("Loading…") :
+                text: eventLogModel.loading || calaosApp.applicationStatus !== Common.LoggedIn ? qsTr("Loading…") :
                       page.failed ? qsTr("Could not load the events.") :
                       qsTr("No events in log.<br>Calaos Server <b>v3.1</b> is required.")
             }
 
-            Text {
+            CalaosButton {
                 objectName: "eventLogRetry"
                 visible: page.failed
                 anchors.horizontalCenter: parent.horizontalCenter
-                color: Theme.blueColor
-                font { family: calaosFont.fontFamily; pixelSize: Units.dp(20); underline: true }
                 text: qsTr("Retry")
-                MouseArea {
-                    anchors { fill: parent; margins: -Units.dp(12) }
-                    onClicked: eventLogModel.refresh()
-                }
+                height: Units.dp(48)
+                onButtonClicked: eventLogModel.refresh()
             }
         }
 
@@ -302,15 +327,12 @@ PageScaffold {
                         font { family: calaosFont.fontFamily; pixelSize: Units.dp(16) }
                         text: qsTr("The picture could not be loaded.")
                     }
-                    Text {
+                    CalaosButton {
+                        objectName: "eventPictureRetry"
                         anchors.horizontalCenter: parent.horizontalCenter
-                        color: Theme.blueColor
-                        font { family: calaosFont.fontFamily; pixelSize: Units.dp(16); underline: true }
                         text: qsTr("Retry")
-                        MouseArea {
-                            anchors { fill: parent; margins: -Units.dp(12) }
-                            onClicked: page.picture.retry()
-                        }
+                        height: Units.dp(48)
+                        onButtonClicked: page.picture.retry()
                     }
                 }
 
@@ -325,14 +347,24 @@ PageScaffold {
     }
 
     //In the page: the desktop popups are not children of it and would not
-    //stack above the header and footer bands.
+    //stack above the header band. The footer stays uncovered so that Back is
+    //still there, and closes the photo first.
     Rectangle {
         id: photo
         objectName: "eventPhoto"
-        anchors.fill: parent
+        anchors { top: page.header.bottom; bottom: page.footer.top; left: parent.left; right: parent.right }
         z: 10
-        color: "#e6000000"
+        color: Theme.colorAlpha(Theme.backgroundColor, 0.97)
         visible: page.photoOpen
+
+        onVisibleChanged: if (visible) forceActiveFocus()
+
+        Keys.onReleased: (event) => {
+            if (event.key === Qt.Key_Escape || event.key === Qt.Key_Back) {
+                page.photoOpen = false
+                event.accepted = true
+            }
+        }
 
         Image {
             anchors { fill: parent; margins: Units.dp(20) }
@@ -341,16 +373,18 @@ PageScaffold {
         }
 
         MouseArea {
-            objectName: "eventPhotoClose"
+            objectName: "eventPhotoBackdrop"
             anchors.fill: parent
             onClicked: page.photoOpen = false
         }
 
-        Text {
+        CalaosButton {
+            objectName: "eventPhotoClose"
             anchors { top: parent.top; right: parent.right; margins: Units.dp(20) }
-            color: Theme.whiteColor
-            font { family: calaosFont.fontFamily; pixelSize: Units.dp(40) }
-            text: "✕"
+            width: Units.dp(120)
+            text: qsTr("Close")
+            height: Units.dp(48)
+            onButtonClicked: page.photoOpen = false
         }
     }
 }

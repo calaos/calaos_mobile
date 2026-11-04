@@ -21,8 +21,14 @@ TestCase {
     Item {
         id: rootWindow
         anchors.fill: parent
-        function handleBack() {}
+        property int backCalls: 0
+        function handleBack() { backCalls++ }
         function goToDesktop() {}
+    }
+
+    QtObject {
+        id: calaosApp
+        property int applicationStatus: Common.LoggedIn
     }
 
     //Picture of an event: the url is an image of the resources
@@ -80,6 +86,8 @@ TestCase {
         eventLogModel.loadMoreCalls = 0
         eventLogModel.refreshCalls = 0
         eventLogModel.pictures = []
+        calaosApp.applicationStatus = Common.LoggedIn
+        rootWindow.backCalls = 0
     }
 
     function cleanup() {
@@ -157,7 +165,6 @@ TestCase {
         mouseClick(area)
         compare(findChild(page, "eventPhoto").visible, true)
         wait(200)
-        shot("events-photo")
         mouseClick(findChild(page, "eventPhotoClose"))
         compare(findChild(page, "eventPhoto").visible, false)
 
@@ -207,6 +214,92 @@ TestCase {
         eventLogModel.loadMoreCalls = 0
         list.positionViewAtEnd()
         tryVerify(function() { return eventLogModel.loadMoreCalls > 0 })
+    }
+
+    function test_nextPageWhenTheListStillFits() {
+        fill()
+        var page = open()
+        var list = findChild(page, "eventLogList")
+        tryVerify(function() { return list.itemAtIndex(2) !== null })
+        verify(list.atYEnd)
+        eventLogModel.loadMoreCalls = 0
+
+        //A failed load leaves nothing to ask for
+        eventLogModel.error = true
+        eventLogModel.loading = true
+        eventLogModel.loading = false
+        wait(50)
+        compare(eventLogModel.loadMoreCalls, 0)
+
+        eventLogModel.error = false
+        eventLogModel.loading = true
+        eventLogModel.loading = false
+        tryVerify(function() { return eventLogModel.loadMoreCalls > 0 })
+    }
+
+    function test_reloadsAfterAReconnection() {
+        fill()
+        var page = open()
+        compare(eventLogModel.refreshCalls, 1)
+
+        //reset() on logout: no "No events" while the session is gone
+        calaosApp.applicationStatus = Common.NotConnected
+        eventLogModel.clear()
+        var msg = findChild(page, "eventLogMessage")
+        compare(msg.text, "Loading…")
+        compare(eventLogModel.refreshCalls, 1)
+
+        calaosApp.applicationStatus = Common.Loading
+        compare(eventLogModel.refreshCalls, 1)
+        calaosApp.applicationStatus = Common.LoggedIn
+        compare(eventLogModel.refreshCalls, 2)
+        verify(msg.text.indexOf("Calaos Server") >= 0)
+    }
+
+    function test_photoClosesFromTheButtonEscapeAndBack() {
+        fill()
+        var page = open()
+        clickRow(page, 2)
+        var area = findChild(page, "eventThumbArea")
+        tryVerify(function() { return area.enabled })
+        var photo = findChild(page, "eventPhoto")
+        var footer = findChild(page, "eventBack")
+
+        //The footer is not under the photo
+        wait(200)
+        mouseClick(area)
+        compare(photo.visible, true)
+        verify(photo.mapToItem(page, 0, photo.height).y <= footer.mapToItem(page, 0, 0).y)
+        wait(200)
+        shot("events-photo")
+
+        mouseClick(findChild(page, "eventPhotoClose"))
+        compare(photo.visible, false)
+
+        mouseClick(area)
+        compare(photo.visible, true)
+        keyClick(Qt.Key_Escape)
+        compare(photo.visible, false)
+
+        mouseClick(area)
+        keyClick(Qt.Key_Back)
+        compare(photo.visible, false)
+
+        //Back leaves the photo first, then the page
+        mouseClick(area)
+        mouseClick(footer)
+        compare(photo.visible, false)
+        compare(rootWindow.backCalls, 0)
+        mouseClick(footer)
+        compare(rootWindow.backCalls, 1)
+    }
+
+    function test_retryIsTheSharedButton() {
+        var page = open()
+        eventLogModel.error = true
+        var retry = findChild(page, "eventLogRetry")
+        verify(retry.height >= Units.dp(48))
+        verify(retry.hasOwnProperty("buttonClicked"))
     }
 
     function test_frenchCapture() {

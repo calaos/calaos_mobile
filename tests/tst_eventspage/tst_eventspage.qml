@@ -29,6 +29,7 @@ TestCase {
     QtObject {
         id: calaosApp
         property int applicationStatus: Common.LoggedIn
+        function getPictureSized(name) { return name === "" ? "" : "qrc:/img/" + name + ".png" }
     }
 
     //Picture of an event: the url is an image of the resources
@@ -95,10 +96,10 @@ TestCase {
     }
 
     function fill() {
-        eventLogModel.append(event("Lamp", 1))
-        eventLogModel.append(event("Door", 3))
+        eventLogModel.append(event("Lamp", 1, { evIconSource: "icon_light_on" }))
+        eventLogModel.append(event("Door", 3, { evIconSource: "icon_scenario" }))
         eventLogModel.append(event("Motion", 1, { evType: Common.EventPush, evNotifText: "Motion in the hall",
-                                                  evHasPicture: true, evPicUid: "pic1" }))
+                                                  evHasPicture: true, evPicUid: "pic1", evIconSource: "icon_notif" }))
     }
 
     function open() {
@@ -242,14 +243,15 @@ TestCase {
         var page = open()
         compare(eventLogModel.refreshCalls, 1)
 
-        //reset() on logout: no "No events" while the session is gone
+        //reset() on logout: no "No events" and no "Loading…" while the session is gone
         calaosApp.applicationStatus = Common.NotConnected
         eventLogModel.clear()
         var msg = findChild(page, "eventLogMessage")
-        compare(msg.text, "Loading…")
+        compare(msg.text, "Could not load the events.")
         compare(eventLogModel.refreshCalls, 1)
 
         calaosApp.applicationStatus = Common.Loading
+        compare(msg.text, "Loading…")
         compare(eventLogModel.refreshCalls, 1)
         calaosApp.applicationStatus = Common.LoggedIn
         compare(eventLogModel.refreshCalls, 2)
@@ -365,5 +367,99 @@ TestCase {
         wait(100)
         shot("events-list-fr")
         compare(page.title, "Historique des événements")
+    }
+
+    function test_rowShowsTheTypeIconBlueTitleAndYellowAction() {
+        fill()
+        var page = open()
+        var list = findChild(page, "eventLogList")
+        tryVerify(function() { return list.itemAtIndex(2) !== null })
+        var row = list.itemAtIndex(0)
+        var icon = findChild(row, "eventIcon")
+        compare(icon.visible, true)
+        compare(icon.source.toString(), "qrc:/img/icon_light_on.png")
+        compare(findChild(row, "eventTitle").color, Theme.blueColor)
+        compare(findChild(row, "eventAction").color, Theme.yellowColor)
+        compare(findChild(row, "eventAction").text, "On")
+
+        eventLogModel.setProperty(0, "evIconSource", "")
+        compare(icon.visible, false)
+
+        //A push has no action line, its text stays white
+        var push = list.itemAtIndex(2)
+        compare(findChild(push, "eventAction").parent.visible, false)
+        compare(findChild(push, "eventIcon").source.toString(), "qrc:/img/icon_notif.png")
+    }
+
+    function test_detailActionIsYellow() {
+        fill()
+        var page = open()
+        clickRow(page, 0)
+        var action = findChild(page, "eventDetailAction")
+        compare(action.visible, true)
+        compare(action.children[2].color, Theme.yellowColor)
+        compare(action.children[2].text, "On")
+        compare(action.children[0].color, Theme.whiteColor)
+        wait(100)
+        shot("events-detail-action")
+    }
+
+    function test_loadingOnlyWhenSomethingLoads() {
+        var page = open()
+        var msg = findChild(page, "eventLogMessage")
+
+        //Revoked credentials: reset() leaves NotConnected, nothing loads
+        calaosApp.applicationStatus = Common.NotConnected
+        compare(msg.text, "Could not load the events.")
+        compare(findChild(page, "eventLogHint").visible, true)
+        compare(findChild(page, "eventLogRetry").visible, true)
+
+        eventLogModel.loading = true
+        compare(msg.text, "Loading…")
+        compare(findChild(page, "eventLogHint").visible, false)
+        eventLogModel.error = true
+        eventLogModel.loading = false
+        compare(msg.text, "Could not load the events.")
+    }
+
+    function test_backspaceClosesThePhotoFirst() {
+        fill()
+        var page = open()
+        clickRow(page, 2)
+        var area = findChild(page, "eventThumbArea")
+        tryVerify(function() { return area.enabled })
+        wait(200)
+        mouseClick(area)
+        var photo = findChild(page, "eventPhoto")
+        compare(photo.visible, true)
+        keyClick(Qt.Key_Backspace)
+        compare(photo.visible, false)
+    }
+
+    function test_resetClearsTheSelectionAndThePhoto() {
+        fill()
+        var page = open()
+        clickRow(page, 2)
+        var area = findChild(page, "eventThumbArea")
+        tryVerify(function() { return area.enabled })
+        wait(200)
+        mouseClick(area)
+        compare(findChild(page, "eventPhoto").visible, true)
+
+        calaosApp.applicationStatus = Common.NotConnected
+        eventLogModel.clear()
+        compare(page.selected, null)
+        compare(page.photoOpen, false)
+        compare(findChild(page, "eventPhoto").visible, false)
+        compare(findChild(page, "eventThumb").visible, false)
+        compare(eventLogModel.pictures[0].released, 1)
+    }
+
+    //main.qml cannot be loaded in a test: its routing is read from the source
+    function test_mainRoutesTheEntryToThePage() {
+        var main = harness.resourceText("qml/desktop/main.qml")
+        verify(main.length > 0)
+        verify(/"config\/events"\)\s*\{\s*item = configEventsView\s*\}/.test(main))
+        verify(/id: configEventsView\s*ConfigEventsView\s*\{/.test(main))
     }
 }

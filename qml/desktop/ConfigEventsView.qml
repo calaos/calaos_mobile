@@ -11,7 +11,9 @@ PageScaffold {
     property QtObject picture: null
     property bool photoOpen: false
 
-    readonly property bool failed: eventLogModel.error && !eventLogModel.loading
+    //Without a session nothing can load: say so rather than "Loading…" forever.
+    readonly property bool waiting: eventLogModel.loading || calaosApp.applicationStatus === Common.Loading
+    readonly property bool failed: !waiting && (eventLogModel.error || calaosApp.applicationStatus !== Common.LoggedIn)
     //mutedColor on the list background is under 4.5:1, too faint for 14 px text.
     readonly property color softText: Theme.colorAlpha(Theme.whiteColor, 0.7)
     function rowKey(date, time, title, uid) { return date + "|" + time + "|" + title + "|" + uid }
@@ -39,6 +41,8 @@ PageScaffold {
         function onApplicationStatusChanged() {
             if (calaosApp.applicationStatus === Common.LoggedIn)
                 eventLogModel.refresh()
+            else if (calaosApp.applicationStatus === Common.NotConnected)
+                page.select(null)
         }
     }
 
@@ -150,20 +154,61 @@ PageScaffold {
                         leftMargin: Units.dp(8); rightMargin: Units.dp(8)
                         verticalCenter: parent.verticalCenter
                     }
-                    Text {
+                    RowLayout {
                         width: parent.width
-                        elide: Text.ElideRight
-                        color: Theme.whiteColor
-                        font { family: calaosFont.fontFamily; pixelSize: Units.dp(17) }
-                        text: evTitle
+                        spacing: Units.dp(8)
+
+                        IconItem {
+                            objectName: "eventIcon"
+                            fillMode: Image.PreserveAspectFit
+                            source: calaosApp.getPictureSized(evIconSource)
+                            visible: evIconSource != ""
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+                        Text {
+                            objectName: "eventTitle"
+                            Layout.fillWidth: true
+                            elide: Text.ElideRight
+                            color: Theme.blueColor
+                            font { family: calaosFont.fontFamily; pixelSize: Units.dp(17) }
+                            text: evTitle
+                        }
+                    }
+                    Row {
+                        width: parent.width
+                        visible: evType != Common.EventPush
+
+                        Text {
+                            id: roomLabel
+                            width: Math.min(implicitWidth, parent.width)
+                            elide: Text.ElideRight
+                            color: Theme.whiteColor
+                            font { family: calaosFont.fontFamilyLight; pixelSize: Units.dp(14) }
+                            text: evRoomName
+                        }
+                        Text {
+                            id: sepLabel
+                            color: Theme.whiteColor
+                            font { family: calaosFont.fontFamilyLight; pixelSize: Units.dp(14) }
+                            text: " · "
+                            visible: evRoomName != "" && evActionText != ""
+                        }
+                        Text {
+                            objectName: "eventAction"
+                            width: Math.min(implicitWidth, Math.max(0, parent.width - roomLabel.width - (sepLabel.visible ? sepLabel.width : 0)))
+                            elide: Text.ElideRight
+                            color: Theme.yellowColor
+                            font { family: calaosFont.fontFamilyLight; pixelSize: Units.dp(14) }
+                            text: evActionText
+                        }
                     }
                     Text {
                         width: parent.width
+                        visible: evType == Common.EventPush
                         elide: Text.ElideRight
-                        color: page.softText
+                        color: Theme.whiteColor
                         font { family: calaosFont.fontFamilyLight; pixelSize: Units.dp(14) }
-                        text: evType == Common.EventPush ? evNotifText :
-                              evRoomName + (evRoomName != "" && evActionText != "" ? " · " : "") + evActionText
+                        text: evNotifText
                     }
                 }
 
@@ -232,7 +277,7 @@ PageScaffold {
                 textFormat: Text.RichText
                 color: Theme.whiteColor
                 font { family: calaosFont.fontFamily; pixelSize: Units.dp(20) }
-                text: eventLogModel.loading || calaosApp.applicationStatus !== Common.LoggedIn ? qsTr("Loading…") :
+                text: page.waiting ? qsTr("Loading…") :
                       page.failed ? qsTr("Could not load the events.") :
                       qsTr("No events in log.<br>Calaos Server <b>v3.1</b> is required.")
             }
@@ -307,12 +352,32 @@ PageScaffold {
             }
             Text {
                 width: parent.width
+                visible: page.selected && page.selected.isPush
                 wrapMode: Text.WordWrap
                 color: Theme.whiteColor
                 font { family: calaosFont.fontFamilyLight; pixelSize: Units.dp(18) }
-                text: !page.selected ? "" :
-                      page.selected.isPush ? page.selected.notif :
-                      page.selected.room + (page.selected.room != "" && page.selected.action != "" ? " · " : "") + page.selected.action
+                text: page.selected ? page.selected.notif : ""
+            }
+            Flow {
+                objectName: "eventDetailAction"
+                width: parent.width
+                visible: page.selected && !page.selected.isPush
+                Text {
+                    color: Theme.whiteColor
+                    font { family: calaosFont.fontFamilyLight; pixelSize: Units.dp(18) }
+                    text: page.selected ? page.selected.room : ""
+                }
+                Text {
+                    color: Theme.whiteColor
+                    font { family: calaosFont.fontFamilyLight; pixelSize: Units.dp(18) }
+                    text: " · "
+                    visible: page.selected && page.selected.room !== "" && page.selected.action !== ""
+                }
+                Text {
+                    color: Theme.yellowColor
+                    font { family: calaosFont.fontFamilyLight; pixelSize: Units.dp(18) }
+                    text: page.selected ? page.selected.action : ""
+                }
             }
 
             Item {
@@ -384,7 +449,8 @@ PageScaffold {
         onVisibleChanged: if (visible) forceActiveFocus()
 
         Keys.onReleased: (event) => {
-            if (event.key === Qt.Key_Escape || event.key === Qt.Key_Back) {
+            if (event.key === Qt.Key_Escape || event.key === Qt.Key_Back ||
+                event.key === Qt.Key_Backspace) {
                 page.photoOpen = false
                 event.accepted = true
             }

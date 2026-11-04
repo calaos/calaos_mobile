@@ -50,6 +50,7 @@ public:
     void setApiBase(const QString &base) { apiBase = base; }
     QString getApiBase() const { return apiBase; }
     void setTransferTimeout(int ms) { transferTimeoutMs = ms; }
+    void setTotalTimeout(int ms) { totalTimeoutMs = ms; }
 
     QQmlListProperty<WeatherData> getForecast();
     WeatherData *getForecastData(int i);
@@ -70,6 +71,8 @@ private:
 
     QNetworkAccessManager *accessManager;
     int transferTimeoutMs = 30000;
+    int totalTimeoutMs = 60000;
+    QPointer<QNetworkReply> inflight;
     QString apiBase = QStringLiteral("https://api.openweathermap.org/data/2.5/");
 
     WeatherData dataNow;

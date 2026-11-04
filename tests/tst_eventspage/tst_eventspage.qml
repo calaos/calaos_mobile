@@ -388,6 +388,8 @@ TestCase {
         //A push has no action line, its text stays white
         var push = list.itemAtIndex(2)
         compare(findChild(push, "eventAction").parent.visible, false)
+        compare(findChild(push, "eventNotif").visible, true)
+        compare(findChild(push, "eventNotif").color, Theme.whiteColor)
         compare(findChild(push, "eventIcon").source.toString(), "qrc:/img/icon_notif.png")
     }
 
@@ -402,6 +404,41 @@ TestCase {
         compare(action.children[0].color, Theme.whiteColor)
         wait(100)
         shot("events-detail-action")
+    }
+
+    readonly property string longRoom: "Salle de reunion du deuxieme etage du batiment principal, cote jardin et terrasse couverte, " +
+                                       "pres de l'escalier de service, derriere la cuisine collective du personnel et des visiteurs"
+
+    function test_longRoomElidesAndKeepsTheActionReadable() {
+        eventLogModel.append(event("Light", 1, { evRoomName: longRoom, evActionText: "On" }))
+        var page = open()
+        var list = findChild(page, "eventLogList")
+        tryVerify(function() { return list.itemAtIndex(0) !== null })
+        var row = list.itemAtIndex(0)
+        var action = findChild(row, "eventAction")
+        compare(action.width, action.implicitWidth)
+        verify(action.width > 0)
+        var room = action.parent.children[0]
+        verify(room.truncated)
+        verify(room.width > 0)
+        verify(room.width + action.parent.children[1].width + action.width <= action.parent.width + 1)
+        wait(100)
+        shot("events-list-long-room")
+    }
+
+    function test_longRoomWrapsInTheDetail() {
+        eventLogModel.append(event("Light", 1, { evRoomName: longRoom, evActionText: "On" }))
+        var page = open()
+        clickRow(page, 0)
+        var flow = findChild(page, "eventDetailAction")
+        verify(flow.width > 0)
+        var room = flow.children[0]
+        verify(room.width <= flow.width)
+        verify(room.lineCount > 1)
+        verify(flow.childrenRect.width <= flow.width)
+        compare(flow.children[2].text, "On")
+        wait(100)
+        shot("events-detail-long-room")
     }
 
     function test_loadingOnlyWhenSomethingLoads() {

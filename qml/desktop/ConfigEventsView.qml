@@ -176,11 +176,11 @@ PageScaffold {
                     }
                     Row {
                         width: parent.width
-                        visible: evType != Common.EventPush
+                        visible: evType == Common.EventIoChanged
 
                         Text {
                             id: roomLabel
-                            width: Math.min(implicitWidth, parent.width)
+                            width: Math.min(implicitWidth, Math.max(0, parent.width - (sepLabel.visible ? sepLabel.width : 0) - eventAction.width))
                             elide: Text.ElideRight
                             color: Theme.whiteColor
                             font { family: calaosFont.fontFamilyLight; pixelSize: Units.dp(14) }
@@ -194,8 +194,10 @@ PageScaffold {
                             visible: evRoomName != "" && evActionText != ""
                         }
                         Text {
+                            id: eventAction
                             objectName: "eventAction"
-                            width: Math.min(implicitWidth, Math.max(0, parent.width - roomLabel.width - (sepLabel.visible ? sepLabel.width : 0)))
+                            //The room gives way first: the action keeps up to 60% of the line
+                            width: Math.min(implicitWidth, parent.width * 0.6)
                             elide: Text.ElideRight
                             color: Theme.yellowColor
                             font { family: calaosFont.fontFamilyLight; pixelSize: Units.dp(14) }
@@ -203,6 +205,7 @@ PageScaffold {
                         }
                     }
                     Text {
+                        objectName: "eventNotif"
                         width: parent.width
                         visible: evType == Common.EventPush
                         elide: Text.ElideRight
@@ -363,6 +366,8 @@ PageScaffold {
                 width: parent.width
                 visible: page.selected && !page.selected.isPush
                 Text {
+                    width: Math.min(implicitWidth, parent.width)
+                    wrapMode: Text.WordWrap
                     color: Theme.whiteColor
                     font { family: calaosFont.fontFamilyLight; pixelSize: Units.dp(18) }
                     text: page.selected ? page.selected.room : ""
@@ -374,6 +379,8 @@ PageScaffold {
                     visible: page.selected && page.selected.room !== "" && page.selected.action !== ""
                 }
                 Text {
+                    width: Math.min(implicitWidth, parent.width)
+                    wrapMode: Text.WordWrap
                     color: Theme.yellowColor
                     font { family: calaosFont.fontFamilyLight; pixelSize: Units.dp(18) }
                     text: page.selected ? page.selected.action : ""

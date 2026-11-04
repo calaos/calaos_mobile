@@ -256,6 +256,7 @@ PageScaffold {
                         key: page.rowKey(evDate, evTime, evTitle, evPicUid),
                         date: evDate, time: evTime, title: evTitle,
                         isPush: evType == Common.EventPush,
+                        isIoChanged: evType == Common.EventIoChanged,
                         room: evRoomName, action: evActionText, notif: evNotifText,
                         count: evCount, hasPicture: evHasPicture, picUid: evPicUid
                     })
@@ -364,8 +365,9 @@ PageScaffold {
             Flow {
                 objectName: "eventDetailAction"
                 width: parent.width
-                visible: page.selected && !page.selected.isPush
+                visible: page.selected && page.selected.isIoChanged
                 Text {
+                    objectName: "eventDetailRoom"
                     width: Math.min(implicitWidth, parent.width)
                     wrapMode: Text.WordWrap
                     color: Theme.whiteColor
@@ -373,12 +375,14 @@ PageScaffold {
                     text: page.selected ? page.selected.room : ""
                 }
                 Text {
+                    objectName: "eventDetailSep"
                     color: Theme.whiteColor
                     font { family: calaosFont.fontFamilyLight; pixelSize: Units.dp(18) }
                     text: " · "
                     visible: page.selected && page.selected.room !== "" && page.selected.action !== ""
                 }
                 Text {
+                    objectName: "eventDetailActionText"
                     width: Math.min(implicitWidth, parent.width)
                     wrapMode: Text.WordWrap
                     color: Theme.yellowColor

@@ -399,9 +399,10 @@ TestCase {
         clickRow(page, 0)
         var action = findChild(page, "eventDetailAction")
         compare(action.visible, true)
-        compare(action.children[2].color, Theme.yellowColor)
-        compare(action.children[2].text, "On")
-        compare(action.children[0].color, Theme.whiteColor)
+        var actionText = findChild(action, "eventDetailActionText")
+        compare(actionText.color, Theme.yellowColor)
+        compare(actionText.text, "On")
+        compare(findChild(action, "eventDetailRoom").color, Theme.whiteColor)
         wait(100)
         shot("events-detail-action")
     }
@@ -432,13 +433,23 @@ TestCase {
         clickRow(page, 0)
         var flow = findChild(page, "eventDetailAction")
         verify(flow.width > 0)
-        var room = flow.children[0]
+        var room = findChild(flow, "eventDetailRoom")
         verify(room.width <= flow.width)
         verify(room.lineCount > 1)
         verify(flow.childrenRect.width <= flow.width)
-        compare(flow.children[2].text, "On")
+        compare(findChild(flow, "eventDetailActionText").text, "On")
         wait(100)
         shot("events-detail-long-room")
+    }
+
+    function test_unknownEventShowsNoRoomAndActionLine() {
+        eventLogModel.append(event("X", 1, { evType: Common.EventUnknown }))
+        var page = open()
+        var list = findChild(page, "eventLogList")
+        tryVerify(function() { return list.itemAtIndex(0) !== null })
+        compare(findChild(list.itemAtIndex(0), "eventAction").parent.visible, false)
+        clickRow(page, 0)
+        compare(findChild(page, "eventDetailAction").visible, false)
     }
 
     function test_loadingOnlyWhenSomethingLoads() {

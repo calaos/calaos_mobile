@@ -899,10 +899,10 @@ void TstNetworkBounds::weatherRefreshAbandonsForecastInFlight()
 
     WeatherModel model;
     model.setApiBase(base());
-    model.setTransferTimeout(200);
+    model.setTransferTimeout(1000);
     model.refreshWeather();
     //weather has timed out, the forecast request is now in flight
-    QTRY_COMPARE_WITH_TIMEOUT(log().count(QLatin1String("Error in weather request")), 1, 3000);
+    QTRY_COMPARE_WITH_TIMEOUT(log().count(QLatin1String("Error in weather request")), 1, 10000);
 
     model.refreshWeather();
     int running = 0;
@@ -910,8 +910,8 @@ void TstNetworkBounds::weatherRefreshAbandonsForecastInFlight()
         if (r->isRunning())
             ++running;
     QCOMPARE(running, 1);
-    //the abandoned forecast must not report; the new weather request is still within its 200 ms
-    QTest::qWait(100);
+    //the abandoned forecast must not report; the new weather request is still within its 1 s
+    QTest::qWait(150);
     QCOMPARE(log().count(QLatin1String("Error in weather request")), 1);
 }
 

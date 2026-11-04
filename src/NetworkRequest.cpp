@@ -209,6 +209,7 @@ void NetworkRequest::cancel()
 }
 
 //nmReadyRead and nmFinished* are only ever called as slots of reply: sender() is the guard.
+//Do not call them directly (sender() would be null and the call silently dropped).
 void NetworkRequest::nmReadyRead()
 {
     if (sender() != reply || reply->error() == QNetworkReply::OperationCanceledError)
@@ -257,6 +258,7 @@ void NetworkRequest::discardPartialFile()
         qCWarning(lcNet) << "Cannot remove the partial download file";
 }
 
+//Slot of reply only: the sender() guard drops late signals from an abandoned reply.
 void NetworkRequest::nmFinished()
 {
     //A stale reply, after a restart from a slot, must not touch the new one.

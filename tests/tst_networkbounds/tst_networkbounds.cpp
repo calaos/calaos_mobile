@@ -20,7 +20,7 @@
 
 namespace {
 
-enum Mode { Announced, NoLength, OverLimit, Chunked, Deflate, DeflateModerate, Burst, Small, Exact };
+enum Mode { Announced, NoLength, OverLimit, Chunked, Deflate, DeflateModerate, Burst, Small, Exact, Redirect, Mute, Drip };
 
 //Deflate stream (no size prefix) of about `inflated` bytes, ratio ~30: under
 //the ratio 40 above which Qt refuses an archive bomb before any readyRead.
@@ -44,6 +44,7 @@ public:
     //Bound of the code under test.
     qint64 limit = 0;
     int released = 0;
+    QString location;
 
 protected:
     void incomingConnection(qintptr handle) override
@@ -137,6 +138,22 @@ protected:
                 sock->write(head + "Content-Length: 5\r\n\r\nhello");
                 sock->disconnectFromHost();
                 break;
+            case Redirect:
+                sock->write("HTTP/1.1 302 Found\r\nLocation: " + location.toUtf8() + "\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+                sock->disconnectFromHost();
+                break;
+            case Mute:
+                break;
+            case Drip:
+            {
+                //One byte every 20 ms, never ending: the transfer timeout never fires.
+                sock->write(head + "Content-Length: 1000000\r\n\r\n");
+                QTimer *t = new QTimer(sock);
+                t->setInterval(20);
+                connect(t, &QTimer::timeout, sock, [sock]() { sock->write("x"); });
+                t->start();
+                break;
+            }
             case Exact:
                 sock->write(head + "Content-Length: " + QByteArray::number(limit) + "\r\n\r\n" + QByteArray(limit, 'x'));
                 sock->disconnectFromHost();
@@ -226,6 +243,10 @@ private slots:
     void webSocketFrameHeaderIsRefusedBeforeItsBody();
     void weatherRepliesAreFreed();
     void weatherDefaultsToHttps();
+    void weatherRefusesRedirectToAnotherHost();
+    void weatherSilentServerIsCutByTimeout();
+    void weatherDrippingServerIsCutByDeadline();
+    void weatherRefreshReplacesRequestInFlight();
 
 private:
     static void modes()
@@ -805,6 +826,70 @@ void TstNetworkBounds::weatherDefaultsToHttps()
 {
     WeatherModel model;
     QVERIFY2(model.getApiBase().startsWith(QLatin1String("https://")), qPrintable(model.getApiBase()));
+}
+
+void TstNetworkBounds::weatherRefusesRedirectToAnotherHost()
+{
+    //Another port is another origin; this one must never be contacted.
+    QTcpServer other;
+    QVERIFY(other.listen(QHostAddress::LocalHost, 0));
+    QSignalSpy contacted(&other, &QTcpServer::pendingConnectionAvailable);
+    server->mode = Redirect;
+    server->location = QStringLiteral("http://127.0.0.1:%1/stolen").arg(other.serverPort());
+
+    WeatherModel model;
+    model.setApiBase(base());
+    model.refreshWeather();
+    QTRY_VERIFY2_WITH_TIMEOUT(log().count(QLatin1String("Error in weather request")) >= 2, qPrintable(log()), 8000);
+    QTest::qWait(100);
+    QCOMPARE(contacted.count(), 0);
+}
+
+void TstNetworkBounds::weatherSilentServerIsCutByTimeout()
+{
+    server->mode = Mute;
+
+    WeatherModel model;
+    model.setApiBase(base());
+    model.setTransferTimeout(300);
+    model.refreshWeather();
+    QTRY_VERIFY2_WITH_TIMEOUT(log().count(QLatin1String("Error in weather request")) >= 2, qPrintable(log()), 8000);
+}
+
+void TstNetworkBounds::weatherDrippingServerIsCutByDeadline()
+{
+    server->mode = Drip;
+
+    WeatherModel model;
+    model.setApiBase(base());
+    //The default transfer timeout (30 s) must not be what ends the test.
+    model.setTotalTimeout(500);
+    model.refreshWeather();
+    QTRY_VERIFY2_WITH_TIMEOUT(log().count(QLatin1String("Error in weather request")) >= 2, qPrintable(log()), 8000);
+}
+
+void TstNetworkBounds::weatherRefreshReplacesRequestInFlight()
+{
+    server->mode = Mute;
+
+    WeatherModel model;
+    model.setApiBase(base());
+    model.refreshWeather();
+    model.refreshWeather();
+    model.refreshWeather();
+
+    auto running = [&model]() {
+        int n = 0;
+        for (QNetworkReply *r : model.findChildren<QNetworkReply *>())
+            if (r->isRunning())
+                ++n;
+        return n;
+    };
+    QTRY_COMPARE_WITH_TIMEOUT(running(), 1, 3000);
+    //the abandoned requests must not chain into a forecast request
+    QTest::qWait(200);
+    QCOMPARE(running(), 1);
+    QVERIFY2(!log().contains(QLatin1String("Error in weather request")), qPrintable(log()));
 }
 
 QTEST_MAIN(TstNetworkBounds)

@@ -27,6 +27,7 @@ SUBDIRS += \
     tst_controlpanelmodel \
     tst_eventlogmodel \
     tst_eventlogsession \
+    tst_eventspage \
     tst_favoritesmodel \
     tst_homemodel \
     tst_httpapiversion \

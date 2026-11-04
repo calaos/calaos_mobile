@@ -695,7 +695,10 @@ void Application::homeLoaded(const QVariantMap &homeData)
     audioModel->load(homeData);
     favHomeModel->load(homeData);
     cameraModel->load(homeData);
+#ifndef CALAOS_DESKTOP
+    //The kiosk loads the log when its page opens.
     eventLogModel->refresh();
+#endif
     update_applicationStatus(Common::LoggedIn);
     //After the status: main.qml read it to leave the page stack alone.
     resumePolicy.loggedIn();

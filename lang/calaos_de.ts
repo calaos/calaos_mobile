@@ -85,82 +85,82 @@
 <context>
     <name>AdminUpdates</name>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="364"/>
+        <location filename="../src/AdminUpdates.cpp" line="365"/>
         <source>Wrong admin password.</source>
         <translation>Falsches Admin-Passwort.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="366"/>
+        <location filename="../src/AdminUpdates.cpp" line="367"/>
         <source>Too many attempts. Try again in %1 s.</source>
         <translation>Zu viele Versuche. Erneut versuchen in %1 s.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="368"/>
+        <location filename="../src/AdminUpdates.cpp" line="369"/>
         <source>An update is already in progress.</source>
         <translation>Es läuft bereits ein Update.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="370"/>
+        <location filename="../src/AdminUpdates.cpp" line="371"/>
         <source>This action is not allowed.</source>
         <translation>Diese Aktion ist nicht erlaubt.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="372"/>
+        <location filename="../src/AdminUpdates.cpp" line="373"/>
         <source>The box refused the request.</source>
         <translation>Die Box hat die Anfrage abgelehnt.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="374"/>
+        <location filename="../src/AdminUpdates.cpp" line="375"/>
         <source>This package has no update waiting.</source>
         <translation>Für dieses Paket steht kein Update aus.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="376"/>
+        <location filename="../src/AdminUpdates.cpp" line="377"/>
         <source>This package is held on the box and won&apos;t be updated.</source>
         <translation>Dieses Paket ist auf der Box gesperrt und wird nicht aktualisiert.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="378"/>
+        <location filename="../src/AdminUpdates.cpp" line="379"/>
         <source>Something went wrong on the box. Try again; the detail is in the box&apos;s logs.</source>
         <translation>Auf der Box ist ein Fehler aufgetreten. Erneut versuchen; Details stehen in den Protokollen der Box.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="380"/>
+        <location filename="../src/AdminUpdates.cpp" line="381"/>
         <source>The box did not answer. Try again in a moment.</source>
         <translation>Die Box hat nicht geantwortet. Bitte gleich erneut versuchen.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="382"/>
+        <location filename="../src/AdminUpdates.cpp" line="383"/>
         <source>Connection lost before the box answered. Try again once it is back.</source>
         <translation>Verbindung verloren, bevor die Box geantwortet hat. Erneut versuchen, sobald sie wieder da ist.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="384"/>
+        <location filename="../src/AdminUpdates.cpp" line="385"/>
         <source>The box has not answered yet. Try again in a moment.</source>
         <translation>Die Box hat noch nicht geantwortet. Bitte gleich erneut versuchen.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="386"/>
+        <location filename="../src/AdminUpdates.cpp" line="387"/>
         <source>Answer the certificate question first.</source>
         <translation>Beantworten Sie zuerst die Frage zum Zertifikat.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="387"/>
+        <location filename="../src/AdminUpdates.cpp" line="388"/>
         <source>Unexpected answer from the box.</source>
         <translation>Unerwartete Antwort der Box.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="633"/>
+        <location filename="../src/AdminUpdates.cpp" line="634"/>
         <source>The update was interrupted before the end. Try again.</source>
         <translation>Das Update wurde vor dem Ende unterbrochen. Erneut versuchen.</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="635"/>
+        <location filename="../src/AdminUpdates.cpp" line="636"/>
         <source>Reason: %1</source>
         <translation>Grund: %1</translation>
     </message>
     <message>
-        <location filename="../src/AdminUpdates.cpp" line="637"/>
+        <location filename="../src/AdminUpdates.cpp" line="638"/>
         <source>Try again. If it fails again, the detail is in the box&apos;s logs.</source>
         <translation>Erneut versuchen. Wenn es wieder fehlschlägt, stehen Details in den Protokollen der Box.</translation>
     </message>
@@ -168,7 +168,7 @@
 <context>
     <name>Application</name>
     <message>
-        <location filename="../src/Application.cpp" line="277"/>
+        <location filename="../src/Application.cpp" line="278"/>
         <source>Network error</source>
         <translation>Netzwerkfehler</translation>
     </message>
@@ -177,78 +177,78 @@
         <translation type="vanished">Die Verbindung zu calaos_server wurde unterbrochen. Die Verbindung wird automatisch wiederhergestellt, wenn calaos_server wieder verfügbar ist.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="278"/>
+        <location filename="../src/Application.cpp" line="279"/>
         <source>The connection to calaos_server was lost. It will reconnect automatically when calaos_server is available again.</source>
         <translation>Die Verbindung zu calaos_server wurde unterbrochen. Die Verbindung wird automatisch wiederhergestellt, wenn calaos_server wieder verfügbar ist.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="281"/>
-        <location filename="../src/Application.cpp" line="300"/>
-        <location filename="../src/Application.cpp" line="313"/>
-        <location filename="../src/Application.cpp" line="325"/>
-        <location filename="../src/Application.cpp" line="337"/>
-        <location filename="../src/Application.cpp" line="791"/>
-        <location filename="../src/Application.cpp" line="956"/>
+        <location filename="../src/Application.cpp" line="282"/>
+        <location filename="../src/Application.cpp" line="301"/>
+        <location filename="../src/Application.cpp" line="314"/>
+        <location filename="../src/Application.cpp" line="326"/>
+        <location filename="../src/Application.cpp" line="338"/>
+        <location filename="../src/Application.cpp" line="801"/>
+        <location filename="../src/Application.cpp" line="966"/>
         <source>Close</source>
         <translation>Schliessen</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="291"/>
+        <location filename="../src/Application.cpp" line="292"/>
         <source>Not connected</source>
         <translation>Nicht verbunden</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="293"/>
+        <location filename="../src/Application.cpp" line="294"/>
         <source>The certificate of %1 was not trusted, the connection was cancelled.</source>
         <translation>Dem Zertifikat von %1 wurde nicht vertraut, die Verbindung wurde abgebrochen.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="296"/>
+        <location filename="../src/Application.cpp" line="297"/>
         <source>The certificate of %1 was not trusted, the connection was cancelled. Tap Login to check it again.</source>
         <translation>Dem Zertifikat von %1 wurde nicht vertraut, die Verbindung wurde abgebrochen. Tippen Sie auf Anmelden, um es erneut zu prüfen.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="313"/>
+        <location filename="../src/Application.cpp" line="314"/>
         <source>Certificate refused</source>
         <translation>Zertifikat abgelehnt</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="311"/>
+        <location filename="../src/Application.cpp" line="312"/>
         <source>The certificate of %1 is not valid (%2). The connection was cancelled.</source>
         <translation>Das Zertifikat von %1 ist ungültig (%2). Die Verbindung wurde abgebrochen.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="308"/>
+        <location filename="../src/Application.cpp" line="309"/>
         <source>The certificate of %1 uses a key that is too weak (%2). The connection was cancelled. Regenerate the certificate of the Calaos box (/mnt/calaos/haproxy/server.pem).</source>
         <translation>Das Zertifikat von %1 verwendet einen zu schwachen Schlüssel (%2). Die Verbindung wurde abgebrochen. Erzeugen Sie das Zertifikat der Calaos-Box neu (/mnt/calaos/haproxy/server.pem).</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="323"/>
+        <location filename="../src/Application.cpp" line="324"/>
         <source>Credentials change failed</source>
         <translation>Änderung der Anmeldedaten fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="324"/>
+        <location filename="../src/Application.cpp" line="325"/>
         <source>Credentials were not changed. Please try again.</source>
         <translation>Die Anmeldedaten wurden nicht geändert. Bitte versuchen Sie es erneut.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="335"/>
+        <location filename="../src/Application.cpp" line="336"/>
         <source>Credentials changed</source>
         <translation>Anmeldedaten geändert</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="336"/>
+        <location filename="../src/Application.cpp" line="337"/>
         <source>Credentials were successfully changed.</source>
         <translation>Die Anmeldedaten wurden erfolgreich geändert.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="954"/>
+        <location filename="../src/Application.cpp" line="964"/>
         <source>Reboot</source>
         <translation type="unfinished">Neustart</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="955"/>
+        <location filename="../src/Application.cpp" line="965"/>
         <source>An update is being installed. Reboot once it has finished.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -257,12 +257,12 @@
         <translation type="vanished">Keine Netzwerkverbindung gefunden, diese Anwendung benötigt eine Netzwerkverbindung, um zu funktionieren.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="789"/>
+        <location filename="../src/Application.cpp" line="799"/>
         <source>Login failed</source>
         <translation>Anmeldung fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="790"/>
+        <location filename="../src/Application.cpp" line="800"/>
         <source>Connection failed, please check your credentials.</source>
         <translation>Verbindung fehlgeschlagen, bitte überprüfen Sie Ihre Zugangsdaten.</translation>
     </message>
@@ -308,148 +308,148 @@
 <context>
     <name>BoxTimeManager</name>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="113"/>
-        <location filename="../src/BoxTimeManager.cpp" line="391"/>
+        <location filename="../src/BoxTimeManager.cpp" line="114"/>
+        <location filename="../src/BoxTimeManager.cpp" line="392"/>
         <source>The date and time of the box could not be read.</source>
         <translation>Datum und Uhrzeit der Box konnten nicht gelesen werden.</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="193"/>
+        <location filename="../src/BoxTimeManager.cpp" line="194"/>
         <source>The list of time zones could not be read.</source>
         <translation>Die Liste der Zeitzonen konnte nicht gelesen werden.</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="270"/>
+        <location filename="../src/BoxTimeManager.cpp" line="271"/>
         <source>An update is being installed. Change the time once it has finished.</source>
         <translation>Ein Update wird installiert. Ändern Sie die Uhrzeit, sobald es abgeschlossen ist.</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="274"/>
+        <location filename="../src/BoxTimeManager.cpp" line="275"/>
         <source>The box could not be reached. Nothing was changed.</source>
         <translation>Die Box konnte nicht erreicht werden. Es wurde nichts geändert.</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="277"/>
+        <location filename="../src/BoxTimeManager.cpp" line="278"/>
         <source>The change may have been made, the box did not answer. Check the values above before applying it again.</source>
         <translation>Die Änderung wurde möglicherweise übernommen, die Box hat nicht geantwortet. Prüfen Sie die Werte oben, bevor Sie sie erneut anwenden.</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="291"/>
+        <location filename="../src/BoxTimeManager.cpp" line="292"/>
         <source>The box could not apply this change.</source>
         <translation>Die Box konnte diese Änderung nicht übernehmen.</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="307"/>
+        <location filename="../src/BoxTimeManager.cpp" line="308"/>
         <source>time zone</source>
         <translation>Zeitzone</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="309"/>
+        <location filename="../src/BoxTimeManager.cpp" line="310"/>
         <source>automatic time</source>
         <translation>automatische Uhrzeit</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="310"/>
+        <location filename="../src/BoxTimeManager.cpp" line="311"/>
         <source>time</source>
         <translation>Uhrzeit</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="322"/>
+        <location filename="../src/BoxTimeManager.cpp" line="323"/>
         <source>The change was made, but the box could not read it back.</source>
         <translation>Die Änderung wurde übernommen, die Box konnte sie aber nicht zurücklesen.</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="324"/>
+        <location filename="../src/BoxTimeManager.cpp" line="325"/>
         <source>Not changed: %1.</source>
         <translation>Nicht geändert: %1.</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="325"/>
+        <location filename="../src/BoxTimeManager.cpp" line="326"/>
         <source>Changed: %1. Not changed: %2.</source>
         <translation>Geändert: %1. Nicht geändert: %2.</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="331"/>
+        <location filename="../src/BoxTimeManager.cpp" line="332"/>
         <source>The box refused this date and time.</source>
         <translation>Die Box hat dieses Datum und diese Uhrzeit abgelehnt.</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="333"/>
+        <location filename="../src/BoxTimeManager.cpp" line="334"/>
         <source>The box does not know this time zone.</source>
         <translation>Die Box kennt diese Zeitzone nicht.</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="334"/>
+        <location filename="../src/BoxTimeManager.cpp" line="335"/>
         <source>The box refused this change.</source>
         <translation>Die Box hat diese Änderung abgelehnt.</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="380"/>
+        <location filename="../src/BoxTimeManager.cpp" line="381"/>
         <source>%1 min</source>
         <translation>%1 Min.</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="383"/>
+        <location filename="../src/BoxTimeManager.cpp" line="384"/>
         <source>%1 h</source>
         <translation>%1 Std.</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="384"/>
+        <location filename="../src/BoxTimeManager.cpp" line="385"/>
         <source>%1 days</source>
         <translation>%1 Tage</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="401"/>
+        <location filename="../src/BoxTimeManager.cpp" line="402"/>
         <source>Enter a complete date and time.</source>
         <translation>Geben Sie ein vollständiges Datum und eine vollständige Uhrzeit ein.</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="404"/>
+        <location filename="../src/BoxTimeManager.cpp" line="405"/>
         <source>The year must be between %1 and %2.</source>
         <translation>Das Jahr muss zwischen %1 und %2 liegen.</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="407"/>
+        <location filename="../src/BoxTimeManager.cpp" line="408"/>
         <source>This time does not exist in %1: clocks skip it at the change to summer time.</source>
         <translation>Diese Uhrzeit gibt es in %1 nicht: Die Uhren überspringen sie bei der Umstellung auf Sommerzeit.</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="410"/>
+        <location filename="../src/BoxTimeManager.cpp" line="411"/>
         <source>This screen does not know the time zone %1: the time cannot be set from here.</source>
         <translation>Dieser Bildschirm kennt die Zeitzone %1 nicht: Die Uhrzeit kann hier nicht eingestellt werden.</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="421"/>
+        <location filename="../src/BoxTimeManager.cpp" line="422"/>
         <source>The box clock will be set to %1, %2 (%3).</source>
         <translation>Die Uhr der Box wird auf %1, %2 (%3) gestellt.</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="426"/>
+        <location filename="../src/BoxTimeManager.cpp" line="427"/>
         <source>Automatic time (NTP) will be turned off: the box stops synchronizing with time servers.</source>
         <translation>Die automatische Uhrzeit (NTP) wird ausgeschaltet: Die Box synchronisiert sich nicht mehr mit Zeitservern.</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="428"/>
+        <location filename="../src/BoxTimeManager.cpp" line="429"/>
         <source>The box clock will move by %1. Moving it back can break secure connections and updates until the time is right.</source>
         <translation>Die Uhr der Box verschiebt sich um %1. Wird sie zurückgestellt, können sichere Verbindungen und Updates fehlschlagen, bis die Uhrzeit stimmt.</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="458"/>
+        <location filename="../src/BoxTimeManager.cpp" line="459"/>
         <source>The Calaos server is restarting.</source>
         <translation>Der Calaos-Server wird neu gestartet.</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="464"/>
+        <location filename="../src/BoxTimeManager.cpp" line="465"/>
         <source>This box must be updated to restart the Calaos server from here.</source>
         <translation>Diese Box muss aktualisiert werden, um den Calaos-Server von hier aus neu zu starten.</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="466"/>
+        <location filename="../src/BoxTimeManager.cpp" line="467"/>
         <source>An update is being installed. Restart once it has finished.</source>
         <translation>Ein Update wird installiert. Starten Sie neu, sobald es abgeschlossen ist.</translation>
     </message>
     <message>
-        <location filename="../src/BoxTimeManager.cpp" line="468"/>
+        <location filename="../src/BoxTimeManager.cpp" line="469"/>
         <source>The Calaos server could not be restarted.</source>
         <translation>Der Calaos-Server konnte nicht neu gestartet werden.</translation>
     </message>
@@ -457,14 +457,14 @@
 <context>
     <name>CalaosOsAPI</name>
     <message>
-        <location filename="../src/CalaosOsAPI.cpp" line="173"/>
-        <location filename="../src/CalaosOsAPI.cpp" line="226"/>
-        <location filename="../src/CalaosOsAPI.cpp" line="503"/>
+        <location filename="../src/CalaosOsAPI.cpp" line="175"/>
+        <location filename="../src/CalaosOsAPI.cpp" line="228"/>
+        <location filename="../src/CalaosOsAPI.cpp" line="505"/>
         <source>Failed to start network request</source>
         <translation>Netzwerkanfrage konnte nicht gestartet werden</translation>
     </message>
     <message>
-        <location filename="../src/CalaosOsAPI.cpp" line="525"/>
+        <location filename="../src/CalaosOsAPI.cpp" line="527"/>
         <source>Invalid answer from the update service</source>
         <translation type="unfinished"></translation>
     </message>
@@ -788,6 +788,82 @@
     </message>
 </context>
 <context>
+    <name>ConfigEventsView</name>
+    <message>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="19"/>
+        <source>Event log</source>
+        <translation>Ereignisprotokoll</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="60"/>
+        <source>Back</source>
+        <translation>Zurück</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="73"/>
+        <source>Quit</source>
+        <translation>Beenden</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="184"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="299"/>
+        <source>%1x</source>
+        <translation>%1x</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="195"/>
+        <source>Picture attached</source>
+        <translation>Bild angehängt</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="235"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="341"/>
+        <source>Loading…</source>
+        <translation>Wird geladen…</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="236"/>
+        <source>Could not load the events.</source>
+        <translation>Die Ereignisse konnten nicht geladen werden.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="237"/>
+        <source>No events in log.&lt;br&gt;Calaos Server &lt;b&gt;v3.1&lt;/b&gt; is required.</source>
+        <translation>Keine Ereignisse im Protokoll.&lt;br&gt;Calaos Server &lt;b&gt;v3.1&lt;/b&gt; ist erforderlich.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="248"/>
+        <source>Check the connection to the box.</source>
+        <translation>Überprüfen Sie die Verbindung zur Box.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="255"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="357"/>
+        <source>Retry</source>
+        <translation>Erneut versuchen</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="267"/>
+        <source>Loading earlier events…</source>
+        <translation>Frühere Ereignisse werden geladen…</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="287"/>
+        <source>Select an event</source>
+        <translation>Ereignis auswählen</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="352"/>
+        <source>The picture could not be loaded.</source>
+        <translation>Das Bild konnte nicht geladen werden.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="410"/>
+        <source>Close</source>
+        <translation>Schließen</translation>
+    </message>
+</context>
+<context>
     <name>ConfigInstallView</name>
     <message>
         <location filename="../qml/desktop/ConfigInstallView.qml" line="63"/>
@@ -913,32 +989,32 @@
 <context>
     <name>ConfigScreenView</name>
     <message>
-        <location filename="../qml/desktop/ConfigScreenView.qml" line="55"/>
+        <location filename="../qml/desktop/ConfigScreenView.qml" line="57"/>
         <source>Turn off screen after some time</source>
         <translation>Bildschirm nach einiger Zeit ausschalten</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigScreenView.qml" line="73"/>
+        <location filename="../qml/desktop/ConfigScreenView.qml" line="75"/>
         <source>Screen will be turned off after %1 minutes</source>
         <translation>Der Bildschirm wird nach %1 Minuten ausgeschaltet</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigScreenView.qml" line="74"/>
+        <location filename="../qml/desktop/ConfigScreenView.qml" line="76"/>
         <source>Screen will remain always on</source>
         <translation>Der Bildschirm bleibt immer eingeschaltet</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigScreenView.qml" line="111"/>
+        <location filename="../qml/desktop/ConfigScreenView.qml" line="113"/>
         <source>Screen configuration</source>
         <translation>Konfiguration des Bildschirms</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigScreenView.qml" line="138"/>
+        <location filename="../qml/desktop/ConfigScreenView.qml" line="140"/>
         <source>Back to config</source>
         <translation>Zurück zu Konfig</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigScreenView.qml" line="145"/>
+        <location filename="../qml/desktop/ConfigScreenView.qml" line="147"/>
         <source>Quit</source>
         <translation>Beenden</translation>
     </message>
@@ -1538,82 +1614,92 @@
 <context>
     <name>ControlPanelModel</name>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="27"/>
+        <location filename="../src/ControlPanelModel.cpp" line="54"/>
         <source>Screen saver</source>
         <translation>Bildschirmschoner</translation>
     </message>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="28"/>
+        <location filename="../src/ControlPanelModel.cpp" line="54"/>
         <source>Screen power management</source>
         <translation>Bildschirm-Energieverwaltung</translation>
     </message>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="34"/>
+        <location filename="../src/ControlPanelModel.cpp" line="56"/>
         <source>Localization</source>
         <translation>Lokalisierung</translation>
     </message>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="35"/>
+        <location filename="../src/ControlPanelModel.cpp" line="56"/>
         <source>Language settings</source>
         <translation>Spracheinstellungen</translation>
     </message>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="41"/>
+        <location filename="../src/ControlPanelModel.cpp" line="58"/>
         <source>Date and time</source>
         <translation>Datum und Uhrzeit</translation>
     </message>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="42"/>
+        <location filename="../src/ControlPanelModel.cpp" line="58"/>
         <source>Clock, time zone, automatic time</source>
         <translation>Uhr, Zeitzone und automatische Uhrzeit</translation>
     </message>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="48"/>
+        <location filename="../src/ControlPanelModel.cpp" line="60"/>
+        <source>Event log</source>
+        <translation>Ereignisse</translation>
+    </message>
+    <message>
+        <location filename="../src/ControlPanelModel.cpp" line="60"/>
+        <source>History of events</source>
+        <translation>Verlauf der Ereignisse</translation>
+    </message>
+    <message>
+        <location filename="../src/ControlPanelModel.cpp" line="62"/>
         <source>Information</source>
         <translation>Informationen</translation>
     </message>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="49"/>
+        <location filename="../src/ControlPanelModel.cpp" line="62"/>
         <source>Personal settings</source>
         <translation>Persönliche Einstellungen</translation>
     </message>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="55"/>
+        <location filename="../src/ControlPanelModel.cpp" line="64"/>
         <source>Network</source>
         <translation>Netzwerk</translation>
     </message>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="56"/>
+        <location filename="../src/ControlPanelModel.cpp" line="64"/>
         <source>IP, gateway, DNS</source>
         <translation>IP, Gateway, DNS</translation>
     </message>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="62"/>
+        <location filename="../src/ControlPanelModel.cpp" line="66"/>
         <source>Update</source>
         <translation>Update</translation>
     </message>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="63"/>
+        <location filename="../src/ControlPanelModel.cpp" line="66"/>
         <source>Software updates</source>
         <translation>Software-Aktualisierungen</translation>
     </message>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="71"/>
+        <location filename="../src/ControlPanelModel.cpp" line="70"/>
         <source>Installation</source>
         <translation>Installation</translation>
     </message>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="72"/>
+        <location filename="../src/ControlPanelModel.cpp" line="70"/>
         <source>Install on disk</source>
         <translation>Installation auf Festplatte</translation>
     </message>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="81"/>
+        <location filename="../src/ControlPanelModel.cpp" line="74"/>
         <source>Rollback</source>
         <translation>Rollback</translation>
     </message>
     <message>
-        <location filename="../src/ControlPanelModel.cpp" line="82"/>
+        <location filename="../src/ControlPanelModel.cpp" line="74"/>
         <source>Rollback to this snapshot</source>
         <translation>Rollback zu diesem Snapshot</translation>
     </message>
@@ -2182,49 +2268,49 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
 <context>
     <name>EventLogItem</name>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="255"/>
+        <location filename="../src/EventLogModel.cpp" line="352"/>
         <source>Appliance change</source>
         <translation>Geräteänderung</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="260"/>
+        <location filename="../src/EventLogModel.cpp" line="357"/>
         <source>Push Notification</source>
         <translation>Push-Benachrichtigung</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="280"/>
+        <location filename="../src/EventLogModel.cpp" line="371"/>
         <source>Unknown event!</source>
         <translation>Unbekanntes Ereignis!</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="288"/>
+        <location filename="../src/EventLogModel.cpp" line="379"/>
         <source>Today</source>
         <translation>Heute</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="290"/>
+        <location filename="../src/EventLogModel.cpp" line="381"/>
         <source>Yesterday</source>
         <translation>Gestern</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="317"/>
-        <location filename="../src/EventLogModel.cpp" line="330"/>
+        <location filename="../src/EventLogModel.cpp" line="408"/>
+        <location filename="../src/EventLogModel.cpp" line="421"/>
         <source>On</source>
         <translation>Ein</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="322"/>
-        <location filename="../src/EventLogModel.cpp" line="335"/>
+        <location filename="../src/EventLogModel.cpp" line="413"/>
+        <location filename="../src/EventLogModel.cpp" line="426"/>
         <source>Off</source>
         <translation>Aus</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="341"/>
+        <location filename="../src/EventLogModel.cpp" line="432"/>
         <source>Temp changed</source>
         <translation>Temperatur geändert</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="348"/>
+        <location filename="../src/EventLogModel.cpp" line="439"/>
         <source>Opened</source>
         <translation>Geöffnet</translation>
     </message>
@@ -2233,12 +2319,12 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <translation type="vanished">Geöffnet</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="353"/>
+        <location filename="../src/EventLogModel.cpp" line="444"/>
         <source>Closed</source>
         <translation>Geschlossen</translation>
     </message>
     <message>
-        <location filename="../src/EventLogModel.cpp" line="359"/>
+        <location filename="../src/EventLogModel.cpp" line="450"/>
         <source>Started</source>
         <translation>Gestartet</translation>
     </message>
@@ -2405,27 +2491,27 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
 <context>
     <name>IOBase</name>
     <message>
-        <location filename="../src/RoomModel.cpp" line="594"/>
+        <location filename="../src/RoomModel.cpp" line="595"/>
         <source>State: Opened.</source>
         <translation>Zustand: Geöffnet.</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="596"/>
+        <location filename="../src/RoomModel.cpp" line="597"/>
         <source>State: %1% Opened.</source>
         <translation>Zustand: %1% Geöffnet.</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="598"/>
+        <location filename="../src/RoomModel.cpp" line="599"/>
         <source>State: %1% Closed.</source>
         <translation>Zustand: %1% Geschlossen.</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="601"/>
+        <location filename="../src/RoomModel.cpp" line="602"/>
         <source>State: Closed.</source>
         <translation>Zustand: Geschlossen.</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="604"/>
+        <location filename="../src/RoomModel.cpp" line="605"/>
         <source>Action: Stopped.</source>
         <translation>Aktion: Gestoppt.</translation>
     </message>
@@ -2434,12 +2520,12 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <translation type="vanished">Aktion: gestoppt.</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="606"/>
+        <location filename="../src/RoomModel.cpp" line="607"/>
         <source>Action: Closing...</source>
         <translation>Aktion: Schließen...</translation>
     </message>
     <message>
-        <location filename="../src/RoomModel.cpp" line="608"/>
+        <location filename="../src/RoomModel.cpp" line="609"/>
         <source>Action: Opening...</source>
         <translation>Aktion: Öffnen...</translation>
     </message>
@@ -2884,40 +2970,32 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
 <context>
     <name>NoteBack</name>
     <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="48"/>
         <source>Edit note</source>
-        <translation>Anmerkung bearbeiten</translation>
+        <translation type="vanished">Anmerkung bearbeiten</translation>
     </message>
     <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="49"/>
         <source>Note</source>
-        <translation>Hinweis</translation>
+        <translation type="vanished">Hinweis</translation>
     </message>
     <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="50"/>
         <source>Write your note to be displayed on the desktop</source>
-        <translation>Schreiben Sie Ihre Notiz, die auf dem Desktop angezeigt werden soll</translation>
+        <translation type="vanished">Schreiben Sie Ihre Notiz, die auf dem Desktop angezeigt werden soll</translation>
     </message>
     <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="61"/>
         <source>Send by mail</source>
-        <translation>Per Post versenden</translation>
+        <translation type="vanished">Per Post versenden</translation>
     </message>
     <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="91"/>
-        <location filename="../widgets/Note/NoteBack.qml" line="107"/>
         <source>Close</source>
-        <translation>Schliessen</translation>
+        <translation type="vanished">Schliessen</translation>
     </message>
     <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="104"/>
         <source>No Emails</source>
-        <translation>Keine Emails</translation>
+        <translation type="vanished">Keine Emails</translation>
     </message>
     <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="105"/>
         <source>No emails are configured. Please go to the Configuration panel and add at least one email address</source>
-        <translation>Es sind keine E-Mail-Adressen konfiguriert. Bitte gehen Sie zum Konfigurationspanel und fügen Sie mindestens eine E-Mail-Adresse hinzu</translation>
+        <translation type="vanished">Es sind keine E-Mail-Adressen konfiguriert. Bitte gehen Sie zum Konfigurationspanel und fügen Sie mindestens eine E-Mail-Adresse hinzu</translation>
     </message>
 </context>
 <context>
@@ -2980,9 +3058,8 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../3rd_party/drivelist_linux/linuxdrivelist.cpp" line="121"/>
         <source>Internal SD card reader</source>
-        <translation>Interner SD-Kartenleser</translation>
+        <translation type="vanished">Interner SD-Kartenleser</translation>
     </message>
 </context>
 <context>
@@ -3449,83 +3526,83 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
 <context>
     <name>UpdateManager</name>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="167"/>
-        <location filename="../src/UpdateManager.cpp" line="412"/>
+        <location filename="../src/UpdateManager.cpp" line="170"/>
+        <location filename="../src/UpdateManager.cpp" line="415"/>
         <source>Cannot contact the update service</source>
         <translation>Update-Dienst nicht erreichbar</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="380"/>
+        <location filename="../src/UpdateManager.cpp" line="383"/>
         <source>Invalid answer from the update service</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="396"/>
+        <location filename="../src/UpdateManager.cpp" line="399"/>
         <source>Another update was running. Check for updates again, then retry.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="402"/>
+        <location filename="../src/UpdateManager.cpp" line="405"/>
         <source>Another update operation is in progress, try again later.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="522"/>
+        <location filename="../src/UpdateManager.cpp" line="525"/>
         <source>The update service lost track of the update</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="820"/>
-        <location filename="../src/UpdateManager.cpp" line="860"/>
-        <location filename="../src/UpdateManager.cpp" line="898"/>
+        <location filename="../src/UpdateManager.cpp" line="823"/>
+        <location filename="../src/UpdateManager.cpp" line="857"/>
+        <location filename="../src/UpdateManager.cpp" line="895"/>
         <source>Software update</source>
         <translation>Software-Update</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="861"/>
+        <location filename="../src/UpdateManager.cpp" line="858"/>
         <source>Update installed successfully.</source>
         <translation>Update erfolgreich installiert.</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="1228"/>
+        <location filename="../src/UpdateManager.cpp" line="1225"/>
         <source>The outcome of the update is unknown. Check for updates again.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="1250"/>
+        <location filename="../src/UpdateManager.cpp" line="1247"/>
         <source>The outcome of the update is unknown: another update ran meanwhile. Check for updates again.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="822"/>
-        <location filename="../src/UpdateManager.cpp" line="862"/>
-        <location filename="../src/UpdateManager.cpp" line="900"/>
-        <location filename="../src/UpdateManager.cpp" line="943"/>
+        <location filename="../src/UpdateManager.cpp" line="825"/>
+        <location filename="../src/UpdateManager.cpp" line="859"/>
+        <location filename="../src/UpdateManager.cpp" line="897"/>
+        <location filename="../src/UpdateManager.cpp" line="940"/>
         <source>Close</source>
         <translation>Schliessen</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="894"/>
+        <location filename="../src/UpdateManager.cpp" line="891"/>
         <source>Upgrade failed</source>
         <translation>Update fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="899"/>
+        <location filename="../src/UpdateManager.cpp" line="896"/>
         <source>Upgrade failed: %1</source>
         <translation>Update fehlgeschlagen: %1</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="939"/>
+        <location filename="../src/UpdateManager.cpp" line="936"/>
         <source>An update is being installed. Restart once it has finished.</source>
         <translation>Ein Update wird installiert. Starten Sie nach Abschluss neu.</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="940"/>
+        <location filename="../src/UpdateManager.cpp" line="937"/>
         <source>The application could not be restarted.</source>
         <translation>Die Anwendung konnte nicht neu gestartet werden.</translation>
     </message>
     <message>
-        <location filename="../src/UpdateManager.cpp" line="941"/>
+        <location filename="../src/UpdateManager.cpp" line="938"/>
         <source>Restart</source>
         <translation>Neustart</translation>
     </message>
@@ -4125,12 +4202,12 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
 <context>
     <name>main</name>
     <message>
-        <location filename="../qml/desktop/main.qml" line="374"/>
+        <location filename="../qml/desktop/main.qml" line="381"/>
         <source>Keyboard</source>
         <translation>Tastatur</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/main.qml" line="375"/>
+        <location filename="../qml/desktop/main.qml" line="382"/>
         <source>Change text for &apos;%1&apos;</source>
         <translation>Text für &apos;%1&apos; ändern</translation>
     </message>

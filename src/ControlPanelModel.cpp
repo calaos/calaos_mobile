@@ -57,6 +57,8 @@ QList<ControlPanelModel::Entry> ControlPanelModel::entries() const
                    "qrc:/img/icon_config_l18n.png", "config/l18n" };
     list << Entry{ tr("Date and time"), tr("Clock, time zone, automatic time"),
                    "qrc:/img/icon_config_clock.png", "config/time" };
+    list << Entry{ tr("Event log"), tr("History of events"),
+                   "qrc:/img/icon_config_events.png", "config/events" };
     list << Entry{ tr("Information"), tr("Personal settings"),
                    "qrc:/img/icon_config_info.png", "config/info" };
     list << Entry{ tr("Network"), tr("IP, gateway, DNS"),

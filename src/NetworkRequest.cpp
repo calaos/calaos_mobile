@@ -92,8 +92,9 @@ bool NetworkRequest::start()
             qCWarning(lcNet) << "Error opening file '" << dlFile->fileName() << "' for write";
             return false;
         }
-        //Only a file opened here may be deleted: the caller's open file, or a
-        //content:// URI, stays theirs.
+        //Only a file opened here may be deleted. A content:// URI passed closed
+        //is opened here too, hence removable: only a file the caller opened
+        //stays theirs.
         ownsOpen = !wasOpen;
     }
 
@@ -147,10 +148,12 @@ bool NetworkRequest::start()
 
     //The reader drains the reply at every readyRead, so the reply's own check
     //never sees the sum: the total is counted here.
-    auto accumulate = [this]()
+    QNetworkReply *const current = reply;
+    auto accumulate = [this, current]()
     {
-        //The bound's abort() runs finished synchronously: reply is already null.
-        if (!reply || reply->error() == QNetworkReply::OperationCanceledError)
+        //The bound's abort() runs finished synchronously, and a slot of it may
+        //have restarted the request: this reply is then no longer the current one.
+        if (reply != current || reply->error() == QNetworkReply::OperationCanceledError)
             return;
         auto d = reply->readAll();
         if (dataRead.size() + d.size() > bound)
@@ -159,8 +162,10 @@ bool NetworkRequest::start()
             reply->abort();
             return;
         }
-        emit dataReadyRead(d);
+        //Before the signal: a slot may delete the request (only with deleteLater()
+        //if it owns its manager: the reply is a child of it).
         dataRead.append(d);
+        emit dataReadyRead(d);
     };
 
     if (resType == TypeJson)
@@ -205,7 +210,7 @@ void NetworkRequest::cancel()
 
 void NetworkRequest::nmReadyRead()
 {
-    if (!reply || reply->error() == QNetworkReply::OperationCanceledError)
+    if (sender() != reply || reply->error() == QNetworkReply::OperationCanceledError)
         return;
     auto d = reply->readAll();
     if (!writeChunk(d))
@@ -253,6 +258,9 @@ void NetworkRequest::discardPartialFile()
 
 void NetworkRequest::nmFinished()
 {
+    //A stale reply, after a restart from a slot, must not touch the new one.
+    if (sender() != reply)
+        return;
     httpStatusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
     networkError = reply->error();
 
@@ -263,7 +271,8 @@ void NetworkRequest::nmFinished()
         qCWarning(lcNet) << "Error in" << LogRedact::redactUrl(reply->url()) << ":" << lastError
                          << "(status" << httpStatusCode << ")";
         discardPartialFile();
-        //State is reset before the signal: a slot may restart or destroy the request.
+        //State is reset before the signal: a slot may restart the request, or
+        //destroy it with deleteLater(): with its own manager, a synchronous delete would free the reply being emitted.
         reply->deleteLater();
         reply = nullptr;
         emit finished(RequestHttpError);
@@ -298,6 +307,9 @@ void NetworkRequest::nmFinished()
 
 void NetworkRequest::nmFinishedJson()
 {
+    //A stale reply, after a restart from a slot, must not touch the new one.
+    if (sender() != reply)
+        return;
     QJsonParseError err;
     QJsonDocument jdoc;
 
@@ -343,6 +355,9 @@ void NetworkRequest::nmFinishedJson()
 
 void NetworkRequest::nmFinishedData()
 {
+    //A stale reply, after a restart from a slot, must not touch the new one.
+    if (sender() != reply)
+        return;
     httpStatusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
     networkError = reply->error();
 

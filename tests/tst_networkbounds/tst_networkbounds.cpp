@@ -230,7 +230,12 @@ private slots:
     void fileThatCannotBeWrittenFailsTheRequest();
     void partialFileIsRemovedWhenItCannotBeEmptied();
     void fileOpenedByTheCallerIsNotRemoved();
+    void slotMayRestartTheRequestAfterAnError_data();
     void slotMayRestartTheRequestAfterAnError();
+    void slotMayDeleteTheRequestWhileItReads();
+    void staleReplyIsIgnoredAfterARestart_data();
+    void staleReplyIsIgnoredAfterARestart();
+    void slotMayDeleteLaterTheRequestWithItsOwnManager();
     void boundStartsOverAfterTheFileWasTruncated();
     void fileDestroyedMidTransferFailsTheRequest();
     void fileDestroyedBeforeTheRequestIsSafe();
@@ -511,8 +516,17 @@ void TstNetworkBounds::fileOpenedByTheCallerIsNotRemoved()
     QVERIFY(QFileInfo::exists(file.fileName()));
 }
 
+void TstNetworkBounds::slotMayRestartTheRequestAfterAnError_data()
+{
+    QTest::addColumn<int>("type");
+    QTest::newRow("file") << int(NetworkRequest::TypeFile);
+    QTest::newRow("json") << int(NetworkRequest::TypeJson);
+    QTest::newRow("raw data") << int(NetworkRequest::TypeRawData);
+}
+
 void TstNetworkBounds::slotMayRestartTheRequestAfterAnError()
 {
+    QFETCH(int, type);
     server->mode = Burst;
     server->limit = 64 * 1024;
     QTemporaryFile file;
@@ -520,23 +534,112 @@ void TstNetworkBounds::slotMayRestartTheRequestAfterAnError()
     QNetworkAccessManager nam;
     NetworkRequest req(base() + QStringLiteral("api"));
     req.setNetManager(&nam);
-    req.setResultType(NetworkRequest::TypeFile);
-    req.setFile(&file);
+    req.setResultType(NetworkRequest::ResulType(type));
+    if (type == NetworkRequest::TypeFile)
+        req.setFile(&file);
     req.setMaxBytes(64 * 1024);
     int calls = 0;
     bool restarted = false;
-    connect(&req, &NetworkRequest::finished, this, [&]()
+    auto done = [&]()
     {
         if (calls++ == 0)
         {
             server->mode = Small;
             restarted = req.start();
         }
-    });
+    };
+    connect(&req, &NetworkRequest::finished, this, done);
+    connect(&req, &NetworkRequest::finishedJson, this, done);
+    connect(&req, &NetworkRequest::finishedData, this, done);
     QVERIFY(req.start());
     QTRY_COMPARE_WITH_TIMEOUT(calls, 2, 8000);
     QVERIFY(restarted);
-    QCOMPARE(file.size(), qint64(5));
+    if (type == NetworkRequest::TypeFile)
+        QCOMPARE(file.size(), qint64(5));
+}
+
+void TstNetworkBounds::slotMayDeleteTheRequestWhileItReads()
+{
+    //ASan: the request is read again after the signal if the slot deletes it.
+    server->mode = NoLength;
+    server->limit = NetworkLimits::MaxJsonBytes;
+    QNetworkAccessManager nam;
+    auto *req = new NetworkRequest(base() + QStringLiteral("api"));
+    req->setNetManager(&nam);
+    req->setResultType(NetworkRequest::TypeJson);
+    int chunks = 0;
+    connect(req, &NetworkRequest::dataReadyRead, this, [&]()
+    {
+        if (chunks++ == 0)
+            delete req;
+    });
+    QVERIFY(req->start());
+    QTRY_VERIFY_WITH_TIMEOUT(chunks > 0, 8000);
+    QTest::qWait(150);
+    QCOMPARE(chunks, 1);
+}
+
+void TstNetworkBounds::staleReplyIsIgnoredAfterARestart_data()
+{
+    QTest::addColumn<bool>("toFile");
+    QTest::newRow("data") << false;
+    QTest::newRow("file") << true;
+}
+
+void TstNetworkBounds::staleReplyIsIgnoredAfterARestart()
+{
+    QFETCH(bool, toFile);
+    //A batch over the bound aborts the reply from limitDownload, which runs
+    //finished and so the slot below before the reader's own readyRead slot.
+    server->mode = NoLength;
+    server->limit = NetworkLimits::MaxPictureBytes;
+    QNetworkAccessManager nam;
+    NetworkRequest req(base() + QStringLiteral("api"));
+    req.setNetManager(&nam);
+    QTemporaryFile file;
+    if (toFile)
+    {
+        QVERIFY(file.open());
+        req.setResultType(NetworkRequest::TypeFile);
+        req.setFile(&file);
+    }
+    else
+        req.setResultType(NetworkRequest::TypeRawData);
+    req.setMaxBytes(64 * 1024);
+    int emptyChunks = 0;
+    int finishedCalls = 0;
+    bool restarted = false;
+    connect(&req, &NetworkRequest::dataReadyRead, this, [&](const QByteArray &d)
+    {
+        if (d.isEmpty())
+            ++emptyChunks;
+    });
+    auto restartOnce = [&]()
+    {
+        if (finishedCalls++ == 0)
+            restarted = req.start();
+    };
+    connect(&req, &NetworkRequest::finishedData, this, restartOnce);
+    connect(&req, &NetworkRequest::finished, this, restartOnce);
+    QVERIFY(req.start());
+    QTRY_VERIFY_WITH_TIMEOUT(finishedCalls >= 2, 8000);
+    QVERIFY(restarted);
+    //An empty chunk is the old readyRead slot reading the new reply.
+    QCOMPARE(emptyChunks, 0);
+}
+
+void TstNetworkBounds::slotMayDeleteLaterTheRequestWithItsOwnManager()
+{
+    server->mode = Small;
+    auto *req = new NetworkRequest(base() + QStringLiteral("api"));
+    req->setResultType(NetworkRequest::TypeRawData);
+    QPointer<NetworkRequest> guard(req);
+    QSignalSpy done(req, &NetworkRequest::finishedData);
+    connect(req, &NetworkRequest::finishedData, this, [req]() { req->deleteLater(); });
+    QVERIFY(req->start());
+    QTRY_COMPARE_WITH_TIMEOUT(done.count(), 1, 8000);
+    QCOMPARE(done.first().value(0).toInt(), int(NetworkRequest::RequestSuccess));
+    QTRY_VERIFY_WITH_TIMEOUT(guard.isNull(), 3000);
 }
 
 void TstNetworkBounds::boundStartsOverAfterTheFileWasTruncated()

@@ -790,56 +790,77 @@
 <context>
     <name>ConfigEventsView</name>
     <message>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="16"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="19"/>
         <source>Event log</source>
         <translation>Historique des événements</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="34"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="60"/>
         <source>Back</source>
         <translation>Retour</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="41"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="73"/>
         <source>Quit</source>
         <translation>Quitter</translation>
     </message>
     <message>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="184"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="299"/>
+        <source>%1x</source>
+        <translation>%1x</translation>
+    </message>
+    <message>
         <location filename="../qml/desktop/ConfigEventsView.qml" line="195"/>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="293"/>
+        <source>Picture attached</source>
+        <translation>Photo jointe</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="235"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="341"/>
         <source>Loading…</source>
         <translation>Chargement…</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="196"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="236"/>
         <source>Could not load the events.</source>
         <translation>Impossible de charger les événements.</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="197"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="237"/>
         <source>No events in log.&lt;br&gt;Calaos Server &lt;b&gt;v3.1&lt;/b&gt; is required.</source>
         <translation>Aucun événement dans le journal.&lt;br&gt;Calaos Server &lt;b&gt;v3.1&lt;/b&gt; est requis.</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="206"/>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="309"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="248"/>
+        <source>Check the connection to the box.</source>
+        <translation>Vérifiez la connexion à la box.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="255"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="357"/>
         <source>Retry</source>
         <translation>Réessayer</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="220"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="267"/>
         <source>Loading earlier events…</source>
         <translation>Chargement des événements précédents…</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="240"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="287"/>
         <source>Select an event</source>
         <translation>Sélectionnez un événement</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="303"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="352"/>
         <source>The picture could not be loaded.</source>
         <translation>L’image n’a pas pu être chargée.</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="410"/>
+        <source>Close</source>
+        <translation>Fermer</translation>
     </message>
 </context>
 <context>

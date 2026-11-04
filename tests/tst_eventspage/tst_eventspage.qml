@@ -302,6 +302,62 @@ TestCase {
         verify(retry.hasOwnProperty("buttonClicked"))
     }
 
+    function test_photoVeilIsNearlyOpaque() {
+        fill()
+        var page = open()
+        verify(findChild(page, "eventPhoto").color.a >= 0.95)
+    }
+
+    function test_failureAdvisesToCheckTheConnection() {
+        var page = open()
+        var hint = findChild(page, "eventLogHint")
+        compare(hint.visible, false)
+        eventLogModel.error = true
+        compare(hint.visible, true)
+        compare(hint.text, "Check the connection to the box.")
+    }
+
+    function test_sameTitleOnTwoDaysIsNotSelectedTwice() {
+        eventLogModel.append(event("Lamp", 1, { evDate: "1 November" }))
+        eventLogModel.append(event("Lamp", 1, { evDate: "31 October" }))
+        var page = open()
+        var list = findChild(page, "eventLogList")
+        clickRow(page, 0)
+        tryVerify(function() { return list.itemAtIndex(1) !== null })
+        compare(list.itemAtIndex(0).current, true)
+        compare(list.itemAtIndex(1).current, false)
+    }
+
+    function test_thumbnailLoadingAndFailure() {
+        fill()
+        var page = open()
+        clickRow(page, 2)
+        var pic = eventLogModel.pictures[0]
+        var loading = findChild(page, "eventThumbLoading")
+        var failed = findChild(page, "eventThumbFailed")
+
+        pic.loading = true
+        compare(loading.visible, true)
+        wait(100)
+        shot("events-thumb-loading")
+
+        //A failed picture has no image: nothing above the Retry button
+        pic.loading = false
+        pic.url = ""
+        pic.failed = true
+        compare(loading.visible, false)
+        compare(failed.visible, true)
+        var retry = findChild(page, "eventPictureRetry")
+        verify(retry.height >= Units.dp(48))
+        waitForRendering(page)
+        wait(100)
+        shot("events-thumb-failed")
+
+        mouseClick(retry)
+        compare(pic.failed, false)
+        compare(failed.visible, false)
+    }
+
     function test_frenchCapture() {
         verify(harness.setLanguage("fr"))
         fill()

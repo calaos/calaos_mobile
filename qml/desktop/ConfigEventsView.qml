@@ -12,6 +12,9 @@ PageScaffold {
     property bool photoOpen: false
 
     readonly property bool failed: eventLogModel.error && !eventLogModel.loading
+    //mutedColor on the list background is under 4.5:1, too faint for 14 px text.
+    readonly property color softText: Theme.colorAlpha(Theme.whiteColor, 0.7)
+    function rowKey(date, time, title, uid) { return date + "|" + time + "|" + title + "|" + uid }
 
     title: qsTr("Event log")
 
@@ -116,12 +119,18 @@ PageScaffold {
                 height: Math.max(Units.dp(52), rowText.implicitHeight + Units.dp(16))
 
                 readonly property bool current: page.selected !== null &&
-                                                page.selected.key === evTime + "|" + evTitle + "|" + evPicUid
+                                                page.selected.key === page.rowKey(evDate, evTime, evTitle, evPicUid)
 
                 Rectangle {
                     anchors.fill: parent
-                    color: Theme.colorAlpha(Theme.blueColor, 0.16)
+                    color: Theme.colorAlpha(Theme.blueColor, 0.28)
                     visible: parent.current
+
+                    Rectangle {
+                        width: Units.dp(4)
+                        height: parent.height
+                        color: Theme.blueColor
+                    }
                 }
 
                 Text {
@@ -151,7 +160,7 @@ PageScaffold {
                     Text {
                         width: parent.width
                         elide: Text.ElideRight
-                        color: Theme.mutedColor
+                        color: page.softText
                         font { family: calaosFont.fontFamilyLight; pixelSize: Units.dp(14) }
                         text: evType == Common.EventPush ? evNotifText :
                               evRoomName + (evRoomName != "" && evActionText != "" ? " · " : "") + evActionText
@@ -171,8 +180,8 @@ PageScaffold {
                         id: countLabel
                         anchors.centerIn: parent
                         color: Theme.blueColor
-                        font { family: calaosFont.fontFamily; pixelSize: Units.dp(13) }
-                        text: evCount + "x"
+                        font { family: calaosFont.fontFamily; pixelSize: Units.dp(15) }
+                        text: qsTr("%1x").arg(evCount)
                     }
                 }
 
@@ -182,6 +191,8 @@ PageScaffold {
                     width: visible ? implicitWidth : 0
                     visible: evHasPicture
                     source: "qrc:/img/icon_camera_title.png"
+                    Accessible.role: Accessible.Graphic
+                    Accessible.name: qsTr("Picture attached")
                 }
 
                 Rectangle {
@@ -194,7 +205,7 @@ PageScaffold {
                     objectName: "eventRow"
                     anchors.fill: parent
                     onClicked: page.select({
-                        key: evTime + "|" + evTitle + "|" + evPicUid,
+                        key: page.rowKey(evDate, evTime, evTitle, evPicUid),
                         date: evDate, time: evTime, title: evTitle,
                         isPush: evType == Common.EventPush,
                         room: evRoomName, action: evActionText, notif: evNotifText,
@@ -226,6 +237,17 @@ PageScaffold {
                       qsTr("No events in log.<br>Calaos Server <b>v3.1</b> is required.")
             }
 
+            Text {
+                objectName: "eventLogHint"
+                width: parent.width
+                horizontalAlignment: Text.AlignHCenter
+                wrapMode: Text.WordWrap
+                visible: page.failed
+                color: page.softText
+                font { family: calaosFont.fontFamilyLight; pixelSize: Units.dp(16) }
+                text: qsTr("Check the connection to the box.")
+            }
+
             CalaosButton {
                 objectName: "eventLogRetry"
                 visible: page.failed
@@ -240,7 +262,7 @@ PageScaffold {
             objectName: "eventLogMore"
             anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: Units.dp(8) }
             visible: eventLogModel.loadingMore && logList.count > 0
-            color: Theme.mutedColor
+            color: page.softText
             font { family: calaosFont.fontFamily; pixelSize: Units.dp(14) }
             text: qsTr("Loading earlier events…")
         }
@@ -274,7 +296,7 @@ PageScaffold {
                 color: Theme.yellowColor
                 font { family: calaosFont.fontFamily; pixelSize: Units.dp(18) }
                 text: page.selected ? page.selected.date + "  " + page.selected.time +
-                                      (page.selected.count > 1 ? "  (" + page.selected.count + "x)" : "") : ""
+                                      (page.selected.count > 1 ? "  (" + qsTr("%1x").arg(page.selected.count) + ")" : "") : ""
             }
             Text {
                 width: parent.width
@@ -312,13 +334,15 @@ PageScaffold {
 
                 Text {
                     anchors.centerIn: parent
-                    color: Theme.mutedColor
+                    objectName: "eventThumbLoading"
+                    color: page.softText
                     font { family: calaosFont.fontFamily; pixelSize: Units.dp(16) }
                     visible: page.picture && page.picture.loading
                     text: qsTr("Loading…")
                 }
 
                 Column {
+                    objectName: "eventThumbFailed"
                     anchors.centerIn: parent
                     spacing: Units.dp(8)
                     visible: page.picture && page.picture.failed
@@ -368,6 +392,7 @@ PageScaffold {
 
         Image {
             anchors { fill: parent; margins: Units.dp(20) }
+            asynchronous: true
             fillMode: Image.PreserveAspectFit
             source: page.photoOpen && page.picture ? page.picture.url : ""
         }

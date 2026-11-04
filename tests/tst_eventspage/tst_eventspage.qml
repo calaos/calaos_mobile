@@ -427,6 +427,19 @@ TestCase {
         shot("events-list-long-room")
     }
 
+    function test_longActionIsCappedAtSixtyPercentOfTheRow() {
+        eventLogModel.append(event("Light", 1, { evRoomName: "Hall", evActionText: longRoom }))
+        var page = open()
+        var list = findChild(page, "eventLogList")
+        tryVerify(function() { return list.itemAtIndex(0) !== null })
+        var action = findChild(list.itemAtIndex(0), "eventAction")
+        var row = action.parent
+        verify(row.width > 0)
+        verify(action.implicitWidth > row.width * 0.6)
+        verify(action.truncated)
+        verify(action.width <= row.width * 0.6 + 1)
+    }
+
     function test_longRoomWrapsInTheDetail() {
         eventLogModel.append(event("Light", 1, { evRoomName: longRoom, evActionText: "On" }))
         var page = open()
@@ -449,6 +462,7 @@ TestCase {
         tryVerify(function() { return list.itemAtIndex(0) !== null })
         compare(findChild(list.itemAtIndex(0), "eventAction").parent.visible, false)
         clickRow(page, 0)
+        verify(page.selected !== null)
         compare(findChild(page, "eventDetailAction").visible, false)
     }
 

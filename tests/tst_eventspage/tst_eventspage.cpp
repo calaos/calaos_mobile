@@ -40,6 +40,12 @@ public:
         return QFile::exists(QStringLiteral(":/") + path);
     }
 
+    Q_INVOKABLE QString resourceText(const QString &path) const
+    {
+        QFile f(QStringLiteral(":/") + path);
+        return f.open(QIODevice::ReadOnly) ? QString::fromUtf8(f.readAll()) : QString();
+    }
+
     //The panel entry that opens a page: its icon, or an empty string without it
     Q_INVOKABLE QString panelIcon(const QString &clickId) const
     {

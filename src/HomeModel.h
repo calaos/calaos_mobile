@@ -11,6 +11,10 @@ class RoomModel;
 class ScenarioModel;
 class IOBase;
 
+//Rooms of a "home" reply in display order: hits descending, server order on
+//ties. Recent servers already send them sorted; older ones send io.xml order.
+QVariantList sortRoomsByHits(const QVariantList &rooms);
+
 class LightOnModel: public QStandardItemModel
 {
     Q_OBJECT

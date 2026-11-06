@@ -95,6 +95,10 @@ private slots:
     void clearAlsoEmptiesCache();
     void ghostLightsAfterReconnect();
 
+    void roomsSortedByHits();
+    void roomsSortedByHits_tiesKeepServerOrder();
+    void roomsSortedByHits_badHitsCountAsZero();
+
 private:
     FakeConnection *connection = nullptr;
 };
@@ -181,6 +185,53 @@ void TstHomeModel::ghostLightsAfterReconnect()
     model.clear();
     lightCycle();
     QCOMPARE(model.rowCount(), 2);
+}
+
+namespace {
+
+QVariantMap room(const QString &name, const QVariant &hits)
+{
+    QVariantMap r;
+    r["name"] = name;
+    r["type"] = QStringLiteral("salon");
+    r["hits"] = hits;
+    return r;
+}
+
+QStringList names(const QVariantList &rooms)
+{
+    QStringList out;
+    for (const QVariant &r: rooms)
+        out << r.toMap()["name"].toString();
+    return out;
+}
+
+} //namespace
+
+//Older servers send io.xml order; the client must still show hits descending.
+void TstHomeModel::roomsSortedByHits()
+{
+    //hits arrive as strings on the wire (calaos_base JsonApi::buildJsonHome).
+    const QVariantList in = { room("Cave", "1"), room("Salon", "30"), room("Cuisine", "12") };
+
+    QCOMPARE(names(sortRoomsByHits(in)),
+             QStringList({ "Salon", "Cuisine", "Cave" }));
+}
+
+void TstHomeModel::roomsSortedByHits_tiesKeepServerOrder()
+{
+    const QVariantList in = { room("B", "5"), room("A", "5"), room("C", "9"), room("D", "5") };
+
+    QCOMPARE(names(sortRoomsByHits(in)),
+             QStringList({ "C", "B", "A", "D" }));
+}
+
+void TstHomeModel::roomsSortedByHits_badHitsCountAsZero()
+{
+    const QVariantList in = { room("Bad", "abc"), room("Neg", "-2"), room("One", "1"), room("Missing", QVariant()) };
+
+    QCOMPARE(names(sortRoomsByHits(in)),
+             QStringList({ "One", "Bad", "Missing", "Neg" }));
 }
 
 QTEST_GUILESS_MAIN(TstHomeModel)

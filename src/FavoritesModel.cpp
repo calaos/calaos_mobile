@@ -228,7 +228,7 @@ void HomeFavModel::load(const QVariantMap &homeData)
     appendRow(room);
 
     //Add normal rooms
-    QVariantList rooms = homeData[JsonKeys::Home].toList();
+    QVariantList rooms = sortRoomsByHits(homeData[JsonKeys::Home].toList());
     QVariantList::iterator it = rooms.begin();
     for (;it != rooms.end();it++)
     {

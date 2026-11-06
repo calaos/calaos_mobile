@@ -2,6 +2,27 @@
 #include <QDebug>
 #include "RoomModel.h"
 #include "JsonKeys.h"
+#include <algorithm>
+
+QVariantList sortRoomsByHits(const QVariantList &rooms)
+{
+    QVector<QPair<int, QVariant>> keyed;
+    keyed.reserve(rooms.size());
+    for (const QVariant &r: rooms)
+        keyed.append({ Common::toIntSafe(r.toMap()[JsonKeys::Hits], 0, "room.hits"), r });
+
+    std::stable_sort(keyed.begin(), keyed.end(), [](const auto &a, const auto &b)
+    {
+        return a.first > b.first;
+    });
+
+    QVariantList sorted;
+    sorted.reserve(keyed.size());
+    for (const auto &k: keyed)
+        sorted.append(k.second);
+
+    return sorted;
+}
 
 HomeModel::HomeModel(QQmlApplicationEngine *eng, CalaosConnection *con, ScenarioModel *scModel, LightOnModel *lModel, QObject *parent) :
     QStandardItemModel(parent),
@@ -37,7 +58,7 @@ void HomeModel::load(const QVariantMap &homeData)
         return;
     }
 
-    QVariantList rooms = homeData[JsonKeys::Home].toList();
+    QVariantList rooms = sortRoomsByHits(homeData[JsonKeys::Home].toList());
     QVariantList::iterator it = rooms.begin();
     for (;it != rooms.end();it++)
     {

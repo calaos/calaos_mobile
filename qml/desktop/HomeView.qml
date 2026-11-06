@@ -55,25 +55,35 @@ Item {
         flow: GridView.FlowLeftToRight
         boundsBehavior: Flickable.StopAtBounds
 
-        property int page: 0
-        onPageChanged: currentIndex = page * 9
+        readonly property int columns: 3
+        readonly property int visibleRows: 3
 
-        function movePageDown(){
-            var p = lst.page
-            p++
-            var m = lst.count % 9 > 0? 1:0
-            if (p > lst.count / 9 + m)
-                p = lst.count / 9 + m
-            lst.page = p
+        NumberAnimation {
+            id: scrollAnim
+            target: lst
+            property: "contentY"
+            duration: 250
+            easing.type: Easing.OutCubic
         }
 
-        function movePageUp() {
-            var p = lst.page
-            p--
-            if (p < 0)
-                p = 0
-            lst.page = p
+        // Start from contentY, not from a stored page: the view can also be
+        // flicked by hand. A click during the animation continues from its
+        // target so repeated clicks do not lose a page.
+        function scrollRows(delta) {
+            var y = scrollAnim.running? scrollAnim.to: contentY
+            var row = Math.round((y - originY) / cellHeight) + delta
+            var maxY = originY + Math.max(0, contentHeight - height)
+            var target = Math.max(originY, Math.min(originY + row * cellHeight, maxY))
+            scrollAnim.stop()
+            scrollAnim.from = contentY
+            scrollAnim.to = target
+            scrollAnim.start()
         }
+
+        onMovementStarted: scrollAnim.stop()
+
+        function movePageDown() { scrollRows(visibleRows) }
+        function movePageUp() { scrollRows(-visibleRows) }
 
         delegate: Item {
             height: lst.cellHeight

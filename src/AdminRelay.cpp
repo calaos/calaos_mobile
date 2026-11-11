@@ -257,7 +257,9 @@ void AdminRelay::finish(const QString &msgId, const Outcome &outcome)
 
 void AdminRelay::applyOutcome(const QString &msg, const QString &action, Outcome &o)
 {
-    Q_UNUSED(action)
+    //the household versions page says nothing about the admin password
+    if (action == QLatin1String("versions"))
+        return;
 
     if (o.ok)
     {

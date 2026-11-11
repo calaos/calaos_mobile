@@ -44,6 +44,8 @@ public:
     //reply.data says what was done: "applied", and "failed" for the step that failed.
     void setBoxTime(const QJsonObject &change, std::function<void(const CalaosOsReply &reply)> callback);
     void getTimezones(std::function<void(const CalaosOsReply &reply)> callback);
+    //system/versions (v2 only): a 404 is a daemon too old to have it
+    void getSystemVersions(std::function<void(const CalaosOsReply &reply)> callback);
     //restart a system service of the box. The daemon answers first, then restarts it.
     void restartService(const QString &unit, std::function<void(const CalaosOsReply &reply)> callback);
 

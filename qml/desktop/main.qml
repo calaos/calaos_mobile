@@ -87,6 +87,8 @@ Window {
             item = configL18nView
         } else if (itemId === "config/time") {
             item = configTimeView
+        } else if (itemId === "config/versions") {
+            item = configVersionsView
         } else if (itemId === "config/events") {
             item = configEventsView
         } else if (itemId === "config/info") {
@@ -272,6 +274,11 @@ Window {
     Component {
         id: configTimeView
         ConfigTimeView {}
+    }
+
+    Component {
+        id: configVersionsView
+        ConfigVersionsView {}
     }
 
     Component {

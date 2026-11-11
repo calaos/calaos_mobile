@@ -18,6 +18,7 @@
         <file>qml/mobile/SettingsPage.qml</file>
         <file>qml/mobile/SettingsEntry.qml</file>
         <file>qml/mobile/SettingsDeviceView.qml</file>
+        <file>qml/mobile/SettingsVersionsView.qml</file>
         <file>qml/mobile/SettingsConnectionView.qml</file>
         <file>qml/mobile/SettingsFavoritesView.qml</file>
         <file>qml/mobile/SettingsRow.qml</file>

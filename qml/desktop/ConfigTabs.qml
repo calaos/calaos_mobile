@@ -4,6 +4,9 @@ import QtQuick.Layouts
 
 BorderImage {
 
+    //off on the versions page itself
+    property bool showVersions: true
+
     source: "qrc:/img/controls_bg.png"
 
     border { left: Units.dp(7); right: Units.dp(7); top: Units.dp(7); bottom: Units.dp(7); }
@@ -59,6 +62,14 @@ BorderImage {
                 ConfigTabLabelValue {
                     labelText: qsTr("Product Version:")
                     valueText: calaosApp.appVersion
+                }
+
+                CalaosButton {
+                    objectName: "versionsButton"
+                    visible: showVersions
+                    text: qsTr("All versions")
+                    anchors { right: parent.right; rightMargin: Units.dp(14) }
+                    onButtonClicked: rootWindow.handleSubitemClick("config/versions")
                 }
 
                 ConfigTabLabelValue {

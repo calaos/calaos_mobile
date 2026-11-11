@@ -32,6 +32,8 @@ set(CALAOS_SOURCES
     src/AdminRelay.cpp
     src/AdminRelayBackend.cpp
     src/AdminUpdates.cpp
+    src/VersionsReport.cpp
+    src/VersionsModel.cpp
 )
 
 set(CALAOS_HEADERS
@@ -70,4 +72,6 @@ set(CALAOS_HEADERS
     src/AdminRelay.h
     src/AdminRelayBackend.h
     src/AdminUpdates.h
+    src/VersionsReport.h
+    src/VersionsModel.h
 )

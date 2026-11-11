@@ -43,7 +43,9 @@ SUBDIRS += \
     tst_roomfiltermodel \
     tst_sessionlifecycle \
     tst_tlspinning \
-    tst_updateclient
+    tst_updateclient \
+    tst_versions \
+    tst_versionspage
 
 # Objective-C of the iOS notification extension, built with the macOS SDK.
 macx: SUBDIRS += tst_notifquery

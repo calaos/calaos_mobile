@@ -38,7 +38,9 @@ SOURCES += src/main.cpp \
     $$PWD/src/AdminBiometrics.cpp \
     $$PWD/src/AdminRelay.cpp \
     $$PWD/src/AdminRelayBackend.cpp \
-    $$PWD/src/AdminUpdates.cpp
+    $$PWD/src/AdminUpdates.cpp \
+    $$PWD/src/VersionsReport.cpp \
+    $$PWD/src/VersionsModel.cpp
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH = qml
@@ -78,7 +80,9 @@ HEADERS += \
     $$PWD/src/SecretWipe.h \
     $$PWD/src/AdminRelay.h \
     $$PWD/src/AdminRelayBackend.h \
-    $$PWD/src/AdminUpdates.h
+    $$PWD/src/AdminUpdates.h \
+    $$PWD/src/VersionsReport.h \
+    $$PWD/src/VersionsModel.h
 
 win32 {
 LIBS += -liphlpapi

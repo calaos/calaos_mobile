@@ -408,6 +408,8 @@ void Application::createQmlApp()
     engine.rootContext()->setContextProperty("adminBiometrics", adminBiometrics);
 #endif
 
+    setupVersionsModel();
+
     m_netAddresses = new QQmlObjectListModel<NetworkInfo>(this);
 
 #ifdef CALAOS_DESKTOP
@@ -997,6 +999,52 @@ void Application::rollbackSnapshot()
                                                   }
                                               });
 #endif
+}
+
+void Application::setupVersionsModel()
+{
+#if defined(CALAOS_DESKTOP)
+    const QString clientName = QStringLiteral("calaos-home kiosk");
+#elif defined(Q_OS_ANDROID)
+    const QString clientName = QStringLiteral("calaos-home android");
+#elif defined(Q_OS_IOS)
+    const QString clientName = QStringLiteral("calaos-home ios");
+#else
+    const QString clientName = QStringLiteral("calaos-home desktop");
+#endif
+    versionsModel = new VersionsModel(clientName, get_appVersion(), this);
+
+    //get_server_info already gave the server version, whatever the box answers
+    QPointer<CalaosConnection> conn(calaosConnect);
+#ifdef CALAOS_DESKTOP
+    versionsModel->setFetcher([conn](VersionsModel::Done done)
+    {
+        CalaosOsAPI::Instance()->getSystemVersions([conn, done](const CalaosOsReply &reply)
+        {
+            const QString server = conn ? conn->serverCapabilities().version : QString();
+            done(VersionsReport::fromDaemon(reply.ok, reply.httpStatus, reply.data, server));
+        });
+    });
+#else
+    QPointer<AdminRelay> relay(adminRelay);
+    versionsModel->setFetcher([conn, relay](VersionsModel::Done done)
+    {
+        if (!relay)
+        {
+            done(VersionsReport::fromRelayError(QStringLiteral("not_connected"), QString()));
+            return;
+        }
+        relay->request(QStringLiteral("versions"), QJsonObject(), [conn, done](const AdminRelay::Outcome &o)
+        {
+            if (o.ok)
+                done(VersionsReport::fromRelayResult(o.result));
+            else
+                done(VersionsReport::fromRelayError(o.error.code,
+                                                    conn ? conn->serverCapabilities().version : QString()));
+        });
+    });
+#endif
+    engine.rootContext()->setContextProperty("versionsModel", versionsModel);
 }
 
 void Application::sysInfoTimerSlot()

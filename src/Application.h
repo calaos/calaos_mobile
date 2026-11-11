@@ -36,6 +36,7 @@
 #include "AdminRelay.h"
 #include "AdminRelayBackend.h"
 #include "AdminUpdates.h"
+#include "VersionsModel.h"
 #include "AdminBiometrics.h"
 #include "ResumePolicy.h"
 #include "BookmarkModel.h"
@@ -165,6 +166,8 @@ private slots:
     void pushNotificationReceived(const QString &uuid);
 
 private:
+    void setupVersionsModel();
+
     QQmlApplicationEngine engine;
     CalaosConnection *calaosConnect;
     HomeModel *homeModel;
@@ -191,6 +194,7 @@ private:
     AdminRelayBackend *adminBackend = nullptr;
     AdminUpdates *boxUpdates = nullptr;
     AdminBiometrics *adminBiometrics = nullptr;
+    VersionsModel *versionsModel = nullptr;
 
     ResumePolicy resumePolicy;
     //Mirrors resumePolicy into keepPageOnResume, before any status change.

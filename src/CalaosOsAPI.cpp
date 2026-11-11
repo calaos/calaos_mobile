@@ -288,6 +288,13 @@ void CalaosOsAPI::getBoxTime(std::function<void (const CalaosOsReply &)> callbac
     call(r, callback);
 }
 
+void CalaosOsAPI::getSystemVersions(std::function<void (const CalaosOsReply &)> callback)
+{
+    Route r;
+    r.v2Path = QStringLiteral("/system/versions");
+    call(r, callback);
+}
+
 void CalaosOsAPI::setBoxTime(const QJsonObject &change, std::function<void (const CalaosOsReply &)> callback)
 {
     Route r;

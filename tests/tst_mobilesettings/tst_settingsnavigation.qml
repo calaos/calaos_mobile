@@ -55,6 +55,25 @@ TestCase {
         function setLanguage(code) { languages.push(code) }
         function forgetTlsPin(host) { forgotten.push(host) }
     }
+    QtObject {
+        id: versionsModel
+        property bool loading: false
+        property bool loaded: false
+        property string clientName: "calaos-home android"
+        property string clientVersion: "4.5.0"
+        property string qtVersion: "6.12.0"
+        property string serverVersion: ""
+        property bool systemAvailable: false
+        property string containerVersion: ""
+        property string calaosOs: ""
+        property string debian: ""
+        property string kernel: ""
+        property var packages: []
+        property string failure: ""
+        property string message: ""
+        function refresh() {}
+        function copyToClipboard() {}
+    }
     ListModel {
         id: langModel
         function getLangModel(idx) { return get(idx) }
@@ -148,10 +167,10 @@ TestCase {
     }
 
     //In reading order: from the top, and from the left on a row
-    function test_entryListsTheFiveSubPagesInOrder() {
+    function test_entryListsTheSubPagesInOrder() {
         var page = openSettings()
         var names = ["settingsEntryDevice", "settingsEntryConnection", "settingsEntryFavorites",
-                     "settingsEntryBox", "settingsEntryEventLog"]
+                     "settingsEntryBox", "settingsEntryEventLog", "settingsEntryVersions"]
         var previous = null
         for (var i = 0; i < names.length; i++) {
             var rect = entryRect(page, names[i])
@@ -201,7 +220,7 @@ TestCase {
     function test_everyEntryHasItsOwnIcon() {
         var page = openSettings()
         var names = ["settingsEntryDevice", "settingsEntryConnection", "settingsEntryFavorites",
-                     "settingsEntryBox", "settingsEntryEventLog"]
+                     "settingsEntryBox", "settingsEntryEventLog", "settingsEntryVersions"]
         var seen = {}
         for (var i = 0; i < names.length; i++) {
             var glyph = findChild(page, names[i]).glyph
@@ -224,6 +243,7 @@ TestCase {
             { tag: "device", entry: "settingsEntryDevice", title: "Device" },
             { tag: "connection", entry: "settingsEntryConnection", title: "Connection" },
             { tag: "favorites", entry: "settingsEntryFavorites", title: "Favorites" },
+            { tag: "versions", entry: "settingsEntryVersions", title: "Versions" },
         ]
     }
 
@@ -372,7 +392,7 @@ TestCase {
     function test_everyTileHasASubtitle() {
         var page = openSettings()
         var names = ["settingsEntryDevice", "settingsEntryConnection", "settingsEntryFavorites",
-                     "settingsEntryBox", "settingsEntryEventLog"]
+                     "settingsEntryBox", "settingsEntryEventLog", "settingsEntryVersions"]
         for (var i = 0; i < names.length; i++) {
             var sub = findChild(findChild(page, names[i]), "tileSubtitle")
             verify(sub, names[i])

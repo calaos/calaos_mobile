@@ -587,6 +587,9 @@ private slots:
     void biometricsBusyUnlockKeepsNothing();
     void biometricsEraseCancelsTheStore();
     void biometricsOutlivesTheUpdatesPage();
+    void versionsLeaveTheGate_data();
+    void versionsLeaveTheGate();
+    void versionsTimeoutIsNotOldServer();
 };
 
 void TstAdminRelay::unlockSuccessStoresSession()
@@ -2279,6 +2282,59 @@ void TstAdminRelay::biometricsOutlivesTheUpdatesPage()
         delete screen;
     }
     QVERIFY(true);
+}
+
+void TstAdminRelay::versionsLeaveTheGate_data()
+{
+    QTest::addColumn<bool>("success");
+    QTest::addColumn<QString>("code");
+    QTest::newRow("answered") << true << QString();
+    QTest::newRow("https_required") << false << "https_required";
+    QTest::newRow("invalid_request") << false << "invalid_request";
+    QTest::newRow("not_allowed") << false << "not_allowed";
+    QTest::newRow("daemon_unreachable") << false << "daemon_unreachable";
+    QTest::newRow("bad_session") << false << "bad_session";
+}
+
+//The versions page needs no admin password: its answer, whatever it is, says
+//nothing about the updates page.
+void TstAdminRelay::versionsLeaveTheGate()
+{
+    QFETCH(bool, success);
+    QFETCH(QString, code);
+
+    FakeTransport idle;
+    AdminRelay fresh(&idle);
+    AdminRelay::Outcome got;
+    fresh.request("versions", QJsonObject(), [&got](const AdminRelay::Outcome &o) { got = o; });
+    QCOMPARE(idle.frames.size(), 1);
+    fresh.handleReply("admin", idle.frames.last().msgId,
+                      success ? ok(QJsonObject{{ "server", "4.8.0" }, { "system", QJsonValue::Null }}) : err(code));
+    QCOMPARE(got.ok, success);
+    QCOMPARE(fresh.gate(), AdminRelay::GateIdle);
+
+    FakeTransport t;
+    AdminRelay relay(&t);
+    unlockRelay(t, relay);
+    relay.request("versions", QJsonObject(), {});
+    QVERIFY(!t.frames.last().data.contains("admin_session"));
+    relay.handleReply("admin", t.frames.last().msgId,
+                      success ? ok(QJsonObject{{ "server", "4.8.0" }, { "system", QJsonValue::Null }}) : err(code));
+    QCOMPARE(relay.gate(), AdminRelay::GateUnlocked);
+    QVERIFY(relay.isUnlocked());
+}
+
+void TstAdminRelay::versionsTimeoutIsNotOldServer()
+{
+    FakeTransport t;
+    AdminRelay relay(&t);
+    relay.setTimeouts(100, 300);
+    AdminRelay::Outcome got;
+    bool called = false;
+    relay.request("versions", QJsonObject(), [&](const AdminRelay::Outcome &o) { got = o; called = true; });
+    QTRY_VERIFY(called);
+    QCOMPARE(got.error.code, AdminRelay::ErrTimeout);
+    QCOMPARE(relay.gate(), AdminRelay::GateIdle);
 }
 
 QTEST_MAIN(TstAdminRelay)

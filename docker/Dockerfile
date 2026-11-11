@@ -35,6 +35,7 @@ USER ${USER}
 WORKDIR /src
 
 COPY build/* /usr/bin
+COPY keys /usr/share/calaos-keys
 
 RUN get_pkgbuilds.sh && \
     build_pkg.sh "calaos-home" "" "$ARCH" "$COMMIT" "$APP_VERSION" && \
@@ -49,7 +50,8 @@ RUN sudo pacman -S --noconfirm libxinerama readline bash perl libxtst libxft tex
 #and its source= points to a mirror on calaos.fr since
 #download.savannah.gnu.org is too unreliable
 COPY --chown=${UID}:${GID} ratpoison /src/ratpoison
-RUN gpg --recv-keys 0DFA74AE1524E7EE && \
+# Vendored key: keyservers are unreliable (fingerprint 513592C1AD3652932BDFDDCC0DFA74AE1524E7EE)
+RUN gpg --import /usr/share/calaos-keys/ratpoison.asc && \
     cd /src/ratpoison && \
     sudo -u calaos makepkg -s
 

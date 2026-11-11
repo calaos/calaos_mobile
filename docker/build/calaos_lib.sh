@@ -165,8 +165,10 @@ fix_docker_perms()
 
 setup_calaos_repo()
 {
-    sudo pacman-key --recv-keys AEE23917D88BD96A
-    sudo pacman-key --lsign-key AEE23917D88BD96A
+    # Vendored key: keyservers (keyserver.ubuntu.com) are unreliable and broke CI.
+    # Fingerprint F23CC5BFD99F730CCD66C841AEE23917D88BD96A
+    sudo pacman-key --add /usr/share/calaos-keys/calaos-arch.asc
+    sudo pacman-key --lsign-key F23CC5BFD99F730CCD66C841AEE23917D88BD96A
 
     if ! grep arch.calaos.fr /etc/pacman.conf > /dev/null
     then

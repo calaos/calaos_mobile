@@ -187,8 +187,8 @@
         <location filename="../src/Application.cpp" line="314"/>
         <location filename="../src/Application.cpp" line="326"/>
         <location filename="../src/Application.cpp" line="338"/>
-        <location filename="../src/Application.cpp" line="801"/>
-        <location filename="../src/Application.cpp" line="966"/>
+        <location filename="../src/Application.cpp" line="803"/>
+        <location filename="../src/Application.cpp" line="968"/>
         <source>Close</source>
         <translation>Schliessen</translation>
     </message>
@@ -243,12 +243,12 @@
         <translation>Die Anmeldedaten wurden erfolgreich geändert.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="964"/>
+        <location filename="../src/Application.cpp" line="966"/>
         <source>Reboot</source>
         <translation type="unfinished">Neustart</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="965"/>
+        <location filename="../src/Application.cpp" line="967"/>
         <source>An update is being installed. Reboot once it has finished.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -257,12 +257,12 @@
         <translation type="vanished">Keine Netzwerkverbindung gefunden, diese Anwendung benötigt eine Netzwerkverbindung, um zu funktionieren.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="799"/>
+        <location filename="../src/Application.cpp" line="801"/>
         <source>Login failed</source>
         <translation>Anmeldung fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="800"/>
+        <location filename="../src/Application.cpp" line="802"/>
         <source>Connection failed, please check your credentials.</source>
         <translation>Verbindung fehlgeschlagen, bitte überprüfen Sie Ihre Zugangsdaten.</translation>
     </message>
@@ -459,12 +459,12 @@
     <message>
         <location filename="../src/CalaosOsAPI.cpp" line="175"/>
         <location filename="../src/CalaosOsAPI.cpp" line="228"/>
-        <location filename="../src/CalaosOsAPI.cpp" line="505"/>
+        <location filename="../src/CalaosOsAPI.cpp" line="512"/>
         <source>Failed to start network request</source>
         <translation>Netzwerkanfrage konnte nicht gestartet werden</translation>
     </message>
     <message>
-        <location filename="../src/CalaosOsAPI.cpp" line="527"/>
+        <location filename="../src/CalaosOsAPI.cpp" line="534"/>
         <source>Invalid answer from the update service</source>
         <translation type="unfinished"></translation>
     </message>
@@ -790,75 +790,75 @@
 <context>
     <name>ConfigEventsView</name>
     <message>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="19"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="21"/>
         <source>Event log</source>
         <translation>Ereignisprotokoll</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="60"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="64"/>
         <source>Back</source>
         <translation>Zurück</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="73"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="77"/>
         <source>Quit</source>
         <translation>Beenden</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="184"/>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="299"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="232"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="348"/>
         <source>%1x</source>
         <translation>%1x</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="195"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="243"/>
         <source>Picture attached</source>
         <translation>Bild angehängt</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="235"/>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="341"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="284"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="417"/>
         <source>Loading…</source>
         <translation>Wird geladen…</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="236"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="285"/>
         <source>Could not load the events.</source>
         <translation>Die Ereignisse konnten nicht geladen werden.</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="237"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="286"/>
         <source>No events in log.&lt;br&gt;Calaos Server &lt;b&gt;v3.1&lt;/b&gt; is required.</source>
         <translation>Keine Ereignisse im Protokoll.&lt;br&gt;Calaos Server &lt;b&gt;v3.1&lt;/b&gt; ist erforderlich.</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="248"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="297"/>
         <source>Check the connection to the box.</source>
         <translation>Überprüfen Sie die Verbindung zur Box.</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="255"/>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="357"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="304"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="433"/>
         <source>Retry</source>
         <translation>Erneut versuchen</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="267"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="316"/>
         <source>Loading earlier events…</source>
         <translation>Frühere Ereignisse werden geladen…</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="287"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="336"/>
         <source>Select an event</source>
         <translation>Ereignis auswählen</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="352"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="428"/>
         <source>The picture could not be loaded.</source>
         <translation>Das Bild konnte nicht geladen werden.</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigEventsView.qml" line="410"/>
+        <location filename="../qml/desktop/ConfigEventsView.qml" line="487"/>
         <source>Close</source>
         <translation>Schließen</translation>
     </message>
@@ -1022,12 +1022,12 @@
 <context>
     <name>ConfigTabs</name>
     <message>
-        <location filename="../qml/desktop/ConfigTabs.qml" line="29"/>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="32"/>
         <source>System info</source>
         <translation>System-Informationen</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigTabs.qml" line="60"/>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="63"/>
         <source>Product Version:</source>
         <translation>Produktversion:</translation>
     </message>
@@ -1052,32 +1052,37 @@
         <translation type="vanished">%1 Stunde</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigTabs.qml" line="66"/>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="70"/>
+        <source>All versions</source>
+        <translation>Alle Versionen</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="77"/>
         <source>Running since:</source>
         <translation>In Betrieb seit:</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigTabs.qml" line="79"/>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="90"/>
         <source>Machine name:</source>
         <translation>Gerätename:</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigTabs.qml" line="84"/>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="95"/>
         <source>Network:</source>
         <translation>Netzwerk:</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigTabs.qml" line="103"/>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="114"/>
         <source>CPU Usage:</source>
         <translation>CPU-Auslastung:</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigTabs.qml" line="110"/>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="121"/>
         <source>Memory Usage:</source>
         <translation>Speicherverbrauch:</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigTabs.qml" line="139"/>
+        <location filename="../qml/desktop/ConfigTabs.qml" line="150"/>
         <source>Calaos is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License version 3</source>
         <translation>Calaos ist freie Software, Sie können sie unter den Bedingungen der GNU General Public License Version 3 weitergeben und/oder verändern</translation>
     </message>
@@ -1592,6 +1597,64 @@
         <location filename="../qml/desktop/ConfigUserInfoView.qml" line="364"/>
         <source>No</source>
         <translation>Nein</translation>
+    </message>
+</context>
+<context>
+    <name>ConfigVersionsView</name>
+    <message>
+        <location filename="../qml/desktop/ConfigVersionsView.qml" line="8"/>
+        <source>Versions</source>
+        <translation>Versionen</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigVersionsView.qml" line="52"/>
+        <source>Reload</source>
+        <translation>Neu laden</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigVersionsView.qml" line="58"/>
+        <source>Back to config</source>
+        <translation>Zurück zur Konfiguration</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigVersionsView.qml" line="64"/>
+        <source>Quit</source>
+        <translation>Beenden</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigVersionsView.qml" line="114"/>
+        <source>Copied to the clipboard</source>
+        <translation>In die Zwischenablage kopiert</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigVersionsView.qml" line="119"/>
+        <source>Copy</source>
+        <translation>Kopieren</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigVersionsView.qml" line="132"/>
+        <source>This screen</source>
+        <translation>Dieser Bildschirm</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigVersionsView.qml" line="138"/>
+        <source>Reading the versions of the box…</source>
+        <translation>Versionen der Box werden gelesen…</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigVersionsView.qml" line="146"/>
+        <source>unknown</source>
+        <translation>unbekannt</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigVersionsView.qml" line="170"/>
+        <source>Kernel</source>
+        <translation>Kernel</translation>
+    </message>
+    <message>
+        <location filename="../qml/desktop/ConfigVersionsView.qml" line="183"/>
+        <source>Packages</source>
+        <translation>Pakete</translation>
     </message>
 </context>
 <context>
@@ -2460,12 +2523,12 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
 <context>
     <name>HomeView</name>
     <message>
-        <location filename="../qml/desktop/HomeView.qml" line="224"/>
+        <location filename="../qml/desktop/HomeView.qml" line="234"/>
         <source>My Home</source>
         <translation>Mein Zuhause</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/HomeView.qml" line="251"/>
+        <location filename="../qml/desktop/HomeView.qml" line="261"/>
         <source>Quit</source>
         <translation>Beenden</translation>
     </message>
@@ -3240,6 +3303,59 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
     </message>
 </context>
 <context>
+    <name>SettingsVersionsView</name>
+    <message>
+        <location filename="../qml/mobile/SettingsVersionsView.qml" line="8"/>
+        <source>Versions</source>
+        <translation>Versionen</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsVersionsView.qml" line="89"/>
+        <source>Copy</source>
+        <translation>Kopieren</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsVersionsView.qml" line="102"/>
+        <source>Reload</source>
+        <translation>Neu laden</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsVersionsView.qml" line="114"/>
+        <source>Copied to the clipboard</source>
+        <translation>In die Zwischenablage kopiert</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsVersionsView.qml" line="117"/>
+        <source>This phone</source>
+        <translation>Dieses Telefon</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsVersionsView.qml" line="127"/>
+        <source>Box</source>
+        <translation>Box</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsVersionsView.qml" line="132"/>
+        <source>Reading the versions of the box…</source>
+        <translation>Versionen der Box werden gelesen…</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsVersionsView.qml" line="141"/>
+        <source>unknown</source>
+        <translation>unbekannt</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsVersionsView.qml" line="160"/>
+        <source>Kernel</source>
+        <translation>Kernel</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsVersionsView.qml" line="175"/>
+        <source>Packages</source>
+        <translation>Pakete</translation>
+    </message>
+</context>
+<context>
     <name>SettingsView</name>
     <message>
         <source>Event log:</source>
@@ -3326,6 +3442,16 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <location filename="../qml/mobile/SettingsView.qml" line="72"/>
         <source>Box</source>
         <translation>Box</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsView.qml" line="88"/>
+        <source>Versions</source>
+        <translation>Versionen</translation>
+    </message>
+    <message>
+        <location filename="../qml/mobile/SettingsView.qml" line="89"/>
+        <source>Software of the box and of this app</source>
+        <translation>Software der Box und dieser App</translation>
     </message>
     <message>
         <location filename="../qml/mobile/SettingsView.qml" line="58"/>
@@ -4085,6 +4211,24 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
     </message>
 </context>
 <context>
+    <name>VersionsModel</name>
+    <message>
+        <location filename="../src/VersionsModel.cpp" line="59"/>
+        <source>This server cannot give the box versions: update calaos-server.</source>
+        <translation>Dieser Server kann die Versionen der Box nicht liefern: calaos-server aktualisieren.</translation>
+    </message>
+    <message>
+        <location filename="../src/VersionsModel.cpp" line="63"/>
+        <source>The box system is too old to give its versions: update calaos-container.</source>
+        <translation>Das Boxsystem ist zu alt, um seine Versionen zu liefern: calaos-container aktualisieren.</translation>
+    </message>
+    <message>
+        <location filename="../src/VersionsModel.cpp" line="67"/>
+        <source>The box system did not answer: only the server and client versions are shown.</source>
+        <translation>Das Boxsystem hat nicht geantwortet: nur Server- und Clientversionen werden angezeigt.</translation>
+    </message>
+</context>
+<context>
     <name>WebBrowserMenu</name>
     <message>
         <location filename="../qml/desktop/WebBrowserMenu.qml" line="47"/>
@@ -4202,12 +4346,12 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
 <context>
     <name>main</name>
     <message>
-        <location filename="../qml/desktop/main.qml" line="381"/>
+        <location filename="../qml/desktop/main.qml" line="388"/>
         <source>Keyboard</source>
         <translation>Tastatur</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/main.qml" line="382"/>
+        <location filename="../qml/desktop/main.qml" line="389"/>
         <source>Change text for &apos;%1&apos;</source>
         <translation>Text für &apos;%1&apos; ändern</translation>
     </message>

@@ -51,6 +51,7 @@
         <file>qml/desktop/ConfigScreenView.qml</file>
         <file>qml/desktop/ConfigL18nView.qml</file>
         <file>qml/desktop/ConfigTimeView.qml</file>
+        <file>qml/desktop/ConfigVersionsView.qml</file>
         <file>qml/desktop/ConfigEventsView.qml</file>
         <file>qml/desktop/DateTimeWheels.qml</file>
         <file>qml/desktop/TimeZonePicker.qml</file>

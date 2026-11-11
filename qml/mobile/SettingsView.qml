@@ -83,6 +83,15 @@ SettingsPage {
             external: true
             onButtonClicked: AppActions.openEventLog()
         }
+        Tile {
+            objectName: "settingsEntryVersions"
+            title: qsTr("Versions")
+            subtitle: qsTr("Software of the box and of this app")
+            glyph: "info"
+            wide: true
+            Layout.columnSpan: 2
+            onButtonClicked: settingsPage.openSubPage(versionsView)
+        }
     }
 
     Component {
@@ -96,6 +105,13 @@ SettingsPage {
         id: connectionView
 
         SettingsConnectionView {
+        }
+    }
+
+    Component {
+        id: versionsView
+
+        SettingsVersionsView {
         }
     }
 

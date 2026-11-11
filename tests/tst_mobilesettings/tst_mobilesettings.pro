@@ -38,6 +38,7 @@ OTHER_FILES += \
     tst_settingsdevicename.qml \
     tst_settingsnavigation.qml \
     tst_settingseventlog.qml \
+    tst_settingsversions.qml \
     tst_admincodesheet.qml \
     tst_updatesview.qml \
     tst_loginview.qml \

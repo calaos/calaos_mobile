@@ -2291,6 +2291,7 @@ void TstAdminRelay::versionsLeaveTheGate_data()
     QTest::newRow("answered") << true << QString();
     QTest::newRow("https_required") << false << "https_required";
     QTest::newRow("invalid_request") << false << "invalid_request";
+    QTest::newRow("not_allowed") << false << "not_allowed";
     QTest::newRow("daemon_unreachable") << false << "daemon_unreachable";
     QTest::newRow("bad_session") << false << "bad_session";
 }
@@ -2316,6 +2317,7 @@ void TstAdminRelay::versionsLeaveTheGate()
     AdminRelay relay(&t);
     unlockRelay(t, relay);
     relay.request("versions", QJsonObject(), {});
+    QVERIFY(!t.frames.last().data.contains("admin_session"));
     relay.handleReply("admin", t.frames.last().msgId,
                       success ? ok(QJsonObject{{ "server", "4.8.0" }, { "system", QJsonValue::Null }}) : err(code));
     QCOMPARE(relay.gate(), AdminRelay::GateUnlocked);

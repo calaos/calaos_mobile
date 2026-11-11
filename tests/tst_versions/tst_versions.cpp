@@ -140,6 +140,7 @@ void TstVersions::relayErrors_data()
     QTest::addColumn<QString>("code");
     QTest::addColumn<int>("failure");
     QTest::newRow("server without the action") << "invalid_request" << int(Failure::OldServer);
+    QTest::newRow("relay server without the action") << "not_allowed" << int(Failure::OldServer);
     QTest::newRow("server without the relay") << "old_server" << int(Failure::OldServer);
     QTest::newRow("timeout") << "timeout" << int(Failure::Unreachable);
     QTest::newRow("https_required") << "https_required" << int(Failure::Unreachable);
@@ -193,6 +194,8 @@ void TstVersions::daemonAnswers_data()
     QTest::newRow("answered") << true << 200 << true << int(Failure::None) << "";
     QTest::newRow("no route") << false << 404 << false << int(Failure::DaemonTooOld) << "daemon_too_old";
     QTest::newRow("no answer") << false << 0 << false << int(Failure::Unreachable) << "daemon_unreachable";
+    QTest::newRow("token refused") << false << 401 << false << int(Failure::Unauthorized)
+                                   << "authentication error (http 401)";
     QTest::newRow("server error") << false << 500 << false << int(Failure::Unreachable) << "http 500";
 }
 
@@ -300,6 +303,7 @@ void TstVersions::modelMessagePerFailure_data()
     QTest::addColumn<QString>("failure");
     QTest::addColumn<QString>("words");
     QTest::newRow("old server") << "invalid_request" << "old_server" << "update calaos-server";
+    QTest::newRow("old server, not_allowed") << "not_allowed" << "old_server" << "update calaos-server";
     QTest::newRow("unreachable") << "timeout" << "unreachable" << "did not answer";
 }
 
@@ -322,6 +326,12 @@ void TstVersions::modelMessagePerFailure()
     f.pending[1](fromDaemon(false, 404, QJsonValue(), QStringLiteral("4.8.0")));
     QCOMPARE(model.get_failure(), QStringLiteral("daemon_too_old"));
     QVERIFY(model.get_message().contains(QStringLiteral("update calaos-container")));
+
+    model.refresh();
+    f.pending[2](fromDaemon(false, 401, QJsonValue(), QStringLiteral("4.8.0")));
+    QCOMPARE(model.get_failure(), QStringLiteral("unauthorized"));
+    QVERIFY(model.get_message().contains(QStringLiteral("authentication error")));
+    QVERIFY(!model.get_message().contains(QStringLiteral("did not answer")));
 }
 
 void TstVersions::modelKeepsOnlyTheLastAnswer()

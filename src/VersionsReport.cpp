@@ -59,10 +59,11 @@ Report fromRelayError(const QString &code, const QString &serverVersion)
     Report report;
     report.server = serverVersion;
     report.error = code;
-    //an unknown action is refused as invalid_request by the servers before it
-    report.failure = code == QLatin1String("old_server") || code == QLatin1String("invalid_request")
-                         ? Failure::OldServer
-                         : Failure::Unreachable;
+    //A server with the relay but without "versions" refuses the unknown action
+    //as not_allowed, before any session check; invalid_request is kept by caution.
+    const bool oldServer = code == QLatin1String("old_server") || code == QLatin1String("not_allowed")
+                           || code == QLatin1String("invalid_request");
+    report.failure = oldServer ? Failure::OldServer : Failure::Unreachable;
     return report;
 }
 
@@ -80,6 +81,11 @@ Report fromDaemon(bool ok, int httpStatus, const QJsonValue &data, const QString
     {
         report.failure = Failure::DaemonTooOld;
         report.error = QStringLiteral("daemon_too_old");
+    }
+    else if (httpStatus == 401)
+    {
+        report.failure = Failure::Unauthorized;
+        report.error = QStringLiteral("authentication error (http 401)");
     }
     else
     {

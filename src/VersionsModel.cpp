@@ -62,6 +62,10 @@ void VersionsModel::apply(const Report &report)
         update_failure(QStringLiteral("daemon_too_old"));
         update_message(tr("The box system is too old to give its versions: update calaos-container."));
         break;
+    case Failure::Unauthorized:
+        update_failure(QStringLiteral("unauthorized"));
+        update_message(tr("The box system refused this kiosk's credentials (authentication error)."));
+        break;
     case Failure::Unreachable:
         update_failure(QStringLiteral("unreachable"));
         update_message(tr("The box system did not answer: only the server and client versions are shown."));

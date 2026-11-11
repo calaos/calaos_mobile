@@ -194,7 +194,6 @@ private:
     AdminRelayBackend *adminBackend = nullptr;
     AdminUpdates *boxUpdates = nullptr;
     AdminBiometrics *adminBiometrics = nullptr;
-    //the versions page: the daemon on the kiosk, the admin relay on mobile
     VersionsModel *versionsModel = nullptr;
 
     ResumePolicy resumePolicy;

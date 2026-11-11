@@ -10,8 +10,8 @@ PageScaffold {
     property bool copied: false
 
     component BodyText: Text {
-        font { family: calaosFont.fontFamily; weight: Font.ExtraLight; pixelSize: Units.dp(15) }
-        color: Theme.colorAlpha(Theme.whiteColor, 0.7)
+        font { family: calaosFont.fontFamily; weight: Font.Light; pixelSize: Units.dp(15) }
+        color: Theme.colorAlpha(Theme.whiteColor, 0.85)
         wrapMode: Text.WordWrap
         Layout.fillWidth: true
     }
@@ -174,7 +174,9 @@ PageScaffold {
                     BodyText {
                         objectName: "stateMessage"
                         visible: versionsModel.loaded && versionsModel.message !== ""
-                        color: versionsModel.failure === "unreachable" ? Theme.redColor : Theme.blueColor
+                        font.weight: Font.Normal
+                        color: versionsModel.failure === "unreachable" || versionsModel.failure === "unauthorized"
+                               ? Theme.redColor : Theme.blueColor
                         text: versionsModel.message
                     }
 

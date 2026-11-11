@@ -1652,7 +1652,7 @@
         <translation>Kernel</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigVersionsView.qml" line="183"/>
+        <location filename="../qml/desktop/ConfigVersionsView.qml" line="185"/>
         <source>Packages</source>
         <translation>Pakete</translation>
     </message>
@@ -4224,6 +4224,11 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
     </message>
     <message>
         <location filename="../src/VersionsModel.cpp" line="67"/>
+        <source>The box system refused this kiosk&apos;s credentials (authentication error).</source>
+        <translation>Das Boxsystem hat die Zugangsdaten dieses Bildschirms abgelehnt (Authentifizierungsfehler).</translation>
+    </message>
+    <message>
+        <location filename="../src/VersionsModel.cpp" line="71"/>
         <source>The box system did not answer: only the server and client versions are shown.</source>
         <translation>Das Boxsystem hat nicht geantwortet: nur Server- und Clientversionen werden angezeigt.</translation>
     </message>

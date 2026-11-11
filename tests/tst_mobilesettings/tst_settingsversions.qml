@@ -44,6 +44,8 @@ TestCase {
         function getPictureSized(pic) { return "" }
     }
 
+    Rectangle { anchors.fill: parent; color: Theme.backgroundColor }
+
     StackView {
         id: stack
         anchors.fill: parent
@@ -191,5 +193,6 @@ TestCase {
         mouseClick(findChild(page, "copyButton"))
         compare(versionsModel.copies, 1)
         verify(shown(page, "copiedText"))
+        shot("versions-copied.png")
     }
 }

@@ -1030,7 +1030,10 @@ void Application::setupVersionsModel()
     versionsModel->setFetcher([conn, relay](VersionsModel::Done done)
     {
         if (!relay)
+        {
+            done(VersionsReport::fromRelayError(QStringLiteral("not_connected"), QString()));
             return;
+        }
         relay->request(QStringLiteral("versions"), QJsonObject(), [conn, done](const AdminRelay::Outcome &o)
         {
             if (o.ok)

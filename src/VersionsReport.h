@@ -24,6 +24,7 @@ enum class Failure
     OldServer, //calaos_server does not know the "versions" action
     DaemonTooOld, //calaos-container has no versions route
     Unreachable,
+    Unauthorized, //the kiosk token was refused, even after a reload
 };
 
 struct Report

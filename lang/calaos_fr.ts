@@ -1648,7 +1648,7 @@
         <translation>Noyau</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigVersionsView.qml" line="183"/>
+        <location filename="../qml/desktop/ConfigVersionsView.qml" line="185"/>
         <source>Packages</source>
         <translation>Paquets</translation>
     </message>
@@ -4248,8 +4248,13 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
     </message>
     <message>
         <location filename="../src/VersionsModel.cpp" line="67"/>
+        <source>The box system refused this kiosk&apos;s credentials (authentication error).</source>
+        <translation>Le système de la box a refusé les identifiants de cet écran (erreur d’authentification).</translation>
+    </message>
+    <message>
+        <location filename="../src/VersionsModel.cpp" line="71"/>
         <source>The box system did not answer: only the server and client versions are shown.</source>
-        <translation>Le système de la box n'a pas répondu : seules les versions du serveur et du client sont affichées.</translation>
+        <translation>Le système de la box n&apos;a pas répondu : seules les versions du serveur et du client sont affichées.</translation>
     </message>
 </context>
 <context>

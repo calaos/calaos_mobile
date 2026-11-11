@@ -165,7 +165,7 @@ SettingsPage {
     Note {
         objectName: "stateMessage"
         visible: versionsModel.loaded && versionsModel.message !== ""
-        color: versionsModel.failure === "unreachable" ? Theme.redColor : Theme.mutedColor
+        color: versionsModel.failure === "unreachable" || versionsModel.failure === "unauthorized" ? Theme.redColor : Theme.mutedColor
         text: versionsModel.message
     }
 

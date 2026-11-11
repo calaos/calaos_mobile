@@ -130,7 +130,9 @@ void AdminRelay::request(const QString &action, const QJsonObject &params, Callb
 
     QJsonObject data{{ QStringLiteral("action"), action }};
     //an empty key counts as present on the server side: leave it out
-    if (!m_session.isEmpty())
+    //"versions" ignores the session: joining it would turn a forgetSession() into session_lost
+    const bool withSession = !m_session.isEmpty() && action != QLatin1String("versions");
+    if (withSession)
         data[QStringLiteral("admin_session")] = m_session;
     if (!params.isEmpty())
         data[QStringLiteral("params")] = params;
@@ -140,7 +142,7 @@ void AdminRelay::request(const QString &action, const QJsonObject &params, Callb
 
     send(MsgAdmin, action, data,
          action == QLatin1String("update_check") ? m_updateCheckTimeoutMs : m_replyTimeoutMs,
-         !m_session.isEmpty(), callback);
+         withSession, callback);
 }
 
 QString AdminRelay::send(const QString &msg, const QString &action, const QJsonObject &data,
@@ -257,7 +259,7 @@ void AdminRelay::finish(const QString &msgId, const Outcome &outcome)
 
 void AdminRelay::applyOutcome(const QString &msg, const QString &action, Outcome &o)
 {
-    //the household versions page says nothing about the admin password
+    //the answer to the household versions page says nothing about the admin password
     if (action == QLatin1String("versions"))
         return;
 

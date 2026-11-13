@@ -35,6 +35,7 @@ QJsonObject systemData()
         { "container", "1.9.1" },
         { "packages", QJsonArray{
               QJsonObject{{ "name", "calaos-container" }, { "version", "1.9.1" }},
+              QJsonObject{{ "name", "calaos-home" }, { "version", "4.5.1" }},
               QJsonObject{{ "name", "calaos-server" }, { "version", "4.8.0" }},
               QJsonObject{{ "name", "calaos-web-app" }, { "version", "4.2.0" }},
           }},
@@ -75,6 +76,17 @@ public:
     {
         const bool ok = status == 200;
         deliver(fromDaemon(ok, status, ok ? QJsonValue(systemData()) : QJsonValue(), server));
+    }
+
+    //A 200 answer whose system block has no package list, or no Calaos OS version
+    Q_INVOKABLE void answerVariant(const QString &kind, const QString &server)
+    {
+        QJsonObject sys = systemData();
+        if (kind == QLatin1String("noPackages"))
+            sys.insert(QStringLiteral("packages"), QJsonArray());
+        else if (kind == QLatin1String("noCalaosOs"))
+            sys.insert(QStringLiteral("calaos_os"), QString());
+        deliver(fromDaemon(true, 200, QJsonValue(sys), server));
     }
 
     Q_INVOKABLE void answerRelayError(const QString &code, const QString &server)

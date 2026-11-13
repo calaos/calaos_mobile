@@ -64,6 +64,10 @@ SettingsPage {
         font { family: calaosFont.fontFamily; pixelSize: Units.dp(13) }
     }
 
+    // The dpkg package list is the only place Calaos components appear; the
+    // server and container lines are a fallback for when it is absent.
+    readonly property bool packagesListed: versionsModel.systemAvailable && versionsModel.packages.length > 0
+
     Component.onCompleted: versionsModel.refresh()
 
     Timer {
@@ -137,15 +141,18 @@ SettingsPage {
 
         VersionLine {
             objectName: "serverLine"
+            visible: !packagesListed
             name: "calaos-server"
             version: versionsModel.serverVersion !== "" ? versionsModel.serverVersion : qsTr("unknown")
         }
         VersionLine {
-            visible: versionsModel.systemAvailable && versionsModel.containerVersion !== ""
+            objectName: "containerLine"
+            visible: versionsModel.systemAvailable && !packagesListed && versionsModel.containerVersion !== ""
             name: "calaos-container"
             version: versionsModel.containerVersion
         }
         VersionLine {
+            objectName: "calaosOsLine"
             visible: versionsModel.systemAvailable && versionsModel.calaosOs !== ""
             name: "Calaos OS"
             version: versionsModel.calaosOs

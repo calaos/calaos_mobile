@@ -120,7 +120,6 @@ TestCase {
         // the versions of this screen need no answer
         verify(findChild(page, "clientRow").visible)
         compare(rowText(findChild(page, "clientRow")), "This screen 4.5.1 (Qt " + versionsModel.qtVersion + ")")
-        verify(findChild(page, "copyButton").disabled)
         shot("loading")
     }
 
@@ -128,22 +127,16 @@ TestCase {
         var page = open()
         harness.answerDaemon(200, "4.8.0")
         verify(!findChild(page, "stateLoading").visible)
-        compare(rowText(findChild(page, "serverRow")), "calaos-server 4.8.0")
-        compare(rowText(findChild(page, "containerRow")), "calaos-container 1.9.1")
+        // the Calaos components appear once, in the package list
+        verify(!findChild(page, "serverRow").visible)
+        verify(!findChild(page, "containerRow").visible)
         verify(hasText(page, "Calaos OS") && hasText(page, "v4.4.0"))
         verify(hasText(page, "Debian") && hasText(page, "13.1"))
         verify(hasText(page, "Kernel") && hasText(page, "6.12.48-amd64"))
         verify(hasText(page, "Packages"))
         verify(hasText(page, "calaos-web-app") && hasText(page, "4.2.0"))
         verify(!findChild(page, "stateMessage").visible)
-        verify(!findChild(page, "copyButton").disabled)
         shot("nominal")
-    }
-
-    function test_serverVersionUnknown() {
-        var page = open()
-        harness.answerDaemon(200, "")
-        compare(rowText(findChild(page, "serverRow")), "calaos-server unknown")
     }
 
     function failureCase(answer, server, text) {
@@ -212,52 +205,73 @@ TestCase {
         mouseClick(findChild(page, "refresh"))
         harness.answerDaemon(200, "4.8.0")
         verify(!findChild(page, "stateMessage").visible)
-        verify(findChild(page, "containerRow").visible)
+        verify(hasText(page, "Packages"))
     }
 
     function test_reloadKeepsTheShownValues() {
         var page = open()
         harness.answerDaemon(200, "4.8.0")
+        verify(hasText(page, "Packages"))
         mouseClick(findChild(page, "refresh"))
         compare(harness.fetchCount(), 2)
         verify(versionsModel.loading)
         // no flash back to "Reading": the previous values stay until the answer
         verify(!findChild(page, "stateLoading").visible)
-        verify(findChild(page, "serverRow").visible)
-        verify(!findChild(page, "copyButton").disabled)
-        harness.answerDaemon(200, "4.8.1")
+        verify(hasText(page, "Packages"))
+        // the new answer replaces them: here without a system block
+        harness.answerDaemon(500, "4.8.1")
+        verify(!hasText(page, "Packages"))
         compare(rowText(findChild(page, "serverRow")), "calaos-server 4.8.1")
     }
 
-    function test_copy() {
+    function test_noCopyInTheKiosk() {
         var page = open()
         harness.answerDaemon(200, "4.8.0")
-        compare(findChild(page, "copiedText").text, "")
-        mouseClick(findChild(page, "copyButton"))
-        var copied = harness.clipboardText()
-        verify(copied.indexOf("calaos-home kiosk") >= 0, copied)
-        verify(copied.indexOf("4.5.1") >= 0)
-        verify(copied.indexOf("calaos-server") >= 0 && copied.indexOf("4.8.0") >= 0)
-        verify(copied.indexOf("calaos-container") >= 0 && copied.indexOf("1.9.1") >= 0)
-        compare(findChild(page, "copiedText").text, "Copied to the clipboard")
-        shot("copied")
-    }
-
-    function test_copyInAFailureCarriesTheError() {
-        var page = open()
-        harness.answerDaemon(401, "4.8.0")
-        mouseClick(findChild(page, "copyButton"))
-        var copied = harness.clipboardText()
-        verify(copied.indexOf("4.8.0") >= 0, copied)
-        verify(copied.indexOf("authentication error") >= 0, copied)
-    }
-
-    //Nothing to copy before the first answer
-    function test_copyIsRefusedBeforeTheFirstAnswer() {
-        var page = open()
-        mouseClick(findChild(page, "copyButton"))
+        compare(findChild(page, "copyButton"), null)
+        compare(findChild(page, "copiedText"), null)
+        verify(!hasText(page, "Copy"))
+        verify(!hasText(page, "Copied to the clipboard"))
         compare(harness.clipboardText(), "untouched")
-        compare(findChild(page, "copiedText").text, "")
+    }
+
+    function test_serverVersionUnknown() {
+        var page = open()
+        harness.answerDaemon(500, "")
+        compare(rowText(findChild(page, "serverRow")), "calaos-server unknown")
+    }
+
+    function test_thisScreenIsInThePackagesWhenListed() {
+        var page = open()
+        harness.answerDaemon(200, "4.8.0")
+        verify(!findChild(page, "clientRow").visible)
+        verify(hasText(page, "calaos-home") && hasText(page, "4.5.1"))
+        verify(!hasText(page, "This screen"))
+    }
+
+    function test_thisScreenInTheFallback() {
+        var page = open()
+        harness.answerDaemon(500, "4.8.0")
+        verify(findChild(page, "clientRow").visible)
+        compare(rowText(findChild(page, "clientRow")), "This screen 4.5.1 (Qt " + versionsModel.qtVersion + ")")
+    }
+
+    function test_emptyPackageListGivesTheComponentsBack() {
+        var page = open()
+        harness.answerVariant("noPackages", "4.8.0")
+        verify(!hasText(page, "Packages"))
+        compare(rowText(findChild(page, "serverRow")), "calaos-server 4.8.0")
+        compare(rowText(findChild(page, "containerRow")), "calaos-container 1.9.1")
+        verify(findChild(page, "clientRow").visible)
+        verify(hasText(page, "Debian"))
+    }
+
+    function test_emptyCalaosOsIsHidden() {
+        var page = open()
+        harness.answerVariant("noCalaosOs", "4.8.0")
+        verify(hasText(page, "Packages"))
+        verify(!hasText(page, "Calaos OS"))
+        verify(hasText(page, "Debian"))
+        verify(hasText(page, "Kernel"))
     }
 
     function test_footerButtons() {

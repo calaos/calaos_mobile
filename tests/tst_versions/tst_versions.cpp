@@ -219,8 +219,6 @@ void TstVersions::textNominal()
     QCOMPARE(text(r), QStringLiteral(
         "Calaos versions (2026-11-11)\n"
         "client: calaos-home kiosk 4.5.0 (Qt 6.12.0)\n"
-        "calaos-server 4.8.0\n"
-        "calaos-container 1.9.1\n"
         "calaos-os v4.4.0 · debian 13.1 · kernel 6.12.48-amd64\n"
         "calaos-container 1.9.1\n"
         "calaos-server 4.8.0\n"

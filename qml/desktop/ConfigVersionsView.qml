@@ -102,6 +102,8 @@ PageScaffold {
 
                     VersionRow {
                         objectName: "clientRow"
+                        // calaos-home is in the package list when it is shown
+                        visible: !page.packagesListed
                         name: qsTr("This screen")
                         version: versionsModel.clientVersion + " (Qt " + versionsModel.qtVersion + ")"
                     }

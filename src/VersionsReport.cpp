@@ -107,8 +107,13 @@ QString formatText(const Report &report, const QString &clientName, const QStrin
         client += QStringLiteral(" (Qt %1)").arg(qtVersion);
     lines << client;
 
-    lines << (report.server.isEmpty() ? QStringLiteral("calaos-server unavailable")
-                                      : QStringLiteral("calaos-server %1").arg(report.server));
+    // Calaos components are listed once, from the package list; the server and
+    // container lines only stand in when that list is missing.
+    const bool packagesListed = report.hasSystem && !report.packages.isEmpty();
+
+    if (!packagesListed)
+        lines << (report.server.isEmpty() ? QStringLiteral("calaos-server unavailable")
+                                          : QStringLiteral("calaos-server %1").arg(report.server));
 
     if (!report.hasSystem)
     {
@@ -117,7 +122,7 @@ QString formatText(const Report &report, const QString &clientName, const QStrin
         return lines.join(QLatin1Char('\n'));
     }
 
-    if (!report.container.isEmpty())
+    if (!packagesListed && !report.container.isEmpty())
         lines << QStringLiteral("calaos-container %1").arg(report.container);
 
     QStringList os;

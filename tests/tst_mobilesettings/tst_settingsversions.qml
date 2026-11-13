@@ -146,8 +146,8 @@ TestCase {
         var page = openPage()
         nominal()
         verify(!shown(page, "stateLoading"))
-        verify(shown(page, "serverLine"))
-        compare(findChild(page, "serverLine").version, "4.8.0")
+        // the Calaos components appear once, in the package list
+        verify(!shown(page, "serverLine"))
         verify(!shown(page, "stateMessage"))
         compare(findChild(page, "packageRepeater").count, 3)
         verify(!findChild(page, "copyButton").disabled)

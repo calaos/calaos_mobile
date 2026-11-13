@@ -120,7 +120,6 @@ TestCase {
         // the versions of this screen need no answer
         verify(findChild(page, "clientRow").visible)
         compare(rowText(findChild(page, "clientRow")), "This screen 4.5.1 (Qt " + versionsModel.qtVersion + ")")
-        verify(findChild(page, "copyButton").disabled)
         shot("loading")
     }
 
@@ -128,22 +127,23 @@ TestCase {
         var page = open()
         harness.answerDaemon(200, "4.8.0")
         verify(!findChild(page, "stateLoading").visible)
-        compare(rowText(findChild(page, "serverRow")), "calaos-server 4.8.0")
-        compare(rowText(findChild(page, "containerRow")), "calaos-container 1.9.1")
+        // the Calaos components appear once, in the package list
+        verify(!findChild(page, "serverRow").visible)
+        verify(!findChild(page, "containerRow").visible)
         verify(hasText(page, "Calaos OS") && hasText(page, "v4.4.0"))
         verify(hasText(page, "Debian") && hasText(page, "13.1"))
         verify(hasText(page, "Kernel") && hasText(page, "6.12.48-amd64"))
         verify(hasText(page, "Packages"))
         verify(hasText(page, "calaos-web-app") && hasText(page, "4.2.0"))
         verify(!findChild(page, "stateMessage").visible)
-        verify(!findChild(page, "copyButton").disabled)
         shot("nominal")
     }
 
     function test_serverVersionUnknown() {
         var page = open()
         harness.answerDaemon(200, "")
-        compare(rowText(findChild(page, "serverRow")), "calaos-server unknown")
+        verify(!findChild(page, "serverRow").visible)
+        verify(hasText(page, "calaos-server"))
     }
 
     function failureCase(answer, server, text) {
@@ -212,7 +212,8 @@ TestCase {
         mouseClick(findChild(page, "refresh"))
         harness.answerDaemon(200, "4.8.0")
         verify(!findChild(page, "stateMessage").visible)
-        verify(findChild(page, "containerRow").visible)
+        verify(!findChild(page, "stateMessage").visible)
+        verify(hasText(page, "Packages"))
     }
 
     function test_reloadKeepsTheShownValues() {
@@ -223,41 +224,16 @@ TestCase {
         verify(versionsModel.loading)
         // no flash back to "Reading": the previous values stay until the answer
         verify(!findChild(page, "stateLoading").visible)
-        verify(findChild(page, "serverRow").visible)
-        verify(!findChild(page, "copyButton").disabled)
+        verify(hasText(page, "Packages"))
         harness.answerDaemon(200, "4.8.1")
-        compare(rowText(findChild(page, "serverRow")), "calaos-server 4.8.1")
+        verify(hasText(page, "Packages"))
     }
 
-    function test_copy() {
+    function test_noCopyInTheKiosk() {
         var page = open()
         harness.answerDaemon(200, "4.8.0")
-        compare(findChild(page, "copiedText").text, "")
-        mouseClick(findChild(page, "copyButton"))
-        var copied = harness.clipboardText()
-        verify(copied.indexOf("calaos-home kiosk") >= 0, copied)
-        verify(copied.indexOf("4.5.1") >= 0)
-        verify(copied.indexOf("calaos-server") >= 0 && copied.indexOf("4.8.0") >= 0)
-        verify(copied.indexOf("calaos-container") >= 0 && copied.indexOf("1.9.1") >= 0)
-        compare(findChild(page, "copiedText").text, "Copied to the clipboard")
-        shot("copied")
-    }
-
-    function test_copyInAFailureCarriesTheError() {
-        var page = open()
-        harness.answerDaemon(401, "4.8.0")
-        mouseClick(findChild(page, "copyButton"))
-        var copied = harness.clipboardText()
-        verify(copied.indexOf("4.8.0") >= 0, copied)
-        verify(copied.indexOf("authentication error") >= 0, copied)
-    }
-
-    //Nothing to copy before the first answer
-    function test_copyIsRefusedBeforeTheFirstAnswer() {
-        var page = open()
-        mouseClick(findChild(page, "copyButton"))
-        compare(harness.clipboardText(), "untouched")
-        compare(findChild(page, "copiedText").text, "")
+        compare(findChild(page, "copyButton"), null)
+        compare(findChild(page, "copiedText"), null)
     }
 
     function test_footerButtons() {

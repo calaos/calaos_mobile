@@ -7,7 +7,9 @@ PageScaffold {
 
     title: qsTr("Versions")
 
-    property bool copied: false
+    // The dpkg package list is the only place Calaos components appear; the
+    // server and container lines are a fallback for when it is absent.
+    readonly property bool packagesListed: versionsModel.systemAvailable && versionsModel.packages.length > 0
 
     component BodyText: Text {
         font { family: calaosFont.fontFamily; weight: Font.Light; pixelSize: Units.dp(15) }
@@ -39,12 +41,6 @@ PageScaffold {
     }
 
     Component.onCompleted: versionsModel.refresh()
-
-    Timer {
-        id: copiedTimer
-        interval: 2500
-        onTriggered: page.copied = false
-    }
 
     footerButtons: [
         FooterButton {
@@ -104,29 +100,6 @@ PageScaffold {
                     width: pane.width - Units.dp(12)
                     spacing: Units.dp(10)
 
-                    RowLayout {
-                        spacing: Units.dp(12)
-                        Layout.fillWidth: true
-
-                        BodyText {
-                            objectName: "copiedText"
-                            color: Theme.blueColor
-                            text: page.copied ? qsTr("Copied to the clipboard") : ""
-                        }
-
-                        CalaosButton {
-                            objectName: "copyButton"
-                            text: qsTr("Copy")
-                            disabled: !versionsModel.loaded
-                            Layout.minimumWidth: width
-                            onButtonClicked: {
-                                versionsModel.copyToClipboard()
-                                page.copied = true
-                                copiedTimer.restart()
-                            }
-                        }
-                    }
-
                     VersionRow {
                         objectName: "clientRow"
                         name: qsTr("This screen")
@@ -141,14 +114,14 @@ PageScaffold {
 
                     VersionRow {
                         objectName: "serverRow"
-                        visible: versionsModel.loaded
+                        visible: versionsModel.loaded && !page.packagesListed
                         name: "calaos-server"
                         version: versionsModel.serverVersion !== "" ? versionsModel.serverVersion : qsTr("unknown")
                     }
 
                     VersionRow {
                         objectName: "containerRow"
-                        visible: versionsModel.systemAvailable && versionsModel.containerVersion !== ""
+                        visible: versionsModel.systemAvailable && !page.packagesListed && versionsModel.containerVersion !== ""
                         name: "calaos-container"
                         version: versionsModel.containerVersion
                     }
@@ -181,7 +154,7 @@ PageScaffold {
                     }
 
                     Text {
-                        visible: versionsModel.systemAvailable && versionsModel.packages.length > 0
+                        visible: page.packagesListed
                         text: qsTr("Packages")
                         font { family: calaosFont.fontFamily; weight: Font.Thin; pixelSize: Units.dp(18) }
                         color: Theme.whiteColor

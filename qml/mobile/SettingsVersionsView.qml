@@ -146,11 +146,13 @@ SettingsPage {
             version: versionsModel.serverVersion !== "" ? versionsModel.serverVersion : qsTr("unknown")
         }
         VersionLine {
+            objectName: "containerLine"
             visible: versionsModel.systemAvailable && !packagesListed && versionsModel.containerVersion !== ""
             name: "calaos-container"
             version: versionsModel.containerVersion
         }
         VersionLine {
+            objectName: "calaosOsLine"
             visible: versionsModel.systemAvailable && versionsModel.calaosOs !== ""
             name: "Calaos OS"
             version: versionsModel.calaosOs

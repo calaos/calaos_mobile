@@ -148,6 +148,10 @@ TestCase {
         verify(!shown(page, "stateLoading"))
         // the Calaos components appear once, in the package list
         verify(!shown(page, "serverLine"))
+        verify(!shown(page, "containerLine"))
+        verify(shown(page, "calaosOsLine"))
+        // the phone itself is not a package of the box
+        verify(shown(page, "clientLine"))
         verify(!shown(page, "stateMessage"))
         compare(findChild(page, "packageRepeater").count, 3)
         verify(!findChild(page, "copyButton").disabled)
@@ -177,6 +181,24 @@ TestCase {
         failed("old_server", "update calaos-server")
         versionsModel.serverVersion = ""
         compare(findChild(page, "serverLine").version, "unknown")
+    }
+
+    function test_emptyPackageListGivesTheComponentsBack() {
+        var page = openPage()
+        nominal()
+        versionsModel.packages = []
+        verify(shown(page, "serverLine"))
+        verify(shown(page, "containerLine"))
+        compare(findChild(page, "containerLine").version, "1.9.1")
+        compare(findChild(page, "packageRepeater").count, 0)
+    }
+
+    function test_emptyCalaosOsIsHidden() {
+        var page = openPage()
+        nominal()
+        versionsModel.calaosOs = ""
+        verify(!shown(page, "calaosOsLine"))
+        compare(findChild(page, "packageRepeater").count, 3)
     }
 
     function test_reloadAsksAgain() {

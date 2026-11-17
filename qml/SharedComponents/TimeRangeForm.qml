@@ -16,6 +16,7 @@ ColumnLayout {
     //An existing segment is edited: Delete and the level priority are shown.
     property bool editing: false
     property int level: 0
+    //Highest level that has slots: a segment cannot go below it.
     property int levelCount: 0
     property string message: ""
 
@@ -115,6 +116,7 @@ ColumnLayout {
         property alias field: field
         property string label
         property string fontFamily
+        property string placeholder
         property bool readOnly
         signal stepped(int delta)
 
@@ -135,6 +137,8 @@ ColumnLayout {
         Controls.TextField {
             id: field
             enabled: !tf.readOnly
+            placeholderText: tf.placeholder
+            placeholderTextColor: Theme.mutedColor
             color: Theme.whiteColor
             font { family: tf.fontFamily; pixelSize: Units.dp(16) }
             horizontalAlignment: Text.AlignHCenter
@@ -161,6 +165,7 @@ ColumnLayout {
         id: startField
         objectName: "startField"
         label: qsTr("Start")
+        placeholder: "08:00"
         fontFamily: root.fontFamily
         readOnly: root.readOnly
         onStepped: (delta) => {
@@ -174,6 +179,7 @@ ColumnLayout {
         id: endField
         objectName: "endField"
         label: qsTr("End")
+        placeholder: "17:30"
         fontFamily: root.fontFamily
         readOnly: root.readOnly
         onStepped: (delta) => {
@@ -245,7 +251,7 @@ ColumnLayout {
         spacing: Units.dp(6)
         Text {
             objectName: "levelText"
-            text: qsTr("Level %1").arg(root.level)
+            text: qsTr("Priority: level %1").arg(root.level)
             color: Theme.whiteColor
             font { family: root.fontFamily; pixelSize: Units.dp(15) }
         }
@@ -285,6 +291,7 @@ ColumnLayout {
             objectName: "deleteButton"
             visible: root.editing && !root.simpleMode
             fontFamily: root.fontFamily
+            danger: true
             text: qsTr("Delete")
             enabled: !root.readOnly
             onClicked: root.deleteRequested()

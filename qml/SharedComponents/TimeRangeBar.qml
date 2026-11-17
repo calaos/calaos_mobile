@@ -20,7 +20,7 @@ Item {
     property bool showAxis: !compact
     property bool showNow: false
     property int nowMinutes: 0
-    //Desktop and kiosk: a drag on the bar selects a slot (D2).
+    //Desktop and kiosk: a drag on the bar selects a slot.
     property bool dragEnabled: false
     property bool readOnly: false
     //Pending selection of a drag, minutes; -1 when none.
@@ -55,7 +55,7 @@ Item {
     function segmentText(seg, narrow) {
         if (seg.level === 0)
             return seg.off ? qsTr("Off") : (narrow ? "" : degrees(seg.setpoint))
-        return narrow ? "N" + seg.level : "N" + seg.level + " " + degrees(seg.setpoint)
+        return narrow ? String(seg.level) : "N" + seg.level + " " + degrees(seg.setpoint)
     }
 
     function accessibleText(seg) {
@@ -99,15 +99,17 @@ Item {
 
                 Text {
                     anchors.fill: parent
-                    anchors.margins: Units.dp(2)
+                    anchors.margins: seg.ratio < 0.09 ? 0 : Units.dp(2)
                     visible: !root.compact
                     text: root.segmentText(seg.modelData, seg.ratio < 0.09)
                     color: seg.modelData.level === 0 ? Theme.mutedColor
                          : seg.modelData.level <= 3 ? "#111111" : "#ffffff"
-                    font { family: root.fontFamily; pixelSize: Units.dp(13) }
+                    font { family: root.fontFamily; pixelSize: Units.dp(seg.ratio < 0.09 ? 11 : 13) }
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
-                    elide: Text.ElideRight
+                    //A narrow segment shows the bare level number, it must not become "…".
+                    elide: seg.ratio < 0.09 ? Text.ElideNone : Text.ElideRight
+                    clip: true
                 }
             }
         }

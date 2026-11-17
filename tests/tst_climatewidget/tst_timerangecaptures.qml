@@ -31,7 +31,7 @@ TestCase {
             return c.rid
         }
         function getTimeRange(ioId) { return push({ action: "get_timerange", id: ioId }) }
-        function setTimeRange(ioId, ranges, months) { return push({ action: "set_timerange", id: ioId, ranges: ranges }) }
+        function setTimeRange(ioId, ranges) { return push({ action: "set_timerange", id: ioId, ranges: ranges }) }
         function getStates(items) { return push({ action: "get_state", items: items }) }
         function setState(id, value) { return push({ action: "set_state", id: id, value: value }) }
     }

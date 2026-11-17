@@ -29,7 +29,7 @@ TestCase {
             return c.rid
         }
         function getTimeRange(ioId) { return push({ action: "get_timerange", id: ioId }) }
-        function setTimeRange(ioId, ranges, months) { return push({ action: "set_timerange", id: ioId, ranges: ranges }) }
+        function setTimeRange(ioId, ranges) { return push({ action: "set_timerange", id: ioId, ranges: ranges }) }
         function getStates(items) { return push({ action: "get_state", items: items }) }
         function setState(id, value) { return push({ action: "set_state", id: id, value: value }) }
     }
@@ -280,7 +280,7 @@ TestCase {
         answerAll()
         var from = fake.calls.length
         e.openSegment({ start: 720, end: 780, level: 2, setpoint: 18 })
-        compare(findChild(e, "levelText").text, "Level 2")
+        compare(findChild(e, "levelText").text, "Priority: level 2")
         verify(!findChild(e, "levelDown").enabled)
         findChild(e, "levelUp").trigger()
         answerAll()
@@ -331,5 +331,83 @@ TestCase {
         compare(findChild(e, "levelCount").text, "Niveaux : 0 sur 6")
         e.kind = "heat"
         compare(findChild(e, "segment_1_360").Accessible.name, "Niveau 1, 06:00 à 08:00, 21°")
+    }
+
+    //get_timerange fails: the level looks empty, a write would erase the server's slots.
+    function test_noWriteBeforeTheReadOrAfterItFailed() {
+        var e = make()
+        verify(!findChild(e, "addButton").enabled)
+        verify(!findChild(e, "copyButton").enabled)
+        var from = fake.calls.length
+        e.applyRequest({ days: [1], start: 1080, end: 1200, setpoint: 20, original: null })
+        compare(writes(from).length, 0)
+
+        var first = fake.calls.filter(function(c) { return c.action === "get_timerange" })[0]
+        fake.answered = fake.calls.length
+        for (var i = 0; i < fake.calls.length; i++) {
+            var c = fake.calls[i]
+            if (c === first)
+                fake.finished(c.rid, false, {}, "timeout")
+            else if (c.action === "get_timerange")
+                fake.finished(c.rid, true, { ranges: server.ranges[c.id] || [] }, "")
+            else
+                fake.finished(c.rid, true, server.states, "")
+        }
+        verify(findChild(e, "banner").visible)
+        verify(findChild(e, "retryButton").visible)
+        verify(!findChild(e, "addButton").enabled)
+        verify(!findChild(e, "copyButton").enabled)
+        verify(!findChild(e, "defaultUp").enabled)
+        e.applyRequest({ days: [1], start: 1080, end: 1200, setpoint: 20, original: null })
+        compare(writes(from).length, 0)
+
+        from = fake.calls.length
+        findChild(e, "retryButton").trigger()
+        verify(from < fake.calls.length)
+        answerAll()
+        verify(!findChild(e, "banner").visible)
+        verify(findChild(e, "addButton").enabled)
+    }
+
+    function test_checkableButtonsFollowTheirModelAfterSeveralTaps() {
+        var e = make()
+        answerAll()
+        e.openNew(1080, 1200)
+        var form = findChild(e, "slotForm")
+        findChild(form, "formDay2").trigger()
+        findChild(form, "formDay2").trigger()
+        findChild(form, "formDay2").trigger()
+        compare(form.days, [1, 2])
+        form.open({ start: 600, end: 660, days: [3], setpoint: 20 })
+        verify(!findChild(form, "formDay2").checked)
+        verify(findChild(form, "formDay3").checked)
+        verify(!findChild(form, "formDay1").checked)
+
+        //The cool-off switch goes back to the server's value after a refused write.
+        e.kind = "cool"
+        var off = findChild(e, "coolOffButton")
+        off.trigger()
+        verify(off.checked)
+        answerAll(function(c) { return c.id === "coff" ? "failed" : "" })
+        verify(!off.checked)
+        off.trigger()
+        answerAll()
+        verify(off.checked)
+        off.trigger()
+        answerAll()
+        verify(!off.checked)
+    }
+
+    function test_priorityArrowStopsAtTheLastLevelThatHasSlots() {
+        var e = make({ device: { ios: ios(4) } })
+        answerAll()
+        e.openSegment({ start: 360, end: 480, level: 1, setpoint: 21 })
+        verify(!findChild(e, "levelDown").enabled)
+        e.closeForm()
+        server.ranges.h2 = [range(1, 12, 0, 13, 0)]
+        fake.timeRangeChanged("h2")
+        answerAll()
+        e.openSegment({ start: 360, end: 480, level: 1, setpoint: 21 })
+        verify(findChild(e, "levelDown").enabled)
     }
 }

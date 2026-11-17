@@ -4516,8 +4516,8 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <translation>Saisir l'heure comme 17:30</translation>
     </message>
     <message>
-        <source>Level %1</source>
-        <translation>Niveau %1</translation>
+        <source>Priority: level %1</source>
+        <translation>Priorité : niveau %1</translation>
     </message>
     <message>
         <source>Lower the priority</source>
@@ -4568,7 +4568,7 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
     </message>
     <message>
         <source>%1 will be replaced by those of %2.</source>
-        <translation>%1 seront remplacés par ceux de %2.</translation>
+        <translation>Remplacement de %1 par les créneaux de %2.</translation>
     </message>
     <message>
         <source>All</source>

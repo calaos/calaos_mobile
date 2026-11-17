@@ -17,10 +17,9 @@ QString ProgramClient::getTimeRange(const QString &ioId)
     return send(Kind::GetTimeRange, QStringLiteral("get_timerange"), QJsonObject{{ "id", ioId }});
 }
 
-QString ProgramClient::setTimeRange(const QString &ioId, const QVariantList &ranges, const QString &months)
+QString ProgramClient::setTimeRange(const QString &ioId, const QVariantList &ranges)
 {
     QJsonObject data{{ "id", ioId },
-                     { "months", months },
                      { "ranges", QJsonArray::fromVariantList(ranges) }};
     return send(Kind::SetTimeRange, QStringLiteral("set_timerange"), data);
 }

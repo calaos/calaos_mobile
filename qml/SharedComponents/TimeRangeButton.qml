@@ -10,6 +10,8 @@ Rectangle {
     property bool checkable: false
     property bool checked: false
     property bool accent: false
+    //Destructive action: red text and border.
+    property bool danger: false
 
     signal clicked()
 
@@ -19,7 +21,8 @@ Rectangle {
     opacity: enabled ? 1 : 0.4
     color: checked ? Theme.colorAlpha(Theme.blueColor, 0.3)
          : accent ? Theme.blueColor : Theme.colorAlpha(Theme.whiteColor, 0.06)
-    border.color: activeFocus ? Theme.whiteColor : checked ? Theme.blueColor : Theme.borderColor
+    border.color: activeFocus ? Theme.whiteColor : danger ? Theme.redColor
+                 : checked ? Theme.blueColor : Theme.borderColor
     activeFocusOnTab: enabled
 
     Accessible.role: Accessible.Button
@@ -34,8 +37,8 @@ Rectangle {
     function trigger() {
         if (!enabled)
             return
-        if (checkable)
-            checked = !checked
+        //No toggle here: an assignment would replace the parent's binding on
+        //`checked`. The parent updates its model and the binding follows.
         clicked()
     }
 
@@ -44,7 +47,7 @@ Rectangle {
         anchors.centerIn: parent
         width: Math.min(implicitWidth, root.width - Units.dp(8))
         text: root.text
-        color: root.accent && !root.checked ? "#111111" : Theme.whiteColor
+        color: root.accent && !root.checked ? "#111111" : root.danger ? Theme.redColor : Theme.whiteColor
         font { family: root.fontFamily; pixelSize: Units.dp(15) }
         horizontalAlignment: Text.AlignHCenter
         elide: Text.ElideRight

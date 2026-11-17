@@ -60,7 +60,7 @@ void TstProgramClient::requestShapes()
     QCOMPARE(s["action"].toString(), QStringLiteral("set_timerange"));
     QVariantMap d = s["data"].toMap();
     QCOMPARE(d["id"].toString(), QStringLiteral("h1"));
-    QCOMPARE(d["months"].toString(), QStringLiteral("111111111111"));
+    QVERIFY2(!d.contains("months"), "months must be omitted so the server keeps its months");
     QCOMPARE(d["ranges"].toList(), ranges);
 
     QCOMPARE(t.sent.at(1).toMap()["action"].toString(), QStringLiteral("get_timerange"));

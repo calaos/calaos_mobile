@@ -4492,8 +4492,8 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <translation>Uhrzeit wie 17:30 eingeben</translation>
     </message>
     <message>
-        <source>Level %1</source>
-        <translation>Stufe %1</translation>
+        <source>Priority: level %1</source>
+        <translation>Priorität: Stufe %1</translation>
     </message>
     <message>
         <source>Lower the priority</source>
@@ -4544,7 +4544,7 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
     </message>
     <message>
         <source>%1 will be replaced by those of %2.</source>
-        <translation>%1 werden durch die von %2 ersetzt.</translation>
+        <translation>Ersetzen von %1 durch die Zeitfenster von %2.</translation>
     </message>
     <message>
         <source>All</source>

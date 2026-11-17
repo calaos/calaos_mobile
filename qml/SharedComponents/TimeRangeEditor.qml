@@ -5,7 +5,7 @@ import "."
 import "TimeRangeLogic.js" as TR
 
 //Program of a climate: the slots of its heat and cool levels, one day at a
-//time (D1). The ids come from device.ios, the writes go through
+//time. The ids come from device.ios, the writes go through
 //programClient. simpleMode is the one-slot form reused by the scenarios: it
 //never writes program_enabled nor the defaults.
 Item {
@@ -15,7 +15,7 @@ Item {
     property var device: null
     property var client: typeof programClient !== "undefined" ? programClient : null
     property bool simpleMode: false
-    //Phone: the form is a full screen sheet and there is no drag (D2).
+    //Phone: the form is a full screen sheet and there is no drag.
     property bool phone: false
     property bool readOnly: false
     property string kind: "heat"
@@ -35,11 +35,22 @@ Item {
     property var levelsByKind: ({ heat: [], cool: [] })
     property var states: ({})
     readonly property var levels: levelsByKind[kind] || []
+    //Highest level that holds slots: the priority arrow stops there.
+    readonly property int lowestLevel: {
+        var m = 0
+        for (var i = 0; i < levels.length; i++)
+            if (TR.usedLevels([levels[i]]) > 0 && levels[i].n > m)
+                m = levels[i].n
+        return m
+    }
     readonly property bool offline: client === null || sessionLost
-    readonly property bool locked: readOnly || offline || busy
+    //Writes replace the whole list of a level: nothing may be written before the
+    //levels have been read, nor after a read failed, or the server's slots are lost.
+    readonly property bool locked: readOnly || offline || busy || loading || readFailed
     readonly property bool loading: Object.keys(reads).length > 0
     readonly property bool busy: writeId !== "" || queue.length > 0
     property bool loaded: false
+    property bool readFailed: false
     property bool sessionLost: false
     property string banner: ""
     property var retryAction: null
@@ -87,6 +98,7 @@ Item {
         if (!client || !completed)
             return
         sessionLost = false
+        readFailed = false
         var next = { heat: TR.levelsFromIos(ios, "heat"), cool: TR.levelsFromIos(ios, "cool") }
         //Keeps the slots on screen until the new ones are read.
         for (var k in next)
@@ -120,8 +132,12 @@ Item {
     }
 
     function onRead(what, ok, answer) {
-        if (!ok)
+        if (!ok) {
+            readFailed = true
+            banner = qsTr("Could not read the program, try again")
+            retryAction = function() { root.reload() }
             return
+        }
         var next = Object.assign({}, levelsByKind)
         if (what.states) {
             states = answer
@@ -129,7 +145,8 @@ Item {
             next.cool = TR.withSetpoints(next.cool, answer)
         } else {
             var l = TR.levelById(next[what.kind], what.ioId)
-            if (!l)
+            //The optimistic state of a level being written wins until timerange_changed.
+            if (!l || writing(what.ioId))
                 return
             next[what.kind] = TR.withSlots(next[what.kind], l.n, TR.fromRanges(answer.ranges))
         }
@@ -150,6 +167,8 @@ Item {
 
     //Setpoints first, then one set_timerange per changed level, in sequence.
     function commit(res, action, failText) {
+        if (locked)
+            return
         var ops = []
         var i
         for (i = 0; i < res.setpoints.length; i++) {
@@ -172,6 +191,8 @@ Item {
     }
 
     function writeState(stateId, value, action) {
+        if (locked)
+            return
         var s = Object.assign({}, states)
         s[stateId] = value
         states = s
@@ -402,7 +423,7 @@ Item {
                         visible: root.retryAction !== null
                         fontFamily: root.fontFamily
                         text: qsTr("Retry")
-                        enabled: !root.offline && !root.busy
+                        enabled: !root.offline && !root.busy && !root.loading
                         onClicked: root.retry()
                     }
                 }
@@ -658,7 +679,7 @@ Item {
         fontFamily: root.fontFamily
         simpleMode: root.simpleMode
         readOnly: root.locked
-        levelCount: root.levels.length
+        levelCount: root.lowestLevel
         onSaveRequested: (edit) => root.saveSlot(edit)
         onDeleteRequested: root.deleteSlot()
         onCancelRequested: root.closeForm()

@@ -21,9 +21,9 @@ public:
 
     Q_INVOKABLE QString getTimeRange(const QString &ioId);
     //ranges is the whole list of the IO (seven days): the server replaces
-    //every range with it, [] clears them all.
-    Q_INVOKABLE QString setTimeRange(const QString &ioId, const QVariantList &ranges,
-                                     const QString &months = QStringLiteral("111111111111"));
+    //every range with it, [] clears them all. "months" is left out on purpose:
+    //the server then keeps the months set in the installer.
+    Q_INVOKABLE QString setTimeRange(const QString &ioId, const QVariantList &ranges);
     Q_INVOKABLE QString getStates(const QStringList &ioIds);
     Q_INVOKABLE QString setState(const QString &ioId, const QString &value);
 

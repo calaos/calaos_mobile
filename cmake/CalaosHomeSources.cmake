@@ -31,6 +31,7 @@ set(CALAOS_SOURCES
     src/AdminBiometrics.cpp
     src/AdminRelay.cpp
     src/AdminRelayBackend.cpp
+    src/ProgramClient.cpp
     src/AdminUpdates.cpp
     src/VersionsReport.cpp
     src/VersionsModel.cpp
@@ -67,6 +68,8 @@ set(CALAOS_HEADERS
     src/UpdateGrouping.h
     src/ResumePolicy.h
     src/AdminTransport.h
+    src/ProgramTransport.h
+    src/ProgramClient.h
     src/AdminBiometrics.h
     src/SecretWipe.h
     src/AdminRelay.h

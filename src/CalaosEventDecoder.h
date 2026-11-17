@@ -50,6 +50,7 @@ public:
         DeviceChange,       //id, data = the whole `device` object of an io_changed
         CommandRefused,     //id = io of a set_state the server answered success:false
         CommandAnswered,    //id = io, value = sequence number of the command, state = "true" / "false"
+        TimeRangeChange,    //id = time_range IO whose ranges changed; the frame carries no ranges
     };
     Q_ENUM(Type)
 

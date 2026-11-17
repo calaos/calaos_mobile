@@ -38,6 +38,7 @@ SOURCES += src/main.cpp \
     $$PWD/src/AdminBiometrics.cpp \
     $$PWD/src/AdminRelay.cpp \
     $$PWD/src/AdminRelayBackend.cpp \
+    $$PWD/src/ProgramClient.cpp \
     $$PWD/src/AdminUpdates.cpp \
     $$PWD/src/VersionsReport.cpp \
     $$PWD/src/VersionsModel.cpp
@@ -76,6 +77,8 @@ HEADERS += \
     $$PWD/src/UpdateGrouping.h \
     $$PWD/src/ResumePolicy.h \
     $$PWD/src/AdminTransport.h \
+    $$PWD/src/ProgramTransport.h \
+    $$PWD/src/ProgramClient.h \
     $$PWD/src/AdminBiometrics.h \
     $$PWD/src/SecretWipe.h \
     $$PWD/src/AdminRelay.h \

@@ -4395,4 +4395,315 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <translation>Entrez une nouvelle valeur</translation>
     </message>
 </context>
+<context>
+    <name>TimeRangeBar</name>
+    <message>
+        <source>Off</source>
+        <translation>Arrêt</translation>
+    </message>
+    <message>
+        <source>off</source>
+        <translation>arrêt</translation>
+    </message>
+    <message>
+        <source>Default, %1 to %2, %3</source>
+        <translation>Défaut, %1 à %2, %3</translation>
+    </message>
+    <message>
+        <source>Level %1, %2 to %3, %4</source>
+        <translation>Niveau %1, %2 à %3, %4</translation>
+    </message>
+</context>
+<context>
+    <name>TimeRangeForm</name>
+    <message>
+        <source>Monday</source>
+        <translation>Lundi</translation>
+    </message>
+    <message>
+        <source>Tuesday</source>
+        <translation>Mardi</translation>
+    </message>
+    <message>
+        <source>Wednesday</source>
+        <translation>Mercredi</translation>
+    </message>
+    <message>
+        <source>Thursday</source>
+        <translation>Jeudi</translation>
+    </message>
+    <message>
+        <source>Friday</source>
+        <translation>Vendredi</translation>
+    </message>
+    <message>
+        <source>Saturday</source>
+        <translation>Samedi</translation>
+    </message>
+    <message>
+        <source>Sunday</source>
+        <translation>Dimanche</translation>
+    </message>
+    <message>
+        <source>M</source>
+        <comment>Monday</comment>
+        <translation>L</translation>
+    </message>
+    <message>
+        <source>T</source>
+        <comment>Tuesday</comment>
+        <translation>M</translation>
+    </message>
+    <message>
+        <source>W</source>
+        <comment>Wednesday</comment>
+        <translation>M</translation>
+    </message>
+    <message>
+        <source>T</source>
+        <comment>Thursday</comment>
+        <translation>J</translation>
+    </message>
+    <message>
+        <source>F</source>
+        <comment>Friday</comment>
+        <translation>V</translation>
+    </message>
+    <message>
+        <source>S</source>
+        <comment>Saturday</comment>
+        <translation>S</translation>
+    </message>
+    <message>
+        <source>S</source>
+        <comment>Sunday</comment>
+        <translation>D</translation>
+    </message>
+    <message>
+        <source>%1 minus 15 min</source>
+        <translation>%1 moins 15 min</translation>
+    </message>
+    <message>
+        <source>%1 plus 15 min</source>
+        <translation>%1 plus 15 min</translation>
+    </message>
+    <message>
+        <source>Apply</source>
+        <translation>Appliquer</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Annuler</translation>
+    </message>
+    <message>
+        <source>Choose at least one day</source>
+        <translation>Choisir au moins un jour</translation>
+    </message>
+    <message>
+        <source>Days</source>
+        <translation>Jours</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Supprimer</translation>
+    </message>
+    <message>
+        <source>End</source>
+        <translation>Fin</translation>
+    </message>
+    <message>
+        <source>Enter the time as 17:30</source>
+        <translation>Saisir l'heure comme 17:30</translation>
+    </message>
+    <message>
+        <source>Priority: level %1</source>
+        <translation>Priorité : niveau %1</translation>
+    </message>
+    <message>
+        <source>Lower the priority</source>
+        <translation>Baisser la priorité</translation>
+    </message>
+    <message>
+        <source>Raise the priority</source>
+        <translation>Monter la priorité</translation>
+    </message>
+    <message>
+        <source>Lower the setpoint</source>
+        <translation>Baisser la consigne</translation>
+    </message>
+    <message>
+        <source>Raise the setpoint</source>
+        <translation>Monter la consigne</translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation>Enregistrer</translation>
+    </message>
+    <message>
+        <source>Setpoint</source>
+        <translation>Consigne</translation>
+    </message>
+    <message>
+        <source>Start</source>
+        <translation>Début</translation>
+    </message>
+    <message>
+        <source>The end must follow the start</source>
+        <translation>La fin doit suivre le début</translation>
+    </message>
+</context>
+<context>
+    <name>TimeRangeCopy</name>
+    <message>
+        <source>%1 (1 slot)</source>
+        <translation>%1 (1 créneau)</translation>
+    </message>
+    <message>
+        <source>%1 (%2 slots)</source>
+        <translation>%1 (%2 créneaux)</translation>
+    </message>
+    <message>
+        <source>%1 and %2</source>
+        <translation>%1 et %2</translation>
+    </message>
+    <message>
+        <source>%1 will be replaced by those of %2.</source>
+        <translation>Remplacement de %1 par les créneaux de %2.</translation>
+    </message>
+    <message>
+        <source>All</source>
+        <translation>Tous</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Annuler</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation>Copier</translation>
+    </message>
+    <message>
+        <source>Copy %1 to</source>
+        <translation>Copier %1 vers</translation>
+    </message>
+    <message>
+        <source>Nothing to copy: this day has no slot</source>
+        <translation>Rien à copier : ce jour n'a pas de créneau</translation>
+    </message>
+    <message>
+        <source>Replace and copy</source>
+        <translation>Remplacer et copier</translation>
+    </message>
+    <message>
+        <source>Weekdays</source>
+        <translation>Jours ouvrés</translation>
+    </message>
+    <message>
+        <source>Weekend</source>
+        <translation>Week-end</translation>
+    </message>
+</context>
+<context>
+    <name>TimeRangeEditor</name>
+    <message>
+        <source>Could not read the program, try again</source>
+        <translation>Impossible de lire le programme, réessayez</translation>
+    </message>
+    <message>
+        <source>6 levels maximum for %1</source>
+        <translation>6 niveaux maximum pour %1</translation>
+    </message>
+    <message>
+        <source>Cooling</source>
+        <translation>Clim</translation>
+    </message>
+    <message>
+        <source>Heating</source>
+        <translation>Chauffage</translation>
+    </message>
+    <message>
+        <source>Cooling off outside slots</source>
+        <translation>Clim arrêtée hors créneaux</translation>
+    </message>
+    <message>
+        <source>Copy this day…</source>
+        <translation>Copier ce jour…</translation>
+    </message>
+    <message>
+        <source>Default: %1</source>
+        <translation>Défaut : %1</translation>
+    </message>
+    <message>
+        <source>Default: off</source>
+        <translation>Défaut : arrêt</translation>
+    </message>
+    <message>
+        <source>Incomplete copy: not saved, try again</source>
+        <translation>Copie incomplète : non enregistré, réessayer</translation>
+    </message>
+    <message>
+        <source>Levels: %1 of %2</source>
+        <translation>Niveaux : %1 sur %2</translation>
+    </message>
+    <message>
+        <source>Loading the program…</source>
+        <translation>Chargement du programme…</translation>
+    </message>
+    <message>
+        <source>Lower the default setpoint</source>
+        <translation>Baisser la consigne par défaut</translation>
+    </message>
+    <message>
+        <source>Raise the default setpoint</source>
+        <translation>Monter la consigne par défaut</translation>
+    </message>
+    <message>
+        <source>No slot in cooling. Default: %1.</source>
+        <translation>Aucun créneau en clim. Défaut : %1.</translation>
+    </message>
+    <message>
+        <source>No slot in cooling. Default: off.</source>
+        <translation>Aucun créneau en clim. Défaut : arrêt.</translation>
+    </message>
+    <message>
+        <source>No slot in heating. Default: %1.</source>
+        <translation>Aucun créneau en chauffage. Défaut : %1.</translation>
+    </message>
+    <message>
+        <source>Nothing to copy: this day has no slot</source>
+        <translation>Rien à copier : ce jour n'a pas de créneau</translation>
+    </message>
+    <message>
+        <source>Not saved, try again</source>
+        <translation>Non enregistré, réessayer</translation>
+    </message>
+    <message>
+        <source>Retry</source>
+        <translation>Réessayer</translation>
+    </message>
+    <message>
+        <source>Saving failed, try again</source>
+        <translation>Échec de l'enregistrement, réessayer</translation>
+    </message>
+    <message>
+        <source>+ Slot</source>
+        <translation>+ Créneau</translation>
+    </message>
+    <message>
+        <source>The end must follow the start</source>
+        <translation>La fin doit suivre le début</translation>
+    </message>
+    <message>
+        <source>This account cannot change the program</source>
+        <translation>Ce compte ne peut pas modifier le programme</translation>
+    </message>
+    <message>
+        <source>This climate has no program.</source>
+        <translation>Ce climat n'a pas de programme.</translation>
+    </message>
+    <message>
+        <source>Week</source>
+        <translation>Semaine</translation>
+    </message>
+</context>
 </TS>

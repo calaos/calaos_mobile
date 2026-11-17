@@ -50,5 +50,11 @@
         <file>qml/SharedComponents/ClimateIcon.qml</file>
         <file>qml/SharedComponents/ClimateLogic.js</file>
         <file>qml/SharedComponents/ClimateDrafts.js</file>
+        <file>qml/SharedComponents/TimeRangeLogic.js</file>
+        <file>qml/SharedComponents/TimeRangeBar.qml</file>
+        <file>qml/SharedComponents/TimeRangeButton.qml</file>
+        <file>qml/SharedComponents/TimeRangeCopy.qml</file>
+        <file>qml/SharedComponents/TimeRangeForm.qml</file>
+        <file>qml/SharedComponents/TimeRangeEditor.qml</file>
     </qresource>
 </RCC>

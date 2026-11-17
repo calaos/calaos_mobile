@@ -349,6 +349,7 @@ void CalaosConnection::resetTransport()
     //event log requests they carried are failed below, in one place, once
     //the transport is fully down.
     eventLogReplies.clear();
+    trackedReplies.clear();
 
     const QList<QNetworkReply *> replies = reqReplies;
     reqReplies.clear();
@@ -364,6 +365,7 @@ void CalaosConnection::resetTransport()
     //reconnectPolicy, and emit connectionStateChanged(), after this returns,
     //so a listener must not read connectionState() here.
     failPendingEventLogRequests();
+    failPendingTrackedRequests();
 }
 
 void CalaosConnection::connectionLost(const QString &reason, ReconnectPolicy::Failure kind)
@@ -917,6 +919,13 @@ void CalaosConnection::requestFinished()
         return;
     }
 
+    const QString trackedId = trackedReplies.take(reqReply);
+    if (!trackedId.isEmpty())
+    {
+        trackedReplyFinished(reqReply, trackedId);
+        return;
+    }
+
     if (reqReply->error() != QNetworkReply::NoError)
     {
         qCWarning(lcNet) << "Error in " << redactUrl(reqReply->url()) << ":" << redactError(reqReply->errorString(), reqReply->url());
@@ -1119,6 +1128,7 @@ bool CalaosConnection::sendJson(const QString &action, QJsonObject &jsonData, co
 //here and not in JsonKeys.h.
 static const QLatin1StringView EventLogPageTag{"eventlog_page:"};
 static const QLatin1StringView EventLogEventTag{"eventlog_event:"};
+static const QLatin1StringView TrackedTag{"req:"};
 
 QString CalaosConnection::requestEventLogPage(int page, int perPage)
 {
@@ -1199,6 +1209,79 @@ void CalaosConnection::finishEventLogRequest(const QString &requestId, bool tran
         const bool ok = transportOk && !serverError && !answer.isEmpty();
         emit eventLogEventFinished(requestId, ok, answer);
     }
+}
+
+QString CalaosConnection::sendTrackedRequest(const QString &action, QJsonObject data)
+{
+    const QString id = TrackedTag + QString::number(++trackedSeq);
+
+    if (isWebsocket())
+    {
+        if (!sendWebsocket(action, data, id))
+            return QString();
+    }
+    else if (isHttp())
+    {
+        data[JsonKeys::CnUser] = username;
+        data[JsonKeys::CnPass] = password;
+        QNetworkReply *reply = sendHttp(action, data);
+        if (!reply)
+            return QString();
+        trackedReplies.insert(reply, id);
+    }
+    else
+    {
+        qCDebug(lcNet) << "Request" << action << "not sent: no session up";
+        return QString();
+    }
+
+    pendingTracked.insert(id);
+    return id;
+}
+
+void CalaosConnection::cancelTrackedRequest(const QString &requestId)
+{
+    pendingTracked.remove(requestId);
+}
+
+void CalaosConnection::finishTrackedRequest(const QString &requestId, bool transportOk, const QVariantMap &answer)
+{
+    if (!pendingTracked.remove(requestId))
+    {
+        qCDebug(lcNet) << "Answer dropped, no request waits for" << requestId;
+        return;
+    }
+    if (transportOk && answer.contains(JsonKeys::Error))
+        qWarning() << "Request" << requestId << "failed:" << serverErrorText(answer);
+    emit trackedRequestFinished(requestId, transportOk, answer);
+}
+
+void CalaosConnection::failPendingTrackedRequests()
+{
+    QStringList ids(pendingTracked.cbegin(), pendingTracked.cend());
+    ids.sort();
+    for (const QString &id: std::as_const(ids))
+        finishTrackedRequest(id, false, QVariantMap());
+}
+
+void CalaosConnection::trackedReplyFinished(QNetworkReply *reply, const QString &requestId)
+{
+    if (reply->error() != QNetworkReply::NoError)
+    {
+        qCWarning(lcNet) << "Error in " << redactUrl(reply->url()) << ":" << redactError(reply->errorString(), reply->url());
+        finishTrackedRequest(requestId, false, QVariantMap());
+        return;
+    }
+
+    QJsonParseError err;
+    const QJsonDocument jdoc = QJsonDocument::fromJson(reply->read(NetworkLimits::MaxJsonBytes), &err);
+    if (err.error != QJsonParseError::NoError || !jdoc.isObject())
+    {
+        qCWarning(lcNet) << "Answer to" << requestId << "is not a JSON object";
+        finishTrackedRequest(requestId, false, QVariantMap());
+        return;
+    }
+    finishTrackedRequest(requestId, true, jdoc.object().toVariantMap());
 }
 
 //The server's own words: it may echo what it was sent, the password included.
@@ -1710,6 +1793,9 @@ void CalaosConnection::dispatchEvents(const QList<DecodedEvent> &events)
         case DecodedEvent::CommandAnswered:
             emit eventCommandAnswered(ev.id, ev.value.toInt(), ev.state == QLatin1String("true"));
             break;
+        case DecodedEvent::TimeRangeChange:
+            emit eventTimeRangeChange(ev.id);
+            break;
         case DecodedEvent::InputStateChange:
             emit eventInputStateChange(ev.data);
             break;
@@ -1782,6 +1868,15 @@ void CalaosConnection::onWsTextMessageReceived(const QString &message)
 #ifdef QT_DEBUG
     //qDebug() << "RECV:" << message;
 #endif
+
+    //Before the dispatch on msg: a tracked get_state answer must not be
+    //mistaken for a state refresh, its caller reads it.
+    const QString msgId = jroot[JsonKeys::MsgId].toString();
+    if (msgId.startsWith(TrackedTag))
+    {
+        finishTrackedRequest(msgId, true, jdata.toVariantMap());
+        return;
+    }
 
     if (jroot[JsonKeys::Msg] == "login")
     {

@@ -408,6 +408,9 @@ void Application::createQmlApp()
     engine.rootContext()->setContextProperty("adminBiometrics", adminBiometrics);
 #endif
 
+    programClient = new ProgramClient(calaosConnect, calaosConnect, this);
+    engine.rootContext()->setContextProperty("programClient", programClient);
+
     setupVersionsModel();
 
     m_netAddresses = new QQmlObjectListModel<NetworkInfo>(this);

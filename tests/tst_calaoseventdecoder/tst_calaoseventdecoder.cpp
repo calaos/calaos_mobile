@@ -282,6 +282,12 @@ void TstCalaosEventDecoder::v3Events_data()
             << QByteArray(R"({"type":21,"type_str":"io_status_changed",
                               "data":{"id":"output_4","status":"error"}})")
             << QStringList{ "IoStatusChange|output_4|||0|" };
+
+    //Only the id: the ranges are read again with get_timerange.
+    QTest::newRow("timerange_changed")
+            << QByteArray(R"({"type":24,"type_str":"timerange_changed",
+                              "data":{"id":"salon_clim_heat_level1"}})")
+            << QStringList{ "TimeRangeChange|salon_clim_heat_level1|||0|" };
 }
 
 void TstCalaosEventDecoder::v3Events()
@@ -451,6 +457,9 @@ void TstCalaosEventDecoder::v3MalformedAndUnknown_data()
     QTest::newRow("io_status without id")
             << QByteArray(R"({"type_str":"io_status_changed","data":{"status":"error"}})")
             << QStringList{ "Malformed||||0|io_status_changed" };
+    QTest::newRow("timerange_changed without id")
+            << QByteArray(R"({"type_str":"timerange_changed","data":{}})")
+            << QStringList{ "Malformed||||0|timerange_changed" };
 
     //Event types the server sends and the UI does not consume.
     QTest::newRow("push notification")

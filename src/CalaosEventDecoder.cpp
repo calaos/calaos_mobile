@@ -241,6 +241,18 @@ QList<DecodedEvent> CalaosEventDecoder::decodeEventV3(const QVariantMap &msg)
         else
             events << makeUnknown(DecodedEvent::Malformed, typeStr);
     }
+    else if (typeStr == "timerange_changed")
+    {
+        const QString id = data[JsonKeys::Id].toString();
+        if (id.isEmpty())
+            events << makeUnknown(DecodedEvent::Malformed, typeStr);
+        else
+        {
+            DecodedEvent ev = makeEvent(DecodedEvent::TimeRangeChange);
+            ev.id = id;
+            events << ev;
+        }
+    }
     else
     {
         //All the other event types the server can send.

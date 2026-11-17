@@ -11,6 +11,7 @@
 #include "JsonKeys.h"
 #include "TlsPinning.h"
 #include "AdminTransport.h"
+#include "ProgramTransport.h"
 #include "CameraToken.h"
 #include "ServerCapabilities.h"
 
@@ -428,7 +429,7 @@ inline QJsonObject registration(const QString &token, const QString &hardware,
 //QObject first, as Q_OBJECT requires; IOConnection is the read-only view the
 //IO models are given, see src/IOConnection.h. AdminTransport is what
 //AdminRelay sends its frames through.
-class CalaosConnection : public QObject, public IOConnection, public AdminTransport
+class CalaosConnection : public QObject, public IOConnection, public AdminTransport, public ProgramTransport
 {
     Q_OBJECT
 public:
@@ -508,6 +509,13 @@ public:
     void cancelEventLogRequest(const QString &requestId);
     //Requests sent and not finished yet (tests).
     int pendingEventLogRequests() const { return pendingEventLog.size(); }
+
+    //Any other request whose answer must reach its caller (time ranges and
+    //climate program states). Same lifecycle as the event log requests:
+    //exactly one trackedRequestFinished() per non-empty id, unless cancelled.
+    QString sendTrackedRequest(const QString &action, QJsonObject data) override;
+    void cancelTrackedRequest(const QString &requestId) override;
+    int pendingTrackedRequests() const { return pendingTracked.size(); }
 
     //Asks for the picture of a push event; the answer comes by
     //eventPictureDownloaded / eventPictureFailed.
@@ -681,6 +689,13 @@ private:
     void failPendingEventLogRequests();
     //HTTP answer to an event log request.
     void eventLogReplyFinished(QNetworkReply *reply, const QString &requestId);
+
+    QSet<QString> pendingTracked;
+    QHash<QNetworkReply *, QString> trackedReplies;
+    quint64 trackedSeq = 0;
+    void finishTrackedRequest(const QString &requestId, bool transportOk, const QVariantMap &answer);
+    void failPendingTrackedRequests();
+    void trackedReplyFinished(QNetworkReply *reply, const QString &requestId);
     QNetworkReply *pollReply;
 
     QWebSocket *wsocket = nullptr;
@@ -826,6 +841,10 @@ signals:
     void eventDeviceChange(QString id, QVariantMap device);
     void eventCommandRefused(QString id);
     void eventCommandAnswered(QString id, int seq, bool ok);
+    void eventTimeRangeChange(QString id);
+    //End of a sendTrackedRequest(). answer is the server's answer (data of the
+    //websocket frame, body of the HTTP reply), empty when transportOk is false.
+    void trackedRequestFinished(const QString &requestId, bool transportOk, const QVariantMap &answer);
 
     //Lifecycle changes, the value is a ReconnectPolicy::State. Application
     //derives its applicationStatus from this instead of tracking it in

@@ -35,6 +35,7 @@
 #include "UpdateManager.h"
 #include "AdminRelay.h"
 #include "AdminRelayBackend.h"
+#include "ProgramClient.h"
 #include "AdminUpdates.h"
 #include "VersionsModel.h"
 #include "AdminBiometrics.h"
@@ -193,6 +194,7 @@ private:
     AdminRelay *adminRelay = nullptr;
     AdminRelayBackend *adminBackend = nullptr;
     AdminUpdates *boxUpdates = nullptr;
+    ProgramClient *programClient = nullptr;
     AdminBiometrics *adminBiometrics = nullptr;
     VersionsModel *versionsModel = nullptr;
 

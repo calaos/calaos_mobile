@@ -44,7 +44,8 @@ function parseHhmm(text) {
 //Ranges of one get_timerange answer -> slots.
 function fromRanges(ranges) {
     var slots = []
-    if (!Array.isArray(ranges))
+    //A list read from a QVariantMap is a sequence wrapper: Array.isArray() is false.
+    if (!ranges || typeof ranges !== "object" || typeof ranges.length !== "number")
         return slots
     for (var i = 0; i < ranges.length; i++) {
         var r = ranges[i]

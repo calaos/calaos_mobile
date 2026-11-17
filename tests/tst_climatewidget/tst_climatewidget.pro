@@ -33,6 +33,7 @@ OTHER_FILES += \
     tst_climatelogic.qml \
     tst_timerangelogic.qml \
     tst_timerangeeditor.qml \
+    tst_timerangecaptures.qml \
     tst_climatemodel.qml \
     tst_climatesheet.qml \
     tst_climatetranslation.qml \

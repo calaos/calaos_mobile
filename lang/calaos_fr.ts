@@ -4606,6 +4606,10 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
 <context>
     <name>TimeRangeEditor</name>
     <message>
+        <source>Could not read the program, try again</source>
+        <translation>Impossible de lire le programme, réessayez</translation>
+    </message>
+    <message>
         <source>6 levels maximum for %1</source>
         <translation>6 niveaux maximum pour %1</translation>
     </message>

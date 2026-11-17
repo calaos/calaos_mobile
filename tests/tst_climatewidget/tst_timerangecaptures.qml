@@ -229,4 +229,25 @@ TestCase {
         verify(findChild(host.editor, "retryButton").visible)
         shot(host, data.tag, "failure-retry")
     }
+
+    function test_readFailedBannerWithRetry_data() { return modes() }
+    function test_readFailedBannerWithRetry(data) {
+        fillLevels(3)
+        var host = createTemporaryObject(hostComponent, tc, { editorWidth: widths[data.tag] })
+        verify(host !== null)
+        host.editor.device = { ios: ios(3) }
+        host.editor.phone = data.tag === "phone"
+        host.editor.reload()
+        while (fake.answered < fake.calls.length) {
+            var c = fake.calls[fake.answered++]
+            if (c.action === "get_timerange")
+                fake.finished(c.rid, false, {}, "timeout")
+            else
+                fake.finished(c.rid, true, server.states, "")
+        }
+        compare(host.editor.banner, "Could not read the program, try again")
+        verify(findChild(host.editor, "banner").visible)
+        verify(findChild(host.editor, "retryButton").visible)
+        shot(host, data.tag, "read-failed")
+    }
 }

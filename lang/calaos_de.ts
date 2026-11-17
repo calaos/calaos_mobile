@@ -4582,6 +4582,10 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
 <context>
     <name>TimeRangeEditor</name>
     <message>
+        <source>Could not read the program, try again</source>
+        <translation>Das Programm konnte nicht gelesen werden, erneut versuchen</translation>
+    </message>
+    <message>
         <source>6 levels maximum for %1</source>
         <translation>Maximal 6 Stufen für %1</translation>
     </message>

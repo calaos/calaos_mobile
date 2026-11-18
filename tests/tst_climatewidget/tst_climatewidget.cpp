@@ -234,6 +234,7 @@ public:
         ios.clear();
         con.sent.clear();
         con.seqs.clear();
+        fakeNow = 1000000;
     }
 
 private:

@@ -121,6 +121,22 @@ TestCase {
 
     // --- the dialog ------------------------------------------------------------------------
 
+    readonly property var programState: ({ enabled: true, mode_set: "cool", heat: null,
+        cool: { levels: 1, active_level: 1, setpoint: 24, default: 28 }, next_change: null })
+
+    function test_theProgramCardFollowsTheProgramCapability() {
+        open({ program: programState }, { program: { heat_levels: 1, cool_levels: 1, max_levels: 6 } })
+        var card = find(layer, "programCard")
+        verify(card !== null)
+        verify(card.visible)
+    }
+
+    function test_noProgramCardWithoutTheProgramCapability() {
+        open({ program: programState }, {})
+        var card = find(layer, "programCard")
+        verify(card === null || !card.visible)
+    }
+
     function test_opensWithTheDialAndTheSetpointLine() {
         var dlg = open({ mode: "cool" })
         compare(dlg.detail.showing, true)

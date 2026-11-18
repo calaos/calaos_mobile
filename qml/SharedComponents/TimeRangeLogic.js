@@ -1,4 +1,5 @@
 .pragma library
+.import "ClimateLogic.js" as Climate
 
 //Pure helpers behind TimeRangeEditor: time ranges of a climate's levels
 //(get_timerange / set_timerange) <-> slots drawn on a 24 h bar.
@@ -44,8 +45,7 @@ function parseHhmm(text) {
 //Ranges of one get_timerange answer -> slots.
 function fromRanges(ranges) {
     var slots = []
-    //A list read from a QVariantMap is a sequence wrapper: Array.isArray() is false.
-    if (!ranges || typeof ranges !== "object" || typeof ranges.length !== "number")
+    if (!Climate.isList(ranges))
         return slots
     for (var i = 0; i < ranges.length; i++) {
         var r = ranges[i]
@@ -58,6 +58,9 @@ function fromRanges(ranges) {
         var endH = toInt(r.end_hour, 0), endM = toInt(r.end_min, 0), endS = toInt(r.end_sec, 0)
         //The server's end is inclusive: 23:59:59 is the end of the day.
         var end = (endH === 23 && endM === 59 && endS === 59) ? DayMinutes : endH * 60 + endM
+        //start == end is active for one second server-side (inclusive end); the grid cannot hold less than a minute
+        if (end === start && start < DayMinutes)
+            end = start + 1
         var group = "g" + (++groupSeq)
         if (end < start) {
             //Starts on its day and ends the next morning (InPlageHoraire).
@@ -282,6 +285,30 @@ function fullDay(levels, day, defaultSetpoint, defaultOff) {
     return out
 }
 
+//The minutes where both sets hold a setpoint: the auto range exists there.
+//Takes two fullDay() results, gives [{ start, end }].
+function rangeSpans(heat, cool) {
+    var out = []
+    for (var i = 0; i < heat.length; i++) {
+        if (heat[i].off || heat[i].setpoint === null || heat[i].setpoint === undefined)
+            continue
+        for (var j = 0; j < cool.length; j++) {
+            if (cool[j].off || cool[j].setpoint === null || cool[j].setpoint === undefined)
+                continue
+            var a = Math.max(heat[i].start, cool[j].start)
+            var b = Math.min(heat[i].end, cool[j].end)
+            if (b <= a)
+                continue
+            var last = out.length ? out[out.length - 1] : null
+            if (last && last.end === a)
+                last.end = b
+            else
+                out.push({ start: a, end: b })
+        }
+    }
+    return out
+}
+
 function slotCount(levels, day) {
     return daySegments(levels, day).length
 }
@@ -462,6 +489,13 @@ function levelsFromIos(ios, kind) {
         out.push({ n: n, ioId: id, setpointId: typeof sp === "string" ? sp : "", setpoint: null, slots: [] })
     }
     return out
+}
+
+//Same ids, same key: JSON.stringify depends on the key order
+function iosKey(ios) {
+    if (!ios || typeof ios !== "object")
+        return ""
+    return Object.keys(ios).sort().map(function(k) { return k + "=" + ios[k] }).join("|")
 }
 
 //The state ids to read for one direction: level setpoints and defaults.

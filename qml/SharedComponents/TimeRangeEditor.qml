@@ -120,6 +120,15 @@ Item {
             track(client.getStates(ids), { states: true })
     }
 
+    //io_changed of the climate: the setpoints may have moved, the slots have not
+    function refreshStates() {
+        if (!client || !completed || busy || loading)
+            return
+        var ids = TR.stateIds(ios, "heat").concat(TR.stateIds(ios, "cool"))
+        if (ids.length)
+            track(client.getStates(ids), { states: true })
+    }
+
     function readLevel(k, ioId) {
         track(client.getTimeRange(ioId), { kind: k, ioId: ioId })
     }
@@ -272,7 +281,9 @@ Item {
 
     //The initial properties fire their change handlers too: one read at completion.
     property bool completed: false
-    onDeviceChanged: reload()
+    //A new device object arrives at every io_changed: only other ids mean other levels
+    readonly property string iosKey: TR.iosKey(ios)
+    onIosKeyChanged: reload()
     onClientChanged: reload()
     Component.onCompleted: {
         completed = true
@@ -478,7 +489,8 @@ Item {
                         required property int index
                         objectName: "day" + (index + 1)
                         fontFamily: root.fontFamily
-                        text: form.dayLetter(index + 1)
+                        text: form.dayShort(index + 1)
+                        sidePadding: Units.dp(8)
                         checked: root.day === index + 1
                         Accessible.role: Accessible.PageTab
                         Accessible.name: form.dayName(index + 1)
@@ -633,10 +645,10 @@ Item {
                     Layout.fillWidth: true
                     spacing: Units.dp(6)
                     Text {
-                        text: form.dayLetter(weekRow.index + 1)
+                        text: form.dayShort(weekRow.index + 1)
                         color: root.day === weekRow.index + 1 ? Theme.blueColor : Theme.mutedColor
                         font { family: root.fontFamily; pixelSize: Units.dp(13) }
-                        Layout.preferredWidth: Units.dp(16)
+                        Layout.preferredWidth: Units.dp(32)
                     }
                     TimeRangeBar {
                         objectName: "weekBar" + (weekRow.index + 1)

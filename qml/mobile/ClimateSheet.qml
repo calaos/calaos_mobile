@@ -15,6 +15,7 @@ Item {
     readonly property bool opened: detail.opened
     readonly property bool modeOpened: modeSheet.opened
     readonly property bool moreOpened: moreSheet.opened
+    readonly property bool programOpened: programSheet.opened
 
     width: 0
     height: 0
@@ -32,6 +33,7 @@ Item {
     function close() {
         modeSheet.close()
         moreSheet.close()
+        programSheet.close()
         detail.close()
     }
 
@@ -96,6 +98,16 @@ Item {
             }
 
             Item { Layout.fillHeight: true }
+
+            ClimateProgramCard {
+                objectName: "programCard"
+                Layout.fillWidth: true
+                Layout.leftMargin: Units.dp(12)
+                Layout.rightMargin: Units.dp(12)
+                climate: climate
+                fontFamily: host.fontFamily
+                onEditRequested: programSheet.open()
+            }
 
             MouseArea {
                 objectName: "moreLink"
@@ -176,6 +188,42 @@ Item {
             climate: climate
             fontFamily: host.fontFamily
         }
+        }
+    }
+
+    BottomSheet {
+        id: programSheet
+        objectName: "programSheet"
+        title: qsTr("Program")
+        heightRatio: 0.9
+        //The day bar is dragged: a swipe must not take the sheet down with it
+        interactive: false
+        fontFamily: host.fontFamily
+
+        TimeRangeEditor {
+            id: editor
+            objectName: "programEditor"
+            anchors { left: parent.left; right: parent.right; top: parent.top; bottom: programClose.top }
+            fontFamily: host.fontFamily
+            device: climate.modelData ? climate.modelData.device : ({})
+            client: typeof programClient !== "undefined" ? programClient : null
+            phone: true
+            readOnly: climate.status.kind === "offline"
+
+            Connections {
+                target: climate.modelData ? climate.modelData : null
+                ignoreUnknownSignals: true
+                function onDeviceChange() { editor.refreshStates() }
+            }
+        }
+
+        TimeRangeButton {
+            id: programClose
+            objectName: "programClose"
+            anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+            fontFamily: host.fontFamily
+            text: qsTr("Close")
+            onClicked: programSheet.close()
         }
     }
 }

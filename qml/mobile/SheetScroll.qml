@@ -15,6 +15,10 @@ Flickable {
     interactive: contentHeight > height
     boundsBehavior: Flickable.StopAtBounds
 
+    //The scissor clip does not reach Shape items (ClimateIcon): scrolled, their
+    //strokes stay drawn above the sheet. A texture layer clips them too.
+    layer.enabled: contentY > 0
+
     Item {
         id: holder
         width: scroll.width

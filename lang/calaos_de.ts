@@ -770,6 +770,14 @@
         <source>Mode</source>
         <translation type="unfinished">Modus</translation>
     </message>
+    <message>
+        <source>Program</source>
+        <translation>Programm</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Schließen</translation>
+    </message>
 </context>
 <context>
     <name>ColorPickerRGBView</name>
@@ -1905,6 +1913,10 @@
         <location filename="../qml/desktop/DialogClimate.qml" line="135"/>
         <source>More settings — %1</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Program — %1</source>
+        <translation>Programm — %1</translation>
     </message>
 </context>
 <context>
@@ -4421,39 +4433,39 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <translation>Sonntag</translation>
     </message>
     <message>
-        <source>M</source>
-        <comment>Monday</comment>
-        <translation>M</translation>
+        <source>Mon</source>
+        <comment>Monday, short</comment>
+        <translation>Mo</translation>
     </message>
     <message>
-        <source>T</source>
-        <comment>Tuesday</comment>
-        <translation>D</translation>
+        <source>Tue</source>
+        <comment>Tuesday, short</comment>
+        <translation>Di</translation>
     </message>
     <message>
-        <source>W</source>
-        <comment>Wednesday</comment>
-        <translation>M</translation>
+        <source>Wed</source>
+        <comment>Wednesday, short</comment>
+        <translation>Mi</translation>
     </message>
     <message>
-        <source>T</source>
-        <comment>Thursday</comment>
-        <translation>D</translation>
+        <source>Thu</source>
+        <comment>Thursday, short</comment>
+        <translation>Do</translation>
     </message>
     <message>
-        <source>F</source>
-        <comment>Friday</comment>
-        <translation>F</translation>
+        <source>Fri</source>
+        <comment>Friday, short</comment>
+        <translation>Fr</translation>
     </message>
     <message>
-        <source>S</source>
-        <comment>Saturday</comment>
-        <translation>S</translation>
+        <source>Sat</source>
+        <comment>Saturday, short</comment>
+        <translation>Sa</translation>
     </message>
     <message>
-        <source>S</source>
-        <comment>Sunday</comment>
-        <translation>S</translation>
+        <source>Sun</source>
+        <comment>Sunday, short</comment>
+        <translation>So</translation>
     </message>
     <message>
         <source>%1 minus 15 min</source>
@@ -4680,6 +4692,108 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
     <message>
         <source>Week</source>
         <translation>Woche</translation>
+    </message>
+</context>
+<context>
+    <name>ClimateProgramCard</name>
+    <message>
+        <source>Cooling</source>
+        <translation>Kühlen</translation>
+    </message>
+    <message>
+        <source>Heating</source>
+        <translation>Heizen</translation>
+    </message>
+    <message>
+        <source>%1: stopped</source>
+        <translation>%1: aus</translation>
+    </message>
+    <message>
+        <source>%1: level %2, %3</source>
+        <translation>%1: Stufe %2, %3</translation>
+    </message>
+    <message>
+        <source>%1: default, %2</source>
+        <translation>%1: Standard, %2</translation>
+    </message>
+    <message>
+        <source>No change in the next 7 days</source>
+        <translation>Keine Änderung in den nächsten 7 Tagen</translation>
+    </message>
+    <message>
+        <source>%1 level %2</source>
+        <translation>%1 Stufe %2</translation>
+    </message>
+    <message>
+        <source>%1 default</source>
+        <translation>%1 Standard</translation>
+    </message>
+    <message>
+        <source>%1 stopped</source>
+        <translation>%1 aus</translation>
+    </message>
+    <message>
+        <source>%1 at %2</source>
+        <translation>%1 auf %2</translation>
+    </message>
+    <message>
+        <source>in %1 d %2 h</source>
+        <translation>in %1 T %2 Std</translation>
+    </message>
+    <message>
+        <source>in %1 h %2 min</source>
+        <translation>in %1 Std %2 Min</translation>
+    </message>
+    <message>
+        <source>in %1 min</source>
+        <translation>in %1 Min</translation>
+    </message>
+    <message>
+        <source>%1, %2 (%3)</source>
+        <translation>%1, %2 (%3)</translation>
+    </message>
+    <message>
+        <source>Program enabled</source>
+        <translation>Programm aktiviert</translation>
+    </message>
+    <message>
+        <source>Program paused</source>
+        <translation>Programm pausiert</translation>
+    </message>
+    <message>
+        <source>No program for this mode</source>
+        <translation>Kein Programm für diesen Modus</translation>
+    </message>
+    <message>
+        <source>Range %1 – %2</source>
+        <translation>Bereich %1 – %2</translation>
+    </message>
+    <message>
+        <source>About the range</source>
+        <translation>Zum Bereich</translation>
+    </message>
+    <message>
+        <source>In auto, the program sets a range: the lower end follows the heating, the upper end the cooling. The two are kept at least %1 apart.</source>
+        <translation>Im Automodus legt das Programm einen Bereich fest: die Untergrenze folgt dem Heizen, die Obergrenze dem Kühlen. Beide bleiben mindestens %1 auseinander.</translation>
+    </message>
+    <message>
+        <source>In auto, the program sets a range: the lower end follows the heating, the upper end the cooling. The two are kept a minimum apart.</source>
+        <translation>Im Automodus legt das Programm einen Bereich fest: die Untergrenze folgt dem Heizen, die Obergrenze dem Kühlen. Beide bleiben einen Mindestabstand auseinander.</translation>
+    </message>
+    <message>
+        <source>Program and settings</source>
+        <translation>Programm und Einstellungen</translation>
+    </message>
+</context>
+<context>
+    <name>ClimateProgramStrips</name>
+    <message>
+        <source>Cooling today</source>
+        <translation>Kühlen heute</translation>
+    </message>
+    <message>
+        <source>Heating today</source>
+        <translation>Heizen heute</translation>
     </message>
 </context>
 </TS>

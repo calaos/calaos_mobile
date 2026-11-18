@@ -43,14 +43,16 @@ TestCase {
             property int editorWidth: 720
             property alias editor: ed
             color: Theme.backgroundColor
-            width: editorWidth + 32
+            //A phone sheet is the full screen width
+            readonly property int margin: editorWidth < 500 ? 0 : 16
+            width: editorWidth + 2 * margin
             height: 1400
             TimeRangeEditor {
                 id: ed
-                x: 16
-                y: 16
+                x: host.margin
+                y: host.margin
                 width: host.editorWidth
-                height: host.height - 32
+                height: host.height - 2 * host.margin
                 client: fake
                 day: 1
                 fontFamily: calaosFont.fontFamily
@@ -140,7 +142,7 @@ TestCase {
         var flick = flickableOf(host.editor)
         if (!sheet)
             tryVerify(function() { return flick.contentHeight > 200 })
-        var h = sheet ? 800 : Math.ceil(flick.contentHeight) + 32
+        var h = sheet ? 800 : Math.ceil(flick.contentHeight) + 2 * host.margin
         host.height = h
         waitForRendering(host)
         var img = grabImage(host)

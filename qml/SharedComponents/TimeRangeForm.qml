@@ -259,7 +259,7 @@ ColumnLayout {
         TimeRangeButton {
             objectName: "levelUp"
             fontFamily: root.fontFamily
-            text: "▲"
+            icon: "chevronU"
             Accessible.name: qsTr("Raise the priority")
             enabled: !root.readOnly && root.level > 1
             onClicked: root.moveLevelRequested(-1)
@@ -267,7 +267,7 @@ ColumnLayout {
         TimeRangeButton {
             objectName: "levelDown"
             fontFamily: root.fontFamily
-            text: "▼"
+            icon: "chevronD"
             Accessible.name: qsTr("Lower the priority")
             enabled: !root.readOnly && root.level < root.levelCount
             onClicked: root.moveLevelRequested(1)

@@ -293,6 +293,7 @@ TestCase {
         e.openSegment({ start: 720, end: 780, level: 2, setpoint: 18 })
         compare(findChild(e, "levelText").text, "Priority: level 2")
         verify(!findChild(e, "levelDown").enabled)
+        compare(findChild(e, "levelUp").icon, "chevronU")
         findChild(e, "levelUp").trigger()
         answerAll()
         var w = writes(from).map(function(c) { return c.action + ":" + c.id })

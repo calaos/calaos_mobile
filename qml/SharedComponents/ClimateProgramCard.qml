@@ -253,12 +253,14 @@ ColumnLayout {
             activeFocusOnTab: true
             Accessible.role: Accessible.Button
             Accessible.name: qsTr("About the range")
+            Accessible.expandable: true
+            Accessible.expanded: root.helpOpen
             Keys.onSpacePressed: root.helpOpen = !root.helpOpen
             Keys.onReturnPressed: root.helpOpen = !root.helpOpen
 
             ClimateIcon {
                 anchors.centerIn: parent
-                name: "help"
+                name: "info"
                 size: Units.dp(22)
                 color: root.helpOpen ? Theme.blueColor : Theme.mutedColor
             }

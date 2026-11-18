@@ -7,6 +7,8 @@ Rectangle {
 
     property string fontFamily
     property string text
+    //Drawn icon instead of the text: the app fonts lack arrow glyphs
+    property string icon
     property bool checkable: false
     property bool checked: false
     property bool accent: false
@@ -16,7 +18,7 @@ Rectangle {
 
     signal clicked()
 
-    implicitWidth: Math.max(Units.dp(44), label.implicitWidth + sidePadding)
+    implicitWidth: icon !== "" ? Units.dp(44) : Math.max(Units.dp(44), label.implicitWidth + sidePadding)
     implicitHeight: Units.dp(44)
     radius: Units.dp(4)
     opacity: enabled ? 1 : 0.4
@@ -45,6 +47,7 @@ Rectangle {
 
     Text {
         id: label
+        visible: root.icon === ""
         anchors.centerIn: parent
         width: Math.min(implicitWidth, root.width - Units.dp(8))
         text: root.text
@@ -52,6 +55,15 @@ Rectangle {
         font { family: root.fontFamily; pixelSize: Units.dp(15) }
         horizontalAlignment: Text.AlignHCenter
         elide: Text.ElideRight
+    }
+
+    ClimateIcon {
+        objectName: "buttonIcon"
+        visible: root.icon !== ""
+        anchors.centerIn: parent
+        name: root.icon
+        size: Units.dp(20)
+        color: Theme.whiteColor
     }
 
     MouseArea {

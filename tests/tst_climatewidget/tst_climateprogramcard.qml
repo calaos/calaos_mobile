@@ -131,8 +131,11 @@ TestCase {
             cool: { levels: 2, active_level: null, setpoint: 25, default: 28 } }))
         verify(findChild(card, "programRange").visible)
         verify(!findChild(card, "programHelp").visible)
-        mouseClick(findChild(card, "programHelpButton"))
+        var btn = findChild(card, "programHelpButton")
+        verify(!btn.Accessible.expanded)
+        mouseClick(btn)
         verify(findChild(card, "programHelp").visible)
+        verify(btn.Accessible.expanded)
         compare(card.activeLines.length, 2)
     }
 

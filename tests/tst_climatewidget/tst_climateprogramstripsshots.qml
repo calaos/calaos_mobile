@@ -25,7 +25,11 @@ TestCase {
             reads = reads.concat([{ id: ioId, rid: "r" + (++seq) }])
             return "r" + seq
         }
-        function getStates(items) { return "r" + (++seq) }
+        property var stateRids: []
+        function getStates(items) {
+            stateRids = stateRids.concat(["r" + (++seq)])
+            return "r" + seq
+        }
         function setState(id, value) { return "r" + (++seq) }
     }
 
@@ -53,13 +57,16 @@ TestCase {
                              cool_level1: "c1", cool_level1_setpoint: "c1sp" } } })
         var m = createTemporaryObject(modelComponent, tc, { modelData: io })
         fake.reads = []
+        fake.stateRids = []
         var item = createTemporaryObject(cardComponent, tc, { climate: m, x: 12, y: 12, width: w })
         tc.verify(item !== null)
         var got = fake.reads
         tc.compare(got.length, 2)
         // 2026-11-18 is day 3 of the ISO week
         fake.finished(got[0].rid, true, { ranges: [range(3, 6, 8), range(3, 17, 22)] }, "")
-        fake.finished(got[1].rid, true, { ranges: [range(3, 11, 15)] }, "")
+        fake.finished(got[1].rid, true, { ranges: [range(3, 7, 20)] }, "")
+        for (var i = 0; i < fake.stateRids.length; i++)
+            fake.finished(fake.stateRids[i], true, { h1sp: "21", c1sp: "25" }, "")
         wait(300)
         return item
     }
@@ -78,6 +85,9 @@ TestCase {
     function test_stripsDialogWidth() {
         var c = card(430)
         tc.verify(c.visible)
+        tc.verify(findChild(c, "programRange_420") !== null)
+        tc.verify(findChild(c, "programRange_1020") !== null)
+        tc.compare(findChild(c, "programRange_480"), null)
         shot("program-auto-strips-dialog.png")
     }
 

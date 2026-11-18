@@ -24,6 +24,10 @@ ColumnLayout {
     property bool completed: false
     readonly property int day: TR.isoDay(new Date(now))
     readonly property int nowMinutes: new Date(now).getHours() * 60 + new Date(now).getMinutes()
+    readonly property var rangeSpans: levelsByKind.heat.length === 0 || levelsByKind.cool.length === 0 ? [] : TR.rangeSpans(
+        TR.fullDay(levelsByKind.heat, day, TR.toSetpoint(stateValue("heat_default")), false),
+        TR.fullDay(levelsByKind.cool, day, TR.toSetpoint(stateValue("cool_default")),
+                   String(stateValue("cool_default_off")) === "true"))
     readonly property bool loaded: levelsByKind.heat.length + levelsByKind.cool.length > 0
 
     visible: active && loaded
@@ -118,8 +122,8 @@ ColumnLayout {
         reload()
     }
 
-    Repeater {
-        model: ["heat", "cool"]
+    Component {
+        id: stripRow
 
         RowLayout {
             id: row
@@ -155,4 +159,49 @@ ColumnLayout {
             }
         }
     }
+    Repeater { model: ["heat"]; delegate: stripRow }
+
+    //Where both sets hold a setpoint, the auto range lives between the two bars
+    RowLayout {
+        objectName: "programRangeRow"
+        Layout.fillWidth: true
+        spacing: Units.dp(8)
+        visible: root.rangeSpans.length > 0
+
+        Item { Layout.preferredWidth: Units.dp(64) }
+
+        Item {
+            id: hatchHost
+            Layout.fillWidth: true
+            Layout.preferredHeight: Units.dp(10)
+
+            Repeater {
+                model: root.rangeSpans
+
+                delegate: Canvas {
+                    id: hatch
+                    required property var modelData
+                    objectName: "programRange_" + modelData.start
+                    x: hatchHost.width * modelData.start / TR.DayMinutes
+                    width: Math.max(1, hatchHost.width * (modelData.end - modelData.start) / TR.DayMinutes)
+                    height: hatchHost.height
+                    onWidthChanged: requestPaint()
+                    onPaint: {
+                        var c = getContext("2d")
+                        c.clearRect(0, 0, width, height)
+                        c.strokeStyle = Theme.mutedColor
+                        c.lineWidth = 1
+                        c.beginPath()
+                        for (var k = -height; k < width; k += Units.dp(5)) {
+                            c.moveTo(k, height)
+                            c.lineTo(k + height, 0)
+                        }
+                        c.stroke()
+                    }
+                }
+            }
+        }
+    }
+
+    Repeater { model: ["cool"]; delegate: stripRow }
 }

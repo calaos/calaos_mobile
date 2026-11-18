@@ -280,6 +280,16 @@ TestCase {
         compare(withSp[1].setpoint, null)
     }
 
+    function test_rangeSpansIsWhereBothSetsHoldASetpoint() {
+        var heat = [{ start: 0, end: 600, level: 1, setpoint: 20, off: false },
+                    { start: 600, end: 1440, level: 0, setpoint: null, off: false }]
+        var cool = [{ start: 0, end: 480, level: 0, setpoint: 28, off: true },
+                    { start: 480, end: 900, level: 1, setpoint: 25, off: false },
+                    { start: 900, end: 1440, level: 0, setpoint: 28, off: false }]
+        compare(TR.rangeSpans(heat, cool), [{ start: 480, end: 600 }])
+        compare(TR.rangeSpans([], cool), [])
+    }
+
     function test_timeHelpers() {
         compare(TR.hhmm(1440), "24:00")
         compare(TR.hhmm(65), "01:05")

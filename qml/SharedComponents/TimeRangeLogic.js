@@ -285,6 +285,30 @@ function fullDay(levels, day, defaultSetpoint, defaultOff) {
     return out
 }
 
+//The minutes where both sets hold a setpoint: the auto range exists there.
+//Takes two fullDay() results, gives [{ start, end }].
+function rangeSpans(heat, cool) {
+    var out = []
+    for (var i = 0; i < heat.length; i++) {
+        if (heat[i].off || heat[i].setpoint === null || heat[i].setpoint === undefined)
+            continue
+        for (var j = 0; j < cool.length; j++) {
+            if (cool[j].off || cool[j].setpoint === null || cool[j].setpoint === undefined)
+                continue
+            var a = Math.max(heat[i].start, cool[j].start)
+            var b = Math.min(heat[i].end, cool[j].end)
+            if (b <= a)
+                continue
+            var last = out.length ? out[out.length - 1] : null
+            if (last && last.end === a)
+                last.end = b
+            else
+                out.push({ start: a, end: b })
+        }
+    }
+    return out
+}
+
 function slotCount(levels, day) {
     return daySegments(levels, day).length
 }

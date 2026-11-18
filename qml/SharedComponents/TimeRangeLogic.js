@@ -58,7 +58,7 @@ function fromRanges(ranges) {
         var endH = toInt(r.end_hour, 0), endM = toInt(r.end_min, 0), endS = toInt(r.end_sec, 0)
         //The server's end is inclusive: 23:59:59 is the end of the day.
         var end = (endH === 23 && endM === 59 && endS === 59) ? DayMinutes : endH * 60 + endM
-        //start == end is a range of a single instant on the server: one minute here
+        //start == end is active for one second server-side (inclusive end); the grid cannot hold less than a minute
         if (end === start && start < DayMinutes)
             end = start + 1
         var group = "g" + (++groupSeq)
@@ -465,6 +465,13 @@ function levelsFromIos(ios, kind) {
         out.push({ n: n, ioId: id, setpointId: typeof sp === "string" ? sp : "", setpoint: null, slots: [] })
     }
     return out
+}
+
+//Same ids, same key: JSON.stringify depends on the key order
+function iosKey(ios) {
+    if (!ios || typeof ios !== "object")
+        return ""
+    return Object.keys(ios).sort().map(function(k) { return k + "=" + ios[k] }).join("|")
 }
 
 //The state ids to read for one direction: level setpoints and defaults.

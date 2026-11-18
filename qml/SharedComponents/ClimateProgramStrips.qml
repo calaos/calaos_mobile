@@ -108,7 +108,9 @@ ColumnLayout {
         }
     }
 
-    onDeviceChanged: reload()
+    //A new device object arrives at every io_changed: only other ids mean other levels
+    readonly property string iosKey: TR.iosKey(ios)
+    onIosKeyChanged: reload()
     onClientChanged: reload()
     onActiveChanged: reload()
     Component.onCompleted: {

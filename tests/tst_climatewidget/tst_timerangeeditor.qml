@@ -129,6 +129,17 @@ TestCase {
         compare(findChild(e, "levelCount").text, "Levels: 1 of 6")
     }
 
+    function test_sameIosDoesNotReload() {
+        var e = make()
+        answerAll()
+        var n = fake.calls.length
+        e.device = { ios: ios(2), state: { current_temp: 21 } }
+        compare(fake.calls.length, n)
+        verify(!findChild(e, "loadingText").visible)
+        e.device = { ios: ios(1) }
+        verify(fake.calls.length > n)
+    }
+
     function test_newSetpointWritesTheSetpointThenTheRanges() {
         var e = make()
         answerAll()

@@ -38,7 +38,9 @@ ColumnLayout {
     spacing: Units.dp(8)
 
     onProgramChanged: {
-        requested = undefined
+        //A measurement landing between the click and the confirmation must not flip the switch back
+        if (program && program.enabled === requested)
+            requested = undefined
         if (climate)
             now = climate.clock()
     }
@@ -121,10 +123,10 @@ ColumnLayout {
         var time = sameDay ? Qt.formatTime(when, "HH:mm") : Qt.formatDateTime(when, "ddd HH:mm")
         var what = n.level > 0 ? qsTr("%1 level %2").arg(setName(n.set)).arg(n.level)
                                : qsTr("%1 default").arg(setName(n.set))
-        if (n.setpoint === null)
-            what = qsTr("%1 stopped").arg(setName(n.set))
-        else
+        if (n.setpoint !== null)
             what = qsTr("%1 at %2").arg(what).arg(degrees(n.setpoint))
+        else if (n.set === "cool")
+            what = qsTr("%1 stopped").arg(setName(n.set))
         var left = Logic.untilChange(n.at, now)
         var delay = left.days > 0 ? qsTr("in %1 d %2 h").arg(left.days).arg(left.hours)
                   : left.hours > 0 ? qsTr("in %1 h %2 min").arg(left.hours).arg(left.minutes)
@@ -281,7 +283,14 @@ ColumnLayout {
               : qsTr("In auto, the program sets a range: the lower end follows the heating, the upper end the cooling. The two are kept a minimum apart.")
     }
 
+    Connections {
+        target: root.climate ? root.climate.modelData : null
+        ignoreUnknownSignals: true
+        function onDeviceChange() { strips.refreshStates() }
+    }
+
     ClimateProgramStrips {
+        id: strips
         objectName: "programStrips"
         Layout.fillWidth: true
         active: root.present && root.modeSet === "auto"
@@ -303,6 +312,12 @@ ColumnLayout {
 
     MouseArea {
         objectName: "programEdit"
+        activeFocusOnTab: true
+        Accessible.role: Accessible.Button
+        Accessible.name: qsTr("Program and settings")
+        Accessible.onPressAction: root.editRequested()
+        Keys.onReturnPressed: root.editRequested()
+        Keys.onSpacePressed: root.editRequested()
         Layout.fillWidth: true
         Layout.preferredHeight: Units.dp(50)
         visible: root.present

@@ -198,6 +198,22 @@ TestCase {
         verify(card.programOn)
     }
 
+    function test_autoStripsFollowIoChangedWithoutReloading() {
+        deviceIos = { mode: "m", program_enabled: "pe", heat_level1: "h1", heat_level1_setpoint: "h1sp",
+                      cool_level1: "c1", cool_level1_setpoint: "c1sp" }
+        var auto = { mode_set: "auto", cool: { levels: 1, active_level: 1, setpoint: 25, default: 28 } }
+        var card = make(program(auto))
+        var n = fake.reads.length
+        verify(n > 0)
+        var dev = deviceOf(program(auto))
+        dev.state.current_temp = 22.5
+        harness.pushFrame("salon_ac", "heat", dev)
+        wait(50)
+        var more = fake.reads.slice(n)
+        compare(more.filter(function(r) { return r.action === "get_timerange" }).length, 0)
+        compare(more.filter(function(r) { return r.action === "get_state" }).length, 1)
+    }
+
     function test_editRequestedFromTheButton() {
         var card = make(program())
         var spy = createTemporaryObject(spyComponent, tc, { target: card })

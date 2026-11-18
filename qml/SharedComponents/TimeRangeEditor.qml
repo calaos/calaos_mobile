@@ -281,7 +281,9 @@ Item {
 
     //The initial properties fire their change handlers too: one read at completion.
     property bool completed: false
-    onDeviceChanged: reload()
+    //A new device object arrives at every io_changed: only other ids mean other levels
+    readonly property string iosKey: TR.iosKey(ios)
+    onIosKeyChanged: reload()
     onClientChanged: reload()
     Component.onCompleted: {
         completed = true

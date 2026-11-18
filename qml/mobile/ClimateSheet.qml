@@ -201,6 +201,7 @@ Item {
         fontFamily: host.fontFamily
 
         TimeRangeEditor {
+            id: editor
             objectName: "programEditor"
             anchors { left: parent.left; right: parent.right; top: parent.top; bottom: programClose.top }
             fontFamily: host.fontFamily
@@ -208,7 +209,6 @@ Item {
             client: typeof programClient !== "undefined" ? programClient : null
             phone: true
             readOnly: climate.status.kind === "offline"
-            id: editor
 
             Connections {
                 target: climate.modelData ? climate.modelData : null

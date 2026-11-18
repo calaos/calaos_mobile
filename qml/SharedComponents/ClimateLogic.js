@@ -90,8 +90,61 @@ function capabilities(caps, ios) {
         fanModes: stringList(caps.fan_modes),
         swingModes: stringList(caps.swing_modes),
         reportsAction: caps.reports_action === true,
-        humidity: caps.humidity === true
+        humidity: caps.humidity === true,
+        program: programCaps(caps.program)
     }
+}
+
+function wholeCount(v) {
+    return typeof v === "number" && isFinite(v) && v >= 0 ? Math.floor(v) : 0
+}
+
+//null when the device has no program: the card is then not drawn at all.
+function programCaps(p) {
+    if (!isObj(p))
+        return null
+    var heat = wholeCount(p.heat_levels)
+    var cool = wholeCount(p.cool_levels)
+    if (heat + cool === 0)
+        return null
+    return { heatLevels: heat, coolLevels: cool, maxLevels: wholeCount(p.max_levels) || 6 }
+}
+
+function programSet(s) {
+    if (!isObj(s))
+        return null
+    return { levels: wholeCount(s.levels),
+             activeLevel: wholeCount(s.active_level) > 0 ? wholeCount(s.active_level) : 0,
+             setpoint: isNum(s.setpoint) ? s.setpoint : null,
+             def: isNum(s["default"]) ? s["default"] : null }
+}
+
+function programNext(n) {
+    if (!isObj(n))
+        return null
+    var at = typeof n.at === "string" ? Date.parse(n.at) : NaN
+    if (isNaN(at) || (n.set !== "heat" && n.set !== "cool"))
+        return null
+    return { at: at, set: n.set, level: wholeCount(n.level) > 0 ? wholeCount(n.level) : 0,
+             setpoint: isNum(n.setpoint) ? n.setpoint : null }
+}
+
+//state.program of the device, or null. A set absent from the state is null.
+function programState(state) {
+    if (!isObj(state) || !isObj(state.program))
+        return null
+    var p = state.program
+    var ms = p.mode_set
+    return { enabled: p.enabled === true,
+             modeSet: ms === "heat" || ms === "cool" || ms === "auto" ? ms : "",
+             heat: programSet(p.heat), cool: programSet(p.cool),
+             next: programNext(p.next_change) }
+}
+
+//Time left until `at`, split for display; the server only sends the instant.
+function untilChange(atMs, nowMs) {
+    var min = Math.max(0, Math.ceil((atMs - nowMs) / 60000))
+    return { days: Math.floor(min / 1440), hours: Math.floor(min % 1440 / 60), minutes: min % 60 }
 }
 
 //The scalar `state` of the item is the mode; "" means it is not known (yet).

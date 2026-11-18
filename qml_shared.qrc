@@ -56,5 +56,6 @@
         <file>qml/SharedComponents/TimeRangeCopy.qml</file>
         <file>qml/SharedComponents/TimeRangeForm.qml</file>
         <file>qml/SharedComponents/TimeRangeEditor.qml</file>
+        <file>qml/SharedComponents/ClimateProgramCard.qml</file>
     </qresource>
 </RCC>

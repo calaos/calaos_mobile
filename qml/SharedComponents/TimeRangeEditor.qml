@@ -120,6 +120,15 @@ Item {
             track(client.getStates(ids), { states: true })
     }
 
+    //io_changed of the climate: the setpoints may have moved, the slots have not
+    function refreshStates() {
+        if (!client || !completed || busy || loading)
+            return
+        var ids = TR.stateIds(ios, "heat").concat(TR.stateIds(ios, "cool"))
+        if (ids.length)
+            track(client.getStates(ids), { states: true })
+    }
+
     function readLevel(k, ioId) {
         track(client.getTimeRange(ioId), { kind: k, ioId: ioId })
     }

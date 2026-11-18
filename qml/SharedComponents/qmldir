@@ -15,6 +15,11 @@ ClimateModePill 1.0 ClimateModePill.qml
 ClimateRows 1.0 ClimateRows.qml
 ClimateMore 1.0 ClimateMore.qml
 ClimateIcon 1.0 ClimateIcon.qml
+TimeRangeBar 1.0 TimeRangeBar.qml
+TimeRangeButton 1.0 TimeRangeButton.qml
+TimeRangeCopy 1.0 TimeRangeCopy.qml
+TimeRangeForm 1.0 TimeRangeForm.qml
+TimeRangeEditor 1.0 TimeRangeEditor.qml
 IOBoiler 1.0 IOBoiler.qml
 IOFavAllLights 1.0 IOFavAllLights.qml
 IOHeater 1.0 IOHeater.qml

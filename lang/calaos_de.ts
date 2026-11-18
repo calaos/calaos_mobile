@@ -4371,4 +4371,315 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <translation type="unfinished">Neuen Wert eingeben</translation>
     </message>
 </context>
+<context>
+    <name>TimeRangeBar</name>
+    <message>
+        <source>Off</source>
+        <translation>Aus</translation>
+    </message>
+    <message>
+        <source>off</source>
+        <translation>aus</translation>
+    </message>
+    <message>
+        <source>Default, %1 to %2, %3</source>
+        <translation>Standard, %1 bis %2, %3</translation>
+    </message>
+    <message>
+        <source>Level %1, %2 to %3, %4</source>
+        <translation>Stufe %1, %2 bis %3, %4</translation>
+    </message>
+</context>
+<context>
+    <name>TimeRangeForm</name>
+    <message>
+        <source>Monday</source>
+        <translation>Montag</translation>
+    </message>
+    <message>
+        <source>Tuesday</source>
+        <translation>Dienstag</translation>
+    </message>
+    <message>
+        <source>Wednesday</source>
+        <translation>Mittwoch</translation>
+    </message>
+    <message>
+        <source>Thursday</source>
+        <translation>Donnerstag</translation>
+    </message>
+    <message>
+        <source>Friday</source>
+        <translation>Freitag</translation>
+    </message>
+    <message>
+        <source>Saturday</source>
+        <translation>Samstag</translation>
+    </message>
+    <message>
+        <source>Sunday</source>
+        <translation>Sonntag</translation>
+    </message>
+    <message>
+        <source>M</source>
+        <comment>Monday</comment>
+        <translation>M</translation>
+    </message>
+    <message>
+        <source>T</source>
+        <comment>Tuesday</comment>
+        <translation>D</translation>
+    </message>
+    <message>
+        <source>W</source>
+        <comment>Wednesday</comment>
+        <translation>M</translation>
+    </message>
+    <message>
+        <source>T</source>
+        <comment>Thursday</comment>
+        <translation>D</translation>
+    </message>
+    <message>
+        <source>F</source>
+        <comment>Friday</comment>
+        <translation>F</translation>
+    </message>
+    <message>
+        <source>S</source>
+        <comment>Saturday</comment>
+        <translation>S</translation>
+    </message>
+    <message>
+        <source>S</source>
+        <comment>Sunday</comment>
+        <translation>S</translation>
+    </message>
+    <message>
+        <source>%1 minus 15 min</source>
+        <translation>%1 minus 15 Min.</translation>
+    </message>
+    <message>
+        <source>%1 plus 15 min</source>
+        <translation>%1 plus 15 Min.</translation>
+    </message>
+    <message>
+        <source>Apply</source>
+        <translation>Anwenden</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Abbrechen</translation>
+    </message>
+    <message>
+        <source>Choose at least one day</source>
+        <translation>Mindestens einen Tag wählen</translation>
+    </message>
+    <message>
+        <source>Days</source>
+        <translation>Tage</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Löschen</translation>
+    </message>
+    <message>
+        <source>End</source>
+        <translation>Ende</translation>
+    </message>
+    <message>
+        <source>Enter the time as 17:30</source>
+        <translation>Uhrzeit wie 17:30 eingeben</translation>
+    </message>
+    <message>
+        <source>Priority: level %1</source>
+        <translation>Priorität: Stufe %1</translation>
+    </message>
+    <message>
+        <source>Lower the priority</source>
+        <translation>Priorität senken</translation>
+    </message>
+    <message>
+        <source>Raise the priority</source>
+        <translation>Priorität erhöhen</translation>
+    </message>
+    <message>
+        <source>Lower the setpoint</source>
+        <translation>Sollwert senken</translation>
+    </message>
+    <message>
+        <source>Raise the setpoint</source>
+        <translation>Sollwert erhöhen</translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation>Speichern</translation>
+    </message>
+    <message>
+        <source>Setpoint</source>
+        <translation>Sollwert</translation>
+    </message>
+    <message>
+        <source>Start</source>
+        <translation>Beginn</translation>
+    </message>
+    <message>
+        <source>The end must follow the start</source>
+        <translation>Das Ende muss nach dem Beginn liegen</translation>
+    </message>
+</context>
+<context>
+    <name>TimeRangeCopy</name>
+    <message>
+        <source>%1 (1 slot)</source>
+        <translation>%1 (1 Zeitfenster)</translation>
+    </message>
+    <message>
+        <source>%1 (%2 slots)</source>
+        <translation>%1 (%2 Zeitfenster)</translation>
+    </message>
+    <message>
+        <source>%1 and %2</source>
+        <translation>%1 und %2</translation>
+    </message>
+    <message>
+        <source>%1 will be replaced by those of %2.</source>
+        <translation>Ersetzen von %1 durch die Zeitfenster von %2.</translation>
+    </message>
+    <message>
+        <source>All</source>
+        <translation>Alle</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Abbrechen</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation>Kopieren</translation>
+    </message>
+    <message>
+        <source>Copy %1 to</source>
+        <translation>%1 kopieren nach</translation>
+    </message>
+    <message>
+        <source>Nothing to copy: this day has no slot</source>
+        <translation>Nichts zu kopieren: dieser Tag hat kein Zeitfenster</translation>
+    </message>
+    <message>
+        <source>Replace and copy</source>
+        <translation>Ersetzen und kopieren</translation>
+    </message>
+    <message>
+        <source>Weekdays</source>
+        <translation>Werktage</translation>
+    </message>
+    <message>
+        <source>Weekend</source>
+        <translation>Wochenende</translation>
+    </message>
+</context>
+<context>
+    <name>TimeRangeEditor</name>
+    <message>
+        <source>Could not read the program, try again</source>
+        <translation>Das Programm konnte nicht gelesen werden, erneut versuchen</translation>
+    </message>
+    <message>
+        <source>6 levels maximum for %1</source>
+        <translation>Maximal 6 Stufen für %1</translation>
+    </message>
+    <message>
+        <source>Cooling</source>
+        <translation>Kühlen</translation>
+    </message>
+    <message>
+        <source>Heating</source>
+        <translation>Heizen</translation>
+    </message>
+    <message>
+        <source>Cooling off outside slots</source>
+        <translation>Kühlen aus außerhalb der Zeitfenster</translation>
+    </message>
+    <message>
+        <source>Copy this day…</source>
+        <translation>Diesen Tag kopieren…</translation>
+    </message>
+    <message>
+        <source>Default: %1</source>
+        <translation>Standard: %1</translation>
+    </message>
+    <message>
+        <source>Default: off</source>
+        <translation>Standard: aus</translation>
+    </message>
+    <message>
+        <source>Incomplete copy: not saved, try again</source>
+        <translation>Kopie unvollständig: nicht gespeichert, erneut versuchen</translation>
+    </message>
+    <message>
+        <source>Levels: %1 of %2</source>
+        <translation>Stufen: %1 von %2</translation>
+    </message>
+    <message>
+        <source>Loading the program…</source>
+        <translation>Programm wird geladen…</translation>
+    </message>
+    <message>
+        <source>Lower the default setpoint</source>
+        <translation>Standard-Sollwert senken</translation>
+    </message>
+    <message>
+        <source>Raise the default setpoint</source>
+        <translation>Standard-Sollwert erhöhen</translation>
+    </message>
+    <message>
+        <source>No slot in cooling. Default: %1.</source>
+        <translation>Kein Zeitfenster beim Kühlen. Standard: %1.</translation>
+    </message>
+    <message>
+        <source>No slot in cooling. Default: off.</source>
+        <translation>Kein Zeitfenster beim Kühlen. Standard: aus.</translation>
+    </message>
+    <message>
+        <source>No slot in heating. Default: %1.</source>
+        <translation>Kein Zeitfenster beim Heizen. Standard: %1.</translation>
+    </message>
+    <message>
+        <source>Nothing to copy: this day has no slot</source>
+        <translation>Nichts zu kopieren: dieser Tag hat kein Zeitfenster</translation>
+    </message>
+    <message>
+        <source>Not saved, try again</source>
+        <translation>Nicht gespeichert, erneut versuchen</translation>
+    </message>
+    <message>
+        <source>Retry</source>
+        <translation>Erneut versuchen</translation>
+    </message>
+    <message>
+        <source>Saving failed, try again</source>
+        <translation>Speichern fehlgeschlagen, erneut versuchen</translation>
+    </message>
+    <message>
+        <source>+ Slot</source>
+        <translation>+ Zeitfenster</translation>
+    </message>
+    <message>
+        <source>The end must follow the start</source>
+        <translation>Das Ende muss nach dem Beginn liegen</translation>
+    </message>
+    <message>
+        <source>This account cannot change the program</source>
+        <translation>Dieses Konto kann das Programm nicht ändern</translation>
+    </message>
+    <message>
+        <source>This climate has no program.</source>
+        <translation>Diese Klimaanlage hat kein Programm.</translation>
+    </message>
+    <message>
+        <source>Week</source>
+        <translation>Woche</translation>
+    </message>
+</context>
 </TS>

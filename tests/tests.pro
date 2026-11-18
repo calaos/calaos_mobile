@@ -37,6 +37,7 @@ SUBDIRS += \
     tst_mobilesettings \
     tst_netquiet \
     tst_networkbounds \
+    tst_programclient \
     tst_pushnotif \
     tst_qqmlhelpers \
     tst_reconnectpolicy \

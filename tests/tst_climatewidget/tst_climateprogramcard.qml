@@ -20,6 +20,15 @@ TestCase {
         signal finished(string requestId, bool ok, var answer, string error)
         property var calls: []
         property int seq: 0
+        property var reads: []
+        function getTimeRange(ioId) {
+            reads = reads.concat([{ action: "get_timerange", id: ioId, rid: "r" + (++seq) }])
+            return "r" + seq
+        }
+        function getStates(items) {
+            reads = reads.concat([{ action: "get_state", items: items, rid: "r" + (++seq) }])
+            return "r" + seq
+        }
         function setState(id, value) {
             calls = calls.concat([{ id: id, value: value }])
             return "r" + (++seq)
@@ -47,7 +56,9 @@ TestCase {
         return p
     }
 
-    function make(prog, withProgramCaps) {
+    property var deviceIos: ({ mode: "m", program_enabled: "pe" })
+
+    function deviceOf(prog, withProgramCaps) {
         var st = { mode: prog.mode_set === "auto" ? "auto" : "heat", current_temp: 21, target_temp: 22,
                    target_temp_low: 20, target_temp_high: 24, program: prog }
         var c = { modes: ["off", "heat", "cool", "auto"],
@@ -55,9 +66,12 @@ TestCase {
                   target_temp_range: true }
         if (withProgramCaps !== false)
             c.program = { heat_levels: 2, cool_levels: 2, max_levels: 6 }
+        return { family: "climate", impl: "proxy", capabilities: c, state: st, ios: deviceIos }
+    }
+
+    function make(prog, withProgramCaps) {
         var io = harness.makeClimate({ id: "salon_ac", name: "Clim", gui_type: "climate", state: "heat", rw: "true",
-                                       device: { family: "climate", impl: "proxy", capabilities: c, state: st,
-                                                 ios: { mode: "m", program_enabled: "pe" } } })
+                                       device: deviceOf(prog, withProgramCaps) })
         var m = createTemporaryObject(modelComponent, tc, { modelData: io })
         var card = createTemporaryObject(cardComponent, tc, { climate: m })
         verify(card !== null)
@@ -67,6 +81,8 @@ TestCase {
     function init() {
         harness.reset()
         fake.calls = []
+        fake.reads = []
+        deviceIos = { mode: "m", program_enabled: "pe" }
         fakeNow = Date.parse("2026-11-18T10:00:00+01:00")
     }
 
@@ -128,6 +144,58 @@ TestCase {
     function test_absentWithoutProgramCapability() {
         var card = make(program(), false)
         verify(!card.visible)
+    }
+
+    function autoProgram() {
+        return program({ mode_set: "auto",
+            heat: { levels: 1, active_level: 1, setpoint: 21, default: 17 },
+            cool: { levels: 1, active_level: null, setpoint: 25, default: 28 } })
+    }
+
+    function range(day, sh, eh) {
+        return { day: String(day), start_hour: String(sh), start_min: "0", start_sec: "0",
+                 start_type: "0", start_offset: "0", end_hour: String(eh), end_min: "0",
+                 end_sec: "0", end_type: "0", end_offset: "0" }
+    }
+
+    function test_autoStacksTheStripsOfBothSets() {
+        deviceIos = { mode: "m", program_enabled: "pe", heat_level1: "h1", heat_level1_setpoint: "h1sp",
+                      cool_level1: "c1", cool_level1_setpoint: "c1sp" }
+        var card = make(autoProgram())
+        var strips = findChild(card, "programStrips")
+        verify(strips.active)
+        var got = fake.reads.filter(function(r) { return r.action === "get_timerange" })
+        compare(got.length, 2)
+        // 2026-11-18 is day 3 of the ISO week
+        fake.finished(got[0].rid, true, { ranges: [range(3, 6, 8)] }, "")
+        fake.finished(got[1].rid, true, { ranges: [range(3, 12, 14)] }, "")
+        verify(findChild(findChild(card, "programStripBar_heat"), "segment_1_360") !== null)
+        verify(findChild(findChild(card, "programStripBar_cool"), "segment_1_720") !== null)
+        verify(strips.visible)
+    }
+
+    function test_stripsAbsentOutsideAuto() {
+        deviceIos = { mode: "m", program_enabled: "pe", heat_level1: "h1" }
+        var card = make(program())
+        verify(!findChild(card, "programStrips").active)
+        verify(!findChild(card, "programStrips").visible)
+        compare(fake.reads.length, 0)
+    }
+
+    function test_cardFollowsIoChanged() {
+        var card = make(program())
+        verify(findChild(card, "programLevel").text.indexOf("2") >= 0)
+        var paused = program({ enabled: false, next_change: null,
+                               heat: { levels: 2, active_level: 1, setpoint: 19.5, default: 17 } })
+        harness.pushFrame("salon_ac", "heat", deviceOf(paused))
+        tryVerify(function() { return findChild(card, "programPaused").visible })
+        verify(findChild(card, "programLevel").text.indexOf("1") >= 0)
+        verify(!findChild(card, "programNext").visible)
+        var again = program({ next_change: { at: "2026-11-18T18:00:00+01:00", set: "cool", level: 2, setpoint: 24 } })
+        harness.pushFrame("salon_ac", "heat", deviceOf(again))
+        tryVerify(function() { return findChild(card, "programNext").visible })
+        verify(findChild(card, "programNext").text.indexOf("8 h") >= 0)
+        verify(card.programOn)
     }
 
     function test_editRequestedFromTheButton() {

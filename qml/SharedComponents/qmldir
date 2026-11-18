@@ -16,6 +16,7 @@ ClimateRows 1.0 ClimateRows.qml
 ClimateMore 1.0 ClimateMore.qml
 ClimateIcon 1.0 ClimateIcon.qml
 ClimateProgramCard 1.0 ClimateProgramCard.qml
+ClimateProgramStrips 1.0 ClimateProgramStrips.qml
 TimeRangeBar 1.0 TimeRangeBar.qml
 TimeRangeButton 1.0 TimeRangeButton.qml
 TimeRangeCopy 1.0 TimeRangeCopy.qml

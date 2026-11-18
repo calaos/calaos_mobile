@@ -37,7 +37,11 @@ ColumnLayout {
     visible: present
     spacing: Units.dp(8)
 
-    onProgramChanged: requested = undefined
+    onProgramChanged: {
+        requested = undefined
+        if (climate)
+            now = climate.clock()
+    }
 
     function toggle() {
         if (!canToggle)
@@ -275,6 +279,16 @@ ColumnLayout {
               ? qsTr("In auto, the program sets a range: the lower end follows the heating, the upper end the cooling. The two are kept at least %1 apart.")
                     .arg(root.degrees(root.climate.caps.bounds.minRange))
               : qsTr("In auto, the program sets a range: the lower end follows the heating, the upper end the cooling. The two are kept a minimum apart.")
+    }
+
+    ClimateProgramStrips {
+        objectName: "programStrips"
+        Layout.fillWidth: true
+        active: root.present && root.modeSet === "auto"
+        client: root.client
+        device: root.climate && root.climate.modelData ? root.climate.modelData.device : null
+        fontFamily: root.fontFamily
+        now: root.now
     }
 
     Text {

@@ -4785,4 +4785,15 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <translation>Programm und Einstellungen</translation>
     </message>
 </context>
+<context>
+    <name>ClimateProgramStrips</name>
+    <message>
+        <source>Cooling today</source>
+        <translation>Kühlen heute</translation>
+    </message>
+    <message>
+        <source>Heating today</source>
+        <translation>Heizen heute</translation>
+    </message>
+</context>
 </TS>

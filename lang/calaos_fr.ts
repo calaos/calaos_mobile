@@ -4809,4 +4809,15 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <translation>Programme et réglages</translation>
     </message>
 </context>
+<context>
+    <name>ClimateProgramStrips</name>
+    <message>
+        <source>Cooling today</source>
+        <translation>Climatisation aujourd'hui</translation>
+    </message>
+    <message>
+        <source>Heating today</source>
+        <translation>Chauffage aujourd'hui</translation>
+    </message>
+</context>
 </TS>

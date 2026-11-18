@@ -44,15 +44,15 @@ ColumnLayout {
         }
     }
 
-    function dayLetter(d) {
+    function dayShort(d) {
         switch (d) {
-        case 1: return qsTr("M", "Monday")
-        case 2: return qsTr("T", "Tuesday")
-        case 3: return qsTr("W", "Wednesday")
-        case 4: return qsTr("T", "Thursday")
-        case 5: return qsTr("F", "Friday")
-        case 6: return qsTr("S", "Saturday")
-        default: return qsTr("S", "Sunday")
+        case 1: return qsTr("Mon", "Monday, short")
+        case 2: return qsTr("Tue", "Tuesday, short")
+        case 3: return qsTr("Wed", "Wednesday, short")
+        case 4: return qsTr("Thu", "Thursday, short")
+        case 5: return qsTr("Fri", "Friday, short")
+        case 6: return qsTr("Sat", "Saturday, short")
+        default: return qsTr("Sun", "Sunday, short")
         }
     }
 
@@ -236,7 +236,8 @@ ColumnLayout {
                 required property int index
                 objectName: "formDay" + (index + 1)
                 fontFamily: root.fontFamily
-                text: root.dayLetter(index + 1)
+                text: root.dayShort(index + 1)
+                sidePadding: Units.dp(8)
                 Accessible.name: root.dayName(index + 1)
                 checkable: true
                 checked: root.days.indexOf(index + 1) >= 0

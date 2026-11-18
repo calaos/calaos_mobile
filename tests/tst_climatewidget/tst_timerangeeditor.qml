@@ -321,6 +321,43 @@ TestCase {
         verify(form.visible)
     }
 
+    function test_dayButtonsShowThreeLettersAndSpellTheDayOut() {
+        var e = make()
+        answerAll()
+        e.openNew(1080, 1200)
+        var form = findChild(e, "slotForm")
+        var abbr = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        var full = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        for (var i = 0; i < 7; ++i) {
+            var b = findChild(form, "formDay" + (i + 1))
+            compare(b.text, abbr[i])
+            compare(b.Accessible.name, full[i])
+        }
+    }
+
+    function test_frenchDayButtons() {
+        verify(harness.setLanguage("fr"))
+        var e = make()
+        answerAll()
+        e.openNew(1080, 1200)
+        var form = findChild(e, "slotForm")
+        var abbr = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
+        for (var i = 0; i < 7; ++i)
+            compare(findChild(form, "formDay" + (i + 1)).text, abbr[i])
+        compare(findChild(form, "formDay3").Accessible.name, "Mercredi")
+    }
+
+    function test_germanDayButtons() {
+        verify(harness.setLanguage("de"))
+        var e = make()
+        answerAll()
+        e.openNew(1080, 1200)
+        var form = findChild(e, "slotForm")
+        var abbr = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+        for (var i = 0; i < 7; ++i)
+            compare(findChild(form, "formDay" + (i + 1)).text, abbr[i])
+    }
+
     function test_frenchTexts() {
         verify(harness.setLanguage("fr"))
         var e = make()

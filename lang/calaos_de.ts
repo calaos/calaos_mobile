@@ -4433,39 +4433,39 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <translation>Sonntag</translation>
     </message>
     <message>
-        <source>M</source>
-        <comment>Monday</comment>
-        <translation>M</translation>
+        <source>Mon</source>
+        <comment>Monday, short</comment>
+        <translation>Mo</translation>
     </message>
     <message>
-        <source>T</source>
-        <comment>Tuesday</comment>
-        <translation>D</translation>
+        <source>Tue</source>
+        <comment>Tuesday, short</comment>
+        <translation>Di</translation>
     </message>
     <message>
-        <source>W</source>
-        <comment>Wednesday</comment>
-        <translation>M</translation>
+        <source>Wed</source>
+        <comment>Wednesday, short</comment>
+        <translation>Mi</translation>
     </message>
     <message>
-        <source>T</source>
-        <comment>Thursday</comment>
-        <translation>D</translation>
+        <source>Thu</source>
+        <comment>Thursday, short</comment>
+        <translation>Do</translation>
     </message>
     <message>
-        <source>F</source>
-        <comment>Friday</comment>
-        <translation>F</translation>
+        <source>Fri</source>
+        <comment>Friday, short</comment>
+        <translation>Fr</translation>
     </message>
     <message>
-        <source>S</source>
-        <comment>Saturday</comment>
-        <translation>S</translation>
+        <source>Sat</source>
+        <comment>Saturday, short</comment>
+        <translation>Sa</translation>
     </message>
     <message>
-        <source>S</source>
-        <comment>Sunday</comment>
-        <translation>S</translation>
+        <source>Sun</source>
+        <comment>Sunday, short</comment>
+        <translation>So</translation>
     </message>
     <message>
         <source>%1 minus 15 min</source>

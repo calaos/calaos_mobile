@@ -12,10 +12,11 @@ Rectangle {
     property bool accent: false
     //Destructive action: red text and border.
     property bool danger: false
+    property real sidePadding: Units.dp(24)
 
     signal clicked()
 
-    implicitWidth: Math.max(Units.dp(44), label.implicitWidth + Units.dp(24))
+    implicitWidth: Math.max(Units.dp(44), label.implicitWidth + sidePadding)
     implicitHeight: Units.dp(44)
     radius: Units.dp(4)
     opacity: enabled ? 1 : 0.4

@@ -28,8 +28,8 @@ ColumnLayout {
         return names ? names.dayName(d) : String(d)
     }
 
-    function dayLetter(d) {
-        return names ? names.dayLetter(d) : String(d)
+    function dayShort(d) {
+        return names ? names.dayShort(d) : String(d)
     }
 
     function open(day) {
@@ -104,7 +104,8 @@ ColumnLayout {
                 required property int index
                 objectName: "copyDay" + (index + 1)
                 fontFamily: root.fontFamily
-                text: root.dayLetter(index + 1)
+                text: root.dayShort(index + 1)
+                sidePadding: Units.dp(8)
                 Accessible.name: root.dayName(index + 1)
                 checkable: true
                 checked: root.targets.indexOf(index + 1) >= 0

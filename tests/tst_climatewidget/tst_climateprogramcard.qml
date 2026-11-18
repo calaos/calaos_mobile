@@ -132,10 +132,10 @@ TestCase {
         verify(findChild(card, "programRange").visible)
         verify(!findChild(card, "programHelp").visible)
         var btn = findChild(card, "programHelpButton")
-        verify(!btn.Accessible.expanded)
+        verify(!btn.Accessible.checked)
         mouseClick(btn)
         verify(findChild(card, "programHelp").visible)
-        verify(btn.Accessible.expanded)
+        verify(btn.Accessible.checked)
         compare(card.activeLines.length, 2)
     }
 

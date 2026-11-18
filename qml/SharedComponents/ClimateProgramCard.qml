@@ -253,8 +253,8 @@ ColumnLayout {
             activeFocusOnTab: true
             Accessible.role: Accessible.Button
             Accessible.name: qsTr("About the range")
-            Accessible.expandable: true
-            Accessible.expanded: root.helpOpen
+            Accessible.checkable: true
+            Accessible.checked: root.helpOpen
             Keys.onSpacePressed: root.helpOpen = !root.helpOpen
             Keys.onReturnPressed: root.helpOpen = !root.helpOpen
 

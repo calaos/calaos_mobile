@@ -76,9 +76,30 @@ TestCase {
         compare(out[1].start_hour, "10")
     }
 
+    //Not an Array (Array.isArray() is false), no Array methods, a length that
+    //is not enumerable: what a list inside a QVariantMap looks like to JS.
+    function sequenceWrapper(items) {
+        var w = {}
+        for (var i = 0; i < items.length; i++)
+            w[i] = items[i]
+        Object.defineProperty(w, "length", { value: items.length, enumerable: false })
+        return w
+    }
+
+    //A list of a device, as the C++ side hands it over
+    function test_fromRangesTakesTheListOfADevice() {
+        var io = harness.makeClimate({ id: "dev_ranges", name: "Clim", gui_type: "climate", state: "heat", rw: "true",
+                                       device: { family: "climate", ranges: [range(2, 6, 0, 8, 0), range(3, 7, 0, 9, 0)] } })
+        compare(TR.fromRanges(io.device.ranges).length, 2)
+        harness.reset()
+    }
+
     function test_fromRangesTakesASequenceWrapper() {
-        var wrapper = { length: 1, 0: range(2, 6, 0, 8, 0) }
-        compare(TR.fromRanges(wrapper).length, 1)
+        var wrapper = sequenceWrapper([range(2, 6, 0, 8, 0), range(3, 7, 0, 9, 0)])
+        compare(Array.isArray(wrapper), false)
+        var slots = TR.fromRanges(wrapper)
+        compare(slots.length, 2)
+        compare(slots[1].day, 3)
         compare(TR.fromRanges("abc").length, 0)
         compare(TR.fromRanges({}).length, 0)
     }

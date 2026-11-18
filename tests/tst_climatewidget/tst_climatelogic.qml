@@ -500,4 +500,51 @@ TestCase {
         compare(Logic.humidityShown(Logic.capabilities({ humidity: true }), { humidity: "wet" }), false)
         compare(Logic.humidityShown(Logic.capabilities({ humidity: "yes" }), { humidity: 50 }), false)
     }
+
+    function test_programCaps() {
+        compare(Logic.programCaps({ heat_levels: 2, cool_levels: 0, max_levels: 4 }).maxLevels, 4)
+        compare(Logic.programCaps({ heat_levels: 1 }).maxLevels, 6)
+        compare(Logic.programCaps({ heat_levels: 0, cool_levels: 0 }), null)
+        compare(Logic.programCaps("x"), null)
+        compare(Logic.capabilities({}).program, null)
+        compare(Logic.capabilities({ program: { cool_levels: 3 } }).program.coolLevels, 3)
+    }
+
+    function test_programState() {
+        var st = { program: { enabled: true, mode_set: "auto",
+                              heat: { levels: 2, active_level: null, setpoint: 20, default: 17 },
+                              cool: { levels: 1, active_level: 1, setpoint: 25, default: 28 },
+                              next_change: { at: "2026-11-18T13:20:00+01:00", set: "cool", level: 0, setpoint: null } } }
+        var p = Logic.programState(st)
+        compare(p.enabled, true)
+        compare(p.modeSet, "auto")
+        compare(p.heat.activeLevel, 0)
+        compare(p.cool.activeLevel, 1)
+        compare(p.next.at, Date.parse("2026-11-18T13:20:00+01:00"))
+        compare(p.next.setpoint, null)
+        compare(Logic.programState({}), null)
+        compare(Logic.programState({ program: { enabled: "yes", mode_set: "dry", next_change: { at: "bad", set: "heat" } } }).enabled, false)
+        compare(Logic.programState({ program: { mode_set: "dry", next_change: { at: "bad", set: "heat" } } }).modeSet, "")
+        compare(Logic.programState({ program: { next_change: { at: "bad", set: "heat" } } }).next, null)
+    }
+
+    function test_untilChange() {
+        var now = 1000000000
+        compare(Logic.untilChange(now + 200 * 60000, now).hours, 3)
+        compare(Logic.untilChange(now + 200 * 60000, now).minutes, 20)
+        compare(Logic.untilChange(now + 1500 * 60000, now).days, 1)
+        compare(Logic.untilChange(now - 5000, now).minutes, 0)
+        compare(Logic.untilChange(now + 1, now).minutes, 1)
+    }
+
+    //A wrapper that carries the fields of a program must still be refused: a
+    //list is not an object, whatever Array.isArray() says about it.
+    function test_isObjTakesASequenceWrapper() {
+        var wrapper = { 0: "x", heat_levels: 2 }
+        Object.defineProperty(wrapper, "length", { value: 1, enumerable: false })
+        compare(Array.isArray(wrapper), false)
+        compare(Logic.programCaps(wrapper), null)
+        compare(Logic.programCaps([1, 2]), null)
+        verify(Logic.programCaps({ heat_levels: 2 }) !== null)
+    }
 }

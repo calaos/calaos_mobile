@@ -98,6 +98,10 @@ TestCase {
         mouseClick(find(Overlay.overlay, "programHelpButton"))
         wait(200)
         shot("program-sheet-auto-help.png")
+        var sc = find(Overlay.overlay, "sheetScroll")
+        sc.contentY = sc.contentHeight - sc.height
+        wait(200)
+        shot("program-sheet-auto-help-scrolled.png")
         done(host)
 
         host = show(make("off", "heat", prog({ enabled: false, next_change: null }), true))

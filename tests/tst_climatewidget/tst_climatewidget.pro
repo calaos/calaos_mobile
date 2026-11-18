@@ -49,4 +49,5 @@ OTHER_FILES += \
     tst_climatecapturesdesktop.qml \
     tst_climateprogramshotsmobile.qml \
     tst_climateprogramshotsdesktop.qml \
+    tst_climateprogramstripsshots.qml \
     stubs/QuickFlux/qmldir

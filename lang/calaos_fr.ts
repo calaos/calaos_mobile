@@ -770,6 +770,14 @@
         <source>Mode</source>
         <translation>Mode</translation>
     </message>
+    <message>
+        <source>Program</source>
+        <translation>Programme</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Fermer</translation>
+    </message>
 </context>
 <context>
     <name>ColorPickerRGBView</name>
@@ -1925,6 +1933,10 @@
         <location filename="../qml/desktop/DialogClimate.qml" line="135"/>
         <source>More settings — %1</source>
         <translation>Plus de réglages — %1</translation>
+    </message>
+    <message>
+        <source>Program — %1</source>
+        <translation>Programme — %1</translation>
     </message>
 </context>
 <context>
@@ -4704,6 +4716,97 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
     <message>
         <source>Week</source>
         <translation>Semaine</translation>
+    </message>
+</context>
+<context>
+    <name>ClimateProgramCard</name>
+    <message>
+        <source>Cooling</source>
+        <translation>Refroidissement</translation>
+    </message>
+    <message>
+        <source>Heating</source>
+        <translation>Chauffage</translation>
+    </message>
+    <message>
+        <source>%1: stopped</source>
+        <translation>%1 : arrêté</translation>
+    </message>
+    <message>
+        <source>%1: level %2, %3</source>
+        <translation>%1 : niveau %2, %3</translation>
+    </message>
+    <message>
+        <source>%1: default, %2</source>
+        <translation>%1 : par défaut, %2</translation>
+    </message>
+    <message>
+        <source>No change in the next 7 days</source>
+        <translation>Aucun changement dans les 7 prochains jours</translation>
+    </message>
+    <message>
+        <source>%1 level %2</source>
+        <translation>%1 niveau %2</translation>
+    </message>
+    <message>
+        <source>%1 default</source>
+        <translation>%1 par défaut</translation>
+    </message>
+    <message>
+        <source>%1 stopped</source>
+        <translation>%1 arrêté</translation>
+    </message>
+    <message>
+        <source>%1 at %2</source>
+        <translation>%1 à %2</translation>
+    </message>
+    <message>
+        <source>in %1 d %2 h</source>
+        <translation>dans %1 j %2 h</translation>
+    </message>
+    <message>
+        <source>in %1 h %2 min</source>
+        <translation>dans %1 h %2 min</translation>
+    </message>
+    <message>
+        <source>in %1 min</source>
+        <translation>dans %1 min</translation>
+    </message>
+    <message>
+        <source>%1, %2 (%3)</source>
+        <translation>%1, %2 (%3)</translation>
+    </message>
+    <message>
+        <source>Program enabled</source>
+        <translation>Programme activé</translation>
+    </message>
+    <message>
+        <source>Program paused</source>
+        <translation>Programme en pause</translation>
+    </message>
+    <message>
+        <source>No program for this mode</source>
+        <translation>Pas de programme pour ce mode</translation>
+    </message>
+    <message>
+        <source>Range %1 – %2</source>
+        <translation>Plage %1 – %2</translation>
+    </message>
+    <message>
+        <source>About the range</source>
+        <translation>À propos de la plage</translation>
+    </message>
+    <message>
+        <source>In auto, the program sets a range: the lower end follows the heating, the upper end the cooling. The two are kept at least %1 apart.</source>
+        <translation>En auto, le programme fixe une plage : la borne basse suit le chauffage, la borne haute le refroidissement. Les deux restent écartées d'au moins %1.</translation>
+    </message>
+    <message>
+        <source>In auto, the program sets a range: the lower end follows the heating, the upper end the cooling. The two are kept a minimum apart.</source>
+        <translation>En auto, le programme fixe une plage : la borne basse suit le chauffage, la borne haute le refroidissement. Les deux restent écartées d'un minimum.</translation>
+    </message>
+    <message>
+        <source>Program and settings</source>
+        <translation>Programme et réglages</translation>
     </message>
 </context>
 </TS>

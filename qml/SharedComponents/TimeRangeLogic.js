@@ -1,4 +1,5 @@
 .pragma library
+.import "ClimateLogic.js" as Climate
 
 //Pure helpers behind TimeRangeEditor: time ranges of a climate's levels
 //(get_timerange / set_timerange) <-> slots drawn on a 24 h bar.
@@ -44,8 +45,7 @@ function parseHhmm(text) {
 //Ranges of one get_timerange answer -> slots.
 function fromRanges(ranges) {
     var slots = []
-    //A list read from a QVariantMap is a sequence wrapper: Array.isArray() is false.
-    if (!ranges || typeof ranges !== "object" || typeof ranges.length !== "number")
+    if (!Climate.isList(ranges))
         return slots
     for (var i = 0; i < ranges.length; i++) {
         var r = ranges[i]
@@ -58,6 +58,9 @@ function fromRanges(ranges) {
         var endH = toInt(r.end_hour, 0), endM = toInt(r.end_min, 0), endS = toInt(r.end_sec, 0)
         //The server's end is inclusive: 23:59:59 is the end of the day.
         var end = (endH === 23 && endM === 59 && endS === 59) ? DayMinutes : endH * 60 + endM
+        //start == end is a range of a single instant on the server: one minute here
+        if (end === start && start < DayMinutes)
+            end = start + 1
         var group = "g" + (++groupSeq)
         if (end < start) {
             //Starts on its day and ends the next morning (InPlageHoraire).

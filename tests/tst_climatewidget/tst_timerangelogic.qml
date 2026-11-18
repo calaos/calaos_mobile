@@ -58,6 +58,31 @@ TestCase {
         compare(TR.fromRanges([null, { day: "9" }, range(0, 1, 0, 2, 0)]).length, 0)
     }
 
+    //A server range with start == end is active for that instant only.
+    function test_singleInstantRangeIsASlot() {
+        var slots = TR.fromRanges([range(1, 6, 0, 6, 0)])
+        compare(slots.length, 1)
+        verify(slots[0].end > slots[0].start)
+        verify(TR.hasSlots({ slots: slots }))
+    }
+
+    function test_singleInstantRangeSurvivesAnEdit() {
+        var levels = [level(1, 20, [range(1, 6, 0, 6, 0)])]
+        var r = TR.applySlot(levels, { days: [1], start: 600, end: 660, setpoint: 20 })
+        verify(r.ok)
+        var out = TR.toRanges(r.levels[0].slots)
+        compare(out.length, 2)
+        compare(out[0].start_hour, "6")
+        compare(out[1].start_hour, "10")
+    }
+
+    function test_fromRangesTakesASequenceWrapper() {
+        var wrapper = { length: 1, 0: range(2, 6, 0, 8, 0) }
+        compare(TR.fromRanges(wrapper).length, 1)
+        compare(TR.fromRanges("abc").length, 0)
+        compare(TR.fromRanges({}).length, 0)
+    }
+
     function test_newSlotEndOfDayIs235959() {
         var r = TR.applySlot([level(1, 20, [])], { days: [1], start: 1080, end: 1440, setpoint: 20 })
         verify(r.ok)

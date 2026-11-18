@@ -15,7 +15,7 @@ function isNum(v) {
 }
 
 function isObj(v) {
-    return v !== null && typeof v === "object" && !Array.isArray(v)
+    return v !== null && typeof v === "object" && !isList(v)
 }
 
 //A list nested in a QVariantMap reaches JS as a sequence wrapper, for which

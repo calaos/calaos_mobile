@@ -107,18 +107,26 @@ void CalaosOsAPI::getFsStatus(std::function<void (bool, const QJsonValue &)> cal
     call(r, valueAdapter(callback));
 }
 
-void CalaosOsAPI::rollbackSnapshot(std::function<void (bool)> callback)
+void CalaosOsAPI::rollbackSnapshot(std::function<void (const CalaosOsReply &)> callback)
 {
     Route r;
     r.method = NetworkRequest::HttpPost;
     r.v2Path = QStringLiteral("/system/rollback_snapshot");
     r.legacyPath = QStringLiteral("/api/system/rollback_snapshot");
     r.legacyShape = LegacyBody::Output;
-    call(r, [callback](const CalaosOsReply &reply)
-    {
-        if (callback)
-            callback(reply.ok);
-    });
+    r.timeoutMs = rollbackTimeoutMs();
+    call(r, callback);
+}
+
+QString CalaosOsAPI::rollbackErrorMessage(const CalaosOsReply &reply)
+{
+    if (reply.upgradeInProgress)
+        return tr("An update is being installed. Roll back once it has finished.");
+    if (reply.httpStatus == 0)
+        return tr("The box did not answer. Check its state before trying again.");
+    if (reply.httpStatus == 500)
+        return tr("The rollback failed or there is no snapshot to roll back to. The box was not restarted.");
+    return tr("Failed to roll back to the previous version. Please check logs.");
 }
 
 void CalaosOsAPI::listInstallDevices(std::function<void (bool, const QJsonValue &)> callback)
@@ -449,6 +457,8 @@ void CalaosOsAPI::send(const Route &route, bool useV2, bool authRetried, std::fu
         n->setCustomHeader("Content-Type", "application/json");
     n->setResultType(NetworkRequest::TypeJson);
     n->setPostData(useV2 ? route.v2Body : route.legacyBody);
+    if (route.timeoutMs > 0)
+        n->setTransferTimeout(route.timeoutMs);
 
     connect(n, &NetworkRequest::finishedJson, this,
             [this, n, route, useV2, authRetried, callback](int success, const QJsonDocument &doc)

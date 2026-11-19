@@ -986,21 +986,21 @@ void Application::rollbackSnapshot()
 {
     qInfo() << "Rollback calaos os";
 #ifdef CALAOS_DESKTOP
-    CalaosOsAPI::Instance()->rollbackSnapshot([this](bool success)
-                                              {
-                                                  if (!success)
-                                                  {
-                                                      QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(&engine);
-                                                      QVariantMap m = {{ "title", "Error" },
-                                                                       { "message", "Failed to rollback calaos os to previous version. An error occured. Please check logs" },
-                                                                       { "button", "Close" }};
-                                                      appDispatcher->dispatch("showNotificationMsg", m);
-                                                  }
-                                                  else
-                                                  {
-                                                      CalaosOsAPI::Instance()->rebootMachine({});
-                                                  }
-                                              });
+    //On success the daemon reboots the box itself: no reboot from here.
+    CalaosOsAPI::Instance()->rollbackSnapshot([this](const CalaosOsReply &reply)
+    {
+        QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(&engine);
+        QVariantMap m;
+        if (reply.ok)
+            m = {{ "title", tr("Rollback") },
+                 { "message", tr("The box is restarting on the previous version.") },
+                 { "button", tr("Close") }};
+        else
+            m = {{ "title", tr("Error") },
+                 { "message", CalaosOsAPI::rollbackErrorMessage(reply) },
+                 { "button", tr("Close") }};
+        appDispatcher->dispatch("showNotificationMsg", m);
+    });
 #endif
 }
 

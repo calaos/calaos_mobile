@@ -110,6 +110,8 @@ public:
     bool busy = false;
     QString busyJobId; //job_id of 409 answers, empty: none
     int reboots = 0;
+    int rollbacks = 0;
+    bool noSnapshot = false; //rollback fails: the box is not in a snapshot
     int restarts = 0;
     bool restartRefused = false;
     int legacyUpgrades = 0;
@@ -555,6 +557,18 @@ private:
                 ok(s, 200, QJsonValue::Null);
             }
         }
+        else if (req.method == "POST" && p == QStringLiteral("/system/rollback_snapshot"))
+        {
+            if (busy)
+                busyError(s);
+            else if (noSnapshot)
+                err(s, 500, "internal", "not running from a snapshot");
+            else
+            {
+                rollbacks++;
+                ok(s, 200, QJsonValue::Null);
+            }
+        }
         else if (req.method == "POST" && p == QStringLiteral("/system/restart"))
         {
             if (restartRefused)
@@ -612,6 +626,18 @@ private:
             else
             {
                 reboots++;
+                json(s, 200, QJsonObject{{ "error", false }, { "msg", "ok" }});
+            }
+        }
+        else if (req.method == "POST" && p == QStringLiteral("/api/system/rollback_snapshot"))
+        {
+            if (busy)
+                json(s, 409, inProgress);
+            else if (noSnapshot)
+                json(s, 500, QJsonObject{{ "error", true }, { "msg", "not running from a snapshot" }});
+            else
+            {
+                rollbacks++;
                 json(s, 200, QJsonObject{{ "error", false }, { "msg", "ok" }});
             }
         }
@@ -686,6 +712,9 @@ private slots:
     void checkDuringUpgradeKeepsDaemonAvailable();
     void rebootDuringUpgradeIsRefused_data();
     void rebootDuringUpgradeIsRefused();
+    void rollbackIsOneCallAndReportsRefusals_data();
+    void rollbackIsOneCallAndReportsRefusals();
+    void rollbackWaitsLongerThanTheDaemon();
     void restartRefusedIsReported_data();
     void restartRefusedIsReported();
 
@@ -1272,6 +1301,66 @@ void TstUpdateClient::rebootDuringUpgradeIsRefused()
     QVERIFY(reply.ok);
     QVERIFY(!reply.upgradeInProgress);
     QCOMPARE(daemon.reboots, 1);
+}
+
+void TstUpdateClient::rollbackIsOneCallAndReportsRefusals_data()
+{
+    QTest::addColumn<bool>("hasV2");
+    QTest::newRow("v2") << true;
+    QTest::newRow("legacy") << false;
+}
+
+void TstUpdateClient::rollbackIsOneCallAndReportsRefusals()
+{
+    QFETCH(bool, hasV2);
+
+    FakeDaemon daemon;
+    daemon.token = makeToken('g');
+    daemon.hasV2 = hasV2;
+    writeToken(daemon.token);
+    QVERIFY(daemon.start());
+
+    CalaosOsAPI api;
+    api.setBaseAddr(daemon.baseAddr());
+    api.setTokenFile(m_tokenPath);
+
+    bool done = false;
+    CalaosOsReply reply;
+    auto run = [&]
+    {
+        done = false;
+        api.rollbackSnapshot([&](const CalaosOsReply &r) { reply = r; done = true; });
+        QTRY_VERIFY(done);
+    };
+
+    daemon.busy = true;
+    run();
+    QVERIFY(!reply.ok);
+    QCOMPARE(reply.httpStatus, 409);
+    QVERIFY(reply.upgradeInProgress);
+    QVERIFY(CalaosOsAPI::rollbackErrorMessage(reply).contains("update", Qt::CaseInsensitive));
+    QCOMPARE(daemon.rollbacks, 0);
+
+    daemon.busy = false;
+    daemon.noSnapshot = true;
+    run();
+    QVERIFY(!reply.ok);
+    QCOMPARE(reply.httpStatus, 500);
+    QVERIFY(!reply.upgradeInProgress);
+    QVERIFY(CalaosOsAPI::rollbackErrorMessage(reply).contains("not restarted"));
+
+    daemon.noSnapshot = false;
+    run();
+    QVERIFY(reply.ok);
+    QCOMPARE(daemon.rollbacks, 1);
+    //the daemon reboots by itself
+    QCOMPARE(daemon.reboots, 0);
+}
+
+void TstUpdateClient::rollbackWaitsLongerThanTheDaemon()
+{
+    //calaos-container bounds calaos_rollback to 20 minutes
+    QVERIFY(CalaosOsAPI::rollbackTimeoutMs() > 20 * 60 * 1000);
 }
 
 void TstUpdateClient::restartRefusedIsReported_data()

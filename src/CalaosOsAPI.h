@@ -26,7 +26,13 @@ public:
     void restartApp(std::function<void(const CalaosOsReply &reply)> callback);
     void getFsStatus(std::function<void(bool success, const QJsonValue &res)> callback);
 
-    void rollbackSnapshot(std::function<void(bool success)> callback);
+    //The daemon reboots the box itself once the rollback succeeded: callers must not
+    //send a reboot.
+    void rollbackSnapshot(std::function<void(const CalaosOsReply &reply)> callback);
+    //Longer than the daemon's own bound on calaos_rollback (20 min), or the
+    //client gives up on a rollback that is still running.
+    static int rollbackTimeoutMs() { return 25 * 60 * 1000; }
+    static QString rollbackErrorMessage(const CalaosOsReply &reply);
 
     void listInstallDevices(std::function<void(bool success, const QJsonValue &res)> callback);
     void startInstallation(QString device,
@@ -95,6 +101,7 @@ private:
         QByteArray legacyBody;
         LegacyBody legacyShape = LegacyBody::Raw;
         bool upgradeRoute = false;
+        int timeoutMs = 0; //0: the default of NetworkRequest
     };
 
     void call(const Route &route, std::function<void(const CalaosOsReply &)> callback);

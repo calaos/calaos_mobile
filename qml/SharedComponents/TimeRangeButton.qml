@@ -28,7 +28,8 @@ Rectangle {
                  : Math.max(implicitHeight, label.implicitWidth + sidePadding + (leading !== "" ? Units.dp(26) : 0))
     implicitHeight: Units.dp(44)
     radius: Units.dp(4)
-    opacity: enabled ? 1 : 0.4
+    //A disabled primary button keeps its label readable on the accent colour.
+    opacity: enabled ? 1 : accent ? 0.6 : 0.4
     color: checked ? Theme.colorAlpha(Theme.blueColor, 0.3)
          : accent ? accentColor : Theme.colorAlpha(Theme.whiteColor, 0.06)
     border.color: activeFocus ? Theme.whiteColor : danger ? Theme.redColor

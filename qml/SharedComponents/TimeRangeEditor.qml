@@ -218,7 +218,9 @@ FocusScope {
     }
 
     //Setpoints first, then one set_timerange per changed level, in sequence.
-    function commit(res, action, failText, onSaved) {
+    //A retry resends this very result (idempotent writes): recomputing it from the
+    //reloaded levels would not undo a half-applied swap. `restore` puts kind and day back.
+    function commit(res, restore, failText, onSaved) {
         if (locked)
             return
         var ops = []
@@ -237,7 +239,10 @@ FocusScope {
         levelsByKind = next
         banner = ""
         retryAction = null
-        writeDone = { action: action, failText: failText || "", saved: onSaved || null }
+        var again = function() { if (restore) restore(); root.commit(res, restore, failText, onSaved) }
+        if (!failText && ops.length > 1)
+            failText = qsTr("Incomplete save: not saved, try again")
+        writeDone = { action: again, failText: failText || "", saved: onSaved || null }
         queue = ops
         sendNext()
     }
@@ -280,7 +285,7 @@ FocusScope {
         writeId = ""
         queue = []
         writeDone = null
-        banner = done && done.failText !== "" ? done.failText : errorText(error)
+        banner = done && done.failText !== "" && error !== "scope denied" ? done.failText : errorText(error)
         scopeDenied = scopeDenied || error === "scope denied"
         retryAction = done && !scopeDenied ? done.action : null
         //Shows what the server really has.
@@ -435,11 +440,13 @@ FocusScope {
                        original: edit.original, swapWith: edit.swapWith })
     }
 
+    readonly property string maxLevelsText: qsTr("6 different setpoints maximum")
+
     //The view stays open until the server has the change: a failure keeps the input.
     function applyRequest(request) {
         var res = TR.applySlot(levels, request)
         if (!res.ok) {
-            var text = res.error === "max_levels" ? qsTr("6 different setpoints maximum")
+            var text = res.error === "max_levels" ? maxLevelsText
                                                   : qsTr("The end must follow the start")
             if (currentForm)
                 currentForm.message = text
@@ -448,8 +455,7 @@ FocusScope {
             return
         }
         var k = kind
-        commit(res, function() { root.kind = k; root.applyRequest(request) }, "",
-               function() { root.closeForm() })
+        commit(res, function() { root.kind = k }, "", function() { root.closeForm() })
     }
 
     function deleteSlot() {
@@ -458,8 +464,7 @@ FocusScope {
         var e = editing
         var k = kind
         commit(TR.deleteSegment(levels, e.day, e.start, e.end),
-               function() { root.kind = k; root.deleteSlot() }, "",
-               function() { root.closeForm() })
+               function() { root.kind = k }, "", function() { root.closeForm() })
     }
 
     function copyTo(targets) {
@@ -471,7 +476,7 @@ FocusScope {
         }
         var k = kind, src = day
         copySheet.close()
-        commit(res, function() { root.kind = k; root.day = src; root.copyTo(targets) },
+        commit(res, function() { root.kind = k; root.day = src },
                qsTr("Incomplete copy: not saved, try again"))
     }
 
@@ -565,6 +570,8 @@ FocusScope {
                             visible: text !== ""
                             text: root.headerSubtitle
                             color: Theme.mutedColor
+                            wrapMode: Text.WordWrap
+                            maximumLineCount: 2
                             elide: Text.ElideRight
                             font { family: root.fontFamily; pixelSize: Units.dp(13) }
                         }
@@ -583,6 +590,7 @@ FocusScope {
                         fontFamily: root.fontFamily
                         implicitHeight: root.rowHeight
                         sidePadding: Units.dp(20)
+                        leading: "copy"
                         text: qsTr("Copy to…")
                         enabled: !root.locked && root.periodCount(root.day) > 0
                         onClicked: root.openCopy()

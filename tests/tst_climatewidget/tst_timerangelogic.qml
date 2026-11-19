@@ -217,18 +217,6 @@ TestCase {
         compare(out[0].end_sec, "59")
     }
 
-    function test_swapLevels() {
-        var levels = [level(1, 21, [range(1, 7, 0, 8, 0)]), level(2, 18, [range(2, 6, 0, 10, 0)])]
-        var r = TR.swapLevels(levels, 1, 2)
-        verify(r.ok)
-        compare(r.levels[0].setpoint, 18)
-        compare(r.levels[1].setpoint, 21)
-        compare(r.levels[0].ioId, "tr1")
-        compare(r.changed, [1, 2])
-        compare(r.setpoints.length, 2)
-        verify(!TR.swapLevels(levels, 1, 1).ok)
-    }
-
     function test_copyDayReplacesTargetsLevelByLevel() {
         var levels = [level(1, 21, [range(1, 7, 0, 8, 0), range(3, 12, 0, 13, 0)]),
                       level(2, 18, [range(3, 18, 0, 20, 0)])]
@@ -259,8 +247,6 @@ TestCase {
         var levels = [level(1, 21, [range(1, 7, 0, 8, 0)])]
         compare(TR.copyDay(levels, 2, [3]).error, "empty_source")
         compare(TR.copyDay(levels, 1, [1]).error, "no_target")
-        compare(TR.replacedDays(levels, 2, [1, 3]).length, 1)
-        compare(TR.replacedDays(levels, 2, [1, 3])[0].day, 1)
     }
 
     function test_levelsFromIos() {

@@ -551,6 +551,51 @@ TestCase {
         compare(server.states.h2sp, "21")
     }
 
+    function swapScenario(failH2Once) {
+        init()
+        server.ranges.h2 = [range(1, 12, 0, 13, 0)]
+        var e = make()
+        answerAll()
+        e.openSegment({ start: 720, end: 780, level: 2, setpoint: 18 })
+        var form = e.currentForm
+        form.end = 7 * 60
+        form.start = 7 * 60 - 15
+        form.swapped = true
+        var from = fake.calls.length
+        var failed = false
+        form.submit()
+        answerAll(function(c) {
+            if (failH2Once && !failed && c.action === "set_timerange" && c.id === "h2") {
+                failed = true
+                return "config_not_written"
+            }
+            return ""
+        })
+        return { e: e, from: from }
+    }
+
+    function sentOps(from) {
+        return writes(from).map(function(c) { return c.id + ":" + JSON.stringify(c.ranges || c.value) }).sort()
+    }
+
+    function test_failedSwapRetriesTheSameOperations() {
+        var okRun = swapScenario(false)
+        var expected = JSON.stringify([server.ranges, server.states])
+        var okOps = sentOps(okRun.from)
+
+        var r = swapScenario(true)
+        compare(r.e.page, "form")
+        compare(findChild(r.e, "banner").Accessible.name, "Incomplete save: not saved, try again")
+        var retry = findChild(r.e, "retryButton")
+        verify(retry.visible)
+        var before = fake.calls.length
+        retry.trigger()
+        answerAll()
+        compare(sentOps(before), okOps)
+        compare(JSON.stringify([server.ranges, server.states]), expected)
+        compare(r.e.page, "week")
+    }
+
     function test_deleteAsksInPlaceThenWrites() {
         server.ranges.h2 = [range(1, 12, 0, 13, 30)]
         var e = make()

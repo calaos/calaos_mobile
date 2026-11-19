@@ -148,6 +148,8 @@ ColumnLayout {
             spacing: Units.dp(6)
             ColumnLayout {
                 Layout.fillWidth: true
+                Layout.preferredWidth: 0
+                Layout.minimumWidth: 0
                 spacing: 0
                 Text {
                     text: st.label
@@ -269,7 +271,7 @@ ColumnLayout {
         objectName: "tooManyBanner"
         tone: Theme.amberColor
         visible: root.plain.tooMany
-        text: qsTr("6 different setpoints maximum")
+        text: root.editor.maxLevelsText
     }
 
     Text {

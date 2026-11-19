@@ -3763,6 +3763,11 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <translation>6 consignes différentes au maximum</translation>
     </message>
     <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="222"/>
+        <source>Incomplete save: not saved, try again</source>
+        <translation>Enregistrement incomplet : non enregistré, réessayer</translation>
+    </message>
+    <message>
         <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="475"/>
         <source>Incomplete copy: not saved, try again</source>
         <translation>Copie incomplète : non enregistré, réessayer</translation>

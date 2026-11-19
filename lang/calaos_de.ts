@@ -3763,6 +3763,11 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <translation>Höchstens 6 verschiedene Sollwerte</translation>
     </message>
     <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="222"/>
+        <source>Incomplete save: not saved, try again</source>
+        <translation>Speichern unvollständig: nicht gespeichert, erneut versuchen</translation>
+    </message>
+    <message>
         <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="475"/>
         <source>Incomplete copy: not saved, try again</source>
         <translation>Kopie unvollständig: nicht gespeichert, erneut versuchen</translation>

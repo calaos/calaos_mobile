@@ -126,9 +126,8 @@ FocusScope {
                         objectName: "copyDay" + (index + 1)
                         fontFamily: root.fontFamily
                         implicitHeight: root.names ? root.names.targetSize : Units.dp(44)
-                        implicitWidth: Math.max(implicitHeight, Units.dp(isSource ? 72 : 52))
                         text: isSource ? root.dayShort(index + 1) + " · " + qsTr("source") : root.dayShort(index + 1)
-                        sidePadding: Units.dp(8)
+                        sidePadding: Units.dp(isSource ? 20 : 28)
                         Accessible.name: isSource ? qsTr("%1, source").arg(root.dayName(index + 1)) : root.dayName(index + 1)
                         checkable: true
                         checked: root.targets.indexOf(index + 1) >= 0

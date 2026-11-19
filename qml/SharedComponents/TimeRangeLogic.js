@@ -431,24 +431,6 @@ function deleteSegment(levels, day, start, end) {
     return result(levels, next, [])
 }
 
-//Swaps the priority of two levels: their ranges and setpoints trade places.
-function swapLevels(levels, a, b) {
-    var ia = levelIndex(levels, a), ib = levelIndex(levels, b)
-    if (ia < 0 || ib < 0 || ia === ib)
-        return failure("invalid")
-    var next = cloneLevels(levels)
-    next[ia].slots = levels[ib].slots
-    next[ia].setpoint = levels[ib].setpoint
-    next[ib].slots = levels[ia].slots
-    next[ib].setpoint = levels[ia].setpoint
-    var setpoints = []
-    if (!sameSetpoint(next[ia].setpoint, levels[ia].setpoint) && next[ia].setpoint !== null)
-        setpoints.push({ n: a, setpoint: next[ia].setpoint })
-    if (!sameSetpoint(next[ib].setpoint, levels[ib].setpoint) && next[ib].setpoint !== null)
-        setpoints.push({ n: b, setpoint: next[ib].setpoint })
-    return result(levels, next, setpoints)
-}
-
 function shiftRaw(raw, day) {
     var r = {}
     for (var k in raw)
@@ -510,20 +492,6 @@ function copyDay(levels, source, targets) {
         next[i].slots = kept
     }
     return result(levels, next, [])
-}
-
-//Days of `targets` that already have slots, with their count, for the
-//confirmation: [{ day, count }].
-function replacedDays(levels, source, targets) {
-    var out = []
-    for (var t = 0; t < targets.length; t++) {
-        if (targets[t] === source)
-            continue
-        var c = slotCount(levels, targets[t])
-        if (c > 0)
-            out.push({ day: targets[t], count: c })
-    }
-    return out
 }
 
 //Levels of one direction ("heat" / "cool") from device.ios (role -> id):

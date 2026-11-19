@@ -27,6 +27,8 @@
 #include <QtTest>
 #include <QApplication>
 #include <QHostAddress>
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -662,6 +664,29 @@ struct Dispatched
     QVariantMap message;
 };
 
+//Records the transfer timeout set on each request, per path.
+class TimeoutSpyManager : public QNetworkAccessManager
+{
+public:
+    int timeoutOf(const QString &pathPart) const
+    {
+        for (auto it = seen.crbegin(); it != seen.crend(); ++it)
+            if (it->first.contains(pathPart))
+                return it->second;
+        return -1;
+    }
+
+protected:
+    QNetworkReply *createRequest(Operation op, const QNetworkRequest &req, QIODevice *dev) override
+    {
+        seen.append({ req.url().path(), req.transferTimeout() });
+        return QNetworkAccessManager::createRequest(op, req, dev);
+    }
+
+private:
+    QList<QPair<QString, int>> seen;
+};
+
 class TstUpdateClient: public QObject
 {
     Q_OBJECT
@@ -714,6 +739,8 @@ private slots:
     void rebootDuringUpgradeIsRefused();
     void rollbackIsOneCallAndReportsRefusals_data();
     void rollbackIsOneCallAndReportsRefusals();
+    void rollbackOutcomesAreWorded();
+    void rollbackWaitsLongerThanTheDaemon_data();
     void rollbackWaitsLongerThanTheDaemon();
     void restartRefusedIsReported_data();
     void restartRefusedIsReported();
@@ -1338,7 +1365,7 @@ void TstUpdateClient::rollbackIsOneCallAndReportsRefusals()
     QVERIFY(!reply.ok);
     QCOMPARE(reply.httpStatus, 409);
     QVERIFY(reply.upgradeInProgress);
-    QVERIFY(CalaosOsAPI::rollbackErrorMessage(reply).contains("update", Qt::CaseInsensitive));
+    QVERIFY(CalaosOsAPI::rollbackErrorMessage(reply).contains("already in progress"));
     QCOMPARE(daemon.rollbacks, 0);
 
     daemon.busy = false;
@@ -1347,7 +1374,9 @@ void TstUpdateClient::rollbackIsOneCallAndReportsRefusals()
     QVERIFY(!reply.ok);
     QCOMPARE(reply.httpStatus, 500);
     QVERIFY(!reply.upgradeInProgress);
-    QVERIFY(CalaosOsAPI::rollbackErrorMessage(reply).contains("not restarted"));
+    const QString msg = CalaosOsAPI::rollbackErrorMessage(reply);
+    QVERIFY(msg.contains("did not complete normally"));
+    QVERIFY(!msg.contains("not restarted"));
 
     daemon.noSnapshot = false;
     run();
@@ -1357,10 +1386,60 @@ void TstUpdateClient::rollbackIsOneCallAndReportsRefusals()
     QCOMPARE(daemon.reboots, 0);
 }
 
+void TstUpdateClient::rollbackOutcomesAreWorded()
+{
+    //A cut connection during the rollback is the daemon rebooting before it answered.
+    CalaosOsReply cut;
+    cut.httpStatus = 0;
+    QCOMPARE(CalaosOsAPI::rollbackErrorTitle(cut), QStringLiteral("Connection lost"));
+    QVERIFY(CalaosOsAPI::rollbackErrorMessage(cut).contains("probably restarting"));
+    QVERIFY(!CalaosOsAPI::rollbackErrorMessage(cut).contains("fail", Qt::CaseInsensitive));
+
+    CalaosOsReply refused;
+    refused.httpStatus = 500;
+    QCOMPARE(CalaosOsAPI::rollbackErrorTitle(refused), QStringLiteral("Error"));
+    QVERIFY(CalaosOsAPI::rollbackErrorMessage(refused).contains("restart it manually"));
+
+    CalaosOsReply busy;
+    busy.httpStatus = 409;
+    QVERIFY(CalaosOsAPI::rollbackErrorMessage(busy).contains("update or a restart"));
+}
+
+void TstUpdateClient::rollbackWaitsLongerThanTheDaemon_data()
+{
+    QTest::addColumn<bool>("hasV2");
+    QTest::newRow("v2") << true;
+    QTest::newRow("legacy") << false;
+}
+
 void TstUpdateClient::rollbackWaitsLongerThanTheDaemon()
 {
+    QFETCH(bool, hasV2);
+
+    FakeDaemon daemon;
+    daemon.token = makeToken('h');
+    daemon.hasV2 = hasV2;
+    writeToken(daemon.token);
+    QVERIFY(daemon.start());
+
+    TimeoutSpyManager nm;
+    CalaosOsAPI api(&nm);
+    api.setBaseAddr(daemon.baseAddr());
+    api.setTokenFile(m_tokenPath);
+
+    bool done = false;
+    CalaosOsReply reply;
+    api.rollbackSnapshot([&](const CalaosOsReply &r) { reply = r; done = true; });
+    QTRY_VERIFY(done);
+    QVERIFY(reply.ok);
     //calaos-container bounds calaos_rollback to 20 minutes
-    QVERIFY(CalaosOsAPI::rollbackTimeoutMs() > 20 * 60 * 1000);
+    QVERIFY(nm.timeoutOf(QStringLiteral("rollback_snapshot")) > 20 * 60 * 1000);
+
+    //every other route keeps the default
+    done = false;
+    api.rebootMachine([&](const CalaosOsReply &r) { reply = r; done = true; });
+    QTRY_VERIFY(done);
+    QCOMPARE(nm.timeoutOf(QStringLiteral("/reboot")), 30000);
 }
 
 void TstUpdateClient::restartRefusedIsReported_data()

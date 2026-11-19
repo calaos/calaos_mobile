@@ -32,6 +32,7 @@ public:
     //Longer than the daemon's own bound on calaos_rollback (20 min), or the
     //client gives up on a rollback that is still running.
     static int rollbackTimeoutMs() { return 25 * 60 * 1000; }
+    static QString rollbackErrorTitle(const CalaosOsReply &reply);
     static QString rollbackErrorMessage(const CalaosOsReply &reply);
 
     void listInstallDevices(std::function<void(bool success, const QJsonValue &res)> callback);

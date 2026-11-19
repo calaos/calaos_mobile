@@ -1395,6 +1395,13 @@ void TstUpdateClient::rollbackOutcomesAreWorded()
     QVERIFY(CalaosOsAPI::rollbackErrorMessage(cut).contains("probably restarting"));
     QVERIFY(!CalaosOsAPI::rollbackErrorMessage(cut).contains("fail", Qt::CaseInsensitive));
 
+    CalaosOsReply down;
+    down.httpStatus = 0;
+    down.networkError = QNetworkReply::ConnectionRefusedError;
+    QCOMPARE(CalaosOsAPI::rollbackErrorTitle(down), QStringLiteral("Error"));
+    QVERIFY(CalaosOsAPI::rollbackErrorMessage(down).contains("Nothing was done"));
+    QVERIFY(!CalaosOsAPI::rollbackErrorMessage(down).contains("restarting"));
+
     CalaosOsReply refused;
     refused.httpStatus = 500;
     QCOMPARE(CalaosOsAPI::rollbackErrorTitle(refused), QStringLiteral("Error"));

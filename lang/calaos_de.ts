@@ -187,8 +187,11 @@
         <location filename="../src/Application.cpp" line="314"/>
         <location filename="../src/Application.cpp" line="326"/>
         <location filename="../src/Application.cpp" line="338"/>
-        <location filename="../src/Application.cpp" line="803"/>
-        <location filename="../src/Application.cpp" line="968"/>
+        <location filename="../src/Application.cpp" line="806"/>
+        <location filename="../src/Application.cpp" line="971"/>
+        <location filename="../src/Application.cpp" line="995"/>
+        <location filename="../src/Application.cpp" line="1009"/>
+        <location filename="../src/Application.cpp" line="1014"/>
         <source>Close</source>
         <translation>Schliessen</translation>
     </message>
@@ -243,26 +246,46 @@
         <translation>Die Anmeldedaten wurden erfolgreich geändert.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="966"/>
+        <location filename="../src/Application.cpp" line="969"/>
         <source>Reboot</source>
         <translation type="unfinished">Neustart</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="967"/>
+        <location filename="../src/Application.cpp" line="970"/>
         <source>An update is being installed. Reboot once it has finished.</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="993"/>
+        <source>Rolling back</source>
+        <translation>Wiederherstellung läuft</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="994"/>
+        <source>Rolling back to the previous version. Do not power off the box.</source>
+        <translation>Rückkehr zur vorherigen Version läuft. Schalten Sie die Box nicht aus.</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="1007"/>
+        <source>Rollback</source>
+        <translation>Zurücksetzen</translation>
+    </message>
+    <message>
+        <location filename="../src/Application.cpp" line="1008"/>
+        <source>The box is restarting on the previous version.</source>
+        <translation>Die Box startet mit der vorherigen Version neu.</translation>
     </message>
     <message>
         <source>No network connection found, this application requires a network connection to work.</source>
         <translation type="vanished">Keine Netzwerkverbindung gefunden, diese Anwendung benötigt eine Netzwerkverbindung, um zu funktionieren.</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="801"/>
+        <location filename="../src/Application.cpp" line="804"/>
         <source>Login failed</source>
         <translation>Anmeldung fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="../src/Application.cpp" line="802"/>
+        <location filename="../src/Application.cpp" line="805"/>
         <source>Connection failed, please check your credentials.</source>
         <translation>Verbindung fehlgeschlagen, bitte überprüfen Sie Ihre Zugangsdaten.</translation>
     </message>
@@ -457,14 +480,49 @@
 <context>
     <name>CalaosOsAPI</name>
     <message>
-        <location filename="../src/CalaosOsAPI.cpp" line="175"/>
-        <location filename="../src/CalaosOsAPI.cpp" line="228"/>
-        <location filename="../src/CalaosOsAPI.cpp" line="512"/>
+        <location filename="../src/CalaosOsAPI.cpp" line="124"/>
+        <source>Connection lost</source>
+        <translation>Verbindung verloren</translation>
+    </message>
+    <message>
+        <location filename="../src/CalaosOsAPI.cpp" line="124"/>
+        <source>Error</source>
+        <translation>Fehler</translation>
+    </message>
+    <message>
+        <location filename="../src/CalaosOsAPI.cpp" line="131"/>
+        <source>An update or a restart is already in progress.</source>
+        <translation>Ein Update oder ein Neustart läuft bereits.</translation>
+    </message>
+    <message>
+        <location filename="../src/CalaosOsAPI.cpp" line="134"/>
+        <source>The update service is not reachable. Nothing was done.</source>
+        <translation>Der Update-Dienst ist nicht erreichbar. Es wurde nichts ausgeführt.</translation>
+    </message>
+    <message>
+        <location filename="../src/CalaosOsAPI.cpp" line="136"/>
+        <source>The box is probably restarting on the previous version. Wait for it to reconnect before trying again.</source>
+        <translation>Die Box startet wahrscheinlich mit der vorherigen Version neu. Warten Sie, bis sie sich wieder verbindet, bevor Sie es erneut versuchen.</translation>
+    </message>
+    <message>
+        <location filename="../src/CalaosOsAPI.cpp" line="138"/>
+        <source>The rollback did not complete normally. If the box does not restart, restart it manually: it may boot on the previous version.</source>
+        <translation>Das Zurücksetzen wurde nicht normal abgeschlossen. Falls die Box nicht neu startet, starten Sie sie manuell neu: Sie startet möglicherweise mit der vorherigen Version.</translation>
+    </message>
+    <message>
+        <location filename="../src/CalaosOsAPI.cpp" line="139"/>
+        <source>Failed to roll back to the previous version. Please check logs.</source>
+        <translation>Zurücksetzen auf die vorherige Version fehlgeschlagen. Bitte Protokolle prüfen.</translation>
+    </message>
+    <message>
+        <location filename="../src/CalaosOsAPI.cpp" line="193"/>
+        <location filename="../src/CalaosOsAPI.cpp" line="246"/>
+        <location filename="../src/CalaosOsAPI.cpp" line="532"/>
         <source>Failed to start network request</source>
         <translation>Netzwerkanfrage konnte nicht gestartet werden</translation>
     </message>
     <message>
-        <location filename="../src/CalaosOsAPI.cpp" line="534"/>
+        <location filename="../src/CalaosOsAPI.cpp" line="554"/>
         <source>Invalid answer from the update service</source>
         <translation type="unfinished"></translation>
     </message>
@@ -645,12 +703,12 @@
     <message>
         <location filename="../qml/SharedComponents/ClimateModel.qml" line="200"/>
         <source>Heating</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Heizen</translation>
     </message>
     <message>
         <location filename="../qml/SharedComponents/ClimateModel.qml" line="201"/>
         <source>Cooling</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Kühlen</translation>
     </message>
     <message>
         <location filename="../qml/SharedComponents/ClimateModel.qml" line="202"/>
@@ -745,6 +803,144 @@
     </message>
 </context>
 <context>
+    <name>ClimateProgramCard</name>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="88"/>
+        <source>Cooling</source>
+        <translation>Kühlen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="88"/>
+        <source>Heating</source>
+        <translation>Heizen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="95"/>
+        <source>%1: stopped</source>
+        <translation>%1: aus</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="98"/>
+        <source>%1: level %2, %3</source>
+        <translation>%1: Stufe %2, %3</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="99"/>
+        <source>%1: default, %2</source>
+        <translation>%1: Standard, %2</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="120"/>
+        <source>No change in the next 7 days</source>
+        <translation>Keine Änderung in den nächsten 7 Tagen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="124"/>
+        <source>%1 level %2</source>
+        <translation>%1 Stufe %2</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="125"/>
+        <source>%1 default</source>
+        <translation>%1 Standard</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="129"/>
+        <source>%1 stopped</source>
+        <translation>%1 aus</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="127"/>
+        <source>%1 at %2</source>
+        <translation>%1 auf %2</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="131"/>
+        <source>in %1 d %2 h</source>
+        <translation>in %1 T %2 Std</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="132"/>
+        <source>in %1 h %2 min</source>
+        <translation>in %1 Std %2 Min</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="133"/>
+        <source>in %1 min</source>
+        <translation>in %1 Min</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="134"/>
+        <source>%1, %2 (%3)</source>
+        <translation>%1, %2 (%3)</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="150"/>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="166"/>
+        <source>Program enabled</source>
+        <translation>Programm aktiviert</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="206"/>
+        <source>Program paused</source>
+        <translation>Programm pausiert</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="216"/>
+        <source>No program for this mode</source>
+        <translation>Kein Programm für diesen Modus</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="245"/>
+        <source>Range %1 – %2</source>
+        <translation>Bereich %1 – %2</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="255"/>
+        <source>About the range</source>
+        <translation>Zum Bereich</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="283"/>
+        <source>In auto, the program sets a range: the lower end follows the heating, the upper end the cooling. The two are kept at least %1 apart.</source>
+        <translation>Im Automodus legt das Programm einen Bereich fest: die Untergrenze folgt dem Heizen, die Obergrenze dem Kühlen. Beide bleiben mindestens %1 auseinander.</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="285"/>
+        <source>In auto, the program sets a range: the lower end follows the heating, the upper end the cooling. The two are kept a minimum apart.</source>
+        <translation>Im Automodus legt das Programm einen Bereich fest: die Untergrenze folgt dem Heizen, die Obergrenze dem Kühlen. Beide bleiben einen Mindestabstand auseinander.</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="319"/>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="338"/>
+        <source>Program and settings</source>
+        <translation>Programm und Einstellungen</translation>
+    </message>
+</context>
+<context>
+    <name>ClimateProgramStrips</name>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramStrips.qml" line="142"/>
+        <source>Cooling</source>
+        <translation type="unfinished">Kühlen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramStrips.qml" line="142"/>
+        <source>Heating</source>
+        <translation type="unfinished">Heizen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramStrips.qml" line="158"/>
+        <source>Cooling today</source>
+        <translation>Kühlen heute</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/ClimateProgramStrips.qml" line="158"/>
+        <source>Heating today</source>
+        <translation>Heizen heute</translation>
+    </message>
+</context>
+<context>
     <name>ClimateReading</name>
     <message>
         <location filename="../qml/SharedComponents/ClimateReading.qml" line="108"/>
@@ -755,26 +951,28 @@
 <context>
     <name>ClimateSheet</name>
     <message>
-        <location filename="../qml/mobile/ClimateSheet.qml" line="81"/>
+        <location filename="../qml/mobile/ClimateSheet.qml" line="83"/>
         <source>Mode unknown</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/mobile/ClimateSheet.qml" line="117"/>
-        <location filename="../qml/mobile/ClimateSheet.qml" line="163"/>
+        <location filename="../qml/mobile/ClimateSheet.qml" line="129"/>
+        <location filename="../qml/mobile/ClimateSheet.qml" line="175"/>
         <source>More settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/mobile/ClimateSheet.qml" line="134"/>
+        <location filename="../qml/mobile/ClimateSheet.qml" line="146"/>
         <source>Mode</source>
         <translation type="unfinished">Modus</translation>
     </message>
     <message>
+        <location filename="../qml/mobile/ClimateSheet.qml" line="197"/>
         <source>Program</source>
         <translation>Programm</translation>
     </message>
     <message>
+        <location filename="../qml/mobile/ClimateSheet.qml" line="225"/>
         <source>Close</source>
         <translation>Schließen</translation>
     </message>
@@ -1615,52 +1813,50 @@
         <translation>Versionen</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigVersionsView.qml" line="52"/>
+        <location filename="../qml/desktop/ConfigVersionsView.qml" line="48"/>
         <source>Reload</source>
         <translation>Neu laden</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigVersionsView.qml" line="58"/>
+        <location filename="../qml/desktop/ConfigVersionsView.qml" line="54"/>
         <source>Back to config</source>
         <translation>Zurück zur Konfiguration</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigVersionsView.qml" line="64"/>
+        <location filename="../qml/desktop/ConfigVersionsView.qml" line="60"/>
         <source>Quit</source>
         <translation>Beenden</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigVersionsView.qml" line="114"/>
         <source>Copied to the clipboard</source>
-        <translation>In die Zwischenablage kopiert</translation>
+        <translation type="vanished">In die Zwischenablage kopiert</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigVersionsView.qml" line="119"/>
         <source>Copy</source>
-        <translation>Kopieren</translation>
+        <translation type="vanished">Kopieren</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigVersionsView.qml" line="132"/>
+        <location filename="../qml/desktop/ConfigVersionsView.qml" line="107"/>
         <source>This screen</source>
         <translation>Dieser Bildschirm</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigVersionsView.qml" line="138"/>
+        <location filename="../qml/desktop/ConfigVersionsView.qml" line="113"/>
         <source>Reading the versions of the box…</source>
         <translation>Versionen der Box werden gelesen…</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigVersionsView.qml" line="146"/>
+        <location filename="../qml/desktop/ConfigVersionsView.qml" line="121"/>
         <source>unknown</source>
         <translation>unbekannt</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigVersionsView.qml" line="170"/>
+        <location filename="../qml/desktop/ConfigVersionsView.qml" line="145"/>
         <source>Kernel</source>
         <translation>Kernel</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/ConfigVersionsView.qml" line="185"/>
+        <location filename="../qml/desktop/ConfigVersionsView.qml" line="160"/>
         <source>Packages</source>
         <translation>Pakete</translation>
     </message>
@@ -1888,33 +2084,35 @@
 <context>
     <name>DialogClimate</name>
     <message>
-        <location filename="../qml/desktop/DialogClimate.qml" line="50"/>
-        <location filename="../qml/desktop/DialogClimate.qml" line="114"/>
-        <location filename="../qml/desktop/DialogClimate.qml" line="139"/>
+        <location filename="../qml/desktop/DialogClimate.qml" line="52"/>
+        <location filename="../qml/desktop/DialogClimate.qml" line="124"/>
+        <location filename="../qml/desktop/DialogClimate.qml" line="149"/>
+        <location filename="../qml/desktop/DialogClimate.qml" line="168"/>
         <source>Close</source>
         <translation type="unfinished">Schliessen</translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogClimate.qml" line="75"/>
+        <location filename="../qml/desktop/DialogClimate.qml" line="77"/>
         <source>Mode unknown</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogClimate.qml" line="94"/>
+        <location filename="../qml/desktop/DialogClimate.qml" line="104"/>
         <source>More settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogClimate.qml" line="110"/>
+        <location filename="../qml/desktop/DialogClimate.qml" line="120"/>
         <source>Mode — %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/desktop/DialogClimate.qml" line="135"/>
+        <location filename="../qml/desktop/DialogClimate.qml" line="145"/>
         <source>More settings — %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../qml/desktop/DialogClimate.qml" line="164"/>
         <source>Program — %1</source>
         <translation>Programm — %1</translation>
     </message>
@@ -3322,47 +3520,47 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <translation>Versionen</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsVersionsView.qml" line="89"/>
+        <location filename="../qml/mobile/SettingsVersionsView.qml" line="93"/>
         <source>Copy</source>
         <translation>Kopieren</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsVersionsView.qml" line="102"/>
+        <location filename="../qml/mobile/SettingsVersionsView.qml" line="106"/>
         <source>Reload</source>
         <translation>Neu laden</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsVersionsView.qml" line="114"/>
+        <location filename="../qml/mobile/SettingsVersionsView.qml" line="118"/>
         <source>Copied to the clipboard</source>
         <translation>In die Zwischenablage kopiert</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsVersionsView.qml" line="117"/>
+        <location filename="../qml/mobile/SettingsVersionsView.qml" line="121"/>
         <source>This phone</source>
         <translation>Dieses Telefon</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsVersionsView.qml" line="127"/>
+        <location filename="../qml/mobile/SettingsVersionsView.qml" line="131"/>
         <source>Box</source>
         <translation>Box</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsVersionsView.qml" line="132"/>
+        <location filename="../qml/mobile/SettingsVersionsView.qml" line="136"/>
         <source>Reading the versions of the box…</source>
         <translation>Versionen der Box werden gelesen…</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsVersionsView.qml" line="141"/>
+        <location filename="../qml/mobile/SettingsVersionsView.qml" line="146"/>
         <source>unknown</source>
         <translation>unbekannt</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsVersionsView.qml" line="160"/>
+        <location filename="../qml/mobile/SettingsVersionsView.qml" line="167"/>
         <source>Kernel</source>
         <translation>Kernel</translation>
     </message>
     <message>
-        <location filename="../qml/mobile/SettingsVersionsView.qml" line="175"/>
+        <location filename="../qml/mobile/SettingsVersionsView.qml" line="182"/>
         <source>Packages</source>
         <translation>Pakete</translation>
     </message>
@@ -3541,6 +3739,392 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <location filename="../qml/desktop/SpotifyView.qml" line="149"/>
         <source>Quit</source>
         <translation>Beenden</translation>
+    </message>
+</context>
+<context>
+    <name>TimeRangeBar</name>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeBar.qml" line="57"/>
+        <source>Off</source>
+        <translation>Aus</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeBar.qml" line="62"/>
+        <source>off</source>
+        <translation>aus</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeBar.qml" line="65"/>
+        <source>Default, %1 to %2, %3</source>
+        <translation>Standard, %1 bis %2, %3</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeBar.qml" line="66"/>
+        <source>Level %1, %2 to %3, %4</source>
+        <translation>Stufe %1, %2 bis %3, %4</translation>
+    </message>
+</context>
+<context>
+    <name>TimeRangeCopy</name>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="61"/>
+        <source>%1 (1 slot)</source>
+        <translation>%1 (1 Zeitfenster)</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="62"/>
+        <source>%1 (%2 slots)</source>
+        <translation>%1 (%2 Zeitfenster)</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="65"/>
+        <source>%1 and %2</source>
+        <translation>%1 und %2</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="67"/>
+        <source>%1 will be replaced by those of %2.</source>
+        <translation>Ersetzen von %1 durch die Zeitfenster von %2.</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="136"/>
+        <source>All</source>
+        <translation>Alle</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="170"/>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="190"/>
+        <source>Cancel</source>
+        <translation>Abbrechen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="197"/>
+        <source>Copy</source>
+        <translation>Kopieren</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="83"/>
+        <source>Copy %1 to</source>
+        <translation>%1 kopieren nach</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="91"/>
+        <source>Nothing to copy: this day has no slot</source>
+        <translation>Nichts zu kopieren: dieser Tag hat kein Zeitfenster</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="177"/>
+        <source>Replace and copy</source>
+        <translation>Ersetzen und kopieren</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="124"/>
+        <source>Weekdays</source>
+        <translation>Werktage</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="130"/>
+        <source>Weekend</source>
+        <translation>Wochenende</translation>
+    </message>
+</context>
+<context>
+    <name>TimeRangeEditor</name>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="146"/>
+        <source>Could not read the program, try again</source>
+        <translation>Das Programm konnte nicht gelesen werden, erneut versuchen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="326"/>
+        <source>6 levels maximum for %1</source>
+        <translation>Maximal 6 Stufen für %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="69"/>
+        <source>Cooling</source>
+        <translation>Kühlen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="69"/>
+        <source>Heating</source>
+        <translation>Heizen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="626"/>
+        <source>Cooling off outside slots</source>
+        <translation>Kühlen aus außerhalb der Zeitfenster</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="557"/>
+        <source>Copy this day…</source>
+        <translation>Diesen Tag kopieren…</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="607"/>
+        <source>Default: %1</source>
+        <translation>Standard: %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="607"/>
+        <source>Default: off</source>
+        <translation>Standard: aus</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="368"/>
+        <source>Incomplete copy: not saved, try again</source>
+        <translation>Kopie unvollständig: nicht gespeichert, erneut versuchen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="569"/>
+        <source>Levels: %1 of %2</source>
+        <translation>Stufen: %1 von %2</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="446"/>
+        <source>Loading the program…</source>
+        <translation>Programm wird geladen…</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="602"/>
+        <source>Lower the default setpoint</source>
+        <translation>Standard-Sollwert senken</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="617"/>
+        <source>Raise the default setpoint</source>
+        <translation>Standard-Sollwert erhöhen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="535"/>
+        <source>No slot in cooling. Default: %1.</source>
+        <translation>Kein Zeitfenster beim Kühlen. Standard: %1.</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="534"/>
+        <source>No slot in cooling. Default: off.</source>
+        <translation>Kein Zeitfenster beim Kühlen. Standard: aus.</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="536"/>
+        <source>No slot in heating. Default: %1.</source>
+        <translation>Kein Zeitfenster beim Heizen. Standard: %1.</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="362"/>
+        <source>Nothing to copy: this day has no slot</source>
+        <translation>Nichts zu kopieren: dieser Tag hat kein Zeitfenster</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="169"/>
+        <source>Not saved, try again</source>
+        <translation>Nicht gespeichert, erneut versuchen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="436"/>
+        <source>Retry</source>
+        <translation>Erneut versuchen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="174"/>
+        <source>Saving failed, try again</source>
+        <translation>Speichern fehlgeschlagen, erneut versuchen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="550"/>
+        <source>+ Slot</source>
+        <translation>+ Zeitfenster</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="171"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="327"/>
+        <source>The end must follow the start</source>
+        <translation>Das Ende muss nach dem Beginn liegen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="173"/>
+        <source>This account cannot change the program</source>
+        <translation>Dieses Konto kann das Programm nicht ändern</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="456"/>
+        <source>This climate has no program.</source>
+        <translation>Diese Klimaanlage hat kein Programm.</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="635"/>
+        <source>Week</source>
+        <translation>Woche</translation>
+    </message>
+</context>
+<context>
+    <name>TimeRangeForm</name>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="37"/>
+        <source>Monday</source>
+        <translation>Montag</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="38"/>
+        <source>Tuesday</source>
+        <translation>Dienstag</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="39"/>
+        <source>Wednesday</source>
+        <translation>Mittwoch</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="40"/>
+        <source>Thursday</source>
+        <translation>Donnerstag</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="41"/>
+        <source>Friday</source>
+        <translation>Freitag</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="42"/>
+        <source>Saturday</source>
+        <translation>Samstag</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="43"/>
+        <source>Sunday</source>
+        <translation>Sonntag</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="49"/>
+        <source>Mon</source>
+        <comment>Monday, short</comment>
+        <translation>Mo</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="50"/>
+        <source>Tue</source>
+        <comment>Tuesday, short</comment>
+        <translation>Di</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="51"/>
+        <source>Wed</source>
+        <comment>Wednesday, short</comment>
+        <translation>Mi</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="52"/>
+        <source>Thu</source>
+        <comment>Thursday, short</comment>
+        <translation>Do</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="53"/>
+        <source>Fri</source>
+        <comment>Friday, short</comment>
+        <translation>Fr</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="54"/>
+        <source>Sat</source>
+        <comment>Saturday, short</comment>
+        <translation>Sa</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="55"/>
+        <source>Sun</source>
+        <comment>Sunday, short</comment>
+        <translation>So</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="134"/>
+        <source>%1 minus 15 min</source>
+        <translation>%1 minus 15 Min.</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="159"/>
+        <source>%1 plus 15 min</source>
+        <translation>%1 plus 15 Min.</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="311"/>
+        <source>Apply</source>
+        <translation>Anwenden</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="304"/>
+        <source>Cancel</source>
+        <translation>Abbrechen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="104"/>
+        <source>Choose at least one day</source>
+        <translation>Mindestens einen Tag wählen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="225"/>
+        <source>Days</source>
+        <translation>Tage</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="296"/>
+        <source>Delete</source>
+        <translation>Löschen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="181"/>
+        <source>End</source>
+        <translation>Ende</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="96"/>
+        <source>Enter the time as 17:30</source>
+        <translation>Uhrzeit wie 17:30 eingeben</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="255"/>
+        <source>Priority: level %1</source>
+        <translation>Priorität: Stufe %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="271"/>
+        <source>Lower the priority</source>
+        <translation>Priorität senken</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="263"/>
+        <source>Raise the priority</source>
+        <translation>Priorität erhöhen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="204"/>
+        <source>Lower the setpoint</source>
+        <translation>Sollwert senken</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="219"/>
+        <source>Raise the setpoint</source>
+        <translation>Sollwert erhöhen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="311"/>
+        <source>Save</source>
+        <translation>Speichern</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="195"/>
+        <source>Setpoint</source>
+        <translation>Sollwert</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="167"/>
+        <source>Start</source>
+        <translation>Beginn</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="100"/>
+        <source>The end must follow the start</source>
+        <translation>Das Ende muss nach dem Beginn liegen</translation>
     </message>
 </context>
 <context>
@@ -4381,419 +4965,6 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <location filename="../qml/mobile/main.qml" line="514"/>
         <source>Enter new value</source>
         <translation type="unfinished">Neuen Wert eingeben</translation>
-    </message>
-</context>
-<context>
-    <name>TimeRangeBar</name>
-    <message>
-        <source>Off</source>
-        <translation>Aus</translation>
-    </message>
-    <message>
-        <source>off</source>
-        <translation>aus</translation>
-    </message>
-    <message>
-        <source>Default, %1 to %2, %3</source>
-        <translation>Standard, %1 bis %2, %3</translation>
-    </message>
-    <message>
-        <source>Level %1, %2 to %3, %4</source>
-        <translation>Stufe %1, %2 bis %3, %4</translation>
-    </message>
-</context>
-<context>
-    <name>TimeRangeForm</name>
-    <message>
-        <source>Monday</source>
-        <translation>Montag</translation>
-    </message>
-    <message>
-        <source>Tuesday</source>
-        <translation>Dienstag</translation>
-    </message>
-    <message>
-        <source>Wednesday</source>
-        <translation>Mittwoch</translation>
-    </message>
-    <message>
-        <source>Thursday</source>
-        <translation>Donnerstag</translation>
-    </message>
-    <message>
-        <source>Friday</source>
-        <translation>Freitag</translation>
-    </message>
-    <message>
-        <source>Saturday</source>
-        <translation>Samstag</translation>
-    </message>
-    <message>
-        <source>Sunday</source>
-        <translation>Sonntag</translation>
-    </message>
-    <message>
-        <source>Mon</source>
-        <comment>Monday, short</comment>
-        <translation>Mo</translation>
-    </message>
-    <message>
-        <source>Tue</source>
-        <comment>Tuesday, short</comment>
-        <translation>Di</translation>
-    </message>
-    <message>
-        <source>Wed</source>
-        <comment>Wednesday, short</comment>
-        <translation>Mi</translation>
-    </message>
-    <message>
-        <source>Thu</source>
-        <comment>Thursday, short</comment>
-        <translation>Do</translation>
-    </message>
-    <message>
-        <source>Fri</source>
-        <comment>Friday, short</comment>
-        <translation>Fr</translation>
-    </message>
-    <message>
-        <source>Sat</source>
-        <comment>Saturday, short</comment>
-        <translation>Sa</translation>
-    </message>
-    <message>
-        <source>Sun</source>
-        <comment>Sunday, short</comment>
-        <translation>So</translation>
-    </message>
-    <message>
-        <source>%1 minus 15 min</source>
-        <translation>%1 minus 15 Min.</translation>
-    </message>
-    <message>
-        <source>%1 plus 15 min</source>
-        <translation>%1 plus 15 Min.</translation>
-    </message>
-    <message>
-        <source>Apply</source>
-        <translation>Anwenden</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Abbrechen</translation>
-    </message>
-    <message>
-        <source>Choose at least one day</source>
-        <translation>Mindestens einen Tag wählen</translation>
-    </message>
-    <message>
-        <source>Days</source>
-        <translation>Tage</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation>Löschen</translation>
-    </message>
-    <message>
-        <source>End</source>
-        <translation>Ende</translation>
-    </message>
-    <message>
-        <source>Enter the time as 17:30</source>
-        <translation>Uhrzeit wie 17:30 eingeben</translation>
-    </message>
-    <message>
-        <source>Priority: level %1</source>
-        <translation>Priorität: Stufe %1</translation>
-    </message>
-    <message>
-        <source>Lower the priority</source>
-        <translation>Priorität senken</translation>
-    </message>
-    <message>
-        <source>Raise the priority</source>
-        <translation>Priorität erhöhen</translation>
-    </message>
-    <message>
-        <source>Lower the setpoint</source>
-        <translation>Sollwert senken</translation>
-    </message>
-    <message>
-        <source>Raise the setpoint</source>
-        <translation>Sollwert erhöhen</translation>
-    </message>
-    <message>
-        <source>Save</source>
-        <translation>Speichern</translation>
-    </message>
-    <message>
-        <source>Setpoint</source>
-        <translation>Sollwert</translation>
-    </message>
-    <message>
-        <source>Start</source>
-        <translation>Beginn</translation>
-    </message>
-    <message>
-        <source>The end must follow the start</source>
-        <translation>Das Ende muss nach dem Beginn liegen</translation>
-    </message>
-</context>
-<context>
-    <name>TimeRangeCopy</name>
-    <message>
-        <source>%1 (1 slot)</source>
-        <translation>%1 (1 Zeitfenster)</translation>
-    </message>
-    <message>
-        <source>%1 (%2 slots)</source>
-        <translation>%1 (%2 Zeitfenster)</translation>
-    </message>
-    <message>
-        <source>%1 and %2</source>
-        <translation>%1 und %2</translation>
-    </message>
-    <message>
-        <source>%1 will be replaced by those of %2.</source>
-        <translation>Ersetzen von %1 durch die Zeitfenster von %2.</translation>
-    </message>
-    <message>
-        <source>All</source>
-        <translation>Alle</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Abbrechen</translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation>Kopieren</translation>
-    </message>
-    <message>
-        <source>Copy %1 to</source>
-        <translation>%1 kopieren nach</translation>
-    </message>
-    <message>
-        <source>Nothing to copy: this day has no slot</source>
-        <translation>Nichts zu kopieren: dieser Tag hat kein Zeitfenster</translation>
-    </message>
-    <message>
-        <source>Replace and copy</source>
-        <translation>Ersetzen und kopieren</translation>
-    </message>
-    <message>
-        <source>Weekdays</source>
-        <translation>Werktage</translation>
-    </message>
-    <message>
-        <source>Weekend</source>
-        <translation>Wochenende</translation>
-    </message>
-</context>
-<context>
-    <name>TimeRangeEditor</name>
-    <message>
-        <source>Could not read the program, try again</source>
-        <translation>Das Programm konnte nicht gelesen werden, erneut versuchen</translation>
-    </message>
-    <message>
-        <source>6 levels maximum for %1</source>
-        <translation>Maximal 6 Stufen für %1</translation>
-    </message>
-    <message>
-        <source>Cooling</source>
-        <translation>Kühlen</translation>
-    </message>
-    <message>
-        <source>Heating</source>
-        <translation>Heizen</translation>
-    </message>
-    <message>
-        <source>Cooling off outside slots</source>
-        <translation>Kühlen aus außerhalb der Zeitfenster</translation>
-    </message>
-    <message>
-        <source>Copy this day…</source>
-        <translation>Diesen Tag kopieren…</translation>
-    </message>
-    <message>
-        <source>Default: %1</source>
-        <translation>Standard: %1</translation>
-    </message>
-    <message>
-        <source>Default: off</source>
-        <translation>Standard: aus</translation>
-    </message>
-    <message>
-        <source>Incomplete copy: not saved, try again</source>
-        <translation>Kopie unvollständig: nicht gespeichert, erneut versuchen</translation>
-    </message>
-    <message>
-        <source>Levels: %1 of %2</source>
-        <translation>Stufen: %1 von %2</translation>
-    </message>
-    <message>
-        <source>Loading the program…</source>
-        <translation>Programm wird geladen…</translation>
-    </message>
-    <message>
-        <source>Lower the default setpoint</source>
-        <translation>Standard-Sollwert senken</translation>
-    </message>
-    <message>
-        <source>Raise the default setpoint</source>
-        <translation>Standard-Sollwert erhöhen</translation>
-    </message>
-    <message>
-        <source>No slot in cooling. Default: %1.</source>
-        <translation>Kein Zeitfenster beim Kühlen. Standard: %1.</translation>
-    </message>
-    <message>
-        <source>No slot in cooling. Default: off.</source>
-        <translation>Kein Zeitfenster beim Kühlen. Standard: aus.</translation>
-    </message>
-    <message>
-        <source>No slot in heating. Default: %1.</source>
-        <translation>Kein Zeitfenster beim Heizen. Standard: %1.</translation>
-    </message>
-    <message>
-        <source>Nothing to copy: this day has no slot</source>
-        <translation>Nichts zu kopieren: dieser Tag hat kein Zeitfenster</translation>
-    </message>
-    <message>
-        <source>Not saved, try again</source>
-        <translation>Nicht gespeichert, erneut versuchen</translation>
-    </message>
-    <message>
-        <source>Retry</source>
-        <translation>Erneut versuchen</translation>
-    </message>
-    <message>
-        <source>Saving failed, try again</source>
-        <translation>Speichern fehlgeschlagen, erneut versuchen</translation>
-    </message>
-    <message>
-        <source>+ Slot</source>
-        <translation>+ Zeitfenster</translation>
-    </message>
-    <message>
-        <source>The end must follow the start</source>
-        <translation>Das Ende muss nach dem Beginn liegen</translation>
-    </message>
-    <message>
-        <source>This account cannot change the program</source>
-        <translation>Dieses Konto kann das Programm nicht ändern</translation>
-    </message>
-    <message>
-        <source>This climate has no program.</source>
-        <translation>Diese Klimaanlage hat kein Programm.</translation>
-    </message>
-    <message>
-        <source>Week</source>
-        <translation>Woche</translation>
-    </message>
-</context>
-<context>
-    <name>ClimateProgramCard</name>
-    <message>
-        <source>Cooling</source>
-        <translation>Kühlen</translation>
-    </message>
-    <message>
-        <source>Heating</source>
-        <translation>Heizen</translation>
-    </message>
-    <message>
-        <source>%1: stopped</source>
-        <translation>%1: aus</translation>
-    </message>
-    <message>
-        <source>%1: level %2, %3</source>
-        <translation>%1: Stufe %2, %3</translation>
-    </message>
-    <message>
-        <source>%1: default, %2</source>
-        <translation>%1: Standard, %2</translation>
-    </message>
-    <message>
-        <source>No change in the next 7 days</source>
-        <translation>Keine Änderung in den nächsten 7 Tagen</translation>
-    </message>
-    <message>
-        <source>%1 level %2</source>
-        <translation>%1 Stufe %2</translation>
-    </message>
-    <message>
-        <source>%1 default</source>
-        <translation>%1 Standard</translation>
-    </message>
-    <message>
-        <source>%1 stopped</source>
-        <translation>%1 aus</translation>
-    </message>
-    <message>
-        <source>%1 at %2</source>
-        <translation>%1 auf %2</translation>
-    </message>
-    <message>
-        <source>in %1 d %2 h</source>
-        <translation>in %1 T %2 Std</translation>
-    </message>
-    <message>
-        <source>in %1 h %2 min</source>
-        <translation>in %1 Std %2 Min</translation>
-    </message>
-    <message>
-        <source>in %1 min</source>
-        <translation>in %1 Min</translation>
-    </message>
-    <message>
-        <source>%1, %2 (%3)</source>
-        <translation>%1, %2 (%3)</translation>
-    </message>
-    <message>
-        <source>Program enabled</source>
-        <translation>Programm aktiviert</translation>
-    </message>
-    <message>
-        <source>Program paused</source>
-        <translation>Programm pausiert</translation>
-    </message>
-    <message>
-        <source>No program for this mode</source>
-        <translation>Kein Programm für diesen Modus</translation>
-    </message>
-    <message>
-        <source>Range %1 – %2</source>
-        <translation>Bereich %1 – %2</translation>
-    </message>
-    <message>
-        <source>About the range</source>
-        <translation>Zum Bereich</translation>
-    </message>
-    <message>
-        <source>In auto, the program sets a range: the lower end follows the heating, the upper end the cooling. The two are kept at least %1 apart.</source>
-        <translation>Im Automodus legt das Programm einen Bereich fest: die Untergrenze folgt dem Heizen, die Obergrenze dem Kühlen. Beide bleiben mindestens %1 auseinander.</translation>
-    </message>
-    <message>
-        <source>In auto, the program sets a range: the lower end follows the heating, the upper end the cooling. The two are kept a minimum apart.</source>
-        <translation>Im Automodus legt das Programm einen Bereich fest: die Untergrenze folgt dem Heizen, die Obergrenze dem Kühlen. Beide bleiben einen Mindestabstand auseinander.</translation>
-    </message>
-    <message>
-        <source>Program and settings</source>
-        <translation>Programm und Einstellungen</translation>
-    </message>
-</context>
-<context>
-    <name>ClimateProgramStrips</name>
-    <message>
-        <source>Cooling today</source>
-        <translation>Kühlen heute</translation>
-    </message>
-    <message>
-        <source>Heating today</source>
-        <translation>Heizen heute</translation>
     </message>
 </context>
 </TS>

@@ -121,7 +121,7 @@ void CalaosOsAPI::rollbackSnapshot(std::function<void (const CalaosOsReply &)> c
 QString CalaosOsAPI::rollbackErrorTitle(const CalaosOsReply &reply)
 {
     //A dropped connection is not a failure: the daemon may reboot before it answers.
-    return reply.httpStatus == 0 ? tr("Connection lost") : tr("Error");
+    return reply.httpStatus == 0 && !reply.neverReachedDaemon() ? tr("Connection lost") : tr("Error");
 }
 
 QString CalaosOsAPI::rollbackErrorMessage(const CalaosOsReply &reply)
@@ -129,6 +129,9 @@ QString CalaosOsAPI::rollbackErrorMessage(const CalaosOsReply &reply)
     //500 also covers a rollback done but a reboot refused: never claim nothing changed.
     if (reply.httpStatus == 409 || reply.upgradeInProgress)
         return tr("An update or a restart is already in progress.");
+    //Nothing was started: no reboot is coming.
+    if (reply.neverReachedDaemon())
+        return tr("The update service is not reachable. Nothing was done.");
     if (reply.httpStatus == 0)
         return tr("The box is probably restarting on the previous version. Wait for it to reconnect before trying again.");
     if (reply.httpStatus == 500)

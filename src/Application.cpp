@@ -994,8 +994,13 @@ void Application::rollbackSnapshot()
                                          { "message", tr("Rolling back to the previous version. Do not power off the box.") },
                                          { "button", tr("Close") },
                                          { "timeout", 30 * 60 * 1000 }}));
+    //A second request would only get a 409 whose message replaces the banner.
+    if (rollbackRunning)
+        return;
+    rollbackRunning = true;
     CalaosOsAPI::Instance()->rollbackSnapshot([this](const CalaosOsReply &reply)
     {
+        rollbackRunning = false;
         QFAppDispatcher *appDispatcher = QFAppDispatcher::instance(&engine);
         QVariantMap m;
         if (reply.ok)

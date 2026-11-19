@@ -214,6 +214,7 @@ private:
     QTranslator translator;
 
     bool startedWithOptHandled = false;
+    bool rollbackRunning = false;
 
     //Every login goes through here. userAction: typed on the login screen
     //(true) or automatic (launch, iOS become-active). Offline, the login is

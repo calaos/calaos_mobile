@@ -90,14 +90,15 @@ TestCase {
 
     //Answers every request not answered yet; writes go through failWith.
     function answerAll(failWith) {
+        var err
         while (fake.answered < fake.calls.length) {
             var c = fake.calls[fake.answered++]
             if (c.action === "get_timerange")
                 fake.finished(c.rid, true, { months: "111111111111", ranges: server.ranges[c.id] || [] }, "")
             else if (c.action === "get_state")
                 fake.finished(c.rid, true, server.states, "")
-            else if (failWith && failWith(c))
-                fake.finished(c.rid, false, {}, failWith(c))
+            else if (failWith && (err = failWith(c)))
+                fake.finished(c.rid, false, {}, err)
             else {
                 if (c.action === "set_timerange")
                     server.ranges[c.id] = c.ranges
@@ -594,6 +595,24 @@ TestCase {
         compare(sentOps(before), okOps)
         compare(JSON.stringify([server.ranges, server.states]), expected)
         compare(r.e.page, "week")
+    }
+
+    function test_failedSwapLocksTheFormUntilRetried() {
+        var r = swapScenario(true)
+        var form = r.e.currentForm
+        verify(r.e.retryAction !== null)
+        verify(!findChild(form, "saveButton").enabled)
+        var before = fake.calls.length
+        form.submit()
+        form.start = 6 * 60
+        form.submit()
+        answerAll()
+        compare(writes(before).length, 0)
+        compare(r.e.page, "form")
+        findChild(form, "cancelButton").trigger()
+        compare(r.e.page, "week")
+        verify(r.e.retryAction === null)
+        compare(findChild(r.e, "banner").visible, false)
     }
 
     function test_deleteAsksInPlaceThenWrites() {

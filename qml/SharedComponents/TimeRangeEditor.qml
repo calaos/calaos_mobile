@@ -46,7 +46,10 @@ FocusScope {
     readonly property bool offline: client === null || sessionLost
     //Writes replace the whole list of a level: nothing may be written before the
     //levels have been read, nor after a read failed, or the server's slots are lost.
+    //A failed write stays locked until Retry replays it (a fresh save would be computed
+    //on half-written levels) or the form is cancelled.
     readonly property bool locked: readOnly || offline || scopeDenied || busy || loading || readFailed
+                                   || retryAction !== null
     readonly property bool loading: Object.keys(reads).length > 0
     readonly property bool busy: writeId !== "" || queue.length > 0
     property bool loaded: false
@@ -389,6 +392,10 @@ FocusScope {
 
     function closeForm() {
         editing = null
+        if (!readFailed && retryAction !== null) {
+            retryAction = null
+            banner = ""
+        }
         if (formOpen && !simpleMode)
             stack.pop()
     }

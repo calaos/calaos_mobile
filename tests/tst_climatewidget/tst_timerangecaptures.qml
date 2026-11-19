@@ -403,6 +403,8 @@ TestCase {
         compare(host.editor.banner, "Could not read the program, try again")
         verify(findChild(host.editor, "banner").visible)
         verify(findChild(host.editor, "retryButton").visible)
+        verify(!findChild(host.editor, "programStatus").visible)
+        verify(!findChild(host.editor, "emptyHint").visible)
         shot(host, data.tag, "read-failed")
     }
 

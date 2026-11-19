@@ -26,7 +26,7 @@ Flickable {
 
         Rectangle {
             objectName: "programStatus"
-            visible: root.editor.hasPause && !root.editor.paused
+            visible: root.editor.hasPause && !root.editor.paused && !root.editor.readFailed
             Layout.fillWidth: true
             implicitHeight: activeRow.implicitHeight + Units.dp(12)
             radius: Units.dp(6)
@@ -141,6 +141,8 @@ Flickable {
                 color: rowArea.pressed ? Theme.colorAlpha(Theme.whiteColor, 0.1) : Theme.colorAlpha(Theme.whiteColor, 0.04)
                 border.color: activeFocus ? Theme.whiteColor : Theme.colorAlpha(Theme.whiteColor, 0.06)
                 activeFocusOnTab: true
+                enabled: !root.editor.readFailed
+                opacity: enabled ? 1 : 0.4
 
                 Accessible.role: Accessible.Button
                 Accessible.name: root.editor.dayName(day) + ", " + root.editor.countText(count)
@@ -176,7 +178,7 @@ Flickable {
 
                         Text {
                             objectName: "emptyHint"
-                            visible: dayRow.count === 0 && root.editor.loaded
+                            visible: dayRow.count === 0 && root.editor.loaded && !root.editor.readFailed
                             anchors { left: parent.left; leftMargin: Units.dp(10); verticalCenter: parent.verticalCenter }
                             width: parent.width - Units.dp(20)
                             text: qsTr("No period: tap to add")

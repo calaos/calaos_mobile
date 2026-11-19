@@ -27,6 +27,8 @@
 #include <QtTest>
 #include <QApplication>
 #include <QHostAddress>
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -110,6 +112,8 @@ public:
     bool busy = false;
     QString busyJobId; //job_id of 409 answers, empty: none
     int reboots = 0;
+    int rollbacks = 0;
+    bool noSnapshot = false; //rollback fails: the box is not in a snapshot
     int restarts = 0;
     bool restartRefused = false;
     int legacyUpgrades = 0;
@@ -555,6 +559,18 @@ private:
                 ok(s, 200, QJsonValue::Null);
             }
         }
+        else if (req.method == "POST" && p == QStringLiteral("/system/rollback_snapshot"))
+        {
+            if (busy)
+                busyError(s);
+            else if (noSnapshot)
+                err(s, 500, "internal", "not running from a snapshot");
+            else
+            {
+                rollbacks++;
+                ok(s, 200, QJsonValue::Null);
+            }
+        }
         else if (req.method == "POST" && p == QStringLiteral("/system/restart"))
         {
             if (restartRefused)
@@ -615,6 +631,18 @@ private:
                 json(s, 200, QJsonObject{{ "error", false }, { "msg", "ok" }});
             }
         }
+        else if (req.method == "POST" && p == QStringLiteral("/api/system/rollback_snapshot"))
+        {
+            if (busy)
+                json(s, 409, inProgress);
+            else if (noSnapshot)
+                json(s, 500, QJsonObject{{ "error", true }, { "msg", "not running from a snapshot" }});
+            else
+            {
+                rollbacks++;
+                json(s, 200, QJsonObject{{ "error", false }, { "msg", "ok" }});
+            }
+        }
         else if (req.method == "POST" && p == QStringLiteral("/api/system/restart"))
         {
             if (restartRefused)
@@ -634,6 +662,29 @@ struct Dispatched
 {
     QString type;
     QVariantMap message;
+};
+
+//Records the transfer timeout set on each request, per path.
+class TimeoutSpyManager : public QNetworkAccessManager
+{
+public:
+    int timeoutOf(const QString &pathPart) const
+    {
+        for (auto it = seen.crbegin(); it != seen.crend(); ++it)
+            if (it->first.contains(pathPart))
+                return it->second;
+        return -1;
+    }
+
+protected:
+    QNetworkReply *createRequest(Operation op, const QNetworkRequest &req, QIODevice *dev) override
+    {
+        seen.append({ req.url().path(), req.transferTimeout() });
+        return QNetworkAccessManager::createRequest(op, req, dev);
+    }
+
+private:
+    QList<QPair<QString, int>> seen;
 };
 
 class TstUpdateClient: public QObject
@@ -686,6 +737,11 @@ private slots:
     void checkDuringUpgradeKeepsDaemonAvailable();
     void rebootDuringUpgradeIsRefused_data();
     void rebootDuringUpgradeIsRefused();
+    void rollbackIsOneCallAndReportsRefusals_data();
+    void rollbackIsOneCallAndReportsRefusals();
+    void rollbackOutcomesAreWorded();
+    void rollbackWaitsLongerThanTheDaemon_data();
+    void rollbackWaitsLongerThanTheDaemon();
     void restartRefusedIsReported_data();
     void restartRefusedIsReported();
 
@@ -1272,6 +1328,125 @@ void TstUpdateClient::rebootDuringUpgradeIsRefused()
     QVERIFY(reply.ok);
     QVERIFY(!reply.upgradeInProgress);
     QCOMPARE(daemon.reboots, 1);
+}
+
+void TstUpdateClient::rollbackIsOneCallAndReportsRefusals_data()
+{
+    QTest::addColumn<bool>("hasV2");
+    QTest::newRow("v2") << true;
+    QTest::newRow("legacy") << false;
+}
+
+void TstUpdateClient::rollbackIsOneCallAndReportsRefusals()
+{
+    QFETCH(bool, hasV2);
+
+    FakeDaemon daemon;
+    daemon.token = makeToken('g');
+    daemon.hasV2 = hasV2;
+    writeToken(daemon.token);
+    QVERIFY(daemon.start());
+
+    CalaosOsAPI api;
+    api.setBaseAddr(daemon.baseAddr());
+    api.setTokenFile(m_tokenPath);
+
+    bool done = false;
+    CalaosOsReply reply;
+    auto run = [&]
+    {
+        done = false;
+        api.rollbackSnapshot([&](const CalaosOsReply &r) { reply = r; done = true; });
+        QTRY_VERIFY(done);
+    };
+
+    daemon.busy = true;
+    run();
+    QVERIFY(!reply.ok);
+    QCOMPARE(reply.httpStatus, 409);
+    QVERIFY(reply.upgradeInProgress);
+    QVERIFY(CalaosOsAPI::rollbackErrorMessage(reply).contains("already in progress"));
+    QCOMPARE(daemon.rollbacks, 0);
+
+    daemon.busy = false;
+    daemon.noSnapshot = true;
+    run();
+    QVERIFY(!reply.ok);
+    QCOMPARE(reply.httpStatus, 500);
+    QVERIFY(!reply.upgradeInProgress);
+    const QString msg = CalaosOsAPI::rollbackErrorMessage(reply);
+    QVERIFY(msg.contains("did not complete normally"));
+    QVERIFY(!msg.contains("not restarted"));
+
+    daemon.noSnapshot = false;
+    run();
+    QVERIFY(reply.ok);
+    QCOMPARE(daemon.rollbacks, 1);
+    //the daemon reboots by itself
+    QCOMPARE(daemon.reboots, 0);
+}
+
+void TstUpdateClient::rollbackOutcomesAreWorded()
+{
+    //A cut connection during the rollback is the daemon rebooting before it answered.
+    CalaosOsReply cut;
+    cut.httpStatus = 0;
+    QCOMPARE(CalaosOsAPI::rollbackErrorTitle(cut), QStringLiteral("Connection lost"));
+    QVERIFY(CalaosOsAPI::rollbackErrorMessage(cut).contains("probably restarting"));
+    QVERIFY(!CalaosOsAPI::rollbackErrorMessage(cut).contains("fail", Qt::CaseInsensitive));
+
+    CalaosOsReply down;
+    down.httpStatus = 0;
+    down.networkError = QNetworkReply::ConnectionRefusedError;
+    QCOMPARE(CalaosOsAPI::rollbackErrorTitle(down), QStringLiteral("Error"));
+    QVERIFY(CalaosOsAPI::rollbackErrorMessage(down).contains("Nothing was done"));
+    QVERIFY(!CalaosOsAPI::rollbackErrorMessage(down).contains("restarting"));
+
+    CalaosOsReply refused;
+    refused.httpStatus = 500;
+    QCOMPARE(CalaosOsAPI::rollbackErrorTitle(refused), QStringLiteral("Error"));
+    QVERIFY(CalaosOsAPI::rollbackErrorMessage(refused).contains("restart it manually"));
+
+    CalaosOsReply busy;
+    busy.httpStatus = 409;
+    QVERIFY(CalaosOsAPI::rollbackErrorMessage(busy).contains("update or a restart"));
+}
+
+void TstUpdateClient::rollbackWaitsLongerThanTheDaemon_data()
+{
+    QTest::addColumn<bool>("hasV2");
+    QTest::newRow("v2") << true;
+    QTest::newRow("legacy") << false;
+}
+
+void TstUpdateClient::rollbackWaitsLongerThanTheDaemon()
+{
+    QFETCH(bool, hasV2);
+
+    FakeDaemon daemon;
+    daemon.token = makeToken('h');
+    daemon.hasV2 = hasV2;
+    writeToken(daemon.token);
+    QVERIFY(daemon.start());
+
+    TimeoutSpyManager nm;
+    CalaosOsAPI api(&nm);
+    api.setBaseAddr(daemon.baseAddr());
+    api.setTokenFile(m_tokenPath);
+
+    bool done = false;
+    CalaosOsReply reply;
+    api.rollbackSnapshot([&](const CalaosOsReply &r) { reply = r; done = true; });
+    QTRY_VERIFY(done);
+    QVERIFY(reply.ok);
+    //calaos-container bounds calaos_rollback to 20 minutes
+    QVERIFY(nm.timeoutOf(QStringLiteral("rollback_snapshot")) > 20 * 60 * 1000);
+
+    //every other route keeps the default
+    done = false;
+    api.rebootMachine([&](const CalaosOsReply &r) { reply = r; done = true; });
+    QTRY_VERIFY(done);
+    QCOMPARE(nm.timeoutOf(QStringLiteral("/reboot")), 30000);
 }
 
 void TstUpdateClient::restartRefusedIsReported_data()

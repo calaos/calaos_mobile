@@ -107,18 +107,36 @@ void CalaosOsAPI::getFsStatus(std::function<void (bool, const QJsonValue &)> cal
     call(r, valueAdapter(callback));
 }
 
-void CalaosOsAPI::rollbackSnapshot(std::function<void (bool)> callback)
+void CalaosOsAPI::rollbackSnapshot(std::function<void (const CalaosOsReply &)> callback)
 {
     Route r;
     r.method = NetworkRequest::HttpPost;
     r.v2Path = QStringLiteral("/system/rollback_snapshot");
     r.legacyPath = QStringLiteral("/api/system/rollback_snapshot");
     r.legacyShape = LegacyBody::Output;
-    call(r, [callback](const CalaosOsReply &reply)
-    {
-        if (callback)
-            callback(reply.ok);
-    });
+    r.timeoutMs = rollbackTimeoutMs();
+    call(r, callback);
+}
+
+QString CalaosOsAPI::rollbackErrorTitle(const CalaosOsReply &reply)
+{
+    //A dropped connection is not a failure: the daemon may reboot before it answers.
+    return reply.httpStatus == 0 && !reply.neverReachedDaemon() ? tr("Connection lost") : tr("Error");
+}
+
+QString CalaosOsAPI::rollbackErrorMessage(const CalaosOsReply &reply)
+{
+    //500 also covers a rollback done but a reboot refused: never claim nothing changed.
+    if (reply.httpStatus == 409 || reply.upgradeInProgress)
+        return tr("An update or a restart is already in progress.");
+    //Nothing was started: no reboot is coming.
+    if (reply.neverReachedDaemon())
+        return tr("The update service is not reachable. Nothing was done.");
+    if (reply.httpStatus == 0)
+        return tr("The box is probably restarting on the previous version. Wait for it to reconnect before trying again.");
+    if (reply.httpStatus == 500)
+        return tr("The rollback did not complete normally. If the box does not restart, restart it manually: it may boot on the previous version.");
+    return tr("Failed to roll back to the previous version. Please check logs.");
 }
 
 void CalaosOsAPI::listInstallDevices(std::function<void (bool, const QJsonValue &)> callback)
@@ -449,6 +467,8 @@ void CalaosOsAPI::send(const Route &route, bool useV2, bool authRetried, std::fu
         n->setCustomHeader("Content-Type", "application/json");
     n->setResultType(NetworkRequest::TypeJson);
     n->setPostData(useV2 ? route.v2Body : route.legacyBody);
+    if (route.timeoutMs > 0)
+        n->setTransferTimeout(route.timeoutMs);
 
     connect(n, &NetworkRequest::finishedJson, this,
             [this, n, route, useV2, authRetried, callback](int success, const QJsonDocument &doc)

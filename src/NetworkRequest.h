@@ -64,6 +64,9 @@ public:
     //of the result type (NetworkLimits).
     void setMaxBytes(qint64 max) { maxBytes = max; }
 
+    //Inactivity bound of the transfer, 30 s by default.
+    void setTransferTimeout(int ms) { transferTimeoutMs = ms; }
+
     void setCustomHeader(QString header, QString value);
 
     QString getLastError() { return lastError; }
@@ -118,6 +121,7 @@ private:
 
     QString lastError;
     int httpStatusCode = 0;
+    int transferTimeoutMs = 30000;
     QNetworkReply::NetworkError networkError = QNetworkReply::NoError;
 
     QList<QSslCertificate> cacerts;

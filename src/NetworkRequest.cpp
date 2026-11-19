@@ -8,11 +8,6 @@
 //journal unless asked for with QT_LOGGING_RULES="calaos.net.debug=true".
 //Errors are warnings and always shown.
 
-//Abort a transfer that stops making progress. Set on the request and not on
-//the manager because setNetManager() can hand us a manager owned by someone
-//else (CalaosOsAPI), which we must not reconfigure behind its back.
-static const int HTTP_TRANSFER_TIMEOUT = 30000;
-
 NetworkRequest::NetworkRequest(QObject *parent):
     QObject(parent),
     sslConfiguration(QSslConfiguration::defaultConfiguration())
@@ -66,7 +61,10 @@ bool NetworkRequest::start()
 
     QNetworkRequest request;
     request.setUrl(QUrl(url));
-    request.setTransferTimeout(HTTP_TRANSFER_TIMEOUT);
+    //Abort a transfer that stops making progress. Set on the request and not on
+    //the manager because setNetManager() can hand us a manager owned by someone
+    //else (CalaosOsAPI), which we must not reconfigure behind its back.
+    request.setTransferTimeout(transferTimeoutMs);
     //Per request, the manager may be shared: credentials or tokens must not
     //follow a redirect to another host.
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::SameOriginRedirectPolicy);

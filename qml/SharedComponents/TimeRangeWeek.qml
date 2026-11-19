@@ -125,16 +125,6 @@ Flickable {
             font { family: root.fontFamily; pixelSize: Units.dp(15) }
         }
 
-        Text {
-            objectName: "offlineText"
-            visible: root.editor.offline || root.editor.readOnly
-            Layout.fillWidth: true
-            text: qsTr("Offline: the schedule is read-only")
-            color: Theme.amberColor
-            wrapMode: Text.WordWrap
-            font { family: root.fontFamily; pixelSize: Units.dp(15) }
-        }
-
         Repeater {
             model: root.editor.kinds.length ? 7 : 0
 

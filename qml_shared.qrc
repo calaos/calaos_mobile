@@ -54,7 +54,7 @@
         <file>qml/SharedComponents/TimeRangeBar.qml</file>
         <file>qml/SharedComponents/TimeRangeButton.qml</file>
         <file>qml/SharedComponents/TimeRangeCopy.qml</file>
-        <file>qml/SharedComponents/TimeRangeForm.qml</file>
+        <file>qml/SharedComponents/TimeRangePeriod.qml</file>
         <file>qml/SharedComponents/TimeRangeEditor.qml</file>
         <file>qml/SharedComponents/TimeRangeWeek.qml</file>
         <file>qml/SharedComponents/TimeRangeDay.qml</file>

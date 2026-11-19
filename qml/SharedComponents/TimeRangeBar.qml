@@ -27,7 +27,7 @@ Item {
     implicitHeight: barHeight + (showAxis ? Units.dp(20) : 0)
 
     function levelColor(n) {
-        return TR.levelColor(kind, n, Theme.colorAlpha(Theme.whiteColor, 0.28))
+        return TR.levelColor(kind === "cool" ? Theme.blueColor : Theme.yellowColor, n, Theme.colorAlpha(Theme.whiteColor, 0.28))
     }
 
     function degrees(v) {
@@ -76,7 +76,7 @@ Item {
                     //Below 46 px a setpoint no longer fits: no label rather than "…"
                     visible: !root.compact && seg.modelData.level > 0 && seg.width >= Units.dp(46)
                     text: root.degrees(seg.modelData.setpoint)
-                    color: seg.modelData.level <= 3 ? "#111111" : "#ffffff"
+                    color: seg.modelData.level <= 3 ? Theme.backgroundColor : Theme.whiteColor
                     font { family: root.fontFamily; pixelSize: Units.dp(13) }
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter

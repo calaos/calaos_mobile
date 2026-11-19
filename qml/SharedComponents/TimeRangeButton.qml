@@ -20,6 +20,7 @@ Rectangle {
     //Destructive action: red text and border.
     property bool danger: false
     property real sidePadding: Units.dp(24)
+    property real textSize: Units.dp(15)
 
     signal clicked()
 
@@ -69,8 +70,8 @@ Rectangle {
         anchors.horizontalCenterOffset: root.leading !== "" ? Units.dp(13) : 0
         width: Math.min(implicitWidth, root.width - Units.dp(8) - (root.leading !== "" ? Units.dp(26) : 0))
         text: root.text
-        color: root.accent && !root.checked ? "#111111" : root.danger ? Theme.redColor : root.textColor
-        font { family: root.fontFamily; pixelSize: Units.dp(15); weight: root.accent ? Font.DemiBold : Font.Normal }
+        color: root.accent && !root.checked ? Theme.backgroundColor : root.danger ? Theme.redColor : root.textColor
+        font { family: root.fontFamily; pixelSize: root.textSize; weight: root.accent ? Font.DemiBold : Font.Normal }
         horizontalAlignment: Text.AlignHCenter
         elide: Text.ElideRight
     }

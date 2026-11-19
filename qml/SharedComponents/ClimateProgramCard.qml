@@ -252,9 +252,11 @@ ColumnLayout {
             Layout.preferredHeight: Units.dp(44)
             activeFocusOnTab: true
             Accessible.role: Accessible.Button
-            Accessible.name: qsTr("About the range")
+            Accessible.name: root.helpOpen ? qsTr("Hide range help") : qsTr("About the range")
             Accessible.checkable: true
             Accessible.checked: root.helpOpen
+            Accessible.onPressAction: root.helpOpen = !root.helpOpen
+            Accessible.onToggleAction: root.helpOpen = !root.helpOpen
             Keys.onSpacePressed: root.helpOpen = !root.helpOpen
             Keys.onReturnPressed: root.helpOpen = !root.helpOpen
 

@@ -4797,6 +4797,10 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <translation>À propos de la plage</translation>
     </message>
     <message>
+        <source>Hide range help</source>
+        <translation>Masquer l'aide de la plage</translation>
+    </message>
+    <message>
         <source>In auto, the program sets a range: the lower end follows the heating, the upper end the cooling. The two are kept at least %1 apart.</source>
         <translation>En auto, le programme fixe une plage : la borne basse suit le chauffage, la borne haute le refroidissement. Les deux restent écartées d'au moins %1.</translation>
     </message>

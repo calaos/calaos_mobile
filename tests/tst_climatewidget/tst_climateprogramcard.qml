@@ -217,6 +217,43 @@ TestCase {
         compare(more.filter(function(r) { return r.action === "get_state" }).length, 1)
     }
 
+    function test_helpButtonFollowsAccessibilityActions() {
+        var card = make(autoProgram())
+        var btn = findChild(card, "programHelpButton")
+        var closed = btn.Accessible.name
+        btn.Accessible.pressAction()
+        verify(card.helpOpen)
+        verify(btn.Accessible.checked)
+        verify(btn.Accessible.name !== closed)
+        btn.Accessible.toggleAction()
+        verify(!card.helpOpen)
+        compare(btn.Accessible.name, closed)
+    }
+
+    function test_hatchesKeepTheirCanvasOnIoChangedWithSameRanges() {
+        deviceIos = { mode: "m", program_enabled: "pe", heat_level1: "h1", heat_level1_setpoint: "h1sp",
+                      cool_level1: "c1", cool_level1_setpoint: "c1sp" }
+        var card = make(autoProgram())
+        var reads = fake.reads.filter(function(r) { return r.action === "get_timerange" })
+        fake.finished(reads[0].rid, true, { ranges: [range(3, 6, 8)] }, "")
+        fake.finished(reads[1].rid, true, { ranges: [range(3, 7, 9)] }, "")
+        var states = fake.reads.filter(function(r) { return r.action === "get_state" })
+        for (var i = 0; i < states.length; i++)
+            fake.finished(states[i].rid, true, { h1sp: "21", c1sp: "25" }, "")
+        var hatch = findChild(card, "programRange_420")
+        verify(hatch !== null)
+        var n = fake.reads.length
+        var dev = deviceOf(autoProgram())
+        dev.state.current_temp = 22.5
+        harness.pushFrame("salon_ac", "heat", dev)
+        wait(50)
+        var again = fake.reads.slice(n).filter(function(r) { return r.action === "get_state" })
+        compare(again.length, 1)
+        fake.finished(again[0].rid, true, { h1sp: "21", c1sp: "25" }, "")
+        wait(50)
+        verify(findChild(card, "programRange_420") === hatch)
+    }
+
     function test_editRequestedFromTheButton() {
         var card = make(program())
         var spy = createTemporaryObject(spyComponent, tc, { target: card })

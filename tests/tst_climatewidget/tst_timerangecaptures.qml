@@ -159,6 +159,11 @@ TestCase {
 
     function shot(host, mode, name) {
         settle(host)
+        //The software renderer only repaints dirty regions: without a full
+        //repaint, pixels of the push transition stay outside the stack's clip.
+        host.opacity = 0.99
+        waitForRendering(host)
+        host.opacity = 1
         waitForRendering(host)
         var img = grabImage(host)
         compare(img.width, screens[mode].w)

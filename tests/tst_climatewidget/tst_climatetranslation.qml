@@ -152,7 +152,7 @@ TestCase {
         var contexts = {}
         harness.climateStrings("fr").forEach(function(s) { contexts[s.context] = true })
         compare(Object.keys(contexts).sort(),
-                ["ClimateDetail", "ClimateModel", "ClimateMore", "ClimateReading", "ClimateSheet", "DialogClimate", "IOClimate"])
+                ["ClimateDetail", "ClimateModel", "ClimateMore", "ClimateProgramCard", "ClimateProgramStrips", "ClimateReading", "ClimateSheet", "DialogClimate", "IOClimate"])
     }
 
     // --- the list item -------------------------------------------------------------------------

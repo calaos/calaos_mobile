@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Window
 import SharedComponents
 import "../SharedComponents/ClimateLogic.js" as Logic
 
@@ -17,6 +18,7 @@ Item {
     readonly property alias detail: detail
     readonly property alias modeDialog: modeDialog
     readonly property alias moreDialog: moreDialog
+    readonly property alias programDialog: programDialog
 
     width: 0
     height: 0
@@ -50,7 +52,7 @@ Item {
         negativeButtonText: qsTr("Close")
         //The dialogs opened on top of this one leave a band of it uncovered: it
         //must not take clicks, or its Close would close this one under them
-        enabled: !modeDialog.showing && !moreDialog.showing
+        enabled: !modeDialog.showing && !moreDialog.showing && !programDialog.showing
         onClosed: {
             climate.flush()
             release.restart()
@@ -76,6 +78,14 @@ Item {
             icon: climate.modeIcon(climate.mode)
             disabled: climate.status.kind === "offline" || climate.caps.modes.length === 0
             onButtonClicked: modeDialog.show()
+        }
+
+        ClimateProgramCard {
+            objectName: "programCard"
+            width: parent.width
+            climate: climate
+            fontFamily: host.fontFamily
+            onEditRequested: programDialog.show()
         }
 
         MouseArea {
@@ -144,6 +154,33 @@ Item {
             columnCount: climate.caps.fanModes.length > 0 && climate.caps.swingModes.length > 0 ? 2 : 1
             climate: climate
             fontFamily: host.fontFamily
+        }
+    }
+
+    Dialog {
+        id: programDialog
+        closeOnDisconnect: true
+        objectName: "programDialog"
+        title: qsTr("Program — %1").arg(climate.name)
+        minimumWidth: Units.dp(720)
+        hasActions: true
+        positiveButtonEnabled: false
+        negativeButtonText: qsTr("Close")
+
+        TimeRangeEditor {
+            id: editor
+            objectName: "programEditor"
+            width: parent.width
+            height: Math.min(Units.dp(560), Window.height * 0.7)
+            fontFamily: host.fontFamily
+            device: climate.modelData ? climate.modelData.device : ({})
+            readOnly: climate.status.kind === "offline"
+
+            Connections {
+                target: climate.modelData ? climate.modelData : null
+                ignoreUnknownSignals: true
+                function onDeviceChange() { editor.refreshStates() }
+            }
         }
     }
 }

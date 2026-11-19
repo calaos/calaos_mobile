@@ -35,6 +35,7 @@ OTHER_FILES += \
     tst_timerangeeditor.qml \
     tst_timerangecaptures.qml \
     tst_climatemodel.qml \
+    tst_climateprogramcard.qml \
     tst_climatesheet.qml \
     tst_climatetranslation.qml \
     tst_climatedialog.qml \
@@ -46,4 +47,7 @@ OTHER_FILES += \
     tst_climateshots.qml \
     tst_climatecapturesmobile.qml \
     tst_climatecapturesdesktop.qml \
+    tst_climateprogramshotsmobile.qml \
+    tst_climateprogramshotsdesktop.qml \
+    tst_climateprogramstripsshots.qml \
     stubs/QuickFlux/qmldir

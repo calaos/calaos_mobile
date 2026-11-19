@@ -971,14 +971,6 @@
         <source>Mode</source>
         <translation type="unfinished">Modus</translation>
     </message>
-    <message>
-        <source>Program</source>
-        <translation type="vanished">Programm</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">Schließen</translation>
-    </message>
 </context>
 <context>
     <name>ColorPickerRGBView</name>
@@ -2112,10 +2104,6 @@
         <location filename="../qml/desktop/DialogClimate.qml" line="145"/>
         <source>More settings — %1</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Program — %1</source>
-        <translation type="vanished">Programm — %1</translation>
     </message>
 </context>
 <context>
@@ -3754,10 +3742,6 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
 <context>
     <name>TimeRangeBar</name>
     <message>
-        <source>Off</source>
-        <translation type="vanished">Aus</translation>
-    </message>
-    <message>
         <location filename="../qml/SharedComponents/TimeRangeBar.qml" line="41"/>
         <source>off</source>
         <translation>aus</translation>
@@ -3772,21 +3756,9 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <source>%1 to %2, %3</source>
         <translation>%1 bis %2, %3</translation>
     </message>
-    <message>
-        <source>Level %1, %2 to %3, %4</source>
-        <translation type="vanished">Stufe %1, %2 bis %3, %4</translation>
-    </message>
 </context>
 <context>
     <name>TimeRangeCopy</name>
-    <message>
-        <source>%1 (1 slot)</source>
-        <translation type="vanished">%1 (1 Zeitfenster)</translation>
-    </message>
-    <message>
-        <source>%1 (%2 slots)</source>
-        <translation type="vanished">%1 (%2 Zeitfenster)</translation>
-    </message>
     <message>
         <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="65"/>
         <source>%1 and %2</source>
@@ -3822,10 +3794,6 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="83"/>
         <source>Copy %1 to</source>
         <translation>%1 kopieren nach</translation>
-    </message>
-    <message>
-        <source>Nothing to copy: this day has no slot</source>
-        <translation type="vanished">Nichts zu kopieren: dieser Tag hat kein Zeitfenster</translation>
     </message>
     <message>
         <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="177"/>
@@ -3936,10 +3904,6 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <translation>Das Programm konnte nicht gelesen werden, erneut versuchen</translation>
     </message>
     <message>
-        <source>6 levels maximum for %1</source>
-        <translation type="vanished">Maximal 6 Stufen für %1</translation>
-    </message>
-    <message>
         <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="79"/>
         <source>Cooling</source>
         <translation>Kühlen</translation>
@@ -4042,57 +4006,9 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <translation>%1 Zeiträume</translation>
     </message>
     <message>
-        <source>Cooling off outside slots</source>
-        <translation type="vanished">Kühlen aus außerhalb der Zeitfenster</translation>
-    </message>
-    <message>
-        <source>Copy this day…</source>
-        <translation type="vanished">Diesen Tag kopieren…</translation>
-    </message>
-    <message>
-        <source>Default: %1</source>
-        <translation type="vanished">Standard: %1</translation>
-    </message>
-    <message>
-        <source>Default: off</source>
-        <translation type="vanished">Standard: aus</translation>
-    </message>
-    <message>
         <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="476"/>
         <source>Incomplete copy: not saved, try again</source>
         <translation>Kopie unvollständig: nicht gespeichert, erneut versuchen</translation>
-    </message>
-    <message>
-        <source>Levels: %1 of %2</source>
-        <translation type="vanished">Stufen: %1 von %2</translation>
-    </message>
-    <message>
-        <source>Loading the program…</source>
-        <translation type="vanished">Programm wird geladen…</translation>
-    </message>
-    <message>
-        <source>Lower the default setpoint</source>
-        <translation type="vanished">Standard-Sollwert senken</translation>
-    </message>
-    <message>
-        <source>Raise the default setpoint</source>
-        <translation type="vanished">Standard-Sollwert erhöhen</translation>
-    </message>
-    <message>
-        <source>No slot in cooling. Default: %1.</source>
-        <translation type="vanished">Kein Zeitfenster beim Kühlen. Standard: %1.</translation>
-    </message>
-    <message>
-        <source>No slot in cooling. Default: off.</source>
-        <translation type="vanished">Kein Zeitfenster beim Kühlen. Standard: aus.</translation>
-    </message>
-    <message>
-        <source>No slot in heating. Default: %1.</source>
-        <translation type="vanished">Kein Zeitfenster beim Heizen. Standard: %1.</translation>
-    </message>
-    <message>
-        <source>Nothing to copy: this day has no slot</source>
-        <translation type="vanished">Nichts zu kopieren: dieser Tag hat kein Zeitfenster</translation>
     </message>
     <message>
         <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="220"/>
@@ -4146,10 +4062,6 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <translation>Speichern fehlgeschlagen, erneut versuchen</translation>
     </message>
     <message>
-        <source>+ Slot</source>
-        <translation type="vanished">+ Zeitfenster</translation>
-    </message>
-    <message>
         <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="222"/>
         <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="434"/>
         <source>The end must follow the start</source>
@@ -4159,10 +4071,6 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="224"/>
         <source>This account cannot change the program</source>
         <translation>Dieses Konto kann das Programm nicht ändern</translation>
-    </message>
-    <message>
-        <source>This climate has no program.</source>
-        <translation type="vanished">Diese Klimaanlage hat kein Programm.</translation>
     </message>
     <message>
         <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="506"/>
@@ -4298,10 +4206,6 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="96"/>
         <source>Enter the time as 17:30</source>
         <translation>Uhrzeit wie 17:30 eingeben</translation>
-    </message>
-    <message>
-        <source>Priority: level %1</source>
-        <translation type="vanished">Priorität: Stufe %1</translation>
     </message>
     <message>
         <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="271"/>

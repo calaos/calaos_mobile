@@ -84,7 +84,7 @@ TestCase {
 
     function done(host) {
         if (host.programDialog.showing)
-            mouseClick(host.programDialog.negativeButton)
+            mouseClick(find(layer, "backButton"))
         wait(300)
         mouseClick(host.detail.negativeButton)
         tryVerify(function() { return !host.detail.showing }, 3000)

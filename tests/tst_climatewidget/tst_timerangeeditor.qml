@@ -164,7 +164,7 @@ TestCase {
         verify(!findChild(e, "loadingText").visible)
         compare(findChild(e, "dayRow1").Accessible.name, "Monday, 1 period")
         compare(findChild(e, "dayRow2").Accessible.name, "Tuesday, no period")
-        compare(findChild(findChild(e, "weekBar1"), "segment_1_360").Accessible.name, "06:00 to 08:00, 21 °C")
+        compare(findChild(findChild(e, "weekBar1"), "segment_1_360").Accessible.name, "06:00 to 08:00, 21°")
     }
 
     function test_sameIosDoesNotReload() {
@@ -317,7 +317,7 @@ TestCase {
         verify(e.paused)
         verify(!findChild(e, "programStatus").visible)
         verify(findChild(e, "pausedBanner").visible)
-        compare(findChild(e, "pausedText").text, "Paused: setpoint stays at 21 °C")
+        compare(findChild(e, "pausedText").text, "Paused: setpoint stays at 21°")
         compare(findChild(e, "weekBar1").opacity, 0.5)
         e.openDay(1)
         compare(findChild(e, "dayBar").opacity, 0.5)

@@ -123,7 +123,7 @@ FocusScope {
 
     function degrees(v) {
         return v === null || v === undefined ? "--"
-             : Number(v).toFixed(1).replace(/\.0$/, "").replace(".", Qt.locale().decimalPoint) + " °C"
+             : Number(v).toFixed(1).replace(/\.0$/, "").replace(".", Qt.locale().decimalPoint) + "°"
     }
 
     // --- reads ------------------------------------------------------------
@@ -339,6 +339,10 @@ FocusScope {
     Component.onCompleted: {
         completed = true
         reload()
+    }
+    onSimpleModeChanged: {
+        if (completed)
+            stack.replace(null, simpleMode ? formPage : weekPage, {}, StackView.Immediate)
     }
 
     // --- actions ----------------------------------------------------------

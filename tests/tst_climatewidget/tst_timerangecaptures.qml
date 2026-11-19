@@ -252,8 +252,8 @@ TestCase {
         openDay(host, 1)
         findChild(host.editor, "coolOffButton").trigger()
         answerAll()
-        compare(findChild(host.editor, "defaultText").text, "Off")
-        verify(!findChild(host.editor, "defaultDown").visible)
+        verify(findChild(host.editor, "coolOffButton").checked)
+        verify(!findChild(host.editor, "defaultStepper").visible)
         shot(host, data.tag, "day-cool-off")
     }
 

@@ -971,14 +971,6 @@
         <source>Mode</source>
         <translation>Mode</translation>
     </message>
-    <message>
-        <source>Program</source>
-        <translation type="vanished">Programme</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">Fermer</translation>
-    </message>
 </context>
 <context>
     <name>ColorPickerRGBView</name>
@@ -2132,10 +2124,6 @@
         <location filename="../qml/desktop/DialogClimate.qml" line="145"/>
         <source>More settings — %1</source>
         <translation>Plus de réglages — %1</translation>
-    </message>
-    <message>
-        <source>Program — %1</source>
-        <translation type="vanished">Programme — %1</translation>
     </message>
 </context>
 <context>
@@ -3778,10 +3766,6 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
 <context>
     <name>TimeRangeBar</name>
     <message>
-        <source>Off</source>
-        <translation type="vanished">Arrêt</translation>
-    </message>
-    <message>
         <location filename="../qml/SharedComponents/TimeRangeBar.qml" line="41"/>
         <source>off</source>
         <translation>arrêt</translation>
@@ -3796,21 +3780,9 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <source>%1 to %2, %3</source>
         <translation>%1 à %2, %3</translation>
     </message>
-    <message>
-        <source>Level %1, %2 to %3, %4</source>
-        <translation type="vanished">Niveau %1, %2 à %3, %4</translation>
-    </message>
 </context>
 <context>
     <name>TimeRangeCopy</name>
-    <message>
-        <source>%1 (1 slot)</source>
-        <translation type="vanished">%1 (1 créneau)</translation>
-    </message>
-    <message>
-        <source>%1 (%2 slots)</source>
-        <translation type="vanished">%1 (%2 créneaux)</translation>
-    </message>
     <message>
         <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="65"/>
         <source>%1 and %2</source>
@@ -3846,10 +3818,6 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="83"/>
         <source>Copy %1 to</source>
         <translation>Copier %1 vers</translation>
-    </message>
-    <message>
-        <source>Nothing to copy: this day has no slot</source>
-        <translation type="vanished">Rien à copier : ce jour n&apos;a pas de créneau</translation>
     </message>
     <message>
         <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="177"/>
@@ -3960,10 +3928,6 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <translation>Impossible de lire le programme, réessayez</translation>
     </message>
     <message>
-        <source>6 levels maximum for %1</source>
-        <translation type="vanished">6 niveaux maximum pour %1</translation>
-    </message>
-    <message>
         <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="79"/>
         <source>Cooling</source>
         <translation>Clim</translation>
@@ -4066,57 +4030,9 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <translation>%1 plages</translation>
     </message>
     <message>
-        <source>Cooling off outside slots</source>
-        <translation type="vanished">Clim arrêtée hors créneaux</translation>
-    </message>
-    <message>
-        <source>Copy this day…</source>
-        <translation type="vanished">Copier ce jour…</translation>
-    </message>
-    <message>
-        <source>Default: %1</source>
-        <translation type="vanished">Défaut : %1</translation>
-    </message>
-    <message>
-        <source>Default: off</source>
-        <translation type="vanished">Défaut : arrêt</translation>
-    </message>
-    <message>
         <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="476"/>
         <source>Incomplete copy: not saved, try again</source>
         <translation>Copie incomplète : non enregistré, réessayer</translation>
-    </message>
-    <message>
-        <source>Levels: %1 of %2</source>
-        <translation type="vanished">Niveaux : %1 sur %2</translation>
-    </message>
-    <message>
-        <source>Loading the program…</source>
-        <translation type="vanished">Chargement du programme…</translation>
-    </message>
-    <message>
-        <source>Lower the default setpoint</source>
-        <translation type="vanished">Baisser la consigne par défaut</translation>
-    </message>
-    <message>
-        <source>Raise the default setpoint</source>
-        <translation type="vanished">Monter la consigne par défaut</translation>
-    </message>
-    <message>
-        <source>No slot in cooling. Default: %1.</source>
-        <translation type="vanished">Aucun créneau en clim. Défaut : %1.</translation>
-    </message>
-    <message>
-        <source>No slot in cooling. Default: off.</source>
-        <translation type="vanished">Aucun créneau en clim. Défaut : arrêt.</translation>
-    </message>
-    <message>
-        <source>No slot in heating. Default: %1.</source>
-        <translation type="vanished">Aucun créneau en chauffage. Défaut : %1.</translation>
-    </message>
-    <message>
-        <source>Nothing to copy: this day has no slot</source>
-        <translation type="vanished">Rien à copier : ce jour n&apos;a pas de créneau</translation>
     </message>
     <message>
         <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="220"/>
@@ -4170,10 +4086,6 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <translation>Échec de l&apos;enregistrement, réessayer</translation>
     </message>
     <message>
-        <source>+ Slot</source>
-        <translation type="vanished">+ Créneau</translation>
-    </message>
-    <message>
         <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="222"/>
         <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="434"/>
         <source>The end must follow the start</source>
@@ -4183,10 +4095,6 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="224"/>
         <source>This account cannot change the program</source>
         <translation>Ce compte ne peut pas modifier le programme</translation>
-    </message>
-    <message>
-        <source>This climate has no program.</source>
-        <translation type="vanished">Ce climat n&apos;a pas de programme.</translation>
     </message>
     <message>
         <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="506"/>
@@ -4322,10 +4230,6 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="96"/>
         <source>Enter the time as 17:30</source>
         <translation>Saisir l&apos;heure comme 17:30</translation>
-    </message>
-    <message>
-        <source>Priority: level %1</source>
-        <translation type="vanished">Priorité : niveau %1</translation>
     </message>
     <message>
         <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="271"/>

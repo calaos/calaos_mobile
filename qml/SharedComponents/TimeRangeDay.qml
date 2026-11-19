@@ -21,9 +21,7 @@ Flickable {
     boundsBehavior: Flickable.StopAtBounds
 
     function deg(v) {
-        if (v === null || v === undefined)
-            return "--"
-        return Number(v).toFixed(1).replace(/\.0$/, "").replace(".", Qt.locale().decimalPoint) + "°"
+        return editor ? editor.degrees(v) : ""
     }
 
     ColumnLayout {

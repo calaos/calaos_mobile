@@ -4773,6 +4773,10 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <translation>Zum Bereich</translation>
     </message>
     <message>
+        <source>Hide range help</source>
+        <translation>Bereichshilfe ausblenden</translation>
+    </message>
+    <message>
         <source>In auto, the program sets a range: the lower end follows the heating, the upper end the cooling. The two are kept at least %1 apart.</source>
         <translation>Im Automodus legt das Programm einen Bereich fest: die Untergrenze folgt dem Heizen, die Obergrenze dem Kühlen. Beide bleiben mindestens %1 auseinander.</translation>
     </message>

@@ -17,6 +17,9 @@ Drawer {
     //With no ratio the sheet is as tall as its title and this
     property real fitHeight: 0
 
+    //The whole window, no grip nor title: the content brings its own header.
+    property bool fullScreen: false
+
     //Sheets showing data of the session close when it ends. A question
     //asked while logging in (an unknown server certificate) must stay.
     property bool closeOnLogout: true
@@ -47,16 +50,17 @@ Drawer {
                                                         parent.height - insetTop - Units.dp(16))
                                              : 0
     height: !parent ? 0
+            : fullScreen ? parent.height
             : heightRatio > 0 ? Math.min(maxHeight, parent.height * heightRatio)
             : Math.min(maxHeight, headerHeight + fitHeight + Units.dp(24) + insetBottom)
 
     readonly property real headerHeight: Units.dp(14) + Units.dp(4) + Units.dp(14) +
                                          (titleText.visible ? titleText.height + Units.dp(8) : 0)
 
-    topPadding: 0
-    leftPadding: Units.dp(16) + insetLeft
-    rightPadding: Units.dp(16) + insetRight
-    bottomPadding: Units.dp(24) + insetBottom
+    topPadding: fullScreen ? insetTop + Units.dp(8) : 0
+    leftPadding: Units.dp(fullScreen ? 12 : 16) + insetLeft
+    rightPadding: Units.dp(fullScreen ? 12 : 16) + insetRight
+    bottomPadding: Units.dp(fullScreen ? 8 : 24) + insetBottom
 
     //The sheet lives on the window overlay, outside the pages: going back to the
     //login page does not take it away. Every sheet of the app goes through here.
@@ -72,7 +76,7 @@ Drawer {
 
     background: Rectangle {
         color: Theme.backgroundColor
-        radius: Units.dp(16)
+        radius: sheet.fullScreen ? 0 : Units.dp(16)
 
         //Only the top corners are round
         Rectangle {
@@ -100,6 +104,7 @@ Drawer {
         Rectangle {
             id: grip
             objectName: "grip"
+            visible: !sheet.fullScreen
             anchors { top: parent.top; topMargin: Units.dp(10); horizontalCenter: parent.horizontalCenter }
             width: Units.dp(40)
             height: Units.dp(4)
@@ -111,7 +116,7 @@ Drawer {
             id: titleText
             objectName: "sheetTitle"
             anchors { top: grip.bottom; topMargin: Units.dp(14); left: parent.left }
-            visible: sheet.title !== ""
+            visible: sheet.title !== "" && !sheet.fullScreen
             color: Theme.whiteColor
             font { family: sheet.fontFamily; pixelSize: Units.dp(20) }
             text: sheet.title
@@ -120,8 +125,8 @@ Drawer {
         Item {
             id: body
             anchors {
-                top: titleText.visible ? titleText.bottom : grip.bottom
-                topMargin: titleText.visible ? Units.dp(8) : Units.dp(14)
+                top: titleText.visible ? titleText.bottom : grip.visible ? grip.bottom : parent.top
+                topMargin: titleText.visible ? Units.dp(8) : grip.visible ? Units.dp(14) : 0
                 left: parent.left; right: parent.right; bottom: parent.bottom
             }
         }

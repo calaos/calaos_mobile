@@ -58,8 +58,8 @@ ColumnLayout {
         var parts = []
         for (var i = 0; i < replaced.length; i++) {
             var name = dayName(replaced[i].day)
-            parts.push(replaced[i].count === 1 ? qsTr("%1 (1 slot)").arg(name)
-                                               : qsTr("%1 (%2 slots)").arg(name).arg(replaced[i].count))
+            parts.push(replaced[i].count === 1 ? qsTr("%1 (1 period)").arg(name)
+                                               : qsTr("%1 (%2 periods)").arg(name).arg(replaced[i].count))
         }
         var list = parts.length > 1
                 ? qsTr("%1 and %2").arg(parts.slice(0, -1).join(", ")).arg(parts[parts.length - 1])
@@ -88,7 +88,7 @@ ColumnLayout {
     Text {
         objectName: "copyEmpty"
         visible: root.sourceEmpty
-        text: qsTr("Nothing to copy: this day has no slot")
+        text: qsTr("Nothing to copy: this day has no period")
         color: Theme.amberColor
         wrapMode: Text.WordWrap
         font { family: root.fontFamily; pixelSize: Units.dp(14) }

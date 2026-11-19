@@ -22,6 +22,9 @@ TimeRangeButton 1.0 TimeRangeButton.qml
 TimeRangeCopy 1.0 TimeRangeCopy.qml
 TimeRangeForm 1.0 TimeRangeForm.qml
 TimeRangeEditor 1.0 TimeRangeEditor.qml
+TimeRangeWeek 1.0 TimeRangeWeek.qml
+TimeRangeDay 1.0 TimeRangeDay.qml
+TimeRangeDashed 1.0 TimeRangeDashed.qml
 IOBoiler 1.0 IOBoiler.qml
 IOFavAllLights 1.0 IOFavAllLights.qml
 IOHeater 1.0 IOHeater.qml

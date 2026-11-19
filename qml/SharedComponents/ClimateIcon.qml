@@ -25,7 +25,12 @@ Item {
         chevronU: "M6 15l6-6 6 6",
         info: "M3 12a9 9 0 1 0 18 0a9 9 0 1 0-18 0 M12 11v5 M12 8h.01",
         chevronD: "M6 9l6 6 6-6",
-        check: "M5 12l4 4L19 7"
+        check: "M5 12l4 4L19 7",
+        chevronL: "M15 6l-6 6 6 6",
+        close: "M6 6l12 12M18 6L6 18",
+        pause: "M9 5v14M15 5v14",
+        play: "M7 5l12 7-12 7z",
+        plus: "M12 5v14M5 12h14"
     })
 
     Shape {

@@ -157,24 +157,62 @@ Item {
         }
     }
 
-    Dialog {
+    //Near full screen, one page at a time: the editor carries its own header
+    //and close button. Dialog.qml cannot grow that tall.
+    PopupBase {
         id: programDialog
-        closeOnDisconnect: true
         objectName: "programDialog"
-        title: qsTr("Program — %1").arg(climate.name)
-        minimumWidth: Units.dp(720)
-        hasActions: true
-        positiveButtonEnabled: false
-        negativeButtonText: qsTr("Close")
+        closeOnDisconnect: true
+        overlayLayer: "dialogOverlayLayer"
+        overlayColor: Qt.rgba(0, 0, 0, 0.6)
+        dismissOnTap: false
+        anchors { fill: parent; margins: Units.dp(18) }
+        opacity: showing ? 1 : 0
+        visible: opacity > 0
+
+        Behavior on opacity {
+            NumberAnimation { duration: Theme.reduceMotion ? 0 : 200 }
+        }
+
+        onOpened: editor.forceActiveFocus()
+        onClosed: editor.home()
+
+        function show() {
+            open()
+        }
+
+        //The editor takes Back / Escape while it can go back a page.
+        Keys.onPressed: (event) => {
+            if (event.key === Qt.Key_Escape && showing)
+                event.accepted = true
+        }
+        Keys.onReleased: (event) => {
+            if ((event.key === Qt.Key_Escape || event.key === Qt.Key_Back) && showing) {
+                close()
+                event.accepted = true
+            }
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            color: "#171717"
+            border.color: Theme.borderColor
+            radius: Units.dp(8)
+
+            //Taps on the dialog must not reach the veil.
+            MouseArea { anchors.fill: parent }
+        }
 
         TimeRangeEditor {
             id: editor
             objectName: "programEditor"
-            width: parent.width
-            height: Math.min(Units.dp(560), Window.height * 0.7)
+            anchors { fill: parent; margins: Units.dp(14) }
             fontFamily: host.fontFamily
             device: climate.modelData ? climate.modelData.device : ({})
             readOnly: climate.status.kind === "offline"
+            title: climate.name
+            holdSetpoint: climate.values ? climate.values.target : undefined
+            onCloseRequested: programDialog.close()
 
             Connections {
                 target: climate.modelData ? climate.modelData : null

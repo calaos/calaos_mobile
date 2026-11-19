@@ -2,8 +2,8 @@ import QtQuick
 import QtTest
 import SharedComponents
 
-//The program editor against a fake programClient: what it reads, what it
-//writes and in which order, and what it shows after a failure.
+//The program editor against a fake programClient: its pages (Week, Day, form),
+//what it reads, what it writes and in which order, and what it shows after a failure.
 TestCase {
     id: tc
     name: "TimeRangeEditor"
@@ -49,6 +49,11 @@ TestCase {
         signalName: "applied"
     }
 
+    SignalSpy {
+        id: closeSpy
+        signalName: "closeRequested"
+    }
+
     property var server: ({})
 
     function range(day, sh, sm, eh, em) {
@@ -57,13 +62,15 @@ TestCase {
                  end_sec: "0", end_type: "0", end_offset: "0" }
     }
 
-    function ios(heatLevels) {
+    function ios(heatLevels, pause) {
         var out = { heat_default: "hd", cool_level1: "c1", cool_level1_setpoint: "c1sp",
                     cool_default: "cd", cool_default_off: "coff" }
         for (var n = 1; n <= heatLevels; n++) {
             out["heat_level" + n] = "h" + n
             out["heat_level" + n + "_setpoint"] = "h" + n + "sp"
         }
+        if (pause)
+            out.program_enabled = "pe"
         return out
     }
 
@@ -73,7 +80,8 @@ TestCase {
         fake.answered = 0
         fake.online = true
         server = { ranges: { h1: [range(1, 6, 0, 8, 0)], h2: [] },
-                   states: { hd: "19", h1sp: "21", h2sp: "18", cd: "26", c1sp: "24", coff: "false" } }
+                   states: { hd: "19", h1sp: "21", h2sp: "18", cd: "26", c1sp: "24", coff: "false",
+                             pe: "true" } }
     }
 
     function cleanup() {
@@ -109,10 +117,40 @@ TestCase {
         return e
     }
 
+    //StackView swallows the mouse while a page slides in.
+    function settle(e) {
+        tryCompare(findChild(e, "programStack"), "busy", false)
+    }
+
+    function tap(e, name) {
+        settle(e)
+        var item = findChild(e, name)
+        verify(item !== null, name)
+        mouseClick(item)
+        settle(e)
+    }
+
     function writes(from) {
         return fake.calls.slice(from || 0).filter(function(c) {
             return c.action === "set_timerange" || c.action === "set_state"
         })
+    }
+
+    function header(e) {
+        return [findChild(e, "backButton").text, findChild(e, "headerTitle").text]
+    }
+
+    //Every text and accessible name the user can see or hear under item.
+    function shownTexts(item, out) {
+        if (!item || !item.visible)
+            return out
+        if (typeof item.text === "string" && item.text !== "")
+            out.push(item.text)
+        if (item.Accessible && item.Accessible.name)
+            out.push(item.Accessible.name)
+        for (var i = 0; i < item.children.length; i++)
+            shownTexts(item.children[i], out)
+        return out
     }
 
     function test_loadsEveryLevelAndTheStates() {
@@ -124,9 +162,9 @@ TestCase {
         compare(st.items.sort(), ["c1sp", "cd", "coff", "h1sp", "h2sp", "hd"])
         answerAll()
         verify(!findChild(e, "loadingText").visible)
-        verify(findChild(e, "segment_1_360") !== null)
-        compare(findChild(e, "segment_1_360").Accessible.name, "Level 1, 06:00 to 08:00, 21°")
-        compare(findChild(e, "levelCount").text, "Levels: 1 of 6")
+        compare(findChild(e, "dayRow1").Accessible.name, "Monday, 1 period")
+        compare(findChild(e, "dayRow2").Accessible.name, "Tuesday, no period")
+        compare(findChild(findChild(e, "weekBar1"), "segment_1_360").Accessible.name, "06:00 to 08:00, 21 °C")
     }
 
     function test_sameIosDoesNotReload() {
@@ -140,13 +178,171 @@ TestCase {
         verify(fake.calls.length > n)
     }
 
+    //One level at a time, and the back button names the view it returns to.
+    function test_weekDayFormAndBack() {
+        var e = make({ title: "Living room" })
+        closeSpy.target = e
+        closeSpy.clear()
+        answerAll()
+        compare(e.page, "week")
+        compare(header(e), ["Close", "Schedule"])
+        compare(findChild(e, "headerSubtitle").text, "Living room")
+        verify(!findChild(e, "copyButton").visible)
+
+        tap(e, "dayRow1")
+        compare(e.page, "day")
+        compare(header(e), ["Week", "Monday"])
+        compare(findChild(e, "headerSubtitle").text, "Living room · Heating · 1 period")
+        verify(findChild(e, "copyButton").visible)
+
+        tap(e, "period_360")
+        compare(e.page, "form")
+        compare(header(e), ["Monday", "Period"])
+        verify(!findChild(e, "copyButton").visible)
+
+        tap(e, "backButton")
+        compare(e.page, "day")
+        tap(e, "addButton")
+        compare(header(e), ["Monday", "New period"])
+        e.currentForm.cancelRequested()
+        settle(e)
+        compare(e.page, "day")
+        tap(e, "backButton")
+        compare(e.page, "week")
+        compare(closeSpy.count, 0)
+        tap(e, "backButton")
+        compare(e.page, "week")
+        compare(closeSpy.count, 1)
+
+        tap(e, "dayRow4")
+        compare(header(e), ["Week", "Thursday"])
+        e.home()
+        compare(e.page, "week")
+    }
+
+    function test_tappingTheDayBarDoesNothing() {
+        var e = make()
+        answerAll()
+        e.openDay(1)
+        var from = fake.calls.length
+        tap(e, "dayBar")
+        compare(e.page, "day")
+        tap(e, "segment_1_360")
+        compare(e.page, "day")
+        compare(fake.calls.length, from)
+    }
+
+    function test_escapeGoesBackOneView() {
+        var e = make()
+        answerAll()
+        e.forceActiveFocus()
+        e.openDay(2)
+        e.openNew(600, 660)
+        settle(e)
+        e.forceActiveFocus()
+        keyClick(Qt.Key_Escape)
+        settle(e)
+        compare(e.page, "day")
+        keyClick(Qt.Key_Escape)
+        settle(e)
+        compare(e.page, "week")
+        //The root lets the key through: the host closes the window.
+        closeSpy.target = e
+        closeSpy.clear()
+        keyClick(Qt.Key_Escape)
+        compare(e.page, "week")
+        compare(closeSpy.count, 0)
+    }
+
+    function test_periodListThenTheAddRowThenTheRestOfTheTime() {
+        server.ranges.h2 = [range(1, 18, 0, 20, 30)]
+        var e = make()
+        answerAll()
+        e.openDay(1)
+        settle(e)
+        var first = findChild(e, "period_360"), second = findChild(e, "period_1080")
+        compare(findChild(first, "periodRange").text, "06:00 – 08:00")
+        compare(findChild(first, "periodSetpoint").text, "21°")
+        compare(second.Accessible.name, "18:00 – 20:30, 18°, edit")
+        var add = findChild(e, "addButton"), rest = findChild(e, "restOfTime")
+        verify(add.visible)
+        verify(!findChild(e, "emptyDay").visible)
+        verify(first.y < second.y && second.y < add.y && add.y < rest.y)
+        compare(findChild(e, "defaultText").text, "19°")
+        compare(findChild(e, "defaultText").Accessible.name, "Outside periods: 19°")
+    }
+
+    function test_emptyDayOffersTheFirstPeriod() {
+        var e = make()
+        answerAll()
+        e.openDay(5)
+        settle(e)
+        verify(findChild(e, "emptyDay").visible)
+        verify(!findChild(e, "addButton").visible)
+        compare(findChild(e, "emptyText").text, "Heating stays at 19° all day.")
+        tap(e, "addFirstButton")
+        compare(e.page, "form")
+        compare(e.currentForm.days, [5])
+    }
+
+    function test_touchTargets() {
+        var sizes = [{ phone: false, row: 56, target: 56 }, { phone: true, row: 48, target: 44 }]
+        for (var i = 0; i < sizes.length; i++) {
+            var e = make({ phone: sizes[i].phone })
+            answerAll()
+            compare(findChild(e, "dayRow1").height, sizes[i].row)
+            verify(findChild(e, "backButton").height >= sizes[i].target)
+            verify(findChild(e, "tab_heat").height >= sizes[i].target)
+            e.openDay(1)
+            settle(e)
+            compare(findChild(e, "period_360").height, sizes[i].row)
+            compare(findChild(e, "addButton").height, sizes[i].row)
+            verify(findChild(e, "copyButton").height >= sizes[i].target)
+            verify(findChild(e, "defaultDown").height >= sizes[i].target)
+            verify(findChild(e, "defaultDown").width >= sizes[i].target)
+            verify(findChild(e, "defaultUp").height >= sizes[i].target)
+        }
+    }
+
+    function test_pauseShowsTheBannerAndDimsTheBars() {
+        var e = make({ device: { ios: ios(2, true) }, holdSetpoint: 21 })
+        answerAll()
+        verify(findChild(e, "programStatus").visible)
+        verify(!findChild(e, "pausedBanner").visible)
+        compare(findChild(e, "weekBar1").opacity, 1)
+        var from = fake.calls.length
+        tap(e, "pauseButton")
+        compare(writes(from).map(function(c) { return c.id + "=" + c.value }), ["pe=false"])
+        answerAll()
+        verify(e.paused)
+        verify(!findChild(e, "programStatus").visible)
+        verify(findChild(e, "pausedBanner").visible)
+        compare(findChild(e, "pausedText").text, "Paused: setpoint stays at 21 °C")
+        compare(findChild(e, "weekBar1").opacity, 0.5)
+        e.openDay(1)
+        compare(findChild(e, "dayBar").opacity, 0.5)
+        e.home()
+        from = fake.calls.length
+        tap(e, "resumeButton")
+        compare(writes(from).map(function(c) { return c.id + "=" + c.value }), ["pe=true"])
+        answerAll()
+        verify(!findChild(e, "pausedBanner").visible)
+    }
+
+    function test_noPauseWithoutTheProgramSwitch() {
+        var e = make()
+        answerAll()
+        verify(!findChild(e, "programStatus").visible)
+        verify(!findChild(e, "pausedBanner").visible)
+    }
+
     function test_newSetpointWritesTheSetpointThenTheRanges() {
         var e = make()
         answerAll()
+        e.openDay(1)
         var from = fake.calls.length
         e.openNew(17 * 60 + 30, 22 * 60 + 30)
-        var form = findChild(e, "slotForm")
-        verify(form.visible)
+        var form = e.currentForm
         form.setpoint = 20.5
         form.submit()
         var w = writes(from)
@@ -162,16 +358,16 @@ TestCase {
         compare(w[1].ranges.length, 1)
         compare(w[1].ranges[0].start_hour, "17")
         compare(w[1].ranges[0].start_min, "30")
-        verify(!form.visible)
-        verify(findChild(e, "segment_2_1050") !== null)
+        compare(e.page, "day")
+        verify(findChild(e, "period_1050") !== null)
     }
 
-    function test_slotPastMidnightIsWrittenOnTwoDays() {
+    function test_periodPastMidnightIsWrittenOnTwoDays() {
         var e = make()
         answerAll()
         var from = fake.calls.length
         e.openNew(0, 60)
-        var form = findChild(e, "slotForm")
+        var form = e.currentForm
         form.setpoint = 21
         findChild(form, "startField").text = "23:00"
         findChild(form, "endField").text = "05:00"
@@ -185,28 +381,28 @@ TestCase {
         compare(days.sort(), ["1 0-5:0", "1 6-8:0", "7 23-23:59"])
     }
 
-    function test_seventhLevelIsRefusedBeforeAnyCall() {
+    function test_seventhSetpointIsRefusedBeforeAnyCall() {
         var e = make({ device: { ios: ios(6) } })
         for (var n = 1; n <= 6; n++) {
             server.ranges["h" + n] = [range(n, 6, 0, 7, 0)]
             server.states["h" + n + "sp"] = String(15 + n)
         }
         answerAll()
-        compare(findChild(e, "levelCount").text, "Levels: 6 of 6")
         var from = fake.calls.length
         e.openNew(600, 660)
-        var form = findChild(e, "slotForm")
+        var form = e.currentForm
         form.setpoint = 25
         form.submit()
         compare(fake.calls.length, from)
-        compare(findChild(form, "formMessage").text, "6 levels maximum for Heating")
-        verify(form.visible)
+        compare(findChild(form, "formMessage").text, "6 different setpoints maximum for Heating")
+        compare(e.page, "form")
     }
 
     function test_coolingOff() {
         var e = make()
         answerAll()
         e.kind = "cool"
+        e.openDay(1)
         var from = fake.calls.length
         var off = findChild(e, "coolOffButton")
         verify(off.visible)
@@ -218,7 +414,7 @@ TestCase {
         compare(w[0].value, "true")
         answerAll()
         verify(!findChild(e, "defaultDown").visible)
-        compare(findChild(e, "emptyText").text, "No slot in cooling. Default: off.")
+        compare(findChild(e, "emptyText").text, "Cooling stays off all day.")
         compare(findChild(e, "segment_0_0").Accessible.name, "Default, 00:00 to 24:00, off")
     }
 
@@ -226,8 +422,10 @@ TestCase {
         server.ranges.h2 = [range(3, 18, 0, 20, 0)]
         var e = make()
         answerAll()
+        e.openDay(1)
         var from = fake.calls.length
-        findChild(e, "copyButton").trigger()
+        tap(e, "copyButton")
+        compare(header(e), ["Monday", "Copy to…"])
         var copy = findChild(e, "copyGo")
         verify(!copy.enabled)
         findChild(e, "copyDay3").trigger()
@@ -235,8 +433,9 @@ TestCase {
         verify(!findChild(e, "copyDay1").enabled)
         copy.trigger()
         compare(writes(from).length, 0)
-        compare(findChild(e, "copyConfirmText").text, "Wednesday (1 slot) will be replaced by those of Monday.")
+        compare(findChild(e, "copyConfirmText").text, "Wednesday (1 period) will be replaced by those of Monday.")
         findChild(e, "copyReplace").trigger()
+        compare(e.page, "day")
         answerAll()
         var w = writes(from)
         compare(w.map(function(c) { return c.id }), ["h1", "h2"])
@@ -267,22 +466,26 @@ TestCase {
     function test_emptySourceIsRefused() {
         var e = make()
         answerAll()
-        e.day = 5
-        findChild(e, "copyButton").trigger()
-        verify(findChild(e, "copyEmpty").visible)
-        verify(!findChild(e, "copyGo").enabled)
+        e.openDay(5)
+        verify(!findChild(e, "copyButton").enabled)
+        var from = fake.calls.length
+        e.copyTo([2])
+        compare(writes(from).length, 0)
+        compare(findChild(e, "banner").Accessible.name, "Nothing to copy: this day has no period")
     }
 
     function test_timeRangeChangedRereadsTheLevel() {
         var e = make()
         answerAll()
+        e.openDay(1)
         var from = fake.calls.length
         server.ranges.h2 = [range(1, 12, 0, 13, 0)]
         fake.timeRangeChanged("h2")
         fake.timeRangeChanged("other")
         compare(fake.calls.slice(from).map(function(c) { return c.action + ":" + c.id }), ["get_timerange:h2"])
         answerAll()
-        verify(findChild(e, "segment_2_720") !== null)
+        verify(findChild(e, "period_720") !== null)
+        compare(findChild(e, "headerSubtitle").text, "Heating · 2 periods")
     }
 
     function test_movingALevelSwapsSetpointsAndRanges() {
@@ -291,7 +494,7 @@ TestCase {
         answerAll()
         var from = fake.calls.length
         e.openSegment({ start: 720, end: 780, level: 2, setpoint: 18 })
-        compare(findChild(e, "levelText").text, "Priority: level 2")
+        compare(findChild(e, "levelText").text, "Priority 2")
         verify(!findChild(e, "levelDown").enabled)
         compare(findChild(e, "levelUp").icon, "chevronU")
         findChild(e, "levelUp").trigger()
@@ -307,18 +510,31 @@ TestCase {
     function test_offlineIsReadOnly() {
         fake.online = false
         var e = make()
+        verify(findChild(e, "offlineText").visible)
+        verify(!findChild(e, "pauseButton").enabled)
+        e.openDay(1)
         verify(!findChild(e, "addButton").enabled)
         verify(!findChild(e, "copyButton").enabled)
+        verify(!findChild(e, "defaultUp").enabled)
     }
 
-    function test_simpleModeAppliesOneSlotOnly() {
+    function test_readOnlyHostIsReadOnly() {
+        var e = make({ readOnly: true })
+        answerAll()
+        verify(findChild(e, "offlineText").visible)
+        e.openDay(1)
+        verify(!findChild(e, "addButton").enabled)
+    }
+
+    function test_simpleModeAppliesOnePeriodOnly() {
         var e = make({ simpleMode: true, kind: "heat" })
         appliedSpy.target = e
         appliedSpy.clear()
         answerAll()
+        compare(e.page, "form")
         var form = findChild(e, "slotForm")
         verify(form.visible)
-        verify(!findChild(e, "dayBar").visible)
+        verify(findChild(e, "dayBar") === null)
         compare(findChild(form, "saveButton").text, "Apply")
         verify(!findChild(form, "cancelButton").visible)
         form.setpoint = 21
@@ -331,13 +547,14 @@ TestCase {
         compare(w[0].id, "h1")
         compare(appliedSpy.count, 1)
         verify(form.visible)
+        verify(!e.back())
     }
 
     function test_dayButtonsShowThreeLettersAndSpellTheDayOut() {
         var e = make()
         answerAll()
         e.openNew(1080, 1200)
-        var form = findChild(e, "slotForm")
+        var form = e.currentForm
         var abbr = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
         var full = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
         for (var i = 0; i < 7; ++i) {
@@ -352,7 +569,7 @@ TestCase {
         var e = make()
         answerAll()
         e.openNew(1080, 1200)
-        var form = findChild(e, "slotForm")
+        var form = e.currentForm
         var abbr = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
         for (var i = 0; i < 7; ++i)
             compare(findChild(form, "formDay" + (i + 1)).text, abbr[i])
@@ -364,7 +581,7 @@ TestCase {
         var e = make()
         answerAll()
         e.openNew(1080, 1200)
-        var form = findChild(e, "slotForm")
+        var form = e.currentForm
         var abbr = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
         for (var i = 0; i < 7; ++i)
             compare(findChild(form, "formDay" + (i + 1)).text, abbr[i])
@@ -372,19 +589,66 @@ TestCase {
 
     function test_frenchTexts() {
         verify(harness.setLanguage("fr"))
-        var e = make()
+        var e = make({ title: "Salon" })
         answerAll()
+        compare(header(e), ["Fermer", "Programme"])
+        compare(findChild(e, "dayRow1").Accessible.name, "Lundi, 1 plage")
+        compare(findChild(e, "dayRow2").Accessible.name, "Mardi, aucune plage")
+        e.openDay(1)
+        compare(header(e), ["Semaine", "Lundi"])
+        compare(findChild(e, "headerSubtitle").text, "Salon · Chauffage · 1 plage")
+        compare(findChild(e, "copyButton").text, "Copier vers…")
+        compare(findChild(e, "period_360").Accessible.name, "06:00 – 08:00, 21°, modifier")
+        compare(findChild(e, "addButton").Accessible.name, "Ajouter une plage")
+        e.openNew(600, 660)
+        compare(header(e), ["Lundi", "Nouvelle plage"])
+        e.home()
         e.kind = "cool"
-        compare(findChild(e, "emptyText").text, "Aucun créneau en clim. Défaut : 26 °C.")
-        compare(findChild(e, "copyButton").text, "Copier ce jour…")
-        compare(findChild(e, "levelCount").text, "Niveaux : 0 sur 6")
-        e.kind = "heat"
-        compare(findChild(e, "segment_1_360").Accessible.name, "Niveau 1, 06:00 à 08:00, 21°")
+        e.openDay(5)
+        compare(findChild(e, "emptyText").text, "La clim reste à 26° toute la journée.")
     }
 
-    //get_timerange fails: the level looks empty, a write would erase the server's slots.
+    function test_germanTexts() {
+        verify(harness.setLanguage("de"))
+        var e = make()
+        answerAll()
+        compare(header(e), ["Schließen", "Zeitplan"])
+        compare(findChild(e, "dayRow1").Accessible.name, "Montag, 1 Zeitraum")
+        e.openDay(1)
+        compare(header(e), ["Woche", "Montag"])
+        compare(findChild(e, "addButton").Accessible.name, "Zeitraum hinzufügen")
+    }
+
+    //The new vocabulary: periods, no slot nor level number, in the three languages.
+    function test_noSlotNorLevelWording_data() {
+        return [{ tag: "en", lang: "" }, { tag: "fr", lang: "fr" }, { tag: "de", lang: "de" }]
+    }
+    function test_noSlotNorLevelWording(data) {
+        if (data.lang !== "")
+            verify(harness.setLanguage(data.lang))
+        server.ranges.h2 = [range(1, 12, 0, 13, 0)]
+        var e = make({ device: { ios: ios(2, true) } })
+        answerAll()
+        var seen = shownTexts(e, [])
+        e.openDay(1)
+        settle(e)
+        seen = shownTexts(e, seen)
+        e.openDay(5)
+        e.home()
+        e.openDay(5)
+        settle(e)
+        seen = shownTexts(e, seen)
+        verify(seen.length > 20)
+        var bad = seen.filter(function(t) {
+            return /slot|level|niveau|créneau|Stufe|Zeitfenster|\bN-?\d/i.test(t)
+        })
+        compare(bad, [])
+    }
+
+    //get_timerange fails: the level looks empty, a write would erase the server's periods.
     function test_noWriteBeforeTheReadOrAfterItFailed() {
         var e = make()
+        e.openDay(1)
         verify(!findChild(e, "addButton").enabled)
         verify(!findChild(e, "copyButton").enabled)
         var from = fake.calls.length
@@ -422,7 +686,7 @@ TestCase {
         var e = make()
         answerAll()
         e.openNew(1080, 1200)
-        var form = findChild(e, "slotForm")
+        var form = e.currentForm
         findChild(form, "formDay2").trigger()
         findChild(form, "formDay2").trigger()
         findChild(form, "formDay2").trigger()
@@ -431,9 +695,11 @@ TestCase {
         verify(!findChild(form, "formDay2").checked)
         verify(findChild(form, "formDay3").checked)
         verify(!findChild(form, "formDay1").checked)
+        e.home()
 
         //The cool-off switch goes back to the server's value after a refused write.
         e.kind = "cool"
+        e.openDay(1)
         var off = findChild(e, "coolOffButton")
         off.trigger()
         verify(off.checked)
@@ -447,7 +713,7 @@ TestCase {
         verify(!off.checked)
     }
 
-    function test_priorityArrowStopsAtTheLastLevelThatHasSlots() {
+    function test_priorityArrowStopsAtTheLastLevelThatHasPeriods() {
         var e = make({ device: { ios: ios(4) } })
         answerAll()
         e.openSegment({ start: 360, end: 480, level: 1, setpoint: 21 })

@@ -1,27 +1,35 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 import "."
 import "TimeRangeLogic.js" as TR
 
-//Program of a climate: the slots of its heat and cool levels, one day at a
-//time. The ids come from device.ios, the writes go through
-//programClient. simpleMode is the one-slot form reused by the scenarios: it
-//never writes program_enabled nor the defaults.
-Item {
+//Program of a climate, one page at a time: Week, then Day, then the period
+//form. The ids come from device.ios, the writes go through programClient.
+//simpleMode is the one-period form reused by the scenarios: it never writes
+//program_enabled nor the defaults.
+FocusScope {
     id: root
 
     property string fontFamily
     property var device: null
     property var client: typeof programClient !== "undefined" ? programClient : null
     property bool simpleMode: false
-    //Phone: the form is a full screen sheet and there is no drag.
     property bool phone: false
     property bool readOnly: false
     property string kind: "heat"
     property int day: TR.isoDay(new Date())
+    //Name of the thermostat, and the setpoint it keeps while the program is paused.
+    property string title
+    property var holdSetpoint
+    readonly property real rowHeight: Units.dp(phone ? 48 : 56)
+    //Touch targets: 44 on a phone, 56 on the wall kiosk
+    readonly property real targetSize: Units.dp(phone ? 44 : 56)
 
     signal applied()
+    //Close on the Week page: the host closes its dialog or sheet.
+    signal closeRequested()
 
     readonly property var ios: device && device.ios ? device.ios : ({})
     readonly property var kinds: {
@@ -62,8 +70,10 @@ Item {
     property var writeDone: null
     //The segment being edited: { day, start, end, level } or null for a new one.
     property var editing: null
-    property bool formOpen: simpleMode
-    property bool copyOpen: false
+    readonly property string page: stack.currentItem ? stack.currentItem.page : ""
+    readonly property bool formOpen: page === "form"
+    readonly property bool copyOpen: page === "copy"
+    readonly property var currentForm: formOpen ? stack.currentItem.form : null
 
     function kindName(k) {
         return k === "cool" ? qsTr("Cooling") : qsTr("Heating")
@@ -76,6 +86,40 @@ Item {
 
     readonly property var defaultSetpoint: TR.toSetpoint(stateValue(kind + "_default"))
     readonly property bool coolOff: kind === "cool" && String(stateValue("cool_default_off")) === "true"
+    readonly property bool hasPause: !simpleMode && ios["program_enabled"] !== undefined
+    readonly property bool paused: hasPause && String(stateValue("program_enabled")) === "false"
+
+    function dayName(d) {
+        switch (d) {
+        case 1: return qsTr("Monday")
+        case 2: return qsTr("Tuesday")
+        case 3: return qsTr("Wednesday")
+        case 4: return qsTr("Thursday")
+        case 5: return qsTr("Friday")
+        case 6: return qsTr("Saturday")
+        default: return qsTr("Sunday")
+        }
+    }
+
+    function dayShort(d) {
+        switch (d) {
+        case 1: return qsTr("Mon", "Monday, short")
+        case 2: return qsTr("Tue", "Tuesday, short")
+        case 3: return qsTr("Wed", "Wednesday, short")
+        case 4: return qsTr("Thu", "Thursday, short")
+        case 5: return qsTr("Fri", "Friday, short")
+        case 6: return qsTr("Sat", "Saturday, short")
+        default: return qsTr("Sun", "Sunday, short")
+        }
+    }
+
+    function periodCount(d) {
+        return TR.daySegments(levels, d).length
+    }
+
+    function countText(n) {
+        return n === 0 ? qsTr("no period") : n === 1 ? qsTr("1 period") : qsTr("%1 periods").arg(n)
+    }
 
     function degrees(v) {
         return v === null || v === undefined ? "--"
@@ -115,16 +159,23 @@ Item {
         for (k in next)
             for (i = 0; i < next[k].length; i++)
                 readLevel(k, next[k][i].ioId)
-        var ids = TR.stateIds(ios, "heat").concat(TR.stateIds(ios, "cool"))
+        var ids = stateIds()
         if (ids.length)
             track(client.getStates(ids), { states: true })
+    }
+
+    function stateIds() {
+        var ids = TR.stateIds(ios, "heat").concat(TR.stateIds(ios, "cool"))
+        if (hasPause)
+            ids.push(ios["program_enabled"])
+        return ids
     }
 
     //io_changed of the climate: the setpoints may have moved, the slots have not
     function refreshStates() {
         if (!client || !completed || busy || loading)
             return
-        var ids = TR.stateIds(ios, "heat").concat(TR.stateIds(ios, "cool"))
+        var ids = stateIds()
         if (ids.length)
             track(client.getStates(ids), { states: true })
     }
@@ -292,27 +343,83 @@ Item {
 
     // --- actions ----------------------------------------------------------
 
+    // --- navigation -------------------------------------------------------
+
+    function openDay(d) {
+        if (page !== "week")
+            return
+        day = d
+        stack.push(dayPage)
+    }
+
+    function pushForm(values) {
+        if (formOpen || simpleMode)
+            return
+        var item = stack.push(formPage, { edit: values.editing === true })
+        item.form.open(values)
+    }
+
     function openNew(start, end) {
         editing = null
-        form.open({ start: start, end: end, days: [day],
-                    setpoint: defaultSetpoint !== null ? defaultSetpoint : 20 })
-        formOpen = true
-        copyOpen = false
+        pushForm({ start: start, end: end, days: [day],
+                   setpoint: defaultSetpoint !== null ? defaultSetpoint : 20 })
     }
 
     function openSegment(seg) {
         editing = { day: day, start: seg.start, end: seg.end, level: seg.level }
-        form.open({ start: seg.start, end: seg.end, days: [day], setpoint: seg.setpoint,
-                    editing: true, level: seg.level })
-        formOpen = true
-        copyOpen = false
+        pushForm({ start: seg.start, end: seg.end, days: [day], setpoint: seg.setpoint,
+                   editing: true, level: seg.level })
+    }
+
+    function openCopy() {
+        if (page !== "day" || locked)
+            return
+        var item = stack.push(copyPage)
+        item.copy.open(day)
     }
 
     function closeForm() {
-        bar.selStart = -1
-        bar.selEnd = -1
         editing = null
-        formOpen = simpleMode
+        if (formOpen && !simpleMode)
+            stack.pop()
+    }
+
+    //Named back button and Back / Escape: false on the Week page, which the host closes.
+    function back() {
+        if (simpleMode || stack.depth <= 1)
+            return false
+        if (formOpen)
+            closeForm()
+        else
+            stack.pop()
+        return true
+    }
+
+    function goBack() {
+        if (!back())
+            closeRequested()
+    }
+
+    //The host reopens the editor on the week.
+    function home() {
+        editing = null
+        if (!simpleMode && stack.depth > 1)
+            stack.pop(null, StackView.Immediate)
+    }
+
+    function setPaused(p) {
+        if (hasPause)
+            writeState(ios["program_enabled"], p ? "false" : "true", function() { root.setPaused(p) })
+    }
+
+    Keys.onPressed: (event) => {
+        if ((event.key === Qt.Key_Back || event.key === Qt.Key_Escape) && stack.depth > 1 && !simpleMode)
+            event.accepted = true
+    }
+    //On release, as the hosts do: the release must not reach the page below.
+    Keys.onReleased: (event) => {
+        if ((event.key === Qt.Key_Back || event.key === Qt.Key_Escape) && back())
+            event.accepted = true
     }
 
     function saveSlot(edit) {
@@ -323,10 +430,10 @@ Item {
     function applyRequest(request) {
         var res = TR.applySlot(levels, request)
         if (!res.ok) {
-            var text = res.error === "max_levels" ? qsTr("6 levels maximum for %1").arg(kindName(kind))
+            var text = res.error === "max_levels" ? qsTr("6 different setpoints maximum for %1").arg(kindName(kind))
                                                   : qsTr("The end must follow the start")
-            if (formOpen)
-                form.message = text
+            if (currentForm)
+                currentForm.message = text
             else
                 banner = text
             return
@@ -359,11 +466,12 @@ Item {
         var res = TR.copyDay(levels, day, targets)
         if (!res.ok) {
             if (res.error === "empty_source")
-                banner = qsTr("Nothing to copy: this day has no slot")
+                banner = qsTr("Nothing to copy: this day has no period")
             return
         }
         var k = kind, src = day
-        copyOpen = false
+        if (copyOpen)
+            stack.pop()
         commit(res, function() { root.kind = k; root.day = src; root.copyTo(targets) },
                qsTr("Incomplete copy: not saved, try again"))
     }
@@ -394,311 +502,260 @@ Item {
 
     // --- view -------------------------------------------------------------
 
-    Flickable {
-        id: flick
+    readonly property string backText: page === "week" ? qsTr("Close")
+                                     : page === "day" ? qsTr("Week") : dayName(day)
+    readonly property string headerTitle: page === "week" ? qsTr("Schedule")
+                                        : page === "day" ? dayName(day)
+                                        : page === "copy" ? qsTr("Copy to…")
+                                        : stack.currentItem && stack.currentItem.edit ? qsTr("Period") : qsTr("New period")
+    readonly property string headerSubtitle: {
+        if (page === "week")
+            return title
+        var parts = title !== "" ? [title] : []
+        parts.push(kindName(kind))
+        if (page === "day")
+            parts.push(countText(periodCount(day)))
+        return parts.join(" · ")
+    }
+
+    ColumnLayout {
         anchors.fill: parent
-        contentHeight: column.implicitHeight + Units.dp(16)
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
-        interactive: !(root.formOpen && root.phone)
+        spacing: Units.dp(10)
 
-        ColumnLayout {
-            id: column
-            width: flick.width
-            spacing: Units.dp(10)
+        Item {
+            objectName: "programHeader"
+            visible: !root.simpleMode
+            Layout.fillWidth: true
+            implicitHeight: headerColumn.implicitHeight + Units.dp(10)
 
-            Rectangle {
-                objectName: "banner"
-                visible: root.banner !== ""
-                color: Theme.colorAlpha(Theme.redColor, 0.2)
-                border.color: Theme.redColor
-                radius: Units.dp(4)
-                Layout.fillWidth: true
-                implicitHeight: bannerRow.implicitHeight + Units.dp(12)
-                Accessible.role: Accessible.AlertMessage
-                Accessible.name: root.banner
+            ColumnLayout {
+                id: headerColumn
+                anchors { left: parent.left; right: parent.right; top: parent.top }
+                spacing: Units.dp(8)
 
                 RowLayout {
-                    id: bannerRow
-                    anchors.fill: parent
-                    anchors.margins: Units.dp(6)
-                    Text {
-                        text: root.banner
-                        color: Theme.whiteColor
-                        wrapMode: Text.WordWrap
-                        font { family: root.fontFamily; pixelSize: Units.dp(14) }
-                        Layout.fillWidth: true
-                    }
+                    Layout.fillWidth: true
+                    spacing: Units.dp(12)
+
                     TimeRangeButton {
-                        objectName: "retryButton"
-                        visible: root.retryAction !== null
+                        objectName: "backButton"
                         fontFamily: root.fontFamily
-                        text: qsTr("Retry")
-                        enabled: !root.offline && !root.busy && !root.loading
-                        onClicked: root.retry()
+                        implicitHeight: root.rowHeight
+                        sidePadding: Units.dp(20)
+                        leading: root.page === "week" ? "close" : "chevronL"
+                        text: root.backText
+                        textColor: Theme.blueColor
+                        onClicked: root.goBack()
                     }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: Units.dp(2)
+                        Text {
+                            objectName: "headerTitle"
+                            Layout.fillWidth: true
+                            text: root.headerTitle
+                            color: Theme.whiteColor
+                            elide: Text.ElideRight
+                            font { family: root.fontFamily; pixelSize: Units.dp(20); weight: Font.DemiBold }
+                            Accessible.role: Accessible.Heading
+                            Accessible.name: text
+                        }
+                        Text {
+                            objectName: "headerSubtitle"
+                            Layout.fillWidth: true
+                            visible: text !== ""
+                            text: root.headerSubtitle
+                            color: Theme.mutedColor
+                            elide: Text.ElideRight
+                            font { family: root.fontFamily; pixelSize: Units.dp(13) }
+                        }
+                    }
+
+                    Item {
+                        id: wideTabs
+                        implicitWidth: tabs.implicitWidth
+                        implicitHeight: tabs.implicitHeight
+                        visible: !root.phone && tabs.shown
+                    }
+
+                    TimeRangeButton {
+                        objectName: "copyButton"
+                        visible: root.page === "day"
+                        fontFamily: root.fontFamily
+                        implicitHeight: root.rowHeight
+                        sidePadding: Units.dp(20)
+                        text: qsTr("Copy to…")
+                        enabled: !root.locked && root.periodCount(root.day) > 0
+                        onClicked: root.openCopy()
+                    }
+                }
+
+                Item {
+                    id: phoneTabs
+                    Layout.fillWidth: true
+                    implicitHeight: tabs.implicitHeight
+                    visible: root.phone && tabs.shown
                 }
             }
 
-            Text {
-                objectName: "loadingText"
-                visible: root.loading && !root.loaded
-                text: qsTr("Loading the program…")
-                color: Theme.mutedColor
-                font { family: root.fontFamily; pixelSize: Units.dp(15) }
-                Accessible.role: Accessible.StaticText
-                Accessible.name: text
-            }
+            Row {
+                id: tabs
+                readonly property bool shown: root.page === "week" && root.kinds.length > 1
+                parent: root.phone ? phoneTabs : wideTabs
+                width: root.phone ? parent.width : implicitWidth
+                spacing: 0
 
-            Text {
-                objectName: "noProgramText"
-                visible: !root.kinds.length
-                text: qsTr("This climate has no program.")
-                color: Theme.mutedColor
-                font { family: root.fontFamily; pixelSize: Units.dp(15) }
-            }
-
-            RowLayout {
-                visible: root.kinds.length > 1 && !root.simpleMode
-                spacing: Units.dp(4)
                 Repeater {
                     model: root.kinds
                     delegate: TimeRangeButton {
                         required property string modelData
                         objectName: "tab_" + modelData
                         fontFamily: root.fontFamily
-                        text: root.kindName(modelData) + " (" + TR.usedLevels(root.levelsByKind[modelData] || []) + ")"
-                        checked: root.kind === modelData
+                        implicitHeight: root.rowHeight
+                        width: root.phone ? tabs.width / root.kinds.length : implicitWidth
+                        sidePadding: Units.dp(36)
+                        text: root.kindName(modelData)
+                        accent: root.kind === modelData
+                        accentColor: modelData === "cool" ? Theme.blueColor : Theme.yellowColor
+                        checkable: true
                         Accessible.role: Accessible.PageTab
-                        onClicked: {
-                            root.kind = modelData
-                            root.closeForm()
-                            root.copyOpen = false
-                        }
+                        Accessible.checked: root.kind === modelData
+                        onClicked: root.kind = modelData
                     }
                 }
             }
 
-            Flow {
-                visible: !root.simpleMode && root.kinds.length > 0
-                spacing: Units.dp(4)
-                Layout.fillWidth: true
-                Repeater {
-                    model: 7
-                    delegate: TimeRangeButton {
-                        required property int index
-                        objectName: "day" + (index + 1)
-                        fontFamily: root.fontFamily
-                        text: form.dayShort(index + 1)
-                        sidePadding: Units.dp(8)
-                        checked: root.day === index + 1
-                        Accessible.role: Accessible.PageTab
-                        Accessible.name: form.dayName(index + 1)
-                        onClicked: {
-                            root.day = index + 1
-                            root.closeForm()
-                            root.copyOpen = false
-                        }
-                    }
-                }
+            Rectangle {
+                anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+                height: 1
+                color: Theme.borderColor
             }
+        }
 
-            TimeRangeBar {
-                id: bar
-                objectName: "dayBar"
-                visible: !root.simpleMode && root.kinds.length > 0
-                Layout.fillWidth: true
-                fontFamily: root.fontFamily
-                kind: root.kind
-                levels: root.levels
-                day: root.day
-                defaultSetpoint: root.defaultSetpoint
-                defaultOff: root.coolOff
-                showNow: root.day === TR.isoDay(new Date())
-                nowMinutes: root.nowMinutes
-                dragEnabled: !root.phone
-                readOnly: root.locked
-                onSegmentActivated: (seg) => root.openSegment(seg)
-                onGapActivated: (minute) => {
-                    var s = Math.floor(minute / 60) * 60
-                    root.openNew(s, Math.min(TR.DayMinutes, s + 60))
-                }
-                onRangeSelected: (start, end) => root.openNew(start, end)
-            }
-
-            Text {
-                objectName: "emptyText"
-                visible: !root.simpleMode && root.kinds.length > 0 && root.loaded
-                         && TR.usedLevels(root.levels) === 0
-                text: root.kind === "cool"
-                      ? (root.coolOff ? qsTr("No slot in cooling. Default: off.")
-                                      : qsTr("No slot in cooling. Default: %1.").arg(root.degrees(root.defaultSetpoint)))
-                      : qsTr("No slot in heating. Default: %1.").arg(root.degrees(root.defaultSetpoint))
-                color: Theme.mutedColor
-                wrapMode: Text.WordWrap
-                font { family: root.fontFamily; pixelSize: Units.dp(14) }
-                Layout.fillWidth: true
-            }
-
-            Flow {
-                visible: !root.simpleMode && root.kinds.length > 0
-                spacing: Units.dp(6)
-                Layout.fillWidth: true
-                TimeRangeButton {
-                    objectName: "addButton"
-                    fontFamily: root.fontFamily
-                    text: qsTr("+ Slot")
-                    enabled: !root.locked
-                    onClicked: root.openNew(18 * 60, 22 * 60)
-                }
-                TimeRangeButton {
-                    objectName: "copyButton"
-                    fontFamily: root.fontFamily
-                    text: qsTr("Copy this day…")
-                    enabled: !root.locked
-                    onClicked: {
-                        root.closeForm()
-                        copyPanel.open(root.day)
-                        root.copyOpen = true
-                    }
-                }
-                Text {
-                    objectName: "levelCount"
-                    height: Units.dp(44)
-                    verticalAlignment: Text.AlignVCenter
-                    text: qsTr("Levels: %1 of %2").arg(TR.usedLevels(root.levels)).arg(TR.MaxLevels)
-                    color: Theme.mutedColor
-                    font { family: root.fontFamily; pixelSize: Units.dp(14) }
-                }
-            }
-
-            TimeRangeCopy {
-                id: copyPanel
-                visible: root.copyOpen && !root.simpleMode
-                Layout.fillWidth: true
-                fontFamily: root.fontFamily
-                levels: root.levels
-                names: form
-                onCopyRequested: (targets) => root.copyTo(targets)
-                onCancelRequested: root.copyOpen = false
-            }
-
-            Item {
-                id: inlineSlot
-                visible: root.formOpen && !root.phone
-                Layout.fillWidth: true
-                implicitHeight: visible ? form.implicitHeight : 0
-            }
+        Rectangle {
+            objectName: "banner"
+            visible: root.banner !== ""
+            color: Theme.colorAlpha(Theme.redColor, 0.2)
+            border.color: Theme.redColor
+            radius: Units.dp(4)
+            Layout.fillWidth: true
+            implicitHeight: bannerRow.implicitHeight + Units.dp(12)
+            Accessible.role: Accessible.AlertMessage
+            Accessible.name: root.banner
 
             RowLayout {
-                visible: !root.simpleMode && root.kinds.length > 0
-                spacing: Units.dp(6)
-                TimeRangeButton {
-                    objectName: "defaultDown"
-                    visible: !root.coolOff
-                    fontFamily: root.fontFamily
-                    text: "−"
-                    enabled: !root.locked && root.defaultSetpoint !== null
-                    Accessible.name: qsTr("Lower the default setpoint")
-                    onClicked: root.stepDefault(-TR.SetpointStep)
-                }
+                id: bannerRow
+                anchors.fill: parent
+                anchors.margins: Units.dp(6)
                 Text {
-                    objectName: "defaultText"
-                    text: root.coolOff ? qsTr("Default: off") : qsTr("Default: %1").arg(root.degrees(root.defaultSetpoint))
+                    text: root.banner
                     color: Theme.whiteColor
-                    font { family: root.fontFamily; pixelSize: Units.dp(15) }
+                    wrapMode: Text.WordWrap
+                    font { family: root.fontFamily; pixelSize: Units.dp(14) }
+                    Layout.fillWidth: true
                 }
                 TimeRangeButton {
-                    objectName: "defaultUp"
-                    visible: !root.coolOff
+                    objectName: "retryButton"
+                    visible: root.retryAction !== null
                     fontFamily: root.fontFamily
-                    text: "+"
-                    enabled: !root.locked && root.defaultSetpoint !== null
-                    Accessible.name: qsTr("Raise the default setpoint")
-                    onClicked: root.stepDefault(TR.SetpointStep)
+                    text: qsTr("Retry")
+                    enabled: !root.offline && !root.busy && !root.loading
+                    onClicked: root.retry()
                 }
             }
+        }
 
-            TimeRangeButton {
-                objectName: "coolOffButton"
-                visible: !root.simpleMode && root.kind === "cool" && root.ios["cool_default_off"] !== undefined
+        StackView {
+            id: stack
+            objectName: "programStack"
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            initialItem: root.simpleMode ? formPage : weekPage
+
+            readonly property int duration: Theme.reduceMotion ? 0 : 150
+            pushEnter: Transition {
+                NumberAnimation { property: "opacity"; from: 0; to: 1; duration: stack.duration }
+                NumberAnimation { property: "x"; from: Units.dp(40); to: 0; duration: stack.duration; easing.type: Easing.OutCubic }
+            }
+            pushExit: Transition {
+                NumberAnimation { property: "opacity"; from: 1; to: 0; duration: stack.duration }
+            }
+            popEnter: Transition {
+                NumberAnimation { property: "opacity"; from: 0; to: 1; duration: stack.duration }
+            }
+            popExit: Transition {
+                NumberAnimation { property: "opacity"; from: 1; to: 0; duration: stack.duration }
+                NumberAnimation { property: "x"; from: 0; to: Units.dp(40); duration: stack.duration; easing.type: Easing.InCubic }
+            }
+        }
+    }
+
+    Component {
+        id: weekPage
+        TimeRangeWeek {
+            editor: root
+        }
+    }
+
+    Component {
+        id: dayPage
+        TimeRangeDay {
+            editor: root
+        }
+    }
+
+    Component {
+        id: formPage
+        Flickable {
+            id: formFlick
+            readonly property string page: "form"
+            property bool edit: false
+            property alias form: pageForm
+            contentHeight: pageForm.implicitHeight + Units.dp(16)
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
+
+            TimeRangeForm {
+                id: pageForm
+                objectName: "slotForm"
+                width: formFlick.width
                 fontFamily: root.fontFamily
-                text: qsTr("Cooling off outside slots")
-                checkable: true
-                checked: root.coolOff
-                enabled: !root.locked
-                onClicked: root.setCoolOff(!root.coolOff)
-            }
-
-            Text {
-                visible: !root.simpleMode && root.kinds.length > 0
-                text: qsTr("Week")
-                color: Theme.mutedColor
-                font { family: root.fontFamily; pixelSize: Units.dp(14) }
-            }
-
-            Repeater {
-                model: !root.simpleMode && root.kinds.length > 0 ? 7 : 0
-                delegate: RowLayout {
-                    id: weekRow
-                    required property int index
-                    Layout.fillWidth: true
-                    spacing: Units.dp(6)
-                    Text {
-                        text: form.dayShort(weekRow.index + 1)
-                        color: root.day === weekRow.index + 1 ? Theme.blueColor : Theme.mutedColor
-                        font { family: root.fontFamily; pixelSize: Units.dp(13) }
-                        Layout.preferredWidth: Units.dp(32)
-                    }
-                    TimeRangeBar {
-                        objectName: "weekBar" + (weekRow.index + 1)
-                        compact: true
-                        Layout.fillWidth: true
-                        kind: root.kind
-                        levels: root.levels
-                        day: weekRow.index + 1
-                        defaultSetpoint: root.defaultSetpoint
-                        defaultOff: root.coolOff
-                        Accessible.name: form.dayName(weekRow.index + 1)
-                        onDayActivated: {
-                            root.day = weekRow.index + 1
-                            root.closeForm()
-                        }
-                    }
+                simpleMode: root.simpleMode
+                readOnly: root.locked
+                levelCount: root.lowestLevel
+                onSaveRequested: (edit) => root.saveSlot(edit)
+                onDeleteRequested: root.deleteSlot()
+                onCancelRequested: root.closeForm()
+                onMoveLevelRequested: (delta) => root.moveLevel(delta)
+                Component.onCompleted: {
+                    if (root.simpleMode)
+                        open({ start: 18 * 60, end: 22 * 60, days: [root.day], setpoint: 20 })
                 }
             }
         }
     }
 
-    //Phone: full screen sheet over the editor.
-    Rectangle {
-        id: sheet
-        anchors.fill: parent
-        visible: root.formOpen && root.phone
-        color: Theme.backgroundColor
-        z: 2
-        MouseArea { anchors.fill: parent }
-    }
+    Component {
+        id: copyPage
+        Flickable {
+            id: copyFlick
+            readonly property string page: "copy"
+            property alias copy: pageCopy
+            contentHeight: pageCopy.implicitHeight + Units.dp(16)
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
 
-    TimeRangeForm {
-        id: form
-        objectName: "slotForm"
-        parent: root.phone ? sheet : inlineSlot
-        visible: root.formOpen
-        width: parent ? parent.width - (root.phone ? Units.dp(32) : 0) : 0
-        x: root.phone ? Units.dp(16) : 0
-        y: root.phone ? Units.dp(16) : 0
-        fontFamily: root.fontFamily
-        simpleMode: root.simpleMode
-        readOnly: root.locked
-        levelCount: root.lowestLevel
-        onSaveRequested: (edit) => root.saveSlot(edit)
-        onDeleteRequested: root.deleteSlot()
-        onCancelRequested: root.closeForm()
-        onMoveLevelRequested: (delta) => root.moveLevel(delta)
-        Component.onCompleted: {
-            if (root.simpleMode)
-                open({ start: 18 * 60, end: 22 * 60, days: [root.day], setpoint: 20 })
+            TimeRangeCopy {
+                id: pageCopy
+                width: copyFlick.width
+                fontFamily: root.fontFamily
+                levels: root.levels
+                names: root
+                onCopyRequested: (targets) => root.copyTo(targets)
+                onCancelRequested: root.back()
+            }
         }
     }
 }

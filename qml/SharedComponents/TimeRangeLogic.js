@@ -569,3 +569,12 @@ function isoDay(date) {
     var d = date.getDay()
     return d === 0 ? 7 : d
 }
+
+//Colour of a level on the bar and in the period rows; `none` outside 1..6.
+function levelColor(kind, n, none) {
+    var heat = ["#ffe08a", "#ffc247", "#ff9a3c", "#f2693a", "#d94a4a", "#b3345f"]
+    var cool = ["#a6e3f2", "#6cc9e6", "#38b0d3", "#3b8fd0", "#4a6fd0", "#6a55c4"]
+    if (n < 1 || n > MaxLevels)
+        return none
+    return (kind === "cool" ? cool : heat)[n - 1]
+}

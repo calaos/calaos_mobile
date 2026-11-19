@@ -194,36 +194,32 @@ Item {
     BottomSheet {
         id: programSheet
         objectName: "programSheet"
-        title: qsTr("Program")
-        heightRatio: 0.9
-        //The day bar is dragged: a swipe must not take the sheet down with it
+        fullScreen: true
+        //Pages slide sideways: a swipe must not take the sheet down with them
         interactive: false
         fontFamily: host.fontFamily
+
+        onOpened: editor.forceActiveFocus()
+        onClosed: editor.home()
 
         TimeRangeEditor {
             id: editor
             objectName: "programEditor"
-            anchors { left: parent.left; right: parent.right; top: parent.top; bottom: programClose.top }
+            anchors.fill: parent
             fontFamily: host.fontFamily
             device: climate.modelData ? climate.modelData.device : ({})
             client: typeof programClient !== "undefined" ? programClient : null
             phone: true
             readOnly: climate.status.kind === "offline"
+            title: climate.name
+            holdSetpoint: climate.values ? climate.values.target : undefined
+            onCloseRequested: programSheet.close()
 
             Connections {
                 target: climate.modelData ? climate.modelData : null
                 ignoreUnknownSignals: true
                 function onDeviceChange() { editor.refreshStates() }
             }
-        }
-
-        TimeRangeButton {
-            id: programClose
-            objectName: "programClose"
-            anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
-            fontFamily: host.fontFamily
-            text: qsTr("Close")
-            onClicked: programSheet.close()
         }
     }
 }

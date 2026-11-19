@@ -146,7 +146,6 @@ ColumnLayout {
                 objectName: "programStripBar_" + row.modelData
                 Layout.fillWidth: true
                 compact: true
-                readOnly: true
                 fontFamily: root.fontFamily
                 kind: row.modelData
                 levels: root.levelsByKind[row.modelData]

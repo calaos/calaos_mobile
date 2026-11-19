@@ -252,7 +252,7 @@ ColumnLayout {
         spacing: Units.dp(6)
         Text {
             objectName: "levelText"
-            text: qsTr("Priority: level %1").arg(root.level)
+            text: qsTr("Priority %1").arg(root.level)
             color: Theme.whiteColor
             font { family: root.fontFamily; pixelSize: Units.dp(15) }
         }

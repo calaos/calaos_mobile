@@ -903,21 +903,21 @@
     <message>
         <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="255"/>
         <source>Hide range help</source>
-        <translation>Masquer l'aide de la plage</translation>
+        <translation>Masquer l&apos;aide de la plage</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="283"/>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="285"/>
         <source>In auto, the program sets a range: the lower end follows the heating, the upper end the cooling. The two are kept at least %1 apart.</source>
         <translation>En auto, le programme fixe une plage : la borne basse suit le chauffage, la borne haute le refroidissement. Les deux restent écartées d&apos;au moins %1.</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="285"/>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="287"/>
         <source>In auto, the program sets a range: the lower end follows the heating, the upper end the cooling. The two are kept a minimum apart.</source>
         <translation>En auto, le programme fixe une plage : la borne basse suit le chauffage, la borne haute le refroidissement. Les deux restent écartées d&apos;un minimum.</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="319"/>
-        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="338"/>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="321"/>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="340"/>
         <source>Program and settings</source>
         <translation>Programme et réglages</translation>
     </message>
@@ -935,12 +935,12 @@
         <translation>Chauffage</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/ClimateProgramStrips.qml" line="158"/>
+        <location filename="../qml/SharedComponents/ClimateProgramStrips.qml" line="157"/>
         <source>Cooling today</source>
         <translation>Climatisation aujourd&apos;hui</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/ClimateProgramStrips.qml" line="158"/>
+        <location filename="../qml/SharedComponents/ClimateProgramStrips.qml" line="157"/>
         <source>Heating today</source>
         <translation>Chauffage aujourd&apos;hui</translation>
     </message>
@@ -970,16 +970,6 @@
         <location filename="../qml/mobile/ClimateSheet.qml" line="146"/>
         <source>Mode</source>
         <translation>Mode</translation>
-    </message>
-    <message>
-        <location filename="../qml/mobile/ClimateSheet.qml" line="197"/>
-        <source>Program</source>
-        <translation>Programme</translation>
-    </message>
-    <message>
-        <location filename="../qml/mobile/ClimateSheet.qml" line="225"/>
-        <source>Close</source>
-        <translation>Fermer</translation>
     </message>
 </context>
 <context>
@@ -2112,7 +2102,6 @@
         <location filename="../qml/desktop/DialogClimate.qml" line="52"/>
         <location filename="../qml/desktop/DialogClimate.qml" line="124"/>
         <location filename="../qml/desktop/DialogClimate.qml" line="149"/>
-        <location filename="../qml/desktop/DialogClimate.qml" line="168"/>
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
@@ -2135,11 +2124,6 @@
         <location filename="../qml/desktop/DialogClimate.qml" line="145"/>
         <source>More settings — %1</source>
         <translation>Plus de réglages — %1</translation>
-    </message>
-    <message>
-        <location filename="../qml/desktop/DialogClimate.qml" line="164"/>
-        <source>Program — %1</source>
-        <translation>Programme — %1</translation>
     </message>
 </context>
 <context>
@@ -3272,32 +3256,40 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>NoteBack</name>
     <message>
+        <location filename="../widgets/Note/NoteBack.qml" line="48"/>
         <source>Edit note</source>
-        <translation type="vanished">Editer la note</translation>
+        <translation>Editer la note</translation>
     </message>
     <message>
+        <location filename="../widgets/Note/NoteBack.qml" line="49"/>
         <source>Note</source>
-        <translation type="vanished">Note</translation>
+        <translation>Note</translation>
     </message>
     <message>
+        <location filename="../widgets/Note/NoteBack.qml" line="50"/>
         <source>Write your note to be displayed on the desktop</source>
-        <translation type="vanished">Ecrivez votre note qui sera affichée sur le bureau</translation>
+        <translation>Ecrivez votre note qui sera affichée sur le bureau</translation>
     </message>
     <message>
+        <location filename="../widgets/Note/NoteBack.qml" line="61"/>
         <source>Send by mail</source>
-        <translation type="vanished">Envoyer par mail</translation>
+        <translation>Envoyer par mail</translation>
     </message>
     <message>
+        <location filename="../widgets/Note/NoteBack.qml" line="91"/>
+        <location filename="../widgets/Note/NoteBack.qml" line="107"/>
         <source>Close</source>
-        <translation type="vanished">Fermer</translation>
+        <translation>Fermer</translation>
     </message>
     <message>
+        <location filename="../widgets/Note/NoteBack.qml" line="104"/>
         <source>No Emails</source>
-        <translation type="vanished">Aucune adresses</translation>
+        <translation>Aucune adresses</translation>
     </message>
     <message>
+        <location filename="../widgets/Note/NoteBack.qml" line="105"/>
         <source>No emails are configured. Please go to the Configuration panel and add at least one email address</source>
-        <translation type="vanished">Aucune adresses email n&apos;est configuré. Veuillez aller dans le panneau de configuration et ajoutez en au moins une</translation>
+        <translation>Aucune adresses email n&apos;est configuré. Veuillez aller dans le panneau de configuration et ajoutez en au moins une</translation>
     </message>
 </context>
 <context>
@@ -3360,8 +3352,9 @@ L&apos;option de retour en arrière est également disponible dans le Panneau de
 <context>
     <name>QObject</name>
     <message>
+        <location filename="../3rd_party/drivelist_linux/linuxdrivelist.cpp" line="121"/>
         <source>Internal SD card reader</source>
-        <translation type="vanished">Lecteur de carte SD interne</translation>
+        <translation>Lecteur de carte SD interne</translation>
     </message>
 </context>
 <context>
@@ -3773,38 +3766,23 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
 <context>
     <name>TimeRangeBar</name>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeBar.qml" line="57"/>
-        <source>Off</source>
-        <translation>Arrêt</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeBar.qml" line="62"/>
+        <location filename="../qml/SharedComponents/TimeRangeBar.qml" line="41"/>
         <source>off</source>
         <translation>arrêt</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeBar.qml" line="65"/>
+        <location filename="../qml/SharedComponents/TimeRangeBar.qml" line="44"/>
         <source>Default, %1 to %2, %3</source>
         <translation>Défaut, %1 à %2, %3</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeBar.qml" line="66"/>
-        <source>Level %1, %2 to %3, %4</source>
-        <translation>Niveau %1, %2 à %3, %4</translation>
+        <location filename="../qml/SharedComponents/TimeRangeBar.qml" line="45"/>
+        <source>%1 to %2, %3</source>
+        <translation>%1 à %2, %3</translation>
     </message>
 </context>
 <context>
     <name>TimeRangeCopy</name>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="61"/>
-        <source>%1 (1 slot)</source>
-        <translation>%1 (1 créneau)</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="62"/>
-        <source>%1 (%2 slots)</source>
-        <translation>%1 (%2 créneaux)</translation>
-    </message>
     <message>
         <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="65"/>
         <source>%1 and %2</source>
@@ -3813,7 +3791,12 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
     <message>
         <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="67"/>
         <source>%1 will be replaced by those of %2.</source>
-        <translation>Remplacement de %1 par les créneaux de %2.</translation>
+        <translation>%1 sera remplacé par les plages de %2.</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="91"/>
+        <source>Nothing to copy: this day has no period</source>
+        <translation>Rien à copier : ce jour n’a aucune plage</translation>
     </message>
     <message>
         <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="136"/>
@@ -3837,11 +3820,6 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <translation>Copier %1 vers</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="91"/>
-        <source>Nothing to copy: this day has no slot</source>
-        <translation>Rien à copier : ce jour n&apos;a pas de créneau</translation>
-    </message>
-    <message>
         <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="177"/>
         <source>Replace and copy</source>
         <translation>Remplacer et copier</translation>
@@ -3852,136 +3830,274 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <translation>Jours ouvrés</translation>
     </message>
     <message>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="61"/>
+        <source>%1 (1 period)</source>
+        <translation>%1 (1 plage)</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="62"/>
+        <source>%1 (%2 periods)</source>
+        <translation>%1 (%2 plages)</translation>
+    </message>
+    <message>
         <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="130"/>
         <source>Weekend</source>
         <translation>Week-end</translation>
     </message>
 </context>
 <context>
-    <name>TimeRangeEditor</name>
+    <name>TimeRangeDay</name>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="146"/>
-        <source>Could not read the program, try again</source>
-        <translation>Impossible de lire le programme, réessayez</translation>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="66"/>
+        <source>%1, %2, edit</source>
+        <translation>%1, %2, modifier</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="326"/>
-        <source>6 levels maximum for %1</source>
-        <translation>6 niveaux maximum pour %1</translation>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="96"/>
+        <source>Edit</source>
+        <translation>Modifier</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="69"/>
-        <source>Cooling</source>
-        <translation>Clim</translation>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="128"/>
+        <source>No period that day</source>
+        <translation>Aucune plage ce jour-là</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="69"/>
-        <source>Heating</source>
-        <translation>Chauffage</translation>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="137"/>
+        <source>Heating stays at %1 all day.</source>
+        <translation>Le chauffage reste à %1 toute la journée.</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="626"/>
-        <source>Cooling off outside slots</source>
-        <translation>Clim arrêtée hors créneaux</translation>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="138"/>
+        <source>Cooling stays off all day.</source>
+        <translation>La clim reste arrêtée toute la journée.</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="557"/>
-        <source>Copy this day…</source>
-        <translation>Copier ce jour…</translation>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="139"/>
+        <source>Cooling stays at %1 all day.</source>
+        <translation>La clim reste à %1 toute la journée.</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="607"/>
-        <source>Default: %1</source>
-        <translation>Défaut : %1</translation>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="151"/>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="171"/>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="188"/>
+        <source>Add a period</source>
+        <translation>Ajouter une plage</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="607"/>
-        <source>Default: off</source>
-        <translation>Défaut : arrêt</translation>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="220"/>
+        <source>The rest of the time</source>
+        <translation>Le reste du temps</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="368"/>
-        <source>Incomplete copy: not saved, try again</source>
-        <translation>Copie incomplète : non enregistré, réessayer</translation>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="227"/>
+        <source>outside periods</source>
+        <translation>hors plages</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="569"/>
-        <source>Levels: %1 of %2</source>
-        <translation>Niveaux : %1 sur %2</translation>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="241"/>
+        <source>Off</source>
+        <translation>Arrêt</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="446"/>
-        <source>Loading the program…</source>
-        <translation>Chargement du programme…</translation>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="245"/>
+        <source>Cooling off outside periods</source>
+        <translation>Clim arrêtée hors plages</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="602"/>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="270"/>
         <source>Lower the default setpoint</source>
         <translation>Baisser la consigne par défaut</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="617"/>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="283"/>
+        <source>Outside periods: %1</source>
+        <translation>Hors plages : %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="294"/>
         <source>Raise the default setpoint</source>
         <translation>Monter la consigne par défaut</translation>
     </message>
+</context>
+<context>
+    <name>TimeRangeEditor</name>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="535"/>
-        <source>No slot in cooling. Default: %1.</source>
-        <translation>Aucun créneau en clim. Défaut : %1.</translation>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="197"/>
+        <source>Could not read the program, try again</source>
+        <translation>Impossible de lire le programme, réessayez</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="534"/>
-        <source>No slot in cooling. Default: off.</source>
-        <translation>Aucun créneau en clim. Défaut : arrêt.</translation>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="79"/>
+        <source>Cooling</source>
+        <translation>Clim</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="536"/>
-        <source>No slot in heating. Default: %1.</source>
-        <translation>Aucun créneau en chauffage. Défaut : %1.</translation>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="79"/>
+        <source>Heating</source>
+        <translation>Chauffage</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="362"/>
-        <source>Nothing to copy: this day has no slot</source>
-        <translation>Rien à copier : ce jour n&apos;a pas de créneau</translation>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="94"/>
+        <source>Monday</source>
+        <translation>Lundi</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="169"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="95"/>
+        <source>Tuesday</source>
+        <translation>Mardi</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="96"/>
+        <source>Wednesday</source>
+        <translation>Mercredi</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="97"/>
+        <source>Thursday</source>
+        <translation>Jeudi</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="98"/>
+        <source>Friday</source>
+        <translation>Vendredi</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="99"/>
+        <source>Saturday</source>
+        <translation>Samedi</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="100"/>
+        <source>Sunday</source>
+        <translation>Dimanche</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="106"/>
+        <source>Mon</source>
+        <comment>Monday, short</comment>
+        <translation>Lun</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="107"/>
+        <source>Tue</source>
+        <comment>Tuesday, short</comment>
+        <translation>Mar</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="108"/>
+        <source>Wed</source>
+        <comment>Wednesday, short</comment>
+        <translation>Mer</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="109"/>
+        <source>Thu</source>
+        <comment>Thursday, short</comment>
+        <translation>Jeu</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="110"/>
+        <source>Fri</source>
+        <comment>Friday, short</comment>
+        <translation>Ven</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="111"/>
+        <source>Sat</source>
+        <comment>Saturday, short</comment>
+        <translation>Sam</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="112"/>
+        <source>Sun</source>
+        <comment>Sunday, short</comment>
+        <translation>Dim</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="121"/>
+        <source>no period</source>
+        <translation>aucune plage</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="121"/>
+        <source>1 period</source>
+        <translation>1 plage</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="121"/>
+        <source>%1 periods</source>
+        <translation>%1 plages</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="476"/>
+        <source>Incomplete copy: not saved, try again</source>
+        <translation>Copie incomplète : non enregistré, réessayer</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="220"/>
         <source>Not saved, try again</source>
         <translation>Non enregistré, réessayer</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="436"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="433"/>
+        <source>6 different setpoints maximum for %1</source>
+        <translation>6 consignes différentes au maximum pour %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="469"/>
+        <source>Nothing to copy: this day has no period</source>
+        <translation>Rien à copier : ce jour n’a aucune plage</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="505"/>
+        <source>Close</source>
+        <translation>Fermer</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="507"/>
+        <source>Schedule</source>
+        <translation>Programme</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="509"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="588"/>
+        <source>Copy to…</source>
+        <translation>Copier vers…</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="510"/>
+        <source>Period</source>
+        <translation>Plage</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="510"/>
+        <source>New period</source>
+        <translation>Nouvelle plage</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="662"/>
         <source>Retry</source>
         <translation>Réessayer</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="174"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="225"/>
         <source>Saving failed, try again</source>
         <translation>Échec de l&apos;enregistrement, réessayer</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="550"/>
-        <source>+ Slot</source>
-        <translation>+ Créneau</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="171"/>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="327"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="222"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="434"/>
         <source>The end must follow the start</source>
         <translation>La fin doit suivre le début</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="173"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="224"/>
         <source>This account cannot change the program</source>
         <translation>Ce compte ne peut pas modifier le programme</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="456"/>
-        <source>This climate has no program.</source>
-        <translation>Ce climat n&apos;a pas de programme.</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="635"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="506"/>
         <source>Week</source>
         <translation>Semaine</translation>
     </message>
@@ -4076,6 +4192,11 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <translation>%1 plus 15 min</translation>
     </message>
     <message>
+        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="255"/>
+        <source>Priority %1</source>
+        <translation>Priorité %1</translation>
+    </message>
+    <message>
         <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="311"/>
         <source>Apply</source>
         <translation>Appliquer</translation>
@@ -4109,11 +4230,6 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="96"/>
         <source>Enter the time as 17:30</source>
         <translation>Saisir l&apos;heure comme 17:30</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="255"/>
-        <source>Priority: level %1</source>
-        <translation>Priorité : niveau %1</translation>
     </message>
     <message>
         <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="271"/>
@@ -4154,6 +4270,49 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="100"/>
         <source>The end must follow the start</source>
         <translation>La fin doit suivre le début</translation>
+    </message>
+</context>
+<context>
+    <name>TimeRangeWeek</name>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeWeek.qml" line="49"/>
+        <source>Schedule active</source>
+        <translation>Programme actif</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeWeek.qml" line="60"/>
+        <source>Pause</source>
+        <translation>Pause</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeWeek.qml" line="90"/>
+        <source>Paused: setpoint stays at %1</source>
+        <translation>En pause : la consigne reste à %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeWeek.qml" line="103"/>
+        <source>Resume</source>
+        <translation>Reprendre</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeWeek.qml" line="113"/>
+        <source>Loading the program…</source>
+        <translation>Chargement du programme…</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeWeek.qml" line="123"/>
+        <source>This climate has no program.</source>
+        <translation>Ce climat n’a pas de programme.</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeWeek.qml" line="132"/>
+        <source>Offline: the schedule is read-only</source>
+        <translation>Hors ligne : le programme est en lecture seule</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeWeek.qml" line="192"/>
+        <source>No period: tap to add</source>
+        <translation>Aucune plage : touchez pour ajouter</translation>
     </message>
 </context>
 <context>

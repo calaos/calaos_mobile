@@ -41,6 +41,15 @@ ColumnLayout {
 
     spacing: Units.dp(12)
 
+    //The scenario form opens before the program is read: follow it until the first edit.
+    Connections {
+        target: root.editor
+        function onLevelsChanged() {
+            if (root.simple && !root.editor.busy)
+                root.base = root.editor.levels
+        }
+    }
+
     function preview(swapWith) {
         return TR.previewOverlap(base, request(swapWith))
     }

@@ -131,6 +131,26 @@ TestCase {
         verify(card.visible)
     }
 
+    function openEditorOnDay(dlg) {
+        mouseClick(find(layer, "programEdit"))
+        tryVerify(function() { return dlg.programDialog.showing }, 3000)
+        var e = find(layer, "programEditor")
+        verify(e !== null)
+        e.openDay(1)
+        tryVerify(function() { return e.page === "day" }, 3000)
+        return e
+    }
+
+    function test_escapeFromTheDayViewGoesBackAndKeepsTheDialog() {
+        var dlg = open({ program: programState }, { program: { heat_levels: 1, cool_levels: 1, max_levels: 6 } })
+        var e = openEditorOnDay(dlg)
+        keyClick(Qt.Key_Escape)
+        tryVerify(function() { return e.page === "week" }, 3000)
+        verify(dlg.programDialog.showing)
+        keyClick(Qt.Key_Escape)
+        tryVerify(function() { return !dlg.programDialog.showing }, 3000)
+    }
+
     function test_noProgramCardWithoutTheProgramCapability() {
         open({ program: programState }, {})
         var card = find(layer, "programCard")

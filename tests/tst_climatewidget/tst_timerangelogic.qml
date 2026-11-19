@@ -157,17 +157,14 @@ TestCase {
         verify(TR.applySlot(levels, { days: [7], start: 600, end: 660, setpoint: 18 }).ok)
     }
 
-    function test_slotTakesWhatItCoversFromOtherLevels() {
+    function test_slotKeepsTheOtherLevelsAsTheyAre() {
         var levels = [level(1, 21, [range(1, 6, 0, 9, 0)]), level(2, 18, [])]
         var r = TR.applySlot(levels, { days: [1], start: 420, end: 480, setpoint: 18 })
         verify(r.ok)
-        compare(r.changed, [1, 2])
-        var segs = TR.daySegments(r.levels, 1)
-        compare(segs.length, 3)
-        compare(segs[1].level, 2)
-        compare(segs[1].start, 420)
-        compare(segs[2].level, 1)
-        compare(segs[2].start, 480)
+        compare(r.changed, [2])
+        compare(r.levels[0].slots.length, 1)
+        compare(r.levels[0].slots[0].start, 360)
+        compare(r.levels[0].slots[0].end, 540)
     }
 
     function test_editMovesTheSegment() {

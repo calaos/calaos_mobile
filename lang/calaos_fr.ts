@@ -901,6 +901,11 @@
         <translation>À propos de la plage</translation>
     </message>
     <message>
+        <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="255"/>
+        <source>Hide range help</source>
+        <translation>Masquer l'aide de la plage</translation>
+    </message>
+    <message>
         <location filename="../qml/SharedComponents/ClimateProgramCard.qml" line="283"/>
         <source>In auto, the program sets a range: the lower end follows the heating, the upper end the cooling. The two are kept at least %1 apart.</source>
         <translation>En auto, le programme fixe une plage : la borne basse suit le chauffage, la borne haute le refroidissement. Les deux restent écartées d&apos;au moins %1.</translation>

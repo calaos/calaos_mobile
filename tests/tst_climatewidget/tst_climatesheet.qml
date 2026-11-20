@@ -149,6 +149,29 @@ TestCase {
         verify(card.visible)
     }
 
+    function openEditorOnDay(host) {
+        mouseClick(find(Overlay.overlay, "programEdit"))
+        var e = null
+        tryVerify(function() { e = find(Overlay.overlay, "programEditor"); return e !== null && e.visible && host.programOpened }, 3000)
+        e.openDay(1)
+        tryVerify(function() { return e.page === "day" }, 3000)
+        return e
+    }
+
+    function test_backFromTheDayViewGoesBackAndKeepsTheSheet() {
+        var host = open({ program: programState }, { program: { heat_levels: 1, cool_levels: 1, max_levels: 6 } })
+        var e = openEditorOnDay(host)
+        keyPress(Qt.Key_Back)
+        keyRelease(Qt.Key_Back)
+        tryVerify(function() { return e.page === "week" }, 3000)
+        verify(host.programOpened)
+        verify(e.visible)
+        keyPress(Qt.Key_Back)
+        keyRelease(Qt.Key_Back)
+        tryVerify(function() { return !e.visible }, 3000)
+        compare(under.backReleases, 0)
+    }
+
     function test_noProgramCardWithoutTheProgramCapability() {
         open({ program: programState }, {})
         var card = find(Overlay.overlay, "programCard")

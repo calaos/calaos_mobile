@@ -30,7 +30,8 @@ Item {
         close: "M6 6l12 12M18 6L6 18",
         pause: "M9 5v14M15 5v14",
         play: "M7 5l12 7-12 7z",
-        plus: "M12 5v14M5 12h14"
+        plus: "M12 5v14M5 12h14",
+        copy: "M9 9h10v10H9z M5 15V5h10"
     })
 
     Shape {

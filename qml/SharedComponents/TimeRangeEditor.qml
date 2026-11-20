@@ -43,23 +43,22 @@ FocusScope {
     property var levelsByKind: ({ heat: [], cool: [] })
     property var states: ({})
     readonly property var levels: levelsByKind[kind] || []
-    //Highest level that holds slots: the priority arrow stops there.
-    readonly property int lowestLevel: {
-        var m = 0
-        for (var i = 0; i < levels.length; i++)
-            if (TR.usedLevels([levels[i]]) > 0 && levels[i].n > m)
-                m = levels[i].n
-        return m
-    }
     readonly property bool offline: client === null || sessionLost
     //Writes replace the whole list of a level: nothing may be written before the
     //levels have been read, nor after a read failed, or the server's slots are lost.
-    readonly property bool locked: readOnly || offline || busy || loading || readFailed
+    //A failed write stays locked until Retry replays it (a fresh save would be computed
+    //on half-written levels) or the form is cancelled.
+    readonly property bool locked: readOnly || offline || scopeDenied || busy || loading || readFailed
+                                   || retryAction !== null || pendingWrite !== null
     readonly property bool loading: Object.keys(reads).length > 0
     readonly property bool busy: writeId !== "" || queue.length > 0
     property bool loaded: false
     property bool readFailed: false
+    //A failed read must not replace the failed write: only a replay or Cancel clears it.
+    property var pendingWrite: null
     property bool sessionLost: false
+    //The account may read the program but not write it: sticky until the client changes.
+    property bool scopeDenied: false
     property string banner: ""
     property var retryAction: null
     property int nowMinutes: 0
@@ -72,7 +71,7 @@ FocusScope {
     property var editing: null
     readonly property string page: stack.currentItem ? stack.currentItem.page : ""
     readonly property bool formOpen: page === "form"
-    readonly property bool copyOpen: page === "copy"
+    readonly property bool copyOpen: copySheet.opened
     readonly property var currentForm: formOpen ? stack.currentItem.form : null
 
     function kindName(k) {
@@ -194,8 +193,10 @@ FocusScope {
     function onRead(what, ok, answer) {
         if (!ok) {
             readFailed = true
-            banner = qsTr("Could not read the program, try again")
-            retryAction = function() { root.reload() }
+            if (pendingWrite === null) {
+                banner = qsTr("Could not read the program, try again")
+                retryAction = function() { root.reload() }
+            }
             return
         }
         var next = Object.assign({}, levelsByKind)
@@ -216,17 +217,17 @@ FocusScope {
     // --- writes -----------------------------------------------------------
 
     function errorText(error) {
-        if (error === "config_not_written")
-            return qsTr("Not saved, try again")
         if (error === "invalid ranges" || error === "invalid range")
             return qsTr("The end must follow the start")
         if (error === "scope denied")
             return qsTr("This account cannot change the program")
-        return qsTr("Saving failed, try again")
+        return qsTr("Not saved, try again")
     }
 
     //Setpoints first, then one set_timerange per changed level, in sequence.
-    function commit(res, action, failText) {
+    //A retry resends this very result (idempotent writes): recomputing it from the
+    //reloaded levels would not undo a half-applied swap. `restore` puts kind and day back.
+    function commit(res, restore, failText, onSaved) {
         if (locked)
             return
         var ops = []
@@ -245,7 +246,10 @@ FocusScope {
         levelsByKind = next
         banner = ""
         retryAction = null
-        writeDone = { action: action, failText: failText || "" }
+        var again = function() { if (restore) restore(); root.commit(res, restore, failText, onSaved) }
+        if (!failText && ops.length > 1)
+            failText = qsTr("Incomplete save: not saved, try again")
+        writeDone = { action: again, failText: failText || "", saved: onSaved || null }
         queue = ops
         sendNext()
     }
@@ -257,7 +261,7 @@ FocusScope {
         s[stateId] = value
         states = s
         banner = ""
-        writeDone = { action: action, failText: "" }
+        writeDone = { action: action, failText: "", saved: null }
         queue = [{ stateId: stateId, value: value }]
         sendNext()
     }
@@ -265,6 +269,10 @@ FocusScope {
     function sendNext() {
         if (!queue.length) {
             writeId = ""
+            var done = writeDone
+            writeDone = null
+            if (done && done.saved)
+                done.saved()
             if (simpleMode)
                 applied()
             return
@@ -283,8 +291,11 @@ FocusScope {
         var done = writeDone
         writeId = ""
         queue = []
-        banner = done && done.failText !== "" ? done.failText : errorText(error)
-        retryAction = done ? done.action : null
+        writeDone = null
+        banner = done && done.failText !== "" && error !== "scope denied" ? done.failText : errorText(error)
+        scopeDenied = scopeDenied || error === "scope denied"
+        pendingWrite = done && !scopeDenied ? done.action : null
+        retryAction = pendingWrite
         //Shows what the server really has.
         reload()
     }
@@ -293,6 +304,11 @@ FocusScope {
         var action = retryAction
         banner = ""
         retryAction = null
+        //The replayed write carries its own levels, it needs no successful read first.
+        if (pendingWrite !== null) {
+            pendingWrite = null
+            readFailed = false
+        }
         if (action)
             action()
     }
@@ -335,7 +351,10 @@ FocusScope {
     //A new device object arrives at every io_changed: only other ids mean other levels
     readonly property string iosKey: TR.iosKey(ios)
     onIosKeyChanged: reload()
-    onClientChanged: reload()
+    onClientChanged: {
+        scopeDenied = false
+        reload()
+    }
     Component.onCompleted: {
         completed = true
         reload()
@@ -365,31 +384,44 @@ FocusScope {
 
     function openNew(start, end) {
         editing = null
-        pushForm({ start: start, end: end, days: [day],
+        pushForm({ start: start, end: end,
                    setpoint: defaultSetpoint !== null ? defaultSetpoint : 20 })
     }
 
     function openSegment(seg) {
         editing = { day: day, start: seg.start, end: seg.end, level: seg.level }
-        pushForm({ start: seg.start, end: seg.end, days: [day], setpoint: seg.setpoint,
+        pushForm({ start: seg.start, end: seg.end, setpoint: seg.setpoint,
                    editing: true, level: seg.level })
     }
 
     function openCopy() {
         if (page !== "day" || locked)
             return
-        var item = stack.push(copyPage)
-        item.copy.open(day)
+        copySheet.open(day)
     }
 
     function closeForm() {
         editing = null
+        if (pendingWrite !== null) {
+            pendingWrite = null
+            retryAction = null
+            banner = ""
+            if (readFailed)
+                reload()
+        } else if (!readFailed && retryAction !== null) {
+            retryAction = null
+            banner = ""
+        }
         if (formOpen && !simpleMode)
             stack.pop()
     }
 
     //Named back button and Back / Escape: false on the Week page, which the host closes.
     function back() {
+        if (copyOpen) {
+            copySheet.close()
+            return true
+        }
         if (simpleMode || stack.depth <= 1)
             return false
         if (formOpen)
@@ -417,7 +449,7 @@ FocusScope {
     }
 
     Keys.onPressed: (event) => {
-        if ((event.key === Qt.Key_Back || event.key === Qt.Key_Escape) && stack.depth > 1 && !simpleMode)
+        if ((event.key === Qt.Key_Back || event.key === Qt.Key_Escape) && (copyOpen || stack.depth > 1) && !simpleMode)
             event.accepted = true
     }
     //On release, as the hosts do: the release must not reach the page below.
@@ -426,15 +458,18 @@ FocusScope {
             event.accepted = true
     }
 
-    function saveSlot(edit) {
+    function savePeriod(edit) {
         applyRequest({ days: edit.days, start: edit.start, end: edit.end, setpoint: edit.setpoint,
-                       original: editing ? { day: editing.day, start: editing.start, end: editing.end } : null })
+                       original: edit.original, swapWith: edit.swapWith })
     }
 
+    readonly property string maxLevelsText: qsTr("6 different setpoints maximum")
+
+    //The view stays open until the server has the change: a failure keeps the input.
     function applyRequest(request) {
         var res = TR.applySlot(levels, request)
         if (!res.ok) {
-            var text = res.error === "max_levels" ? qsTr("6 different setpoints maximum for %1").arg(kindName(kind))
+            var text = res.error === "max_levels" ? maxLevelsText
                                                   : qsTr("The end must follow the start")
             if (currentForm)
                 currentForm.message = text
@@ -443,27 +478,16 @@ FocusScope {
             return
         }
         var k = kind
-        closeForm()
-        commit(res, function() { root.kind = k; root.applyRequest(request) })
+        commit(res, function() { root.kind = k }, "", function() { root.closeForm() })
     }
 
     function deleteSlot() {
         if (!editing)
             return
         var e = editing
-        closeForm()
-        commit(TR.deleteSegment(levels, e.day, e.start, e.end), null)
-    }
-
-    function moveLevel(delta) {
-        if (!editing)
-            return
-        var a = editing.level, b = editing.level + delta
-        var res = TR.swapLevels(levels, a, b)
-        if (!res.ok)
-            return
-        closeForm()
-        commit(res, null)
+        var k = kind
+        commit(TR.deleteSegment(levels, e.day, e.start, e.end),
+               function() { root.kind = k }, "", function() { root.closeForm() })
     }
 
     function copyTo(targets) {
@@ -474,9 +498,8 @@ FocusScope {
             return
         }
         var k = kind, src = day
-        if (copyOpen)
-            stack.pop()
-        commit(res, function() { root.kind = k; root.day = src; root.copyTo(targets) },
+        copySheet.close()
+        commit(res, function() { root.kind = k; root.day = src },
                qsTr("Incomplete copy: not saved, try again"))
     }
 
@@ -510,7 +533,6 @@ FocusScope {
                                      : page === "day" ? qsTr("Week") : dayName(day)
     readonly property string headerTitle: page === "week" ? qsTr("Schedule")
                                         : page === "day" ? dayName(day)
-                                        : page === "copy" ? qsTr("Copy to…")
                                         : stack.currentItem && stack.currentItem.edit ? qsTr("Period") : qsTr("New period")
     readonly property string headerSubtitle: {
         if (page === "week")
@@ -571,6 +593,8 @@ FocusScope {
                             visible: text !== ""
                             text: root.headerSubtitle
                             color: Theme.mutedColor
+                            wrapMode: Text.WordWrap
+                            maximumLineCount: 2
                             elide: Text.ElideRight
                             font { family: root.fontFamily; pixelSize: Units.dp(13) }
                         }
@@ -589,6 +613,7 @@ FocusScope {
                         fontFamily: root.fontFamily
                         implicitHeight: root.rowHeight
                         sidePadding: Units.dp(20)
+                        leading: "copy"
                         text: qsTr("Copy to…")
                         enabled: !root.locked && root.periodCount(root.day) > 0
                         onClicked: root.openCopy()
@@ -635,6 +660,18 @@ FocusScope {
                 height: 1
                 color: Theme.borderColor
             }
+        }
+
+        Text {
+            objectName: "offlineText"
+            visible: !root.simpleMode && (root.offline || root.readOnly)
+            Layout.fillWidth: true
+            text: qsTr("Offline: the schedule is read-only")
+            color: Theme.amberColor
+            wrapMode: Text.WordWrap
+            font { family: root.fontFamily; pixelSize: Units.dp(15) }
+            Accessible.role: Accessible.AlertMessage
+            Accessible.name: text
         }
 
         Rectangle {
@@ -721,45 +758,32 @@ FocusScope {
             clip: true
             boundsBehavior: Flickable.StopAtBounds
 
-            TimeRangeForm {
+            TimeRangePeriod {
                 id: pageForm
-                objectName: "slotForm"
+                objectName: "periodView"
+                editor: root
                 width: formFlick.width
                 fontFamily: root.fontFamily
-                simpleMode: root.simpleMode
                 readOnly: root.locked
-                levelCount: root.lowestLevel
-                onSaveRequested: (edit) => root.saveSlot(edit)
+                onSaveRequested: (edit) => root.savePeriod(edit)
                 onDeleteRequested: root.deleteSlot()
                 onCancelRequested: root.closeForm()
-                onMoveLevelRequested: (delta) => root.moveLevel(delta)
                 Component.onCompleted: {
                     if (root.simpleMode)
-                        open({ start: 18 * 60, end: 22 * 60, days: [root.day], setpoint: 20 })
+                        open({ start: 18 * 60, end: 22 * 60, setpoint: 20 })
                 }
             }
         }
     }
 
-    Component {
-        id: copyPage
-        Flickable {
-            id: copyFlick
-            readonly property string page: "copy"
-            property alias copy: pageCopy
-            contentHeight: pageCopy.implicitHeight + Units.dp(16)
-            clip: true
-            boundsBehavior: Flickable.StopAtBounds
-
-            TimeRangeCopy {
-                id: pageCopy
-                width: copyFlick.width
-                fontFamily: root.fontFamily
-                levels: root.levels
-                names: root
-                onCopyRequested: (targets) => root.copyTo(targets)
-                onCancelRequested: root.back()
-            }
-        }
+    TimeRangeCopy {
+        id: copySheet
+        anchors.fill: parent
+        z: 10
+        fontFamily: root.fontFamily
+        levels: root.levels
+        names: root
+        onCopyRequested: (targets) => root.copyTo(targets)
+        onCancelRequested: close()
     }
 }

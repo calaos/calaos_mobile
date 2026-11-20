@@ -195,7 +195,7 @@ Item {
 
         Rectangle {
             anchors.fill: parent
-            color: "#171717"
+            color: Theme.backgroundColor
             border.color: Theme.borderColor
             radius: Units.dp(8)
 

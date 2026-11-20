@@ -89,15 +89,21 @@ TestCase {
     }
 
     //Answers every request not answered yet; writes go through failWith.
+    property int readFailures: 0
+
     function answerAll(failWith) {
+        var err
         while (fake.answered < fake.calls.length) {
             var c = fake.calls[fake.answered++]
-            if (c.action === "get_timerange")
+            if (c.action === "get_timerange" && readFailures > 0) {
+                readFailures--
+                fake.finished(c.rid, false, {}, "timeout")
+            } else if (c.action === "get_timerange")
                 fake.finished(c.rid, true, { months: "111111111111", ranges: server.ranges[c.id] || [] }, "")
             else if (c.action === "get_state")
                 fake.finished(c.rid, true, server.states, "")
-            else if (failWith && failWith(c))
-                fake.finished(c.rid, false, {}, failWith(c))
+            else if (failWith && (err = failWith(c)))
+                fake.finished(c.rid, false, {}, err)
             else {
                 if (c.action === "set_timerange")
                     server.ranges[c.id] = c.ranges
@@ -282,7 +288,8 @@ TestCase {
         compare(findChild(e, "emptyText").text, "Heating stays at 19° all day.")
         tap(e, "addFirstButton")
         compare(e.page, "form")
-        compare(e.currentForm.days, [5])
+        verify(!e.currentForm.editing)
+        verify(!findChild(e, "deleteButton").visible)
     }
 
     function test_touchTargets() {
@@ -365,13 +372,14 @@ TestCase {
     function test_periodPastMidnightIsWrittenOnTwoDays() {
         var e = make()
         answerAll()
+        e.openDay(7)
         var from = fake.calls.length
         e.openNew(0, 60)
         var form = e.currentForm
         form.setpoint = 21
-        findChild(form, "startField").text = "23:00"
-        findChild(form, "endField").text = "05:00"
-        form.days = [7]
+        form.start = 23 * 60
+        form.end = 5 * 60
+        verify(findChild(form, "midnightBanner").visible)
         form.submit()
         answerAll()
         var w = writes(from)
@@ -379,6 +387,7 @@ TestCase {
         compare(w[0].id, "h1")
         var days = w[0].ranges.map(function(r) { return r.day + " " + r.start_hour + "-" + r.end_hour + ":" + r.end_min })
         compare(days.sort(), ["1 0-5:0", "1 6-8:0", "7 23-23:59"])
+        compare(e.page, "day")
     }
 
     function test_seventhSetpointIsRefusedBeforeAnyCall() {
@@ -392,10 +401,15 @@ TestCase {
         e.openNew(600, 660)
         var form = e.currentForm
         form.setpoint = 25
+        verify(findChild(form, "tooManyBanner").visible)
+        compare(findChild(form, "tooManyBanner").Accessible.name, "6 different setpoints maximum")
+        verify(!findChild(form, "saveButton").enabled)
         form.submit()
         compare(fake.calls.length, from)
-        compare(findChild(form, "formMessage").text, "6 different setpoints maximum for Heating")
         compare(e.page, "form")
+        form.setpoint = 18
+        verify(!findChild(form, "tooManyBanner").visible)
+        verify(findChild(form, "saveButton").enabled)
     }
 
     function test_coolingOff() {
@@ -418,29 +432,59 @@ TestCase {
         compare(findChild(e, "segment_0_0").Accessible.name, "Default, 00:00 to 24:00, off")
     }
 
-    function test_copyDayAsksThenWritesEachLevel() {
+    function test_copySheetWritesEachLevelOnce() {
         server.ranges.h2 = [range(3, 18, 0, 20, 0)]
         var e = make()
         answerAll()
         e.openDay(1)
         var from = fake.calls.length
         tap(e, "copyButton")
-        compare(header(e), ["Monday", "Copy to…"])
         var copy = findChild(e, "copyGo")
+        verify(findChild(e, "copySheet").visible)
         verify(!copy.enabled)
+        verify(!findChild(e, "copyDay1").enabled)
+        compare(findChild(e, "copyDay1").text, "Mon · source")
+        compare(copy.text, "Copy to 0 days")
         findChild(e, "copyDay3").trigger()
         findChild(e, "copyDay4").trigger()
-        verify(!findChild(e, "copyDay1").enabled)
-        copy.trigger()
+        verify(copy.enabled)
+        compare(copy.text, "Copy to 2 days")
+        verify(findChild(e, "copyWarning").visible)
+        findChild(e, "copyWeekdays").trigger()
+        compare(copy.text, "Copy to 4 days")
+        findChild(e, "copyWeekend").trigger()
+        compare(copy.text, "Copy to 2 days")
+        findChild(e, "copyAll").trigger()
+        compare(copy.text, "Copy to 6 days")
+        findChild(e, "copyDay2").trigger()
+        findChild(e, "copyDay5").trigger()
+        findChild(e, "copyDay6").trigger()
+        findChild(e, "copyDay7").trigger()
+        compare(copy.text, "Copy to 2 days")
         compare(writes(from).length, 0)
-        compare(findChild(e, "copyConfirmText").text, "Wednesday (1 period) will be replaced by those of Monday.")
-        findChild(e, "copyReplace").trigger()
-        compare(e.page, "day")
+        copy.trigger()
+        verify(!findChild(e, "copySheet").visible)
         answerAll()
         var w = writes(from)
         compare(w.map(function(c) { return c.id }), ["h1", "h2"])
         compare(w[0].ranges.length, 3)
         compare(w[1].ranges.length, 0)
+    }
+
+    function test_copySheetClosesOnBackAndCancel() {
+        var e = make()
+        answerAll()
+        e.openDay(1)
+        tap(e, "copyButton")
+        verify(findChild(e, "copySheet").visible)
+        verify(e.back())
+        verify(!findChild(e, "copySheet").visible)
+        compare(e.page, "day")
+        tap(e, "copyButton")
+        findChild(e, "copyCancel").trigger()
+        verify(!findChild(e, "copySheet").visible)
+        compare(e.page, "day")
+        compare(writes(0).length, 0)
     }
 
     function test_failedCopyRereadsAndRetries() {
@@ -488,23 +532,179 @@ TestCase {
         compare(findChild(e, "headerSubtitle").text, "Heating · 2 periods")
     }
 
-    function test_movingALevelSwapsSetpointsAndRanges() {
+    function test_overlapShowsThePriorityAndSwapsIt() {
         server.ranges.h2 = [range(1, 12, 0, 13, 0)]
         var e = make()
         answerAll()
         var from = fake.calls.length
         e.openSegment({ start: 720, end: 780, level: 2, setpoint: 18 })
-        compare(findChild(e, "levelText").text, "Priority 2")
-        verify(!findChild(e, "levelDown").enabled)
-        compare(findChild(e, "levelUp").icon, "chevronU")
-        findChild(e, "levelUp").trigger()
+        var form = e.currentForm
+        verify(form.editing)
+        verify(!findChild(form, "overlapBanner").visible)
+        form.end = 7 * 60
+        form.start = 7 * 60 - 15
+        var banner = findChild(form, "overlapBanner")
+        verify(banner.visible)
+        verify(/Level 1 comes before level 2/.test(banner.Accessible.name))
+        form.swapped = true
+        verify(/Level 1 comes before level 2/.test(banner.Accessible.name))
+        form.submit()
         answerAll()
         var w = writes(from).map(function(c) { return c.action + ":" + c.id })
-        compare(w.slice(0, 2).sort().concat(w.slice(2)),
+        compare(w.slice(0, 2).sort().concat(w.slice(2).sort()),
                 ["set_state:h1sp", "set_state:h2sp", "set_timerange:h1", "set_timerange:h2"])
-        compare(server.states.h2sp, "21")
         compare(server.states.h1sp, "18")
-        compare(server.ranges.h1[0].start_hour, "12")
+        compare(server.states.h2sp, "21")
+    }
+
+    function swapScenario(failH2Once) {
+        init()
+        server.ranges.h2 = [range(1, 12, 0, 13, 0)]
+        var e = make()
+        answerAll()
+        e.openSegment({ start: 720, end: 780, level: 2, setpoint: 18 })
+        var form = e.currentForm
+        form.end = 7 * 60
+        form.start = 7 * 60 - 15
+        form.swapped = true
+        var from = fake.calls.length
+        var failed = false
+        form.submit()
+        answerAll(function(c) {
+            if (failH2Once && !failed && c.action === "set_timerange" && c.id === "h2") {
+                failed = true
+                return "config_not_written"
+            }
+            return ""
+        })
+        return { e: e, from: from }
+    }
+
+    function sentOps(from) {
+        return writes(from).map(function(c) { return c.id + ":" + JSON.stringify(c.ranges || c.value) }).sort()
+    }
+
+    function test_failedSwapRetriesTheSameOperations() {
+        var okRun = swapScenario(false)
+        var expected = JSON.stringify([server.ranges, server.states])
+        var okOps = sentOps(okRun.from)
+
+        var r = swapScenario(true)
+        compare(r.e.page, "form")
+        compare(findChild(r.e, "banner").Accessible.name, "Incomplete save: not saved, try again")
+        var retry = findChild(r.e, "retryButton")
+        verify(retry.visible)
+        var before = fake.calls.length
+        retry.trigger()
+        answerAll()
+        compare(sentOps(before), okOps)
+        compare(JSON.stringify([server.ranges, server.states]), expected)
+        compare(r.e.page, "week")
+    }
+
+    function test_failedSwapLocksTheFormUntilRetried() {
+        var r = swapScenario(true)
+        var form = r.e.currentForm
+        verify(r.e.retryAction !== null)
+        verify(!findChild(form, "saveButton").enabled)
+        var before = fake.calls.length
+        form.submit()
+        form.start = 6 * 60
+        form.submit()
+        answerAll()
+        compare(writes(before).length, 0)
+        compare(r.e.page, "form")
+        findChild(form, "cancelButton").trigger()
+        compare(r.e.page, "week")
+        verify(r.e.retryAction === null)
+        compare(findChild(r.e, "banner").visible, false)
+    }
+
+    function test_failedReadAfterFailedWriteKeepsTheWrite() {
+        var okRun = swapScenario(false)
+        var expected = JSON.stringify([server.ranges, server.states])
+        var okOps = sentOps(okRun.from)
+
+        init()
+        server.ranges.h2 = [range(1, 12, 0, 13, 0)]
+        var e = make()
+        answerAll()
+        e.openSegment({ start: 720, end: 780, level: 2, setpoint: 18 })
+        var form = e.currentForm
+        form.end = 7 * 60
+        form.start = 7 * 60 - 15
+        form.swapped = true
+        var from = fake.calls.length
+        form.submit()
+        var failed = false
+        readFailures = 1
+        answerAll(function(c) {
+            if (!failed && c.action === "set_timerange" && c.id === "h2") {
+                failed = true
+                return "config_not_written"
+            }
+            return ""
+        })
+        verify(e.readFailed)
+        compare(findChild(e, "banner").Accessible.name, "Incomplete save: not saved, try again")
+        var retry = findChild(e, "retryButton")
+        verify(retry.visible)
+        var before = fake.calls.length
+        form.submit()
+        compare(writes(before).length, 0)
+        retry.trigger()
+        answerAll()
+        compare(sentOps(before), okOps)
+        compare(JSON.stringify([server.ranges, server.states]), expected)
+        compare(e.page, "week")
+    }
+
+    function test_deleteAsksInPlaceThenWrites() {
+        server.ranges.h2 = [range(1, 12, 0, 13, 30)]
+        var e = make()
+        answerAll()
+        var from = fake.calls.length
+        e.openSegment({ start: 720, end: 810, level: 2, setpoint: 18 })
+        var form = e.currentForm
+        verify(findChild(form, "deleteButton").visible)
+        findChild(form, "deleteButton").trigger()
+        compare(writes(from).length, 0)
+        compare(findChild(form, "deleteConfirm").text, "Delete the period 12:00 – 13:30?")
+        findChild(form, "cancelButton").trigger()
+        verify(!findChild(form, "deleteConfirm").visible)
+        findChild(form, "deleteButton").trigger()
+        findChild(form, "confirmDeleteButton").trigger()
+        answerAll()
+        compare(server.ranges.h2.length, 0)
+        compare(e.page, "week")
+    }
+
+    function test_failedSaveKeepsTheInput() {
+        var e = make()
+        answerAll()
+        e.openNew(600, 660)
+        var form = e.currentForm
+        form.start = 9 * 60 + 15
+        form.setpoint = 21
+        form.submit()
+        answerAll(function(c) { return c.action === "set_timerange" ? "config_not_written" : "" })
+        compare(e.page, "form")
+        compare(form.start, 9 * 60 + 15)
+        compare(findChild(e, "banner").Accessible.name, "Not saved, try again")
+        verify(findChild(e, "retryButton").visible)
+    }
+
+    function test_scopeDeniedLocksTheEditor() {
+        var e = make()
+        answerAll()
+        e.openNew(600, 660)
+        var form = e.currentForm
+        form.submit()
+        answerAll(function(c) { return c.action === "set_timerange" || c.action === "set_state" ? "scope denied" : "" })
+        verify(e.scopeDenied)
+        compare(findChild(e, "banner").Accessible.name, "This account cannot change the program")
+        verify(!findChild(e, "retryButton").visible)
+        verify(!findChild(form, "saveButton").enabled)
     }
 
     function test_offlineIsReadOnly() {
@@ -532,13 +732,12 @@ TestCase {
         appliedSpy.clear()
         answerAll()
         compare(e.page, "form")
-        var form = findChild(e, "slotForm")
+        var form = findChild(e, "periodView")
         verify(form.visible)
         verify(findChild(e, "dayBar") === null)
         compare(findChild(form, "saveButton").text, "Apply")
         verify(!findChild(form, "cancelButton").visible)
         form.setpoint = 21
-        form.days = [2, 3]
         var from = fake.calls.length
         form.submit()
         answerAll()
@@ -550,41 +749,43 @@ TestCase {
         verify(!e.back())
     }
 
-    function test_dayButtonsShowThreeLettersAndSpellTheDayOut() {
-        var e = make()
-        answerAll()
-        e.openNew(1080, 1200)
-        var form = e.currentForm
-        var abbr = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-        var full = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-        for (var i = 0; i < 7; ++i) {
-            var b = findChild(form, "formDay" + (i + 1))
-            compare(b.text, abbr[i])
-            compare(b.Accessible.name, full[i])
+    function chipTexts(e, from, to) {
+        var out = []
+        for (var i = from; i <= to; ++i) {
+            var b = findChild(e, "copyDay" + i)
+            out.push(b.text + "|" + b.Accessible.name)
         }
+        return out
     }
 
-    function test_frenchDayButtons() {
+    function test_copyChipsShowThreeLettersAndSpellTheDayOut() {
+        var e = make()
+        answerAll()
+        e.openDay(1)
+        e.openCopy()
+        compare(chipTexts(e, 2, 7), ["Tue|Tuesday", "Wed|Wednesday", "Thu|Thursday", "Fri|Friday", "Sat|Saturday", "Sun|Sunday"])
+        compare(findChild(e, "copyDay1").Accessible.name, "Monday, source")
+    }
+
+    function test_frenchCopyChips() {
         verify(harness.setLanguage("fr"))
         var e = make()
         answerAll()
-        e.openNew(1080, 1200)
-        var form = e.currentForm
-        var abbr = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
-        for (var i = 0; i < 7; ++i)
-            compare(findChild(form, "formDay" + (i + 1)).text, abbr[i])
-        compare(findChild(form, "formDay3").Accessible.name, "Mercredi")
+        e.openDay(1)
+        e.openCopy()
+        compare(chipTexts(e, 2, 7), ["Mar|Mardi", "Mer|Mercredi", "Jeu|Jeudi", "Ven|Vendredi", "Sam|Samedi", "Dim|Dimanche"])
+        compare(findChild(e, "copyGo").text, "Copier sur 0 jours")
+        findChild(e, "copyAll").trigger()
+        compare(findChild(e, "copyGo").text, "Copier sur 6 jours")
     }
 
-    function test_germanDayButtons() {
+    function test_germanCopyChips() {
         verify(harness.setLanguage("de"))
         var e = make()
         answerAll()
-        e.openNew(1080, 1200)
-        var form = e.currentForm
-        var abbr = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
-        for (var i = 0; i < 7; ++i)
-            compare(findChild(form, "formDay" + (i + 1)).text, abbr[i])
+        e.openDay(1)
+        e.openCopy()
+        compare(chipTexts(e, 2, 7).map(function(t) { return t.split("|")[0] }), ["Di", "Mi", "Do", "Fr", "Sa", "So"])
     }
 
     function test_frenchTexts() {
@@ -638,6 +839,12 @@ TestCase {
         e.openDay(5)
         settle(e)
         seen = shownTexts(e, seen)
+        e.openNew(1080, 1200)
+        seen = shownTexts(e, seen)
+        e.closeForm()
+        e.openDay(1)
+        e.openCopy()
+        seen = shownTexts(e, seen)
         verify(seen.length > 20)
         var bad = seen.filter(function(t) {
             return /slot|level|niveau|créneau|Stufe|Zeitfenster|\bN-?\d/i.test(t)
@@ -685,16 +892,20 @@ TestCase {
     function test_checkableButtonsFollowTheirModelAfterSeveralTaps() {
         var e = make()
         answerAll()
-        e.openNew(1080, 1200)
-        var form = e.currentForm
-        findChild(form, "formDay2").trigger()
-        findChild(form, "formDay2").trigger()
-        findChild(form, "formDay2").trigger()
-        compare(form.days, [1, 2])
-        form.open({ start: 600, end: 660, days: [3], setpoint: 20 })
-        verify(!findChild(form, "formDay2").checked)
-        verify(findChild(form, "formDay3").checked)
-        verify(!findChild(form, "formDay1").checked)
+        e.openDay(1)
+        e.openCopy()
+        findChild(e, "copyDay2").trigger()
+        findChild(e, "copyDay2").trigger()
+        findChild(e, "copyDay2").trigger()
+        verify(findChild(e, "copyDay2").checked)
+        findChild(e, "copyCancel").trigger()
+        e.back()
+        settle(e)
+        e.openDay(3)
+        e.openCopy()
+        verify(!findChild(e, "copyDay2").checked)
+        verify(!findChild(e, "copyDay3").enabled)
+        findChild(e, "copyCancel").trigger()
         e.home()
 
         //The cool-off switch goes back to the server's value after a refused write.
@@ -711,18 +922,5 @@ TestCase {
         off.trigger()
         answerAll()
         verify(!off.checked)
-    }
-
-    function test_priorityArrowStopsAtTheLastLevelThatHasPeriods() {
-        var e = make({ device: { ios: ios(4) } })
-        answerAll()
-        e.openSegment({ start: 360, end: 480, level: 1, setpoint: 21 })
-        verify(!findChild(e, "levelDown").enabled)
-        e.closeForm()
-        server.ranges.h2 = [range(1, 12, 0, 13, 0)]
-        fake.timeRangeChanged("h2")
-        answerAll()
-        e.openSegment({ start: 360, end: 480, level: 1, setpoint: 21 })
-        verify(findChild(e, "levelDown").enabled)
     }
 }

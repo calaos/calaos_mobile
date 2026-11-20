@@ -322,10 +322,10 @@ function failure(error) {
 }
 
 //Puts a slot on the bar.
-//edit: { days: [1..7], start, end, setpoint, original: { day, start, end } }
+//edit: { days: [1..7], start, end, setpoint, original: { day, start, end, level } }
 //original is the segment being edited, absent for a new slot. end <= start
-//wraps past midnight: the slot is cut in two days. What the slot covers is
-//taken from every other level, so the bar shows what was asked for.
+//wraps past midnight: the slot is cut in two days. Other levels are left
+//alone: where ranges overlap, the lowest level number wins (see daySegments).
 function applySlot(levels, edit) {
     var start = edit.start, end = edit.end
     if (start < 0 || end < 0 || start > DayMinutes || end > DayMinutes || start === end)
@@ -335,40 +335,91 @@ function applySlot(levels, edit) {
 
     var next = cloneLevels(levels)
     var i
-    if (edit.original)
+    if (edit.original) {
+        var o = edit.original
         for (i = 0; i < next.length; i++)
-            next[i].slots = carve(next[i].slots, edit.original.day, edit.original.start, edit.original.end)
-
-    var pieces = []
-    for (var d = 0; d < edit.days.length; d++) {
-        var day = edit.days[d]
-        if (end > start) {
-            pieces.push({ day: day, start: start, end: end })
-        } else {
-            pieces.push({ day: day, start: start, end: DayMinutes })
-            if (end > 0)
-                pieces.push({ day: nextDay(day), start: 0, end: end })
-        }
+            if (!o.level || next[i].n === o.level)
+                next[i].slots = carve(next[i].slots, o.day, o.start, o.end)
     }
-    for (i = 0; i < next.length; i++)
-        for (var p = 0; p < pieces.length; p++)
-            next[i].slots = carve(next[i].slots, pieces[p].day, pieces[p].start, pieces[p].end)
 
+    var pieces = pieceList(edit)
     var n = pickLevel(next, edit.setpoint)
     if (n < 0)
         return failure("max_levels")
     var idx = levelIndex(next, n)
-    var slots = next[idx].slots.slice()
+    var slots = next[idx].slots
+    for (var p = 0; p < pieces.length; p++)
+        slots = carve(slots, pieces[p].day, pieces[p].start, pieces[p].end)
     for (p = 0; p < pieces.length; p++)
         slots.push(plain(pieces[p].day, pieces[p].start, pieces[p].end))
     next[idx].slots = slots
 
-    var setpoints = []
-    if (!sameSetpoint(next[idx].setpoint, edit.setpoint)) {
-        next[idx].setpoint = Number(edit.setpoint)
-        setpoints.push({ n: n, setpoint: Number(edit.setpoint) })
+    next[idx].setpoint = Number(edit.setpoint)
+    //Swap: the other level takes over this range's priority.
+    if (edit.swapWith > 0 && edit.swapWith !== n) {
+        var io = levelIndex(next, edit.swapWith)
+        if (io >= 0) {
+            var tmp = { slots: next[io].slots, setpoint: next[io].setpoint }
+            next[io].slots = next[idx].slots
+            next[io].setpoint = next[idx].setpoint
+            next[idx].slots = tmp.slots
+            next[idx].setpoint = tmp.setpoint
+            n = edit.swapWith
+        }
     }
-    return result(levels, next, setpoints)
+    var setpoints = []
+    for (i = 0; i < next.length; i++)
+        if (next[i].setpoint !== null && next[i].setpoint !== undefined &&
+            !sameSetpoint(next[i].setpoint, levels[i].setpoint))
+            setpoints.push({ n: next[i].n, setpoint: Number(next[i].setpoint) })
+    var res = result(levels, next, setpoints)
+    res.level = n
+    return res
+}
+
+//The day pieces of an edit: a range past midnight is two pieces.
+function pieceList(edit) {
+    var pieces = []
+    for (var d = 0; d < edit.days.length; d++) {
+        var day = edit.days[d]
+        if (edit.end > edit.start) {
+            pieces.push({ day: day, start: edit.start, end: edit.end })
+        } else {
+            pieces.push({ day: day, start: edit.start, end: DayMinutes })
+            if (edit.end > 0)
+                pieces.push({ day: nextDay(day), start: 0, end: edit.end })
+        }
+    }
+    return pieces
+}
+
+//What saving `edit` would do, for the period view:
+//{ tooMany, level, overlaps: [{ range: {start, end}, setpoint, level, from, to, wins }] }
+//`wins` is true when the edited range has the lower level number.
+function previewOverlap(levels, edit) {
+    var out = { tooMany: false, level: 0, overlaps: [] }
+    var res = applySlot(levels, edit)
+    if (!res.ok) {
+        out.tooMany = res.error === "max_levels"
+        return out
+    }
+    out.level = res.level
+    var pieces = pieceList(edit)
+    for (var i = 0; i < res.levels.length; i++) {
+        var lv = res.levels[i]
+        if (lv.n === res.level)
+            continue
+        for (var j = 0; j < lv.slots.length; j++) {
+            var s = lv.slots[j]
+            for (var p = 0; p < pieces.length; p++) {
+                var from = Math.max(s.start, pieces[p].start), to = Math.min(s.end, pieces[p].end)
+                if (s.day === pieces[p].day && s.end > s.start && from < to)
+                    out.overlaps.push({ range: { start: s.start, end: s.end }, setpoint: lv.setpoint,
+                                        level: lv.n, from: from, to: to, wins: res.level < lv.n })
+            }
+        }
+    }
+    return out
 }
 
 //Deletes what the bar shows on [start, end) of `day`, every level included:
@@ -378,24 +429,6 @@ function deleteSegment(levels, day, start, end) {
     for (var i = 0; i < next.length; i++)
         next[i].slots = carve(next[i].slots, day, start, end)
     return result(levels, next, [])
-}
-
-//Swaps the priority of two levels: their ranges and setpoints trade places.
-function swapLevels(levels, a, b) {
-    var ia = levelIndex(levels, a), ib = levelIndex(levels, b)
-    if (ia < 0 || ib < 0 || ia === ib)
-        return failure("invalid")
-    var next = cloneLevels(levels)
-    next[ia].slots = levels[ib].slots
-    next[ia].setpoint = levels[ib].setpoint
-    next[ib].slots = levels[ia].slots
-    next[ib].setpoint = levels[ia].setpoint
-    var setpoints = []
-    if (!sameSetpoint(next[ia].setpoint, levels[ia].setpoint) && next[ia].setpoint !== null)
-        setpoints.push({ n: a, setpoint: next[ia].setpoint })
-    if (!sameSetpoint(next[ib].setpoint, levels[ib].setpoint) && next[ib].setpoint !== null)
-        setpoints.push({ n: b, setpoint: next[ib].setpoint })
-    return result(levels, next, setpoints)
 }
 
 function shiftRaw(raw, day) {
@@ -459,20 +492,6 @@ function copyDay(levels, source, targets) {
         next[i].slots = kept
     }
     return result(levels, next, [])
-}
-
-//Days of `targets` that already have slots, with their count, for the
-//confirmation: [{ day, count }].
-function replacedDays(levels, source, targets) {
-    var out = []
-    for (var t = 0; t < targets.length; t++) {
-        if (targets[t] === source)
-            continue
-        var c = slotCount(levels, targets[t])
-        if (c > 0)
-            out.push({ day: targets[t], count: c })
-    }
-    return out
 }
 
 //Levels of one direction ("heat" / "cool") from device.ios (role -> id):
@@ -570,11 +589,11 @@ function isoDay(date) {
     return d === 0 ? 7 : d
 }
 
-//Colour of a level on the bar and in the period rows; `none` outside 1..6.
-function levelColor(kind, n, none) {
-    var heat = ["#ffe08a", "#ffc247", "#ff9a3c", "#f2693a", "#d94a4a", "#b3345f"]
-    var cool = ["#a6e3f2", "#6cc9e6", "#38b0d3", "#3b8fd0", "#4a6fd0", "#6a55c4"]
+//Colour of a level on the bar and in the period rows: shades of the theme
+//colour `base` (lighter = higher priority); `none` outside 1..6.
+function levelColor(base, n, none) {
     if (n < 1 || n > MaxLevels)
         return none
-    return (kind === "cool" ? cool : heat)[n - 1]
+    var f = [1.35, 1.15, 1.0, 0.85, 0.7, 0.55][n - 1]
+    return f >= 1 ? Qt.lighter(base, f) : Qt.darker(base, 1 / f)
 }

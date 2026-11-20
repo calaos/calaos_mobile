@@ -173,10 +173,6 @@
         <translation>Netzwerkfehler</translation>
     </message>
     <message>
-        <source>The connection to calaos_server was lost.It will reconnect automatically when calaos_serveris available again.</source>
-        <translation type="vanished">Die Verbindung zu calaos_server wurde unterbrochen. Die Verbindung wird automatisch wiederhergestellt, wenn calaos_server wieder verfügbar ist.</translation>
-    </message>
-    <message>
         <location filename="../src/Application.cpp" line="279"/>
         <source>The connection to calaos_server was lost. It will reconnect automatically when calaos_server is available again.</source>
         <translation>Die Verbindung zu calaos_server wurde unterbrochen. Die Verbindung wird automatisch wiederhergestellt, wenn calaos_server wieder verfügbar ist.</translation>
@@ -274,10 +270,6 @@
         <location filename="../src/Application.cpp" line="1008"/>
         <source>The box is restarting on the previous version.</source>
         <translation>Die Box startet mit der vorherigen Version neu.</translation>
-    </message>
-    <message>
-        <source>No network connection found, this application requires a network connection to work.</source>
-        <translation type="vanished">Keine Netzwerkverbindung gefunden, diese Anwendung benötigt eine Netzwerkverbindung, um zu funktionieren.</translation>
     </message>
     <message>
         <location filename="../src/Application.cpp" line="804"/>
@@ -1077,10 +1069,6 @@
         <translation>Wählen Sie einen Zieldatenträger und klicken Sie auf Installieren, um das Installationsskript zu starten</translation>
     </message>
     <message>
-        <source>WARNING: All data from the destination disk are going to be lost!</source>
-        <translation type="vanished">WARNUNG: Alle Daten auf dem Ziellaufwerk gehen verloren!</translation>
-    </message>
-    <message>
         <location filename="../qml/desktop/ConfigInstallView.qml" line="81"/>
         <source>WARNING: All data on the destination disk will be lost!</source>
         <translation>WARNUNG: Alle Daten auf dem Ziellaufwerk gehen verloren!</translation>
@@ -1231,26 +1219,6 @@
         <location filename="../qml/desktop/ConfigTabs.qml" line="63"/>
         <source>Product Version:</source>
         <translation>Produktversion:</translation>
-    </message>
-    <message>
-        <source>System started since:</source>
-        <translation type="vanished">System gestartet seit:</translation>
-    </message>
-    <message>
-        <source>%1 day</source>
-        <translation type="vanished">%1 Tag</translation>
-    </message>
-    <message>
-        <source>%1 days</source>
-        <translation type="vanished">%1 Tage</translation>
-    </message>
-    <message>
-        <source>%1 hours</source>
-        <translation type="vanished">%1 Stunden</translation>
-    </message>
-    <message>
-        <source>%1 hour</source>
-        <translation type="vanished">%1 Stunde</translation>
     </message>
     <message>
         <location filename="../qml/desktop/ConfigTabs.qml" line="70"/>
@@ -1471,10 +1439,6 @@
 </context>
 <context>
     <name>ConfigUpdateView</name>
-    <message>
-        <source>TODO: Arch pkg Update</source>
-        <translation type="obsolete">TODO: Arch pkg Update</translation>
-    </message>
     <message>
         <location filename="../qml/desktop/ConfigUpdateView.qml" line="12"/>
         <source>Update installed</source>
@@ -1742,14 +1706,6 @@
         <translation>Hier können Sie einige persönliche Informationen wie Ihre E-Mail-Adresse konfigurieren. Sie wird von Calaos verwendet, um Ihnen einige E-Mails zu senden. Zum Beispiel kann das Notiz-Widget diese Adressen verwenden, um Notizen an Ihre Mailbox zu senden.</translation>
     </message>
     <message>
-        <source>Actual username:</source>
-        <translation type="vanished">Aktueller Benutzername:</translation>
-    </message>
-    <message>
-        <source>Here you can configure some personal information like your email address. It is used by Calaos to send you some email. For example, the Note widget can use those addresses to send notes to your mailbox.</source>
-        <translation type="vanished">Hier können Sie einige persönliche Informationen wie Ihre E-Mail-Adresse konfigurieren. Sie wird von Calaos verwendet, um Ihnen einige E-Mails zu senden. Zum Beispiel kann das Notiz-Widget diese Adressen verwenden, um Notizen an Ihre Mailbox zu senden.</translation>
-    </message>
-    <message>
         <location filename="../qml/desktop/ConfigUserInfoView.qml" line="273"/>
         <source>Add email</source>
         <translation>E-Mail hinzufügen</translation>
@@ -1823,14 +1779,6 @@
         <translation>Beenden</translation>
     </message>
     <message>
-        <source>Copied to the clipboard</source>
-        <translation type="vanished">In die Zwischenablage kopiert</translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation type="vanished">Kopieren</translation>
-    </message>
-    <message>
         <location filename="../qml/desktop/ConfigVersionsView.qml" line="107"/>
         <source>This screen</source>
         <translation>Dieser Bildschirm</translation>
@@ -1858,10 +1806,6 @@
 </context>
 <context>
     <name>ConfigView</name>
-    <message>
-        <source>Configuration Panel</source>
-        <translation type="vanished">Systemsteuerung</translation>
-    </message>
     <message>
         <location filename="../qml/desktop/ConfigView.qml" line="104"/>
         <source>Configuration panel</source>
@@ -2062,10 +2006,6 @@
         <translation>Lesezeichen hinzufügen</translation>
     </message>
     <message>
-        <source>Add Bookmark</source>
-        <translation type="vanished">Lesezeichen hinzufügen</translation>
-    </message>
-    <message>
         <location filename="../qml/desktop/DialogBookmarks.qml" line="15"/>
         <source>Close</source>
         <translation>Schliessen</translation>
@@ -2127,10 +2067,6 @@
         <location filename="../qml/desktop/DialogKeyboard.qml" line="238"/>
         <source>Confirm</source>
         <translation>Bestätigen</translation>
-    </message>
-    <message>
-        <source>Valid</source>
-        <translation type="vanished">Bestätigen</translation>
     </message>
     <message>
         <location filename="../qml/desktop/DialogKeyboard.qml" line="252"/>
@@ -2338,18 +2274,6 @@
         <translation>Wiederherstellungssystem</translation>
     </message>
     <message>
-        <source>The system is booted from a previous snapshot. That means the system is read only and all data will not be saved on the disk.
-
-You have the ability to rollback to this snapshot as the primary boot system. This rollback procedure will set this snapshot as the current read write system and reboot.
-
-The rollback option is also available in the Control Panel (Configuration menu)</source>
-        <translation type="vanished">Das System wird von einem früheren Snapshot gebootet. Das bedeutet, dass das System schreibgeschützt ist und alle Daten nicht auf der Festplatte gespeichert werden.
-
-Sie haben die Möglichkeit, zu diesem Snapshot als primäres Boot-System zurückzukehren. Bei diesem Rollback-Verfahren wird dieser Snapshot als aktuelles System mit Lese- und Schreibzugriff festgelegt und neu gestartet.
-
-Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfügbar</translation>
-    </message>
-    <message>
         <location filename="../qml/desktop/DialogRecoveryBoot.qml" line="8"/>
         <source>The system is booted from a previous snapshot. That means the system is read-only and no data will be saved on the disk.
 
@@ -2443,10 +2367,6 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <location filename="../qml/desktop/DialogTabList.qml" line="100"/>
         <source>New tab</source>
         <translation>Neuer Tab</translation>
-    </message>
-    <message>
-        <source>New Tab</source>
-        <translation type="vanished">Neuer Tab</translation>
     </message>
     <message>
         <location filename="../qml/desktop/DialogTabList.qml" line="24"/>
@@ -2575,10 +2495,6 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <location filename="../src/EventLogModel.cpp" line="439"/>
         <source>Opened</source>
         <translation>Geöffnet</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">Geöffnet</translation>
     </message>
     <message>
         <location filename="../src/EventLogModel.cpp" line="444"/>
@@ -2778,10 +2694,6 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <translation>Aktion: Gestoppt.</translation>
     </message>
     <message>
-        <source>Action: stopped.</source>
-        <translation type="vanished">Aktion: gestoppt.</translation>
-    </message>
-    <message>
         <location filename="../src/RoomModel.cpp" line="607"/>
         <source>Action: Closing...</source>
         <translation>Aktion: Schließen...</translation>
@@ -2790,14 +2702,6 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <location filename="../src/RoomModel.cpp" line="609"/>
         <source>Action: Opening...</source>
         <translation>Aktion: Öffnen...</translation>
-    </message>
-    <message>
-        <source>Change value</source>
-        <translation type="vanished">Wert ändern</translation>
-    </message>
-    <message>
-        <source>Enter new value</source>
-        <translation type="vanished">Neuen Wert eingeben</translation>
     </message>
 </context>
 <context>
@@ -2933,21 +2837,9 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <translation>Benutzername</translation>
     </message>
     <message>
-        <source>Sign in</source>
-        <translation type="vanished">Anmelden</translation>
-    </message>
-    <message>
         <location filename="../qml/mobile/LoginView.qml" line="137"/>
         <source>Password</source>
         <translation>Passwort</translation>
-    </message>
-    <message>
-        <source>OK</source>
-        <translation type="vanished">OK</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">Abbrechen</translation>
     </message>
     <message>
         <location filename="../qml/mobile/LoginView.qml" line="147"/>
@@ -2962,10 +2854,6 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
 </context>
 <context>
     <name>MainMenu</name>
-    <message>
-        <source>Add new Widgets</source>
-        <translation type="vanished">Neue Widgets hinzufügen</translation>
-    </message>
     <message>
         <location filename="../qml/desktop/MainMenu.qml" line="145"/>
         <source>Add new widgets</source>
@@ -3091,17 +2979,9 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <translation>Deine Musik</translation>
     </message>
     <message>
-        <source>Access you media library</source>
-        <translation type="vanished">Zugriff auf Ihre Mediathek</translation>
-    </message>
-    <message>
         <location filename="../qml/desktop/MediaView.qml" line="71"/>
         <source>CCTV</source>
         <translation>CCTV</translation>
-    </message>
-    <message>
-        <source>Drive all you cctv cameras</source>
-        <translation type="vanished">Steuern Sie alle Überwachungskameras</translation>
     </message>
     <message>
         <location filename="../qml/desktop/MediaView.qml" line="65"/>
@@ -3147,21 +3027,9 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
 <context>
     <name>MediaWebView</name>
     <message>
-        <source>Reload</source>
-        <translation type="vanished">Neu laden</translation>
-    </message>
-    <message>
-        <source>Go...</source>
-        <translation type="vanished">Geh...</translation>
-    </message>
-    <message>
         <location filename="../qml/desktop/MediaWebView.qml" line="273"/>
         <source>URL</source>
         <translation>URL</translation>
-    </message>
-    <message>
-        <source>Enter the url to navigate to</source>
-        <translation type="vanished">Geben Sie die aufzurufende URL ein</translation>
     </message>
     <message>
         <location filename="../qml/desktop/MediaWebView.qml" line="243"/>
@@ -3230,45 +3098,6 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
     </message>
 </context>
 <context>
-    <name>NoteBack</name>
-    <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="48"/>
-        <source>Edit note</source>
-        <translation>Anmerkung bearbeiten</translation>
-    </message>
-    <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="49"/>
-        <source>Note</source>
-        <translation>Hinweis</translation>
-    </message>
-    <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="50"/>
-        <source>Write your note to be displayed on the desktop</source>
-        <translation>Schreiben Sie Ihre Notiz, die auf dem Desktop angezeigt werden soll</translation>
-    </message>
-    <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="61"/>
-        <source>Send by mail</source>
-        <translation>Per Post versenden</translation>
-    </message>
-    <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="91"/>
-        <location filename="../widgets/Note/NoteBack.qml" line="107"/>
-        <source>Close</source>
-        <translation>Schliessen</translation>
-    </message>
-    <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="104"/>
-        <source>No Emails</source>
-        <translation>Keine Emails</translation>
-    </message>
-    <message>
-        <location filename="../widgets/Note/NoteBack.qml" line="105"/>
-        <source>No emails are configured. Please go to the Configuration panel and add at least one email address</source>
-        <translation>Es sind keine E-Mail-Adressen konfiguriert. Bitte gehen Sie zum Konfigurationspanel und fügen Sie mindestens eine E-Mail-Adresse hinzu</translation>
-    </message>
-</context>
-<context>
     <name>OSInstaller</name>
     <message>
         <location filename="../src/OSInstaller.cpp" line="35"/>
@@ -3323,14 +3152,6 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
         <location filename="../qml/mobile/PushEventView.qml" line="145"/>
         <source>Push Notification</source>
         <translation>Push-Benachrichtigung</translation>
-    </message>
-</context>
-<context>
-    <name>QObject</name>
-    <message>
-        <location filename="../3rd_party/drivelist_linux/linuxdrivelist.cpp" line="121"/>
-        <source>Internal SD card reader</source>
-        <translation>Interner SD-Kartenleser</translation>
     </message>
 </context>
 <context>
@@ -3566,66 +3387,6 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
 <context>
     <name>SettingsView</name>
     <message>
-        <source>Event log:</source>
-        <translation type="vanished">Ereignisprotokoll:</translation>
-    </message>
-    <message>
-        <source>Show log</source>
-        <translation type="vanished">Protokoll anzeigen</translation>
-    </message>
-    <message>
-        <source>Box:</source>
-        <translation type="vanished">Box:</translation>
-    </message>
-    <message>
-        <source>Box updates</source>
-        <translation type="vanished">Updates der Box</translation>
-    </message>
-    <message>
-        <source>Connection:</source>
-        <translation type="vanished">Verbindung:</translation>
-    </message>
-    <message>
-        <source>Logout</source>
-        <translation type="vanished">Abmelden</translation>
-    </message>
-    <message>
-        <source>Reset all data</source>
-        <translation type="vanished">Alle Daten zurücksetzen</translation>
-    </message>
-    <message>
-        <source>Name of this device:</source>
-        <translation type="vanished">Name dieses Geräts:</translation>
-    </message>
-    <message>
-        <source>This name lets you recognise this phone in the box administration</source>
-        <translation type="vanished">An diesem Namen erkennen Sie dieses Telefon in der Verwaltung der Box</translation>
-    </message>
-    <message>
-        <source>Trusted certificates:</source>
-        <translation type="vanished">Vertraute Zertifikate:</translation>
-    </message>
-    <message>
-        <source>Forget</source>
-        <translation type="vanished">Vergessen</translation>
-    </message>
-    <message>
-        <source>Favorites:</source>
-        <translation type="vanished">Favoriten:</translation>
-    </message>
-    <message>
-        <source>Add a favorite</source>
-        <translation type="vanished">Einen Favoriten hinzufügen</translation>
-    </message>
-    <message>
-        <source>Edit favorites list</source>
-        <translation type="vanished">Favoritenliste bearbeiten</translation>
-    </message>
-    <message>
-        <source>Language:</source>
-        <translation type="vanished">Sprache:</translation>
-    </message>
-    <message>
         <location filename="../qml/mobile/SettingsView.qml" line="12"/>
         <source>Settings</source>
         <translation>Einstellungen</translation>
@@ -3700,10 +3461,6 @@ Die Rollback-Option ist auch in der Systemsteuerung (Menü Konfiguration) verfü
 <context>
     <name>SpeedDialPage</name>
     <message>
-        <source>New Tab</source>
-        <translation type="vanished">Neuer Tab</translation>
-    </message>
-    <message>
         <location filename="../qml/desktop/SpeedDialPage.qml" line="18"/>
         <source>New tab</source>
         <translation>Neuer Tab</translation>
@@ -3760,63 +3517,58 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
 <context>
     <name>TimeRangeCopy</name>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="65"/>
-        <source>%1 and %2</source>
-        <translation>%1 und %2</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="67"/>
-        <source>%1 will be replaced by those of %2.</source>
-        <translation>%1 wird durch die Zeiträume von %2 ersetzt.</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="91"/>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="110"/>
         <source>Nothing to copy: this day has no period</source>
         <translation>Nichts zu kopieren: dieser Tag hat keinen Zeitraum</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="136"/>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="130"/>
+        <source>source</source>
+        <translation>Quelle</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="132"/>
+        <source>%1, source</source>
+        <translation>%1, Quelle</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="162"/>
         <source>All</source>
         <translation>Alle</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="170"/>
-        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="190"/>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="169"/>
+        <source>Replaces the existing periods of these days</source>
+        <translation>Ersetzt die vorhandenen Zeiträume dieser Tage</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="184"/>
         <source>Cancel</source>
         <translation>Abbrechen</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="197"/>
-        <source>Copy</source>
-        <translation>Kopieren</translation>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="192"/>
+        <source>Copy to 1 day</source>
+        <translation>Auf 1 Tag kopieren</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="83"/>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="192"/>
+        <source>Copy to %1 days</source>
+        <translation>Auf %1 Tage kopieren</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="90"/>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="100"/>
         <source>Copy %1 to</source>
         <translation>%1 kopieren nach</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="177"/>
-        <source>Replace and copy</source>
-        <translation>Ersetzen und kopieren</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="124"/>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="148"/>
         <source>Weekdays</source>
         <translation>Werktage</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="61"/>
-        <source>%1 (1 period)</source>
-        <translation>%1 (1 Zeitraum)</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="62"/>
-        <source>%1 (%2 periods)</source>
-        <translation>%1 (%2 Zeiträume)</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="130"/>
+        <location filename="../qml/SharedComponents/TimeRangeCopy.qml" line="155"/>
         <source>Weekend</source>
         <translation>Wochenende</translation>
     </message>
@@ -3824,69 +3576,69 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
 <context>
     <name>TimeRangeDay</name>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="66"/>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="64"/>
         <source>%1, %2, edit</source>
         <translation>%1, %2, bearbeiten</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="96"/>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="94"/>
         <source>Edit</source>
         <translation>Bearbeiten</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="128"/>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="126"/>
         <source>No period that day</source>
         <translation>Kein Zeitraum an diesem Tag</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="137"/>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="135"/>
         <source>Heating stays at %1 all day.</source>
         <translation>Die Heizung bleibt den ganzen Tag auf %1.</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="138"/>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="136"/>
         <source>Cooling stays off all day.</source>
         <translation>Die Kühlung bleibt den ganzen Tag aus.</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="139"/>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="137"/>
         <source>Cooling stays at %1 all day.</source>
         <translation>Die Kühlung bleibt den ganzen Tag auf %1.</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="151"/>
-        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="171"/>
-        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="188"/>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="149"/>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="169"/>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="186"/>
         <source>Add a period</source>
         <translation>Zeitraum hinzufügen</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="220"/>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="218"/>
         <source>The rest of the time</source>
         <translation>Die übrige Zeit</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="227"/>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="225"/>
         <source>outside periods</source>
         <translation>außerhalb der Zeiträume</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="241"/>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="239"/>
         <source>Off</source>
         <translation>Aus</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="245"/>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="243"/>
         <source>Cooling off outside periods</source>
         <translation>Kühlung aus außerhalb der Zeiträume</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="270"/>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="269"/>
         <source>Lower the default setpoint</source>
         <translation>Standard-Sollwert senken</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="283"/>
+        <location filename="../qml/SharedComponents/TimeRangeDay.qml" line="282"/>
         <source>Outside periods: %1</source>
         <translation>Außerhalb der Zeiträume: %1</translation>
     </message>
@@ -3899,126 +3651,131 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
 <context>
     <name>TimeRangeEditor</name>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="197"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="191"/>
         <source>Could not read the program, try again</source>
         <translation>Das Programm konnte nicht gelesen werden, erneut versuchen</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="79"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="73"/>
         <source>Cooling</source>
         <translation>Kühlen</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="79"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="73"/>
         <source>Heating</source>
         <translation>Heizen</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="94"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="88"/>
         <source>Monday</source>
         <translation>Montag</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="95"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="89"/>
         <source>Tuesday</source>
         <translation>Dienstag</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="96"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="90"/>
         <source>Wednesday</source>
         <translation>Mittwoch</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="97"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="91"/>
         <source>Thursday</source>
         <translation>Donnerstag</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="98"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="92"/>
         <source>Friday</source>
         <translation>Freitag</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="99"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="93"/>
         <source>Saturday</source>
         <translation>Samstag</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="100"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="94"/>
         <source>Sunday</source>
         <translation>Sonntag</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="106"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="100"/>
         <source>Mon</source>
         <comment>Monday, short</comment>
         <translation>Mo</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="107"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="101"/>
         <source>Tue</source>
         <comment>Tuesday, short</comment>
         <translation>Di</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="108"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="102"/>
         <source>Wed</source>
         <comment>Wednesday, short</comment>
         <translation>Mi</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="109"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="103"/>
         <source>Thu</source>
         <comment>Thursday, short</comment>
         <translation>Do</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="110"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="104"/>
         <source>Fri</source>
         <comment>Friday, short</comment>
         <translation>Fr</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="111"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="105"/>
         <source>Sat</source>
         <comment>Saturday, short</comment>
         <translation>Sa</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="112"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="106"/>
         <source>Sun</source>
         <comment>Sunday, short</comment>
         <translation>So</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="121"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="115"/>
         <source>no period</source>
         <translation>kein Zeitraum</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="121"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="115"/>
         <source>1 period</source>
         <translation>1 Zeitraum</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="121"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="115"/>
         <source>%1 periods</source>
         <translation>%1 Zeiträume</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="476"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="442"/>
+        <source>6 different setpoints maximum</source>
+        <translation>Höchstens 6 verschiedene Sollwerte</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="222"/>
+        <source>Incomplete save: not saved, try again</source>
+        <translation>Speichern unvollständig: nicht gespeichert, erneut versuchen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="475"/>
         <source>Incomplete copy: not saved, try again</source>
         <translation>Kopie unvollständig: nicht gespeichert, erneut versuchen</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="220"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="217"/>
         <source>Not saved, try again</source>
         <translation>Nicht gespeichert, erneut versuchen</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="433"/>
-        <source>6 different setpoints maximum for %1</source>
-        <translation>Höchstens 6 verschiedene Sollwerte für %1</translation>
     </message>
     <message>
         <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="469"/>
@@ -4026,226 +3783,169 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <translation>Nichts zu kopieren: dieser Tag hat keinen Zeitraum</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="505"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="504"/>
         <source>Close</source>
         <translation>Schließen</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="507"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="506"/>
         <source>Schedule</source>
         <translation>Zeitplan</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="509"/>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="588"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="586"/>
         <source>Copy to…</source>
         <translation>Kopieren nach…</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="510"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="508"/>
         <source>Period</source>
         <translation>Zeitraum</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="510"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="508"/>
         <source>New period</source>
         <translation>Neuer Zeitraum</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="662"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="638"/>
+        <source>Offline: the schedule is read-only</source>
+        <translation type="unfinished">Offline: der Zeitplan ist schreibgeschützt</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="672"/>
         <source>Retry</source>
         <translation>Erneut versuchen</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="225"/>
-        <source>Saving failed, try again</source>
-        <translation>Speichern fehlgeschlagen, erneut versuchen</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="222"/>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="434"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="214"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="443"/>
         <source>The end must follow the start</source>
         <translation>Das Ende muss nach dem Beginn liegen</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="224"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="216"/>
         <source>This account cannot change the program</source>
         <translation>Dieses Konto kann das Programm nicht ändern</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="506"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="505"/>
         <source>Week</source>
         <translation>Woche</translation>
     </message>
 </context>
 <context>
-    <name>TimeRangeForm</name>
+    <name>TimeRangePeriod</name>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="37"/>
-        <source>Monday</source>
-        <translation>Montag</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="38"/>
-        <source>Tuesday</source>
-        <translation>Dienstag</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="39"/>
-        <source>Wednesday</source>
-        <translation>Mittwoch</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="40"/>
-        <source>Thursday</source>
-        <translation>Donnerstag</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="41"/>
-        <source>Friday</source>
-        <translation>Freitag</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="42"/>
-        <source>Saturday</source>
-        <translation>Samstag</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="43"/>
-        <source>Sunday</source>
-        <translation>Sonntag</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="49"/>
-        <source>Mon</source>
-        <comment>Monday, short</comment>
-        <translation>Mo</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="50"/>
-        <source>Tue</source>
-        <comment>Tuesday, short</comment>
-        <translation>Di</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="51"/>
-        <source>Wed</source>
-        <comment>Wednesday, short</comment>
-        <translation>Mi</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="52"/>
-        <source>Thu</source>
-        <comment>Thursday, short</comment>
-        <translation>Do</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="53"/>
-        <source>Fri</source>
-        <comment>Friday, short</comment>
-        <translation>Fr</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="54"/>
-        <source>Sat</source>
-        <comment>Saturday, short</comment>
-        <translation>Sa</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="55"/>
-        <source>Sun</source>
-        <comment>Sunday, short</comment>
-        <translation>So</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="134"/>
-        <source>%1 minus 15 min</source>
-        <translation>%1 minus 15 Min.</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="159"/>
-        <source>%1 plus 15 min</source>
-        <translation>%1 plus 15 Min.</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="255"/>
-        <source>Priority %1</source>
-        <translation>Priorität %1</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="311"/>
-        <source>Apply</source>
-        <translation>Anwenden</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="304"/>
-        <source>Cancel</source>
-        <translation>Abbrechen</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="104"/>
-        <source>Choose at least one day</source>
-        <translation>Mindestens einen Tag wählen</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="225"/>
-        <source>Days</source>
-        <translation>Tage</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="296"/>
-        <source>Delete</source>
-        <translation>Löschen</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="181"/>
-        <source>End</source>
-        <translation>Ende</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="96"/>
-        <source>Enter the time as 17:30</source>
-        <translation>Uhrzeit wie 17:30 eingeben</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="271"/>
-        <source>Lower the priority</source>
-        <translation>Priorität senken</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="263"/>
-        <source>Raise the priority</source>
-        <translation>Priorität erhöhen</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="204"/>
-        <source>Lower the setpoint</source>
-        <translation>Sollwert senken</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="219"/>
-        <source>Raise the setpoint</source>
-        <translation>Sollwert erhöhen</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="311"/>
-        <source>Save</source>
-        <translation>Speichern</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="195"/>
-        <source>Setpoint</source>
-        <translation>Sollwert</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="167"/>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="203"/>
         <source>Start</source>
-        <translation>Beginn</translation>
+        <translation type="unfinished">Beginn</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeForm.qml" line="100"/>
-        <source>The end must follow the start</source>
-        <translation>Das Ende muss nach dem Beginn liegen</translation>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="207"/>
+        <source>Start earlier</source>
+        <translation>Früher beginnen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="208"/>
+        <source>Start later</source>
+        <translation>Später beginnen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="215"/>
+        <source>End</source>
+        <translation type="unfinished">Ende</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="217"/>
+        <source>+1 day</source>
+        <translation>+1 Tag</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="220"/>
+        <source>End earlier</source>
+        <translation>Früher enden</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="221"/>
+        <source>End later</source>
+        <translation>Später enden</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="228"/>
+        <source>Temperature</source>
+        <translation>Temperatur</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="232"/>
+        <source>Lower the temperature</source>
+        <translation>Temperatur senken</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="233"/>
+        <source>Raise the temperature</source>
+        <translation>Temperatur erhöhen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="241"/>
+        <source>This period crosses midnight. It will be saved as two periods: %1 and %2.</source>
+        <translation>Dieser Zeitraum geht über Mitternacht. Er wird als zwei Zeiträume gespeichert: %1 und %2.</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="254"/>
+        <source>Overlaps “%1” (%2).</source>
+        <translation>Überschneidet „%1“ (%2).</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="256"/>
+        <source>Between %1 and %2, this period (%3) applies: it takes priority.</source>
+        <translation>Zwischen %1 und %2 gilt dieser Zeitraum (%3): Er hat Vorrang.</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="258"/>
+        <source>Between %1 and %2, that period (%3) applies: it takes priority.</source>
+        <translation>Zwischen %1 und %2 gilt der andere Zeitraum (%3): Er hat Vorrang.</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="261"/>
+        <source>Level %1 comes before level %2.</source>
+        <translation>Stufe %1 hat Vorrang vor Stufe %2.</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="264"/>
+        <source>Swap</source>
+        <translation>Tauschen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="272"/>
+        <source>6 different setpoints maximum</source>
+        <translation>Höchstens 6 verschiedene Sollwerte</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="289"/>
+        <source>Delete the period %1?</source>
+        <translation>Zeitraum %1 löschen?</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="306"/>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="325"/>
+        <source>Delete</source>
+        <translation type="unfinished">Löschen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="317"/>
+        <source>Cancel</source>
+        <translation type="unfinished">Abbrechen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="335"/>
+        <source>Apply</source>
+        <translation>Übernehmen</translation>
+    </message>
+    <message>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="335"/>
+        <source>Save</source>
+        <translation type="unfinished">Speichern</translation>
     </message>
 </context>
 <context>
@@ -4281,12 +3981,7 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <translation>Dieses Klima hat kein Programm.</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeWeek.qml" line="132"/>
-        <source>Offline: the schedule is read-only</source>
-        <translation>Offline: der Zeitplan ist schreibgeschützt</translation>
-    </message>
-    <message>
-        <location filename="../qml/SharedComponents/TimeRangeWeek.qml" line="192"/>
+        <location filename="../qml/SharedComponents/TimeRangeWeek.qml" line="182"/>
         <source>No period: tap to add</source>
         <translation>Kein Zeitraum: zum Hinzufügen tippen</translation>
     </message>
@@ -4898,18 +4593,6 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <translation>Entsperren</translation>
     </message>
     <message>
-        <source>The admin password of the box, not the one you sign in with.</source>
-        <translation type="vanished">Das Admin-Passwort der Box, nicht das Anmeldepasswort.</translation>
-    </message>
-    <message>
-        <source>User</source>
-        <translation type="vanished">Benutzer</translation>
-    </message>
-    <message>
-        <source>Enter the admin password</source>
-        <translation type="vanished">Admin-Passwort eingeben</translation>
-    </message>
-    <message>
         <location filename="../qml/mobile/UpdatesView.qml" line="503"/>
         <source>Box updates</source>
         <translation>Aktualisierungen der Box</translation>
@@ -4941,33 +4624,6 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <location filename="../src/UsbDisk.cpp" line="119"/>
         <source>Removable disks</source>
         <translation>Wechseldatenträger</translation>
-    </message>
-</context>
-<context>
-    <name>Utils</name>
-    <message>
-        <source>hour</source>
-        <translation type="vanished">Stunde</translation>
-    </message>
-    <message>
-        <source>hours</source>
-        <translation type="vanished">Stunden</translation>
-    </message>
-    <message>
-        <source>minute</source>
-        <translation type="vanished">Minute</translation>
-    </message>
-    <message>
-        <source>minutes</source>
-        <translation type="vanished">Minuten</translation>
-    </message>
-    <message>
-        <source>second</source>
-        <translation type="vanished">Sekunde</translation>
-    </message>
-    <message>
-        <source>seconds</source>
-        <translation type="vanished">Sekunden</translation>
     </message>
 </context>
 <context>

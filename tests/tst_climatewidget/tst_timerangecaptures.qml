@@ -48,7 +48,7 @@ TestCase {
             Rectangle {
                 id: frame
                 anchors { fill: parent; margins: host.phone ? 0 : Units.dp(18) }
-                color: host.phone ? Theme.backgroundColor : "#171717"
+                color: Theme.backgroundColor
                 border.color: host.phone ? "transparent" : Theme.borderColor
                 radius: host.phone ? 0 : Units.dp(8)
             }
@@ -219,15 +219,91 @@ TestCase {
         var host = open(data.tag, { levels: 3 })
         openDay(host, 1)
         host.editor.openSegment({ start: 720, end: 810, level: 2, setpoint: 19 })
-        verify(findChild(host.editor, "slotForm").visible)
+        verify(findChild(host.editor, "periodView").visible)
+        verify(findChild(host.editor, "deleteButton").visible)
         shot(host, data.tag, "period")
+    }
+
+    function test_periodNew_data() { return modes() }
+    function test_periodNew(data) {
+        fillLevels(3)
+        var host = open(data.tag, { levels: 3 })
+        openDay(host, 6)
+        host.editor.openNew(1080, 1200)
+        verify(!findChild(host.editor, "deleteButton").visible)
+        shot(host, data.tag, "period-new")
+    }
+
+    function test_periodMidnight_data() { return modes() }
+    function test_periodMidnight(data) {
+        fillLevels(3)
+        var host = open(data.tag, { levels: 3 })
+        openDay(host, 6)
+        host.editor.openNew(1380, 1440)
+        var form = findChild(host.editor, "periodView")
+        form.setpoint = 21
+        form.end = 5 * 60
+        verify(findChild(form, "midnightBanner").visible)
+        shot(host, data.tag, "period-midnight")
+    }
+
+    function test_periodOverlap_data() { return modes() }
+    function test_periodOverlap(data) {
+        fillLevels(3)
+        var host = open(data.tag, { levels: 3 })
+        openDay(host, 1)
+        host.editor.openSegment({ start: 720, end: 810, level: 2, setpoint: 19 })
+        var form = findChild(host.editor, "periodView")
+        form.start = 7 * 60
+        verify(findChild(form, "overlapBanner").visible)
+        shot(host, data.tag, "period-overlap")
+    }
+
+    function test_periodDeleteConfirm_data() { return modes() }
+    function test_periodDeleteConfirm(data) {
+        fillLevels(3)
+        var host = open(data.tag, { levels: 3 })
+        openDay(host, 1)
+        host.editor.openSegment({ start: 720, end: 810, level: 2, setpoint: 19 })
+        findChild(host.editor, "deleteButton").trigger()
+        verify(findChild(host.editor, "deleteConfirm").visible)
+        compare(findChild(host.editor, "deleteConfirm").text, "Delete the period 12:00 – 13:30?")
+        shot(host, data.tag, "period-delete")
+    }
+
+    function test_periodSaveFailed_data() { return modes() }
+    function test_periodSaveFailed(data) {
+        fillLevels(3)
+        var host = open(data.tag, { levels: 3 })
+        openDay(host, 1)
+        host.editor.openSegment({ start: 720, end: 810, level: 2, setpoint: 19 })
+        var form = findChild(host.editor, "periodView")
+        form.end = 14 * 60
+        form.submit()
+        answerAll(function(c) { return c.action === "set_timerange" ? "config_not_written" : "" })
+        compare(host.editor.page, "form")
+        compare(form.end, 14 * 60)
+        verify(findChild(host.editor, "retryButton").visible)
+        shot(host, data.tag, "period-failed")
+    }
+
+    function test_periodScopeDenied_data() { return modes() }
+    function test_periodScopeDenied(data) {
+        fillLevels(3)
+        var host = open(data.tag, { levels: 3 })
+        openDay(host, 1)
+        host.editor.openSegment({ start: 720, end: 810, level: 2, setpoint: 19 })
+        findChild(host.editor, "periodView").submit()
+        answerAll(function(c) { return c.action === "set_timerange" ? "scope denied" : "" })
+        compare(findChild(host.editor, "banner").Accessible.name, "This account cannot change the program")
+        shot(host, data.tag, "period-scope-denied")
     }
 
     function test_simpleMode_data() { return modes() }
     function test_simpleMode(data) {
         fillLevels(1)
         var host = open(data.tag, { simpleMode: true, levels: 1 })
-        var form = findChild(host.editor, "slotForm")
+        var form = findChild(host.editor, "periodView")
         verify(form.visible)
         compare(findChild(form, "saveButton").text, "Apply")
         shot(host, data.tag, "simple")
@@ -240,11 +316,12 @@ TestCase {
         openDay(host, 1)
         var from = fake.calls.length
         host.editor.openNew(600, 660)
-        var form = findChild(host.editor, "slotForm")
+        var form = findChild(host.editor, "periodView")
         form.setpoint = 25
+        verify(!findChild(form, "saveButton").enabled)
         form.submit()
         compare(fake.calls.length, from)
-        compare(findChild(form, "formMessage").text, "6 different setpoints maximum for Heating")
+        verify(findChild(form, "tooManyBanner").visible)
         shot(host, data.tag, "seventh-refused")
     }
 
@@ -262,22 +339,40 @@ TestCase {
         shot(host, data.tag, "day-cool-off")
     }
 
-    function test_copyConfirmation_data() { return modes() }
-    function test_copyConfirmation(data) {
+    function test_copySheet_data() { return modes() }
+    function test_copySheet(data) {
         fillLevels(3)
-        server.ranges.h2 = server.ranges.h2.concat([range(3, 18, 0, 20, 0)])
         var host = open(data.tag, { levels: 3 })
         openDay(host, 1)
         var from = fake.calls.length
         findChild(host.editor, "copyButton").trigger()
         settle(host)
+        findChild(host.editor, "copyWeekdays").trigger()
         findChild(host.editor, "copyDay3").trigger()
-        findChild(host.editor, "copyDay6").trigger()
-        findChild(host.editor, "copyGo").trigger()
         compare(fake.calls.length, from)
-        verify(findChild(host.editor, "copyConfirm").visible)
-        compare(findChild(host.editor, "copyConfirmText").text, "Wednesday (4 periods) will be replaced by those of Monday.")
-        shot(host, data.tag, "copy-confirm")
+        verify(findChild(host.editor, "copySheet").visible)
+        compare(findChild(host.editor, "copyGo").text, "Copy to 3 days")
+        shot(host, data.tag, "copy-sheet")
+    }
+
+    function test_offline_data() { return modes() }
+    function test_offline(data) {
+        fillLevels(3)
+        var host = open(data.tag, { levels: 3 })
+        host.editor.client = null
+        openDay(host, 1)
+        verify(findChild(host.editor, "offlineText").visible)
+        shot(host, data.tag, "day-offline")
+    }
+
+    function test_pausedDay_data() { return modes() }
+    function test_pausedDay(data) {
+        fillLevels(3)
+        server.states.pe = "false"
+        var host = open(data.tag, { levels: 3 })
+        settle(host)
+        verify(findChild(host.editor, "pausedBanner").visible)
+        shot(host, data.tag, "week-paused")
     }
 
     function test_failureBannerWithRetry_data() { return modes() }
@@ -308,6 +403,8 @@ TestCase {
         compare(host.editor.banner, "Could not read the program, try again")
         verify(findChild(host.editor, "banner").visible)
         verify(findChild(host.editor, "retryButton").visible)
+        verify(!findChild(host.editor, "programStatus").visible)
+        verify(!findChild(host.editor, "emptyHint").visible)
         shot(host, data.tag, "read-failed")
     }
 

@@ -75,7 +75,7 @@ Flickable {
                         width: Units.dp(14)
                         height: Units.dp(26)
                         radius: Units.dp(3)
-                        color: TR.levelColor(root.editor.kind, periodRow.modelData.level, Theme.mutedColor)
+                        color: TR.levelColor(root.editor.kind === "cool" ? Theme.blueColor : Theme.yellowColor, periodRow.modelData.level, Theme.mutedColor)
                     }
                     Text {
                         objectName: "periodRange"
@@ -263,6 +263,7 @@ Flickable {
                             color: "transparent"
                             border.width: activeFocus ? 1 : 0
                             text: "−"
+                            textSize: Units.dp(28)
                             textColor: Theme.blueColor
                             enabled: !root.editor.locked && root.editor.defaultSetpoint !== null
                             Accessible.name: qsTr("Lower the default setpoint")
@@ -287,6 +288,7 @@ Flickable {
                             color: "transparent"
                             border.width: activeFocus ? 1 : 0
                             text: "+"
+                            textSize: Units.dp(28)
                             textColor: Theme.blueColor
                             enabled: !root.editor.locked && root.editor.defaultSetpoint !== null
                             Accessible.name: qsTr("Raise the default setpoint")

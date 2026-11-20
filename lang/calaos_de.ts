@@ -3759,8 +3759,8 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
     </message>
     <message>
         <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="442"/>
-        <source>6 different setpoints maximum</source>
-        <translation>Höchstens 6 verschiedene Sollwerte</translation>
+        <source>This week already uses %1 different temperatures. Choose one of them:</source>
+        <translation>Diese Woche werden bereits %1 verschiedene Temperaturen verwendet. Wählen Sie eine davon:</translation>
     </message>
     <message>
         <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="222"/>
@@ -3918,8 +3918,8 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
     </message>
     <message>
         <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="272"/>
-        <source>6 different setpoints maximum</source>
-        <translation>Höchstens 6 verschiedene Sollwerte</translation>
+        <source>This week already uses %1 different temperatures. Choose one of them:</source>
+        <translation>Diese Woche werden bereits %1 verschiedene Temperaturen verwendet. Wählen Sie eine davon:</translation>
     </message>
     <message>
         <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="289"/>

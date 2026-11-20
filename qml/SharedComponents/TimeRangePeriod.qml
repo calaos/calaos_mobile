@@ -56,7 +56,7 @@ ColumnLayout {
 
     function request(swapWith) {
         return { days: [editor.day], start: start, end: end, setpoint: setpoint,
-                 original: original, swapWith: swapWith }
+                 original: original, swapWith: swapWith, maxLevels: editor.levelLimit }
     }
 
     function open(values) {
@@ -272,6 +272,25 @@ ColumnLayout {
         tone: Theme.amberColor
         visible: root.plain.tooMany
         text: root.editor.maxLevelsText
+    }
+
+    Flow {
+        objectName: "usedSetpoints"
+        visible: root.plain.tooMany
+        Layout.fillWidth: true
+        spacing: Units.dp(8)
+        Repeater {
+            model: root.plain.used
+            TimeRangeButton {
+                required property real modelData
+                objectName: "usedSetpoint"
+                fontFamily: root.fontFamily
+                implicitHeight: root.editor.targetSize
+                text: root.editor.degrees(modelData)
+                enabled: !root.readOnly
+                onClicked: root.setpoint = TR.clampSetpoint(modelData)
+            }
+        }
     }
 
     Text {

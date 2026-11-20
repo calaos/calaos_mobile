@@ -157,6 +157,78 @@ TestCase {
         verify(TR.applySlot(levels, { days: [7], start: 600, end: 660, setpoint: 18 }).ok)
     }
 
+    function tenLevels(taken) {
+        var out = []
+        for (var n = 1; n <= 10; n++)
+            out.push(level(n, taken[n - 1] ? taken[n - 1].sp : null, taken[n - 1] ? taken[n - 1].ranges : []))
+        return out
+    }
+
+    //Three temperatures in use, five ranges at 19: one of them moves to 19.5.
+    function raoulWeek() {
+        var five = []
+        for (var d = 1; d <= 5; d++)
+            five.push(range(d, 6, 0, 8, 0))
+        return tenLevels([{ sp: 20.5, ranges: [range(6, 6, 0, 8, 0)] },
+                          { sp: 19, ranges: five },
+                          { sp: 21, ranges: [range(7, 6, 0, 8, 0)] }])
+    }
+
+    function test_fourthTemperatureIsRefusedAtMaxThree() {
+        var r = TR.applySlot(raoulWeek(), { days: [3], start: 360, end: 480, setpoint: 19.5, maxLevels: 3,
+                                            original: { day: 3, start: 360, end: 480, level: 2 } })
+        verify(!r.ok)
+        compare(r.error, "max_levels")
+        var p = TR.previewOverlap(raoulWeek(), { days: [3], start: 360, end: 480, setpoint: 19.5, maxLevels: 3,
+                                                 original: { day: 3, start: 360, end: 480, level: 2 } })
+        verify(p.tooMany)
+        compare(p.used, [19, 20.5, 21])
+    }
+
+    function test_fourthTemperatureIsAcceptedAtMaxTen() {
+        var r = TR.applySlot(raoulWeek(), { days: [3], start: 360, end: 480, setpoint: 19.5, maxLevels: 10,
+                                            original: { day: 3, start: 360, end: 480, level: 2 } })
+        verify(r.ok)
+        compare(r.level, 4)
+        compare(TR.daySegments(r.levels, 3)[0].setpoint, 19.5)
+        compare(r.levels[1].slots.length, 4)
+        compare(r.levels[1].setpoint, 19)
+        for (var d = 1; d <= 5; d++)
+            if (d !== 3)
+                compare(TR.daySegments(r.levels, d)[0].setpoint, 19)
+        compare(TR.usedLevels(r.levels), 4)
+    }
+
+    function test_aLoneRangeChangesItsLevelTemperature() {
+        var levels = tenLevels([{ sp: 20, ranges: [range(1, 6, 0, 8, 0)] }])
+        var r = TR.applySlot(levels, { days: [1], start: 360, end: 480, setpoint: 22, maxLevels: 1,
+                                       original: { day: 1, start: 360, end: 480, level: 1 } })
+        verify(r.ok)
+        compare(r.level, 1)
+        compare(r.setpoints[0].setpoint, 22)
+    }
+
+    function test_rangePastMidnightIsEditedAsOne() {
+        var levels = tenLevels([{ sp: 20, ranges: [range(7, 23, 0, 1, 0)] }, { sp: 18, ranges: [range(2, 6, 0, 7, 0)] }])
+        //Edited from its second half (monday 00:00-01:00), temperature changed.
+        var r = TR.applySlot(levels, { days: [1], start: 0, end: 60, setpoint: 22, maxLevels: 10,
+                                       original: { day: 1, start: 0, end: 60, level: 1 } })
+        verify(r.ok)
+        var out = TR.toRanges(r.levels[r.level - 1].slots)
+        //Both halves stay on the level (alone on it: its temperature changes).
+        compare(out.length, 2)
+        compare(r.level, 1)
+        compare(TR.daySegments(r.levels, 7)[0].setpoint, 22)
+        compare(TR.daySegments(r.levels, 1)[0].setpoint, 22)
+        compare(TR.usedLevels(r.levels), 2)
+    }
+
+    function test_mostUsedSetpoint() {
+        compare(TR.mostUsedSetpoint(raoulWeek(), 10), 19)
+        compare(TR.mostUsedSetpoint(raoulWeek(), 1), 20.5)
+        compare(TR.mostUsedSetpoint(tenLevels([]), 10), null)
+    }
+
     function test_slotKeepsTheOtherLevelsAsTheyAre() {
         var levels = [level(1, 21, [range(1, 6, 0, 9, 0)]), level(2, 18, [])]
         var r = TR.applySlot(levels, { days: [1], start: 420, end: 480, setpoint: 18 })

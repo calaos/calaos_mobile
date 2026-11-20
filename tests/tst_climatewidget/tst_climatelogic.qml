@@ -503,7 +503,7 @@ TestCase {
 
     function test_programCaps() {
         compare(Logic.programCaps({ heat_levels: 2, cool_levels: 0, max_levels: 4 }).maxLevels, 4)
-        compare(Logic.programCaps({ heat_levels: 1 }).maxLevels, 6)
+        compare(Logic.programCaps({ heat_levels: 1 }).maxLevels, 10)
         compare(Logic.programCaps({ heat_levels: 0, cool_levels: 0 }), null)
         compare(Logic.programCaps("x"), null)
         compare(Logic.capabilities({}).program, null)

@@ -402,7 +402,8 @@ TestCase {
         var form = e.currentForm
         form.setpoint = 25
         verify(findChild(form, "tooManyBanner").visible)
-        compare(findChild(form, "tooManyBanner").Accessible.name, "6 different setpoints maximum")
+        compare(findChild(form, "tooManyBanner").Accessible.name, "This week already uses 6 different temperatures. Choose one of them:")
+        compare(findChild(form, "usedSetpoints").children.length > 0, true)
         verify(!findChild(form, "saveButton").enabled)
         form.submit()
         compare(fake.calls.length, from)

@@ -107,7 +107,7 @@ function programCaps(p) {
     var cool = wholeCount(p.cool_levels)
     if (heat + cool === 0)
         return null
-    return { heatLevels: heat, coolLevels: cool, maxLevels: wholeCount(p.max_levels) || 6 }
+    return { heatLevels: heat, coolLevels: cool, maxLevels: wholeCount(p.max_levels) || 10 }
 }
 
 function programSet(s) {

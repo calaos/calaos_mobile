@@ -259,6 +259,33 @@ TestCase {
         shot(host, data.tag, "period-overlap")
     }
 
+    //A temperature of its own while a level is free: no message, no refusal.
+    function test_periodEditAccepted_data() { return modes() }
+    function test_periodEditAccepted(data) {
+        fillLevels(3)
+        var host = open(data.tag, { levels: 4 })
+        openDay(host, 1)
+        host.editor.openSegment({ start: 720, end: 810, level: 2, setpoint: 19 })
+        var form = findChild(host.editor, "periodView")
+        form.setpoint = 19.5
+        verify(!findChild(form, "tooManyBanner").visible)
+        verify(findChild(form, "saveButton").enabled)
+        shot(host, data.tag, "period-edit-accepted")
+    }
+
+    function test_periodTooMany_data() { return modes() }
+    function test_periodTooMany(data) {
+        fillLevels(3)
+        var host = open(data.tag, { levels: 3 })
+        openDay(host, 1)
+        host.editor.openSegment({ start: 720, end: 810, level: 2, setpoint: 19 })
+        var form = findChild(host.editor, "periodView")
+        form.setpoint = 19.5
+        verify(findChild(form, "tooManyBanner").visible)
+        verify(!findChild(form, "saveButton").enabled)
+        shot(host, data.tag, "period-too-many")
+    }
+
     function test_periodDeleteConfirm_data() { return modes() }
     function test_periodDeleteConfirm(data) {
         fillLevels(3)

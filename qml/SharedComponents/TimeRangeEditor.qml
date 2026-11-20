@@ -16,6 +16,8 @@ FocusScope {
     property var device: null
     property var client: typeof programClient !== "undefined" ? programClient : null
     property bool simpleMode: false
+    //Different temperatures one direction may use (capabilities.program.max_levels); 0: what the device exposes.
+    property int maxLevels: 0
     property bool phone: false
     property bool readOnly: false
     property string kind: "heat"
@@ -382,10 +384,16 @@ FocusScope {
         item.form.open(values)
     }
 
+    //A new period starts on the temperature most used this week in this direction.
+    function newSetpoint() {
+        var v = TR.mostUsedSetpoint(levels, levelLimit)
+        return v !== null ? v : (defaultSetpoint !== null ? defaultSetpoint : 20)
+    }
+
     function openNew(start, end) {
         editing = null
         pushForm({ start: start, end: end,
-                   setpoint: defaultSetpoint !== null ? defaultSetpoint : 20 })
+                   setpoint: newSetpoint() })
     }
 
     function openSegment(seg) {
@@ -463,7 +471,8 @@ FocusScope {
                        original: edit.original, swapWith: edit.swapWith })
     }
 
-    readonly property string maxLevelsText: qsTr("6 different setpoints maximum")
+    readonly property int levelLimit: maxLevels > 0 ? Math.min(maxLevels, Math.max(levels.length, 1)) : levels.length
+    readonly property string maxLevelsText: qsTr("This week already uses %1 different temperatures. Choose one of them:").arg(levelLimit)
 
     //The view stays open until the server has the change: a failure keeps the input.
     function applyRequest(request) {
@@ -770,7 +779,7 @@ FocusScope {
                 onCancelRequested: root.closeForm()
                 Component.onCompleted: {
                     if (root.simpleMode)
-                        open({ start: 18 * 60, end: 22 * 60, setpoint: 20 })
+                        open({ start: 18 * 60, end: 22 * 60, setpoint: root.newSetpoint() })
                 }
             }
         }

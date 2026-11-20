@@ -49,11 +49,13 @@ FocusScope {
     //A failed write stays locked until Retry replays it (a fresh save would be computed
     //on half-written levels) or the form is cancelled.
     readonly property bool locked: readOnly || offline || scopeDenied || busy || loading || readFailed
-                                   || retryAction !== null
+                                   || retryAction !== null || pendingWrite !== null
     readonly property bool loading: Object.keys(reads).length > 0
     readonly property bool busy: writeId !== "" || queue.length > 0
     property bool loaded: false
     property bool readFailed: false
+    //A failed read must not replace the failed write: only a replay or Cancel clears it.
+    property var pendingWrite: null
     property bool sessionLost: false
     //The account may read the program but not write it: sticky until the client changes.
     property bool scopeDenied: false
@@ -191,8 +193,10 @@ FocusScope {
     function onRead(what, ok, answer) {
         if (!ok) {
             readFailed = true
-            banner = qsTr("Could not read the program, try again")
-            retryAction = function() { root.reload() }
+            if (pendingWrite === null) {
+                banner = qsTr("Could not read the program, try again")
+                retryAction = function() { root.reload() }
+            }
             return
         }
         var next = Object.assign({}, levelsByKind)
@@ -290,7 +294,8 @@ FocusScope {
         writeDone = null
         banner = done && done.failText !== "" && error !== "scope denied" ? done.failText : errorText(error)
         scopeDenied = scopeDenied || error === "scope denied"
-        retryAction = done && !scopeDenied ? done.action : null
+        pendingWrite = done && !scopeDenied ? done.action : null
+        retryAction = pendingWrite
         //Shows what the server really has.
         reload()
     }
@@ -299,6 +304,11 @@ FocusScope {
         var action = retryAction
         banner = ""
         retryAction = null
+        //The replayed write carries its own levels, it needs no successful read first.
+        if (pendingWrite !== null) {
+            pendingWrite = null
+            readFailed = false
+        }
         if (action)
             action()
     }
@@ -392,7 +402,13 @@ FocusScope {
 
     function closeForm() {
         editing = null
-        if (!readFailed && retryAction !== null) {
+        if (pendingWrite !== null) {
+            pendingWrite = null
+            retryAction = null
+            banner = ""
+            if (readFailed)
+                reload()
+        } else if (!readFailed && retryAction !== null) {
             retryAction = null
             banner = ""
         }

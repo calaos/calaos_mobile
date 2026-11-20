@@ -89,11 +89,16 @@ TestCase {
     }
 
     //Answers every request not answered yet; writes go through failWith.
+    property int readFailures: 0
+
     function answerAll(failWith) {
         var err
         while (fake.answered < fake.calls.length) {
             var c = fake.calls[fake.answered++]
-            if (c.action === "get_timerange")
+            if (c.action === "get_timerange" && readFailures > 0) {
+                readFailures--
+                fake.finished(c.rid, false, {}, "timeout")
+            } else if (c.action === "get_timerange")
                 fake.finished(c.rid, true, { months: "111111111111", ranges: server.ranges[c.id] || [] }, "")
             else if (c.action === "get_state")
                 fake.finished(c.rid, true, server.states, "")
@@ -613,6 +618,45 @@ TestCase {
         compare(r.e.page, "week")
         verify(r.e.retryAction === null)
         compare(findChild(r.e, "banner").visible, false)
+    }
+
+    function test_failedReadAfterFailedWriteKeepsTheWrite() {
+        var okRun = swapScenario(false)
+        var expected = JSON.stringify([server.ranges, server.states])
+        var okOps = sentOps(okRun.from)
+
+        init()
+        server.ranges.h2 = [range(1, 12, 0, 13, 0)]
+        var e = make()
+        answerAll()
+        e.openSegment({ start: 720, end: 780, level: 2, setpoint: 18 })
+        var form = e.currentForm
+        form.end = 7 * 60
+        form.start = 7 * 60 - 15
+        form.swapped = true
+        var from = fake.calls.length
+        form.submit()
+        var failed = false
+        readFailures = 1
+        answerAll(function(c) {
+            if (!failed && c.action === "set_timerange" && c.id === "h2") {
+                failed = true
+                return "config_not_written"
+            }
+            return ""
+        })
+        verify(e.readFailed)
+        compare(findChild(e, "banner").Accessible.name, "Incomplete save: not saved, try again")
+        var retry = findChild(e, "retryButton")
+        verify(retry.visible)
+        var before = fake.calls.length
+        form.submit()
+        compare(writes(before).length, 0)
+        retry.trigger()
+        answerAll()
+        compare(sentOps(before), okOps)
+        compare(JSON.stringify([server.ranges, server.states]), expected)
+        compare(e.page, "week")
     }
 
     function test_deleteAsksInPlaceThenWrites() {

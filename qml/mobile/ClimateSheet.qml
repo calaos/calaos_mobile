@@ -208,6 +208,7 @@ Item {
             anchors.fill: parent
             fontFamily: host.fontFamily
             device: climate.modelData ? climate.modelData.device : ({})
+            maxLevels: climate.caps.program ? climate.caps.program.maxLevels : 0
             client: typeof programClient !== "undefined" ? programClient : null
             phone: true
             readOnly: climate.status.kind === "offline"

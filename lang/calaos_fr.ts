@@ -3758,9 +3758,9 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <translation>%1 plages</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="442"/>
-        <source>6 different setpoints maximum</source>
-        <translation>6 consignes différentes au maximum</translation>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="475"/>
+        <source>This week already uses %1 different temperatures. Choose one of them:</source>
+        <translation>Cette semaine utilise déjà %1 températures différentes. Choisissez l&apos;une d&apos;elles :</translation>
     </message>
     <message>
         <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="222"/>
@@ -3917,9 +3917,9 @@ Ajoutez des favoris depuis le menu du navigateur.</translation>
         <translation>Inverser</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="272"/>
-        <source>6 different setpoints maximum</source>
-        <translation>6 consignes différentes au maximum</translation>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="290"/>
+        <source>Set to %1</source>
+        <translation>Régler sur %1</translation>
     </message>
     <message>
         <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="289"/>

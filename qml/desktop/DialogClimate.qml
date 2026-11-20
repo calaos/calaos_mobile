@@ -209,6 +209,7 @@ Item {
             anchors { fill: parent; margins: Units.dp(14) }
             fontFamily: host.fontFamily
             device: climate.modelData ? climate.modelData.device : ({})
+            maxLevels: climate.caps.program ? climate.caps.program.maxLevels : 0
             readOnly: climate.status.kind === "offline"
             title: climate.name
             holdSetpoint: climate.values ? climate.values.target : undefined

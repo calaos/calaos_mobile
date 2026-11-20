@@ -16,6 +16,8 @@ FocusScope {
     property var device: null
     property var client: typeof programClient !== "undefined" ? programClient : null
     property bool simpleMode: false
+    //Different temperatures one direction may use (capabilities.program.max_levels); 0: what the device exposes.
+    property int maxLevels: 0
     property bool phone: false
     property bool readOnly: false
     property string kind: "heat"
@@ -25,7 +27,7 @@ FocusScope {
     property var holdSetpoint
     readonly property real rowHeight: Units.dp(phone ? 48 : 56)
     //Touch targets: 44 on a phone, 56 on the wall kiosk
-    readonly property real targetSize: Units.dp(phone ? 44 : 56)
+    readonly property real targetSize: Units.dp(phone ? 48 : 56)
 
     signal applied()
     //Close on the Week page: the host closes its dialog or sheet.
@@ -382,10 +384,16 @@ FocusScope {
         item.form.open(values)
     }
 
+    //A new period starts on the temperature most used this week in this direction.
+    function newSetpoint() {
+        var v = TR.mostUsedSetpoint(levels, levelLimit)
+        return v !== null ? v : (defaultSetpoint !== null ? defaultSetpoint : 20)
+    }
+
     function openNew(start, end) {
         editing = null
         pushForm({ start: start, end: end,
-                   setpoint: defaultSetpoint !== null ? defaultSetpoint : 20 })
+                   setpoint: newSetpoint() })
     }
 
     function openSegment(seg) {
@@ -460,10 +468,11 @@ FocusScope {
 
     function savePeriod(edit) {
         applyRequest({ days: edit.days, start: edit.start, end: edit.end, setpoint: edit.setpoint,
-                       original: edit.original, swapWith: edit.swapWith })
+                       original: edit.original, swapWith: edit.swapWith, maxLevels: levelLimit })
     }
 
-    readonly property string maxLevelsText: qsTr("6 different setpoints maximum")
+    readonly property int levelLimit: maxLevels > 0 ? Math.min(maxLevels, Math.max(levels.length, 1)) : levels.length
+    readonly property string maxLevelsText: qsTr("This week already uses %1 different temperatures. Choose one of them:").arg(levelLimit)
 
     //The view stays open until the server has the change: a failure keeps the input.
     function applyRequest(request) {
@@ -770,7 +779,7 @@ FocusScope {
                 onCancelRequested: root.closeForm()
                 Component.onCompleted: {
                     if (root.simpleMode)
-                        open({ start: 18 * 60, end: 22 * 60, setpoint: 20 })
+                        open({ start: 18 * 60, end: 22 * 60, setpoint: root.newSetpoint() })
                 }
             }
         }

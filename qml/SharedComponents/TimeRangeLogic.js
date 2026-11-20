@@ -11,7 +11,7 @@
 //new objects; untouched slots are shared.
 
 var DayMinutes = 1440
-var MaxLevels = 6
+var MaxLevels = 10
 
 var groupSeq = 0
 
@@ -22,6 +22,10 @@ function toInt(v, fallback) {
 
 function nextDay(day) {
     return day % 7 + 1
+}
+
+function prevDay(day) {
+    return (day + 5) % 7 + 1
 }
 
 //"17:30"; 1440 is "24:00".
@@ -193,20 +197,65 @@ function sameSetpoint(a, b) {
            Math.abs(Number(a) - Number(b)) < 0.01
 }
 
-//Grouping by temperature: the level already at this setpoint, else the first
-//level without any slot (its setpoint is rewritten), else -1: all are taken.
-function pickLevel(levels, setpoint) {
+//Grouping by temperature: the level already at this setpoint, else the level
+//the edited range came from if it is now empty (its setpoint is rewritten),
+//else the first level without any slot, else -1: `max` temperatures are used.
+function pickLevel(levels, setpoint, max, own) {
     var i
+    var cap = max > 0 ? max : MaxLevels
     for (i = 0; i < levels.length; i++)
-        if (sameSetpoint(levels[i].setpoint, setpoint) && hasSlots(levels[i]))
+        if (levels[i].n <= cap && sameSetpoint(levels[i].setpoint, setpoint) && hasSlots(levels[i]))
             return levels[i].n
     for (i = 0; i < levels.length; i++)
-        if (sameSetpoint(levels[i].setpoint, setpoint))
+        if (levels[i].n <= cap && sameSetpoint(levels[i].setpoint, setpoint))
             return levels[i].n
+    i = own > 0 ? levelIndex(levels, own) : -1
+    if (i >= 0 && levels[i].n <= cap && !hasSlots(levels[i]))
+        return levels[i].n
     for (i = 0; i < levels.length; i++)
-        if (!hasSlots(levels[i]))
+        if (levels[i].n <= cap && !hasSlots(levels[i]))
             return levels[i].n
     return -1
+}
+
+//Temperatures in use (levels with a slot), sorted, without duplicates.
+function usedSetpoints(levels, max) {
+    var out = []
+    var cap = max > 0 ? max : MaxLevels
+    for (var i = 0; i < levels.length; i++) {
+        var v = levels[i].setpoint
+        if (levels[i].n > cap || v === null || v === undefined || !hasSlots(levels[i]))
+            continue
+        var seen = false
+        for (var j = 0; j < out.length; j++)
+            if (sameSetpoint(out[j], v))
+                seen = true
+        if (!seen)
+            out.push(Number(v))
+    }
+    return out.sort(function(a, b) { return a - b })
+}
+
+//The temperature carrying the most ranges of the week, null if none.
+function mostUsedSetpoint(levels, max) {
+    var cap = max > 0 ? max : MaxLevels
+    var best = null, bestCount = 0
+    for (var i = 0; i < levels.length; i++) {
+        var v = levels[i].setpoint
+        if (levels[i].n > cap || v === null || v === undefined)
+            continue
+        var count = 0
+        for (var j = 0; j < levels.length; j++)
+            if (levels[j].n <= cap && sameSetpoint(levels[j].setpoint, v))
+                for (var k = 0; k < levels[j].slots.length; k++)
+                    if (levels[j].slots[k].end > levels[j].slots[k].start)
+                        count++
+        if (count > bestCount) {
+            best = Number(v)
+            bestCount = count
+        }
+    }
+    return best
 }
 
 function usedLevels(levels) {
@@ -321,6 +370,38 @@ function failure(error) {
     return { ok: false, error: error, levels: null, changed: [], setpoints: [] }
 }
 
+//The other half of a range past midnight: one wrapping range from the server
+//(same raw), or two plain ranges that touch at midnight on the same level, as
+//the web finds it. `o` is the edited segment { day, start, end }.
+function halfTwins(slots, o) {
+    var out = []
+    for (var q = 0; q < slots.length; q++) {
+        var h = slots[q]
+        if (h.day !== o.day || h.start !== o.start || h.end !== o.end || h.parts !== 2)
+            continue
+        for (var r = 0; r < slots.length; r++) {
+            var g = slots[r]
+            if (g !== h && g.group === h.group && g.raw === h.raw)
+                out.push({ day: g.day, start: g.start, end: g.end })
+        }
+    }
+    if (out.length)
+        return out
+    var wantDay = o.end === DayMinutes ? nextDay(o.day) : (o.start === 0 ? prevDay(o.day) : 0)
+    if (!wantDay)
+        return out
+    for (var k = 0; k < slots.length; k++) {
+        var s = slots[k]
+        if (s.day !== wantDay || s.end <= s.start)
+            continue
+        if (o.end === DayMinutes ? s.start === 0 : s.end === DayMinutes) {
+            out.push({ day: s.day, start: s.start, end: s.end })
+            break
+        }
+    }
+    return out
+}
+
 //Puts a slot on the bar.
 //edit: { days: [1..7], start, end, setpoint, original: { day, start, end, level } }
 //original is the segment being edited, absent for a new slot. end <= start
@@ -335,15 +416,26 @@ function applySlot(levels, edit) {
 
     var next = cloneLevels(levels)
     var i
+    var sibling = []
     if (edit.original) {
         var o = edit.original
-        for (i = 0; i < next.length; i++)
-            if (!o.level || next[i].n === o.level)
-                next[i].slots = carve(next[i].slots, o.day, o.start, o.end)
+        for (i = 0; i < next.length; i++) {
+            if (o.level && next[i].n !== o.level)
+                continue
+            var twins = halfTwins(next[i].slots, o)
+            next[i].slots = carve(next[i].slots, o.day, o.start, o.end)
+            for (var t = 0; t < twins.length; t++) {
+                next[i].slots = carve(next[i].slots, twins[t].day, twins[t].start, twins[t].end)
+                //An edit that itself wraps rewrites the next day's half.
+                var later = twins[t].day === nextDay(o.day) && twins[t].start === 0
+                if (!(later && edit.end <= edit.start && edit.end > 0))
+                    sibling.push(twins[t])
+            }
+        }
     }
 
-    var pieces = pieceList(edit)
-    var n = pickLevel(next, edit.setpoint)
+    var pieces = pieceList(edit).concat(sibling)
+    var n = pickLevel(next, edit.setpoint, edit.maxLevels, edit.original ? edit.original.level : 0)
     if (n < 0)
         return failure("max_levels")
     var idx = levelIndex(next, n)
@@ -374,6 +466,7 @@ function applySlot(levels, edit) {
             setpoints.push({ n: next[i].n, setpoint: Number(next[i].setpoint) })
     var res = result(levels, next, setpoints)
     res.level = n
+    res.pieces = pieces
     return res
 }
 
@@ -397,14 +490,16 @@ function pieceList(edit) {
 //{ tooMany, level, overlaps: [{ range: {start, end}, setpoint, level, from, to, wins }] }
 //`wins` is true when the edited range has the lower level number.
 function previewOverlap(levels, edit) {
-    var out = { tooMany: false, level: 0, overlaps: [] }
+    var out = { tooMany: false, level: 0, overlaps: [], used: [] }
     var res = applySlot(levels, edit)
     if (!res.ok) {
         out.tooMany = res.error === "max_levels"
+        if (out.tooMany)
+            out.used = usedSetpoints(levels, edit.maxLevels)
         return out
     }
     out.level = res.level
-    var pieces = pieceList(edit)
+    var pieces = res.pieces
     for (var i = 0; i < res.levels.length; i++) {
         var lv = res.levels[i]
         if (lv.n === res.level)
@@ -590,10 +685,10 @@ function isoDay(date) {
 }
 
 //Colour of a level on the bar and in the period rows: shades of the theme
-//colour `base` (lighter = higher priority); `none` outside 1..6.
+//colour `base` (lighter = higher priority); `none` outside 1..MaxLevels.
 function levelColor(base, n, none) {
     if (n < 1 || n > MaxLevels)
         return none
-    var f = [1.35, 1.15, 1.0, 0.85, 0.7, 0.55][n - 1]
+    var f = [1.35, 1.15, 1.0, 0.85, 0.7, 0.55, 0.47, 0.4, 0.34, 0.29][n - 1]
     return f >= 1 ? Qt.lighter(base, f) : Qt.darker(base, 1 / f)
 }

@@ -27,7 +27,7 @@ FocusScope {
     property var holdSetpoint
     readonly property real rowHeight: Units.dp(phone ? 48 : 56)
     //Touch targets: 44 on a phone, 56 on the wall kiosk
-    readonly property real targetSize: Units.dp(phone ? 44 : 56)
+    readonly property real targetSize: Units.dp(phone ? 48 : 56)
 
     signal applied()
     //Close on the Week page: the host closes its dialog or sheet.
@@ -468,7 +468,7 @@ FocusScope {
 
     function savePeriod(edit) {
         applyRequest({ days: edit.days, start: edit.start, end: edit.end, setpoint: edit.setpoint,
-                       original: edit.original, swapWith: edit.swapWith })
+                       original: edit.original, swapWith: edit.swapWith, maxLevels: levelLimit })
     }
 
     readonly property int levelLimit: maxLevels > 0 ? Math.min(maxLevels, Math.max(levels.length, 1)) : levels.length

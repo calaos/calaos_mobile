@@ -403,7 +403,15 @@ TestCase {
         form.setpoint = 25
         verify(findChild(form, "tooManyBanner").visible)
         compare(findChild(form, "tooManyBanner").Accessible.name, "This week already uses 6 different temperatures. Choose one of them:")
-        compare(findChild(form, "usedSetpoints").children.length > 0, true)
+        compare(findChild(form, "usedSetpoints").visible, true)
+        var chip = findChild(form, "usedSetpoint")
+        verify(chip !== null)
+        settle(e)
+        mouseClick(chip)
+        tryVerify(function() { return !findChild(form, "tooManyBanner").visible })
+        verify(findChild(form, "saveButton").enabled)
+        form.setpoint = 25
+        verify(findChild(form, "tooManyBanner").visible)
         verify(!findChild(form, "saveButton").enabled)
         form.submit()
         compare(fake.calls.length, from)
@@ -411,6 +419,30 @@ TestCase {
         form.setpoint = 18
         verify(!findChild(form, "tooManyBanner").visible)
         verify(findChild(form, "saveButton").enabled)
+    }
+
+    function test_newRangeStartsOnTheMostUsedTemperature() {
+        var e = make({ device: { ios: ios(6) } })
+        server.ranges["h1"] = [range(1, 6, 0, 7, 0), range(2, 6, 0, 7, 0)]
+        server.ranges["h2"] = [range(3, 6, 0, 7, 0)]
+        server.states["h1sp"] = "19"
+        server.states["h2sp"] = "21"
+        answerAll()
+        e.openNew(600, 660)
+        compare(e.currentForm.setpoint, 19)
+    }
+
+    function test_saveAppliesTheLevelLimit() {
+        var e = make({ device: { ios: ios(6) }, maxLevels: 2 })
+        server.ranges["h1"] = [range(1, 6, 0, 7, 0)]
+        server.ranges["h2"] = [range(2, 6, 0, 7, 0)]
+        server.states["h1sp"] = "16"
+        server.states["h2sp"] = "17"
+        answerAll()
+        var from = fake.calls.length
+        e.savePeriod({ days: [3], start: 600, end: 660, setpoint: 25 })
+        compare(writes(from).length, 0)
+        compare(e.banner, e.maxLevelsText)
     }
 
     function test_coolingOff() {

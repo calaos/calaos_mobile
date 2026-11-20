@@ -24,6 +24,10 @@ function nextDay(day) {
     return day % 7 + 1
 }
 
+function prevDay(day) {
+    return (day + 5) % 7 + 1
+}
+
 //"17:30"; 1440 is "24:00".
 function hhmm(minutes) {
     var h = Math.floor(minutes / 60)
@@ -366,6 +370,38 @@ function failure(error) {
     return { ok: false, error: error, levels: null, changed: [], setpoints: [] }
 }
 
+//The other half of a range past midnight: one wrapping range from the server
+//(same raw), or two plain ranges that touch at midnight on the same level, as
+//the web finds it. `o` is the edited segment { day, start, end }.
+function halfTwins(slots, o) {
+    var out = []
+    for (var q = 0; q < slots.length; q++) {
+        var h = slots[q]
+        if (h.day !== o.day || h.start !== o.start || h.end !== o.end || h.parts !== 2)
+            continue
+        for (var r = 0; r < slots.length; r++) {
+            var g = slots[r]
+            if (g !== h && g.group === h.group && g.raw === h.raw)
+                out.push({ day: g.day, start: g.start, end: g.end })
+        }
+    }
+    if (out.length)
+        return out
+    var wantDay = o.end === DayMinutes ? nextDay(o.day) : (o.start === 0 ? prevDay(o.day) : 0)
+    if (!wantDay)
+        return out
+    for (var k = 0; k < slots.length; k++) {
+        var s = slots[k]
+        if (s.day !== wantDay || s.end <= s.start)
+            continue
+        if (o.end === DayMinutes ? s.start === 0 : s.end === DayMinutes) {
+            out.push({ day: s.day, start: s.start, end: s.end })
+            break
+        }
+    }
+    return out
+}
+
 //Puts a slot on the bar.
 //edit: { days: [1..7], start, end, setpoint, original: { day, start, end, level } }
 //original is the segment being edited, absent for a new slot. end <= start
@@ -386,20 +422,15 @@ function applySlot(levels, edit) {
         for (i = 0; i < next.length; i++) {
             if (o.level && next[i].n !== o.level)
                 continue
-            //The other half of a range past midnight follows the temperature.
-            for (var q = 0; q < next[i].slots.length; q++) {
-                var h = next[i].slots[q]
-                if (h.day !== o.day || h.start !== o.start || h.end !== o.end || h.parts !== 2)
-                    continue
-                for (var r = 0; r < next[i].slots.length; r++) {
-                    var g = next[i].slots[r]
-                    if (g !== h && g.group === h.group && g.raw === h.raw)
-                        sibling.push({ day: g.day, start: g.start, end: g.end })
-                }
-            }
+            var twins = halfTwins(next[i].slots, o)
             next[i].slots = carve(next[i].slots, o.day, o.start, o.end)
-            for (var t = 0; t < sibling.length; t++)
-                next[i].slots = carve(next[i].slots, sibling[t].day, sibling[t].start, sibling[t].end)
+            for (var t = 0; t < twins.length; t++) {
+                next[i].slots = carve(next[i].slots, twins[t].day, twins[t].start, twins[t].end)
+                //An edit that itself wraps rewrites the next day's half.
+                var later = twins[t].day === nextDay(o.day) && twins[t].start === 0
+                if (!(later && edit.end <= edit.start && edit.end > 0))
+                    sibling.push(twins[t])
+            }
         }
     }
 
@@ -435,6 +466,7 @@ function applySlot(levels, edit) {
             setpoints.push({ n: next[i].n, setpoint: Number(next[i].setpoint) })
     var res = result(levels, next, setpoints)
     res.level = n
+    res.pieces = pieces
     return res
 }
 
@@ -467,7 +499,7 @@ function previewOverlap(levels, edit) {
         return out
     }
     out.level = res.level
-    var pieces = pieceList(edit)
+    var pieces = res.pieces
     for (var i = 0; i < res.levels.length; i++) {
         var lv = res.levels[i]
         if (lv.n === res.level)

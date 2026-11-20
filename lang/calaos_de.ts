@@ -3758,7 +3758,7 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <translation>%1 Zeiträume</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="442"/>
+        <location filename="../qml/SharedComponents/TimeRangeEditor.qml" line="475"/>
         <source>This week already uses %1 different temperatures. Choose one of them:</source>
         <translation>Diese Woche werden bereits %1 verschiedene Temperaturen verwendet. Wählen Sie eine davon:</translation>
     </message>
@@ -3917,9 +3917,9 @@ Fügen Sie Lesezeichen über das Browsermenü hinzu.</translation>
         <translation>Tauschen</translation>
     </message>
     <message>
-        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="272"/>
-        <source>This week already uses %1 different temperatures. Choose one of them:</source>
-        <translation>Diese Woche werden bereits %1 verschiedene Temperaturen verwendet. Wählen Sie eine davon:</translation>
+        <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="290"/>
+        <source>Set to %1</source>
+        <translation>Auf %1 setzen</translation>
     </message>
     <message>
         <location filename="../qml/SharedComponents/TimeRangePeriod.qml" line="289"/>

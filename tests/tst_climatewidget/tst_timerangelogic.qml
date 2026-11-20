@@ -223,6 +223,64 @@ TestCase {
         compare(TR.usedLevels(r.levels), 2)
     }
 
+    //What the mobile writes for a range past midnight: two plain ranges that touch.
+    function twoPlainHalves() {
+        return tenLevels([{ sp: 20, ranges: [range(7, 23, 0, 23, 59, 59), range(1, 0, 0, 1, 0)] },
+                          { sp: 18, ranges: [range(2, 6, 0, 7, 0)] }])
+    }
+
+    function test_plainHalvesFollowTheTemperatureFromEitherSide_data() {
+        return [
+            { tag: "first half", orig: { day: 7, start: 1380, end: 1440, level: 1 }, s: 1380, e: 1440, d: 7 },
+            { tag: "second half", orig: { day: 1, start: 0, end: 60, level: 1 }, s: 0, e: 60, d: 1 }
+        ]
+    }
+
+    function test_plainHalvesFollowTheTemperatureFromEitherSide(d) {
+        var r = TR.applySlot(twoPlainHalves(), { days: [d.d], start: d.s, end: d.e, setpoint: 22, maxLevels: 10,
+                                                 original: d.orig })
+        verify(r.ok)
+        compare(TR.daySegments(r.levels, 7)[0].setpoint, 22)
+        compare(TR.daySegments(r.levels, 1)[0].setpoint, 22)
+        compare(TR.daySegments(r.levels, 7)[0].start, 1380)
+        compare(TR.daySegments(r.levels, 1)[0].end, 60)
+        //A second edit of the already rewritten halves still moves both.
+        var again = TR.applySlot(r.levels, { days: [1], start: 0, end: 60, setpoint: 23, maxLevels: 10,
+                                             original: { day: 1, start: 0, end: 60, level: r.level } })
+        verify(again.ok)
+        compare(TR.daySegments(again.levels, 7)[0].setpoint, 23)
+        compare(TR.daySegments(again.levels, 1)[0].setpoint, 23)
+    }
+
+    function test_touchingRangesOnAnotherLevelAreNotHalves() {
+        var levels = tenLevels([{ sp: 20, ranges: [range(7, 23, 0, 23, 59, 59)] },
+                                { sp: 18, ranges: [range(1, 0, 0, 1, 0)] }])
+        var r = TR.applySlot(levels, { days: [7], start: 1380, end: 1440, setpoint: 22, maxLevels: 10,
+                                       original: { day: 7, start: 1380, end: 1440, level: 1 } })
+        verify(r.ok)
+        compare(TR.daySegments(r.levels, 1)[0].setpoint, 18)
+    }
+
+    function test_editedWrapReplacesTheOldNextDayHalf() {
+        //Sunday half shortened to 23:00-00:30: monday keeps nothing past 00:30.
+        var r = TR.applySlot(twoPlainHalves(), { days: [7], start: 1380, end: 30, setpoint: 20, maxLevels: 10,
+                                                 original: { day: 7, start: 1380, end: 1440, level: 1 } })
+        verify(r.ok)
+        var mon = TR.daySegments(r.levels, 1)
+        compare(mon[0].start, 0)
+        compare(mon[0].end, 30)
+        compare(mon.length, 1)
+    }
+
+    function test_previewCountsTheOtherHalf() {
+        var levels = tenLevels([{ sp: 20, ranges: [range(7, 23, 0, 23, 59, 59), range(1, 0, 0, 1, 0)] },
+                                { sp: 18, ranges: [range(1, 0, 0, 2, 0)] }])
+        var p = TR.previewOverlap(levels, { days: [7], start: 1380, end: 1440, setpoint: 20, maxLevels: 10,
+                                            original: { day: 7, start: 1380, end: 1440, level: 1 } })
+        compare(p.overlaps.length, 1)
+        compare(p.overlaps[0].level, 2)
+    }
+
     function test_mostUsedSetpoint() {
         compare(TR.mostUsedSetpoint(raoulWeek(), 10), 19)
         compare(TR.mostUsedSetpoint(raoulWeek(), 1), 20.5)

@@ -287,6 +287,7 @@ ColumnLayout {
                 fontFamily: root.fontFamily
                 implicitHeight: root.editor.targetSize
                 text: root.editor.degrees(modelData)
+                Accessible.name: qsTr("Set to %1").arg(text)
                 enabled: !root.readOnly
                 onClicked: root.setpoint = TR.clampSetpoint(modelData)
             }

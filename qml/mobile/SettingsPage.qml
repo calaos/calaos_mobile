@@ -1,5 +1,6 @@
 import QtQuick
 import SharedComponents
+import "../background/qml"
 
 //What the settings pages share: background, header and a scrolling column
 //that receives the children.
@@ -10,12 +11,8 @@ Item {
     property alias glyph: header.glyph
     default property alias content: column.data
 
-    Image {
-        source: calaosApp.getPictureSized(isLandscape?
-                                              "background_landscape":
-                                              "background")
+    CalaosBackground {
         anchors.fill: parent
-        fillMode: Image.PreserveAspectCrop
     }
 
     Flickable {

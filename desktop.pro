@@ -75,6 +75,7 @@ HEADERS += 3rd_party/drivelist/src/drivelist.hpp
 
 RESOURCES += qml_desktop.qrc \
     img_desktop.qrc \
+    background.qrc \
     fonts_desktop.qrc \
     qml_shared.qrc \
     widgets.qrc \

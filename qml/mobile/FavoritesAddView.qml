@@ -1,14 +1,11 @@
 import QtQuick
 import SharedComponents
+import "../background/qml"
 import Calaos
 
 Item {
-    Image {
-        source: calaosApp.getPictureSized(isLandscape?
-                                              "background_landscape":
-                                              "background")
+    CalaosBackground {
         anchors.fill: parent
-        fillMode: Image.PreserveAspectCrop
     }
 
     ListView {

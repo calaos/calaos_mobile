@@ -1,18 +1,15 @@
 import QtQuick
 import Calaos
 import SharedComponents
+import "../background/qml"
 
 Item {
 
     property alias roomItemModel: listView.model
     property alias filteredRoomItemModel: filterModel.source
 
-    Image {
-        source: calaosApp.getPictureSized(isLandscape?
-                                              "background_landscape":
-                                              "background")
+    CalaosBackground {
         anchors.fill: parent
-        fillMode: Image.PreserveAspectCrop
     }
 
     ItemListView {

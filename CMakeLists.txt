@@ -37,6 +37,7 @@ if(ANDROID)
         ${CALAOS_SOURCES} ${CALAOS_HEADERS}
         qml_mobile.qrc
         img_mobile.qrc
+        background.qrc
         fonts_mobile.qrc
         qml_shared.qrc
         lang.qrc
@@ -46,6 +47,7 @@ else()
         ${CALAOS_SOURCES} ${CALAOS_HEADERS}
         qml_mobile.qrc
         img_mobile.qrc
+        background.qrc
         fonts_mobile.qrc
         qml_shared.qrc
         lang.qrc

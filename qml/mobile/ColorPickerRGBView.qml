@@ -2,18 +2,15 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import SharedComponents
+import "../background/qml"
 
 Item {
 
     property QtObject itemColor
     property var itemCallback
 
-    Image {
-        source: calaosApp.getPictureSized(isLandscape?
-                                              "background_landscape":
-                                              "background")
+    CalaosBackground {
         anchors.fill: parent
-        fillMode: Image.PreserveAspectCrop
     }
 
     onItemColorChanged: {

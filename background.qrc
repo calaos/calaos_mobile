@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qml/background/qml/CalaosBackground.qml</file>
+        <file>qml/background/qml/background.frag.qsb</file>
+        <file>qml/background/src/layout.mjs</file>
+        <file>qml/background/assets/variants.mjs</file>
+        <file>qml/background/assets/desktop/base.png</file>
+        <file>qml/background/assets/desktop/mask-a.png</file>
+        <file>qml/background/assets/desktop/mask-b.png</file>
+        <file>qml/background/assets/phone/base.png</file>
+        <file>qml/background/assets/phone/mask-a.png</file>
+        <file>qml/background/assets/phone/mask-b.png</file>
+    </qresource>
+</RCC>

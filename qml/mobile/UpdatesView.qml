@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls as QuickControls
 import QtQuick.Layouts
 import SharedComponents
+import "../background/qml"
 
 //Box updates from the phone, with the admin password (calaos_server admin
 //relay). Same information as the webapp's update panel: one headline, the
@@ -124,12 +125,8 @@ Item {
         }
     }
 
-    Image {
-        source: calaosApp.getPictureSized(isLandscape?
-                                              "background_landscape":
-                                              "background")
+    CalaosBackground {
         anchors.fill: parent
-        fillMode: Image.PreserveAspectCrop
     }
 
     Flickable {

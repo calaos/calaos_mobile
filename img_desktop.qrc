@@ -1,8 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file>img/background_center.png</file>
-        <file>img/background_bottom.png</file>
-        <file>img/background_top.png</file>
         <file>img/background_quad.png</file>
         <file>img/menu_header_shadow.png</file>
         <file>img/menu_header_background.png</file>
@@ -157,10 +154,6 @@
         <file>img/back_items_home@2x.png</file>
         <file>img/back_items_home_glow.png</file>
         <file>img/back_items_home_glow@2x.png</file>
-        <file>img/background.png</file>
-        <file>img/background@2x.png</file>
-        <file>img/background_landscape.png</file>
-        <file>img/background_landscape@2x.png</file>
         <file>img/button_action_actionstop.png</file>
         <file>img/button_action_actionstop_off.png</file>
         <file>img/button_action_back.png</file>

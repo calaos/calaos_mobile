@@ -3,6 +3,7 @@ import Calaos
 import SharedComponents
 import QuickFlux
 import "../quickflux"
+import "../background/qml"
 
 Rectangle {
     id: bg
@@ -10,77 +11,7 @@ Rectangle {
     property alias mainContent: mainItem.children
     property alias menuContent: menuItem.children
 
-    color: "#272727"
-
-    Rectangle {
-        color: "black"
-        opacity: 0.4
-        anchors.fill: parent
-    }
-
-    BorderImage {
-        source: "qrc:/img/background_center.png"
-        opacity: 0.3
-
-        border {
-            left: Units.dp(510)
-            right: Units.dp(512)
-            top: Units.dp(2)
-            bottom: Units.dp(0)
-        }
-
-        anchors {
-            fill: parent
-            bottomMargin: mainItem.anchors.bottomMargin
-        }
-    }
-
-    BorderImage {
-        source: "qrc:/img/background_bottom.png"
-        opacity: 0.5
-
-        border {
-            left: Units.dp(510)
-            right: Units.dp(512)
-            top: Units.dp(364)
-            bottom: Units.dp(288)
-        }
-
-        anchors {
-            fill: parent
-            bottomMargin: mainItem.anchors.bottomMargin
-        }
-    }
-
-    BorderImage {
-        source: "qrc:/img/background_top.png"
-        opacity: 0.3
-
-        border {
-            left: Units.dp(510)
-            right: Units.dp(512)
-            top: Units.dp(364)
-            bottom: Units.dp(288)
-        }
-
-        anchors {
-            fill: parent
-            bottomMargin: mainItem.anchors.bottomMargin
-        }
-    }
-
-    Image {
-        source: "qrc:/img/background_quad.png"
-
-        fillMode: Image.Tile
-        horizontalAlignment: Image.AlignLeft
-        verticalAlignment: Image.AlignTop
-
-        anchors {
-            fill: parent
-            bottomMargin: mainItem.anchors.bottomMargin
-        }
-    }
+    CalaosBackground { anchors.fill: parent }
 
     Item {
         id: mainItem

@@ -2,6 +2,7 @@ import QtQuick
 import Calaos
 import QtQuick.Controls
 import SharedComponents
+import "../background/qml"
 
 Item {
     id: page
@@ -10,12 +11,8 @@ Item {
                                      StackView.status === StackView.Activating
     readonly property real pixelRatio: Screen.devicePixelRatio
 
-    Image {
-        source: calaosApp.getPictureSized(isLandscape?
-                                              "background_landscape":
-                                              "background")
+    CalaosBackground {
         anchors.fill: parent
-        fillMode: Image.PreserveAspectCrop
     }
 
     ListView {

@@ -1,5 +1,6 @@
 import QtQuick
 import SharedComponents
+import "../background/qml"
 
 Item {
 
@@ -8,12 +9,8 @@ Item {
 
     signal roomClicked(int idx, string room_name)
 
-    Image {
-        source: calaosApp.getPictureSized(isLandscape?
-                                              "background_landscape":
-                                              "background")
+    CalaosBackground {
         anchors.fill: parent
-        fillMode: Image.PreserveAspectCrop
     }
 
     function calcGridSize(rootWidth) {

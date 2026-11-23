@@ -22,6 +22,7 @@ android {
 
 RESOURCES += qml_mobile.qrc \
     img_mobile.qrc \
+    background.qrc \
     fonts_mobile.qrc \
     qml_shared.qrc \
     lang.qrc

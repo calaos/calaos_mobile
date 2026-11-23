@@ -3,6 +3,7 @@ import QtQuick.Window
 import QtQuick.Controls
 import Calaos
 import SharedComponents
+import "../background/qml"
 import "../quickflux"
 import QuickFlux
 
@@ -48,11 +49,8 @@ Window {
     //Load fonts
     Fonts { id: calaosFont }
 
-    Image {
+    CalaosBackground {
         id: background
-        source: calaosApp.getPictureSized(isLandscape?
-                                              "background_landscape":
-                                              "background")
         anchors {
             fill: parent
             topMargin: rootWindow.safeTop
@@ -60,7 +58,6 @@ Window {
             leftMargin: rootWindow.safeLeft
             rightMargin: rootWindow.safeRight
         }
-        fillMode: Image.PreserveAspectCrop
     }
 
     Connections {

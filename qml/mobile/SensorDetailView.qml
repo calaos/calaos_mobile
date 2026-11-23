@@ -1,6 +1,7 @@
 import QtQuick
 import Calaos
 import SharedComponents
+import "../background/qml"
 import QtQuick.Layouts
 import "../quickflux"
 
@@ -8,12 +9,8 @@ Item {
     id: sensorDetailView
     property QtObject sensor
 
-    Image {
-        source: calaosApp.getPictureSized(isLandscape?
-                                              "background_landscape":
-                                              "background")
+    CalaosBackground {
         anchors.fill: parent
-        fillMode: Image.PreserveAspectCrop
     }
 
     Flickable {

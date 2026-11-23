@@ -1,6 +1,7 @@
 import QtQuick
 import Calaos
 import SharedComponents
+import "../background/qml"
 import QtQuick.Layouts
 import "../quickflux"
 
@@ -9,12 +10,8 @@ Item {
 
     readonly property bool failed: eventLogModel.error && !eventLogModel.loading
 
-    Image {
-        source: calaosApp.getPictureSized(isLandscape?
-                                              "background_landscape":
-                                              "background")
+    CalaosBackground {
         anchors.fill: parent
-        fillMode: Image.PreserveAspectCrop
     }
 
     ListView {
